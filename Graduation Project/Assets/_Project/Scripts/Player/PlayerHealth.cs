@@ -97,6 +97,7 @@ namespace RetroFPS
 
         private void Die()
         {
+            if (_isDead) return;
             _isDead = true;
             _currentHealth = 0f;
 
@@ -136,7 +137,9 @@ namespace RetroFPS
         public void RestartGame()
         {
             Time.timeScale = 1.0f; // Mikro dondurma varsa zamanı normale çek
-            SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+            Time.fixedDeltaTime = 0.02f;
+            _isDead = false;
+            SceneManager.LoadScene(SceneManager.GetActiveScene().name);
         }
 
         private void Update()

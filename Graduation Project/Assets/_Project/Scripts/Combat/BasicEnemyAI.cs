@@ -98,9 +98,20 @@ namespace RetroFPS
         private float _squashTimer = 0f;
 
         private Renderer[] _renderers;
+        private Collider[] _colliders;
         private MaterialPropertyBlock _propBlock;
         private static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
         private static readonly int ColorId = Shader.PropertyToID("_Color");
+
+        // Ölüm ve Yeniden Doğuş Durum Değişkenleri
+        private bool _isGibbed = false;
+        private Transform _headTransform;
+        private float _deathAnimTimer = 0f;
+        private Quaternion _deathStartRot;
+        private Quaternion _deathTargetRot;
+        private Vector3 _deathStartPos;
+        private Vector3 _deathTargetPos;
+        private float _respawnPopTimer = 0f;
 
         public EnemyState CurrentState => _currentState;
         public float CurrentHealth => _currentHealth;
@@ -129,14 +140,45 @@ namespace RetroFPS
             _lastKnownPlayerPos = _spawnPosition;
 
             _renderers = GetComponentsInChildren<Renderer>();
+            _colliders = GetComponentsInChildren<Collider>();
             _propBlock = new MaterialPropertyBlock();
 
             FindPlayer();
             SetupHitboxes();
+            _headTransform = transform.Find("Head");
 
             // Başlangıçta Idle modunda hafif bekleme ile başla
             _currentState = EnemyState.Idle;
             _stateTimer = Random.Range(idleDurationMin, idleDurationMax);
+        }
+
+        private void SetCollidersActive(bool active)
+        {
+            if (_controller != null) _controller.enabled = active;
+            if (_colliders != null)
+            {
+                for (int i = 0; i < _colliders.Length; i++)
+                {
+                    if (_colliders[i] != null && _colliders[i] != _controller)
+                    {
+                        _colliders[i].enabled = active;
+                    }
+                }
+            }
+        }
+
+        private void SetRenderersActive(bool active)
+        {
+            if (_renderers != null)
+            {
+                for (int i = 0; i < _renderers.Length; i++)
+                {
+                    if (_renderers[i] != null)
+                    {
+                        _renderers[i].enabled = active;
+                    }
+                }
+            }
         }
 
         private void FindPlayer()
@@ -171,6 +213,32 @@ namespace RetroFPS
             if (_currentState == EnemyState.Dead)
             {
                 _stateTimer -= Time.deltaTime;
+
+                if (!_isGibbed)
+                {
+                    _deathAnimTimer += Time.deltaTime;
+
+                    // 1. Aşama (0 - 0.45s): Fiziksel geriye yıkılma ve zemin teması
+                    if (_deathAnimTimer <= 0.45f)
+                    {
+                        float t = Mathf.SmoothStep(0f, 1f, _deathAnimTimer / 0.45f);
+                        transform.rotation = Quaternion.Slerp(_deathStartRot, _deathTargetRot, t);
+                        transform.position = Vector3.Lerp(_deathStartPos, _deathTargetPos, t);
+                    }
+                    // 2. Aşama (0.45s - 1.20s): Zemin altına batarak okült çözünme
+                    else if (_deathAnimTimer <= 1.20f)
+                    {
+                        float sinkT = (_deathAnimTimer - 0.45f) / 0.75f;
+                        transform.position = Vector3.Lerp(_deathTargetPos, _deathTargetPos - Vector3.up * 1.6f, sinkT);
+
+                        if (_deathAnimTimer >= 1.18f)
+                        {
+                            SetRenderersActive(false);
+                            transform.localScale = _initialScale;
+                        }
+                    }
+                }
+
                 if (_stateTimer <= 0f)
                 {
                     Respawn();
@@ -187,8 +255,16 @@ namespace RetroFPS
             UpdateTimers();
             _visualTilt = Mathf.Lerp(_visualTilt, _targetVisualTilt, Time.deltaTime * 12f);
 
+            // Yeniden doğuş organik pop / yaylanma efekti
+            if (_respawnPopTimer > 0f)
+            {
+                _respawnPopTimer -= Time.deltaTime;
+                float popT = 1f - (_respawnPopTimer / 0.22f);
+                float scaleMod = popT < 0.7f ? Mathf.Lerp(0.1f, 1.14f, popT / 0.7f) : Mathf.Lerp(1.14f, 1.0f, (popT - 0.7f) / 0.3f);
+                transform.localScale = _initialScale * scaleMod;
+            }
             // Squash & Stretch darbe reaksiyonu (Organik ezilme-yaylanma)
-            if (_squashTimer > 0f)
+            else if (_squashTimer > 0f)
             {
                 _squashTimer -= Time.deltaTime;
                 float sqT = _squashTimer / 0.18f;
@@ -614,7 +690,20 @@ namespace RetroFPS
 
             if (_currentHealth <= 0f)
             {
-                Die();
+                Die(hitPoint, hitNormal, amount, isCritical);
+            }
+            else
+            {
+                // Canlıyken darbe anında kan püskürt ve çevreye kan sıçrat
+                if (CombatVFXManager.Instance != null)
+                {
+                    CombatVFXManager.Instance.SpawnHitImpact(hitPoint, hitNormal, isCritical, true);
+                }
+
+                if (CombatAudio.Instance != null)
+                {
+                    CombatAudio.Instance.PlayFleshImpact(hitPoint, isCritical);
+                }
             }
         }
 
@@ -641,28 +730,112 @@ namespace RetroFPS
             Debug.Log($"<color=yellow><b>[DÜŞMAN SERSEMLETİLDİ / STUN!]</b></color> {gameObject.name} {duration:F1}s boyunca hareketsiz!");
         }
 
-        private void Die()
+        private void Die(Vector3 hitPoint, Vector3 hitNormal, float killingDamage, bool isCritical)
         {
             _currentState = EnemyState.Dead;
             _stateTimer = respawnTime;
-            _controller.enabled = false;
             _squashTimer = 0f;
-
-            // Combat Juice: Düşman parçalanma patlaması (Gibs & Explosion Sound)
-            if (CombatVFXManager.Instance != null)
-            {
-                CombatVFXManager.Instance.SpawnFleshGibs(transform.position + Vector3.up * 1f, transform.forward);
-            }
-            if (CombatAudio.Instance != null)
-            {
-                CombatAudio.Instance.PlayGibExplosion(transform.position);
-            }
-
-            // Ölüm efekti: Yere çökme / görünürlüğü kapatma
-            transform.localScale = new Vector3(_initialScale.x, _initialScale.y * 0.15f, _initialScale.z);
+            _targetVisualTilt = 0f;
+            _visualTilt = 0f;
             ClearFlash();
 
-            Debug.Log("<color=red><b>[DÜŞMAN İMHA EDİLDİ]</b></color> 4 saniye içinde arenada yeniden doğacak.");
+            // 1. Çarpışma kutularını devre dışı bırak (Yerde takılma ve hayalet mermi bloklama yok)
+            SetCollidersActive(false);
+
+            // 2. Kafa Kopması (Decapitation) veya Parçalanma (Gibs) Kontrolü
+            bool shouldGib = killingDamage >= 50f || _currentHealth <= -25f || (isCritical && killingDamage >= 35f);
+            bool isHeadHit = hitPoint.y >= transform.position.y + 1.45f;
+            bool shouldDecapitate = !shouldGib && (isCritical || isHeadHit);
+
+            Vector3 blastDir = hitNormal.sqrMagnitude > 0.01f ? -hitNormal : transform.forward;
+
+            if (shouldGib)
+            {
+                _isGibbed = true;
+
+                if (CombatVFXManager.Instance != null)
+                {
+                    CombatVFXManager.Instance.SpawnFleshGibs(transform.position + Vector3.up * 1.0f, blastDir, 7);
+                }
+
+                if (CombatAudio.Instance != null)
+                {
+                    CombatAudio.Instance.PlayGibExplosion(transform.position);
+                }
+
+                // Modeli anında gizle, ölçeği orijinal bırak (Yerde yamuk model kalmaz)
+                SetRenderersActive(false);
+                transform.localScale = _initialScale;
+
+                Debug.Log("<color=red><b>[DÜŞMAN PARÇALANDI / GIBBED!]</b></color> Boomer shooter tarzı et ve kemik parçaları saçıldı!");
+            }
+            else if (shouldDecapitate)
+            {
+                _isGibbed = false;
+                _deathAnimTimer = 0f;
+                _deathStartRot = transform.rotation;
+                _deathStartPos = transform.position;
+
+                // Kafayı gizle ve uçan kafa / boyun kan fıskiyesi başlat
+                if (_headTransform == null) _headTransform = transform.Find("Head");
+                if (_headTransform != null)
+                {
+                    _headTransform.gameObject.SetActive(false);
+                    if (CombatVFXManager.Instance != null)
+                    {
+                        CombatVFXManager.Instance.SpawnSeveredHead(_headTransform.position, blastDir);
+                    }
+                }
+
+                if (CombatVFXManager.Instance != null)
+                {
+                    CombatVFXManager.Instance.SpawnNeckBloodFountain(transform.position + Vector3.up * 1.55f);
+                }
+
+                if (CombatAudio.Instance != null)
+                {
+                    CombatAudio.Instance.PlayDecapitation(transform.position);
+                }
+
+                // Dizüstü çökme ve arkaya yığılma rotasyonu
+                Vector3 knockbackDir = hitNormal.sqrMagnitude > 0.01f ? -hitNormal : -transform.forward;
+                knockbackDir.y = 0f;
+                if (knockbackDir.sqrMagnitude < 0.01f) knockbackDir = -transform.forward;
+                knockbackDir.Normalize();
+
+                _deathTargetRot = Quaternion.LookRotation(knockbackDir) * Quaternion.Euler(60f, 0f, 0f);
+                _deathTargetPos = transform.position + knockbackDir * 0.35f - Vector3.up * 0.40f;
+
+                Debug.Log("<color=red><b>[KAFA KOPTU / DECAPITATION!]</b></color> Boyundan kan fışkırıyor ve baş yere yuvarlandı!");
+            }
+            else
+            {
+                _isGibbed = false;
+                _deathAnimTimer = 0f;
+                _deathStartRot = transform.rotation;
+                _deathStartPos = transform.position;
+
+                Vector3 knockbackDir = hitNormal.sqrMagnitude > 0.01f ? -hitNormal : -transform.forward;
+                knockbackDir.y = 0f;
+                if (knockbackDir.sqrMagnitude < 0.01f) knockbackDir = -transform.forward;
+                knockbackDir.Normalize();
+
+                // Yere yatma açısı ve zemin teması
+                _deathTargetRot = Quaternion.LookRotation(knockbackDir) * Quaternion.Euler(75f, 0f, 0f);
+                _deathTargetPos = transform.position + knockbackDir * 0.45f - Vector3.up * 0.35f;
+
+                if (CombatVFXManager.Instance != null)
+                {
+                    CombatVFXManager.Instance.SpawnHitImpact(transform.position + Vector3.up * 0.9f, hitNormal, false, true);
+                }
+
+                if (CombatAudio.Instance != null)
+                {
+                    CombatAudio.Instance.PlayFleshImpact(transform.position, false);
+                }
+
+                Debug.Log("<color=red><b>[DÜŞMAN YIKILDI]</b></color> Okült çözünme ve zemin altına batış başladı.");
+            }
         }
 
         private void Respawn()
@@ -671,12 +844,27 @@ namespace RetroFPS
             transform.rotation = _spawnRotation;
             transform.localScale = _initialScale;
             _squashTimer = 0f;
+            _deathAnimTimer = 0f;
+            _isGibbed = false;
+            _targetVisualTilt = 0f;
+            _visualTilt = 0f;
+
+            if (_headTransform == null) _headTransform = transform.Find("Head");
+            if (_headTransform != null) _headTransform.gameObject.SetActive(true);
 
             _currentHealth = maxHealth;
             _currentState = EnemyState.Idle;
-            _controller.enabled = true;
             _velocity = Vector3.zero;
             ClearFlash();
+
+            SetRenderersActive(true);
+            SetCollidersActive(true);
+            _respawnPopTimer = 0.22f;
+
+            if (CombatVFXManager.Instance != null)
+            {
+                CombatVFXManager.Instance.SpawnHitImpact(transform.position + Vector3.up * 1f, Vector3.up, false, false);
+            }
 
             Debug.Log("<color=green>[Düşman Yeniden Doğdu]</color> Test için hazır!");
         }

@@ -19,6 +19,12 @@ namespace RetroFPS
         [SerializeField] private Color vignetteColor = new Color(0.75f, 0.04f, 0.06f, 1f);
         [SerializeField] private float vignetteDecaySpeed = 2.4f;
 
+        [Header("Gotik Ortam Karartması (Dark Fantasy Ambient Vignette)")]
+        [SerializeField] private bool enableAmbientVignette = true;
+        [Range(0f, 0.4f)]
+        [SerializeField] private float ambientVignetteIntensity = 0.12f;
+        [SerializeField] private Color ambientVignetteColor = new Color(0.01f, 0.01f, 0.02f, 1f);
+
         [Header("Kritik Can Nabız Uyarısı (Low Health)")]
         [SerializeField] private float lowHealthThreshold = 30f;
         [SerializeField] private float lowHealthPulseSpeed = 6.5f;
@@ -62,9 +68,19 @@ namespace RetroFPS
             _look = GetComponent<PlayerLook>();
             _cam = Camera.main;
             _viewmodel = GetComponentInChildren<ProceduralViewmodel>();
+            _currentPainAlpha = 0f;
 
             CreateVignetteTexture();
             CreateIndicatorTexture();
+        }
+
+        private void OnEnable()
+        {
+            _currentPainAlpha = 0f;
+            for (int i = 0; i < MaxHits; i++)
+            {
+                _hits[i].Active = false;
+            }
         }
 
         private void Start()
@@ -231,6 +247,16 @@ namespace RetroFPS
             if (screenW < 100f || screenH < 100f) return;
 
             Color oldCol = GUI.color;
+
+            // 0. Gotik Ortam Karartması (Dark Fantasy Ambient Vignette)
+            if (enableAmbientVignette && _vignetteTexture != null)
+            {
+                Color ambCol = ambientVignetteColor;
+                ambCol.a = ambientVignetteIntensity;
+                GUI.color = ambCol;
+                GUI.DrawTexture(new Rect(0, 0, screenW, screenH), _vignetteTexture);
+                GUI.color = oldCol;
+            }
 
             // 1. Kenar Kan Perdesi & Acı Flaşı (Vignette)
             if (enableBloodVignette && _vignetteTexture != null)

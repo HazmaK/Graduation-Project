@@ -129,12 +129,15 @@ namespace RetroFPS
                     playerCamera = cameraHolder.GetComponent<Camera>();
             }
 
-            // Başlangıç pitch açısını al
+            // Başlangıç rotasyonunu ve sarsıntıları sıfırla
             if (cameraHolder != null)
             {
-                _targetPitch = cameraHolder.localEulerAngles.x;
-                if (_targetPitch > 180f) _targetPitch -= 360f;
-                _pitch = _targetPitch;
+                cameraHolder.localRotation = Quaternion.identity;
+                _targetPitch = 0f;
+                _pitch = 0f;
+                _currentTilt = 0f;
+                _trauma = 0f;
+                _directionalFlinch = Vector3.zero;
 
                 // Göz hizasını 1.55m olarak ayarla (1.80m manken ile tam göz hizası)
                 if (cameraHolder != transform)

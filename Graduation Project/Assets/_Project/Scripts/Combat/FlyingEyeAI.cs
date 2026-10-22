@@ -87,9 +87,17 @@ namespace RetroFPS
         private readonly RaycastHit[] _groundHits = new RaycastHit[8];
 
         private Renderer[] _renderers;
+        private Collider[] _colliders;
         private MaterialPropertyBlock _propBlock;
         private static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
         private static readonly int ColorId = Shader.PropertyToID("_Color");
+
+        // Ölüm ve Yeniden Doğuş Durum Değişkenleri
+        private bool _isGibbed = false;
+        private float _deathAnimTimer = 0f;
+        private Vector3 _deathSpinSpeed = Vector3.zero;
+        private Vector3 _deathFallVelocity = Vector3.zero;
+        private float _respawnPopTimer = 0f;
 
         public FlyingEyeState CurrentState => _currentState;
         public float CurrentHealth => _currentHealth;
@@ -118,6 +126,7 @@ namespace RetroFPS
             _lastKnownPlayerPos = _spawnPosition;
 
             _renderers = GetComponentsInChildren<Renderer>();
+            _colliders = GetComponentsInChildren<Collider>();
             _propBlock = new MaterialPropertyBlock();
 
             FindPlayer();
@@ -125,6 +134,35 @@ namespace RetroFPS
 
             _currentState = FlyingEyeState.Idle;
             _stateTimer = Random.Range(1.0f, 2.5f);
+        }
+
+        private void SetCollidersActive(bool active)
+        {
+            if (_controller != null) _controller.enabled = active;
+            if (_colliders != null)
+            {
+                for (int i = 0; i < _colliders.Length; i++)
+                {
+                    if (_colliders[i] != null && _colliders[i] != _controller)
+                    {
+                        _colliders[i].enabled = active;
+                    }
+                }
+            }
+        }
+
+        private void SetRenderersActive(bool active)
+        {
+            if (_renderers != null)
+            {
+                for (int i = 0; i < _renderers.Length; i++)
+                {
+                    if (_renderers[i] != null)
+                    {
+                        _renderers[i].enabled = active;
+                    }
+                }
+            }
         }
 
         private void FindPlayer()
@@ -169,6 +207,34 @@ namespace RetroFPS
             if (_currentState == FlyingEyeState.Dead)
             {
                 _stateTimer -= Time.deltaTime;
+
+                if (!_isGibbed)
+                {
+                    _deathAnimTimer += Time.deltaTime;
+
+                    // Havada sönerek yere düşme ve kontrolsüz dönme
+                    _deathFallVelocity.y -= 16f * Time.deltaTime;
+                    transform.position += _deathFallVelocity * Time.deltaTime;
+                    transform.Rotate(_deathSpinSpeed * Time.deltaTime);
+
+                    // 0.55 saniye sonra veya zemine çarptığında okült patlama ile parçalan
+                    if (_deathAnimTimer >= 0.55f || transform.position.y <= 0.4f)
+                    {
+                        _isGibbed = true;
+                        if (CombatVFXManager.Instance != null)
+                        {
+                            CombatVFXManager.Instance.SpawnFleshGibs(transform.position, Vector3.up, 5);
+                            CombatVFXManager.Instance.SpawnHitImpact(transform.position, Vector3.up, false, true);
+                        }
+                        if (CombatAudio.Instance != null)
+                        {
+                            CombatAudio.Instance.PlayGibExplosion(transform.position);
+                        }
+                        SetRenderersActive(false);
+                        transform.localScale = _initialScale;
+                    }
+                }
+
                 if (_stateTimer <= 0f)
                 {
                     Respawn();
@@ -183,6 +249,20 @@ namespace RetroFPS
             }
 
             UpdateTimers();
+
+            // Doğuş pop yaylanması
+            if (_respawnPopTimer > 0f)
+            {
+                _respawnPopTimer -= Time.deltaTime;
+                float popT = 1f - (_respawnPopTimer / 0.22f);
+                float scaleMod = popT < 0.7f ? Mathf.Lerp(0.1f, 1.15f, popT / 0.7f) : Mathf.Lerp(1.15f, 1.0f, (popT - 0.7f) / 0.3f);
+                transform.localScale = _initialScale * scaleMod;
+            }
+            else
+            {
+                transform.localScale = _initialScale;
+            }
+
             ExecuteStateMachine();
             ApplyHoverAltitude();
         }
@@ -557,7 +637,19 @@ namespace RetroFPS
 
             if (_currentHealth <= 0f)
             {
-                Die();
+                Die(hitPoint, hitNormal, amount, isCritical);
+            }
+            else
+            {
+                if (CombatVFXManager.Instance != null)
+                {
+                    CombatVFXManager.Instance.SpawnHitImpact(hitPoint, hitNormal, isCritical, true);
+                }
+
+                if (CombatAudio.Instance != null)
+                {
+                    CombatAudio.Instance.PlayFleshImpact(hitPoint, isCritical);
+                }
             }
         }
 
@@ -580,27 +672,59 @@ namespace RetroFPS
             Debug.Log($"<color=yellow><b>[UÇAN GÖZ SERSEMLETİLDİ / STUN!]</b></color> {gameObject.name} {duration:F1}s boyunca havada felç oldu!");
         }
 
-        private void Die()
+        private void Die(Vector3 hitPoint, Vector3 hitNormal, float killingDamage, bool isCritical)
         {
             _currentState = FlyingEyeState.Dead;
             _stateTimer = respawnTime;
-            _controller.enabled = false;
-
-            // Combat Juice: Uçan Göz parçalanma patlaması (Gibs & Explosion Sound)
-            if (CombatVFXManager.Instance != null)
-            {
-                CombatVFXManager.Instance.SpawnFleshGibs(transform.position, transform.forward, 4);
-            }
-            if (CombatAudio.Instance != null)
-            {
-                CombatAudio.Instance.PlayGibExplosion(transform.position);
-            }
-
-            // Ölüm efekti: Yere düşme ve küçülme
-            transform.localScale = new Vector3(_initialScale.x * 0.7f, _initialScale.y * 0.2f, _initialScale.z * 0.7f);
             ClearFlash();
 
-            Debug.Log("<color=red><b>[UÇAN GÖZ İMHA EDİLDİ]</b></color> 4 saniye sonra havada yeniden doğacak.");
+            // 1. Çarpışma kutularını anında kapat
+            SetCollidersActive(false);
+
+            // 2. Parçalanma (Gibs) Kontrolü: Gözbebeği kritik vuruşu veya ağır hasar
+            bool shouldGib = isCritical || killingDamage >= 35f || _currentHealth <= -15f || Random.value < 0.40f;
+
+            if (shouldGib)
+            {
+                _isGibbed = true;
+
+                if (CombatVFXManager.Instance != null)
+                {
+                    Vector3 blastDir = hitNormal.sqrMagnitude > 0.01f ? -hitNormal : transform.forward;
+                    CombatVFXManager.Instance.SpawnFleshGibs(transform.position, blastDir, 6);
+                    CombatVFXManager.Instance.SpawnHitImpact(transform.position, hitNormal, true, false);
+                }
+
+                if (CombatAudio.Instance != null)
+                {
+                    CombatAudio.Instance.PlayGibExplosion(transform.position);
+                }
+
+                SetRenderersActive(false);
+                transform.localScale = _initialScale;
+
+                Debug.Log("<color=red><b>[UÇAN GÖZ PARÇALANDI / GIBBED!]</b></color> Okült plazma ve et parçaları saçıldı!");
+            }
+            else
+            {
+                _isGibbed = false;
+                _deathAnimTimer = 0f;
+                _deathSpinSpeed = new Vector3(Random.Range(350f, 650f), Random.Range(450f, 750f), Random.Range(250f, 550f));
+                Vector3 knockback = hitNormal.sqrMagnitude > 0.01f ? -hitNormal : -transform.forward;
+                _deathFallVelocity = knockback * 2.2f + Vector3.up * 1.4f;
+
+                if (CombatVFXManager.Instance != null)
+                {
+                    CombatVFXManager.Instance.SpawnHitImpact(transform.position, hitNormal, false, false);
+                }
+
+                if (CombatAudio.Instance != null)
+                {
+                    CombatAudio.Instance.PlayFleshImpact(transform.position, false);
+                }
+
+                Debug.Log("<color=red><b>[UÇAN GÖZ DÜŞÜYOR]</b></color> Havadan spiral çizerek yere çakılıyor.");
+            }
         }
 
         private void Respawn()
@@ -608,12 +732,23 @@ namespace RetroFPS
             transform.position = _spawnPosition;
             transform.rotation = _spawnRotation;
             transform.localScale = _initialScale;
+            _deathAnimTimer = 0f;
+            _isGibbed = false;
+            _deathFallVelocity = Vector3.zero;
 
             _currentHealth = maxHealth;
             _currentState = FlyingEyeState.Idle;
-            _controller.enabled = true;
             _velocity = Vector3.zero;
             ClearFlash();
+
+            SetRenderersActive(true);
+            SetCollidersActive(true);
+            _respawnPopTimer = 0.22f;
+
+            if (CombatVFXManager.Instance != null)
+            {
+                CombatVFXManager.Instance.SpawnHitImpact(transform.position, Vector3.up, false, false);
+            }
 
             Debug.Log("<color=green>[Uçan Göz Yeniden Doğdu]</color> Havada devriye için hazır!");
         }

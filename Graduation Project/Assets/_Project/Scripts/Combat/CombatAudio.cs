@@ -56,6 +56,12 @@ namespace RetroFPS.Combat
         [Tooltip("Düşman parçalanma / ölüm patlaması sesi (Gib Explosion).")]
         [SerializeField] private AudioClip gibExplosionSound;
 
+        [Tooltip("Kafa kopması ve basınçlı boyun kan fışkırması sesi (Decapitation Spurt).")]
+        [SerializeField] private AudioClip decapitationSound;
+
+        [Tooltip("Uçuşan et ve kemik parçalarının zemine çarpma sesi (Gib Bounce).")]
+        [SerializeField] private AudioClip gibBounceSound;
+
         [Header("Oyuncu Hasar & Acı Sesleri")]
         [Tooltip("Karakter hasar aldığında çalan tok darbe ve acı sesi.")]
         [SerializeField] private AudioClip playerPainSound;
@@ -79,6 +85,8 @@ namespace RetroFPS.Combat
         private static AudioClip _synthCritCrunch;
         private static AudioClip _synthFleshImpact;
         private static AudioClip _synthGibExplosion;
+        private static AudioClip _synthDecapitation;
+        private static AudioClip _synthGibBounce;
         private static AudioClip _synthPlayerPain;
         private static AudioClip _synthHeartbeat;
 
@@ -112,6 +120,8 @@ namespace RetroFPS.Combat
             if (critCrunchSound == null && _synthCritCrunch == null) _synthCritCrunch = CreateCritCrunchClip();
             if (fleshImpactSound == null && _synthFleshImpact == null) _synthFleshImpact = CreateFleshImpactClip();
             if (gibExplosionSound == null && _synthGibExplosion == null) _synthGibExplosion = CreateGibExplosionClip();
+            if (decapitationSound == null && _synthDecapitation == null) _synthDecapitation = CreateDecapitationClip();
+            if (gibBounceSound == null && _synthGibBounce == null) _synthGibBounce = CreateGibBounceClip();
             if (playerPainSound == null && _synthPlayerPain == null) _synthPlayerPain = CreatePlayerPainClip();
             if (lowHealthHeartbeatSound == null && _synthHeartbeat == null) _synthHeartbeat = CreateHeartbeatClip();
         }
@@ -156,7 +166,7 @@ namespace RetroFPS.Combat
             }
         }
 
-        public void PlayFleshImpact(Vector3 position, bool isCrit)
+        public void PlayFleshImpact(Vector3 position, bool isCrit = false)
         {
             AudioClip clip = isCrit
                 ? (critCrunchSound != null ? critCrunchSound : _synthCritCrunch)
@@ -175,6 +185,24 @@ namespace RetroFPS.Combat
             if (clip != null)
             {
                 AudioSource.PlayClipAtPoint(clip, position, 1.0f * masterCombatVolume);
+            }
+        }
+
+        public void PlayDecapitation(Vector3 position)
+        {
+            AudioClip clip = decapitationSound != null ? decapitationSound : _synthDecapitation;
+            if (clip != null)
+            {
+                AudioSource.PlayClipAtPoint(clip, position, 1.15f * masterCombatVolume);
+            }
+        }
+
+        public void PlayGibBounce(Vector3 position)
+        {
+            AudioClip clip = gibBounceSound != null ? gibBounceSound : _synthGibBounce;
+            if (clip != null)
+            {
+                AudioSource.PlayClipAtPoint(clip, position, 0.65f * masterCombatVolume);
             }
         }
 
@@ -397,6 +425,61 @@ namespace RetroFPS.Combat
             }
 
             AudioClip clip = AudioClip.Create("Synth_GibExplosion", count, 1, sampleRate, false);
+            clip.SetData(data, 0);
+            return clip;
+        }
+
+        private static AudioClip CreateDecapitationClip()
+        {
+            int sampleRate = 44100;
+            float duration = 0.40f;
+            int count = (int)(sampleRate * duration);
+            float[] data = new float[count];
+
+            for (int i = 0; i < count; i++)
+            {
+                float t = (float)i / sampleRate;
+                // 1. Keskin kemik kopması / et kesiği (0 - 0.08s)
+                float sliceEnv = Mathf.Exp(-t * 35f);
+                float sliceFreq = Mathf.Lerp(620f, 180f, t / 0.08f);
+                float sliceTone = Mathf.Sin(2f * Mathf.PI * sliceFreq * t) * sliceEnv * 0.75f;
+
+                // 2. Basınçlı arter kan fışkırması (0.04s - 0.40s)
+                float spurtT = Mathf.Max(0f, t - 0.04f);
+                float spurtEnv = Mathf.Exp(-spurtT * 8f) * (t > 0.04f ? 1f : 0f);
+                float spurtNoise = (Random.value * 2f - 1f) * spurtEnv * 0.70f;
+
+                // 3. Tok boyun kütüğü
+                float thud = Mathf.Sin(2f * Mathf.PI * 110f * t) * sliceEnv * 0.5f;
+
+                data[i] = Mathf.Clamp(sliceTone + spurtNoise + thud, -1f, 1f);
+            }
+
+            AudioClip clip = AudioClip.Create("Synth_Decapitation", count, 1, sampleRate, false);
+            clip.SetData(data, 0);
+            return clip;
+        }
+
+        private static AudioClip CreateGibBounceClip()
+        {
+            int sampleRate = 44100;
+            float duration = 0.10f;
+            int count = (int)(sampleRate * duration);
+            float[] data = new float[count];
+
+            for (int i = 0; i < count; i++)
+            {
+                float t = (float)i / sampleRate;
+                float env = Mathf.Exp(-t * 45f);
+
+                // Islak zemin çarpması: 160 Hz -> 50 Hz tok et sesi + hafif çıtırtı
+                float tone = Mathf.Sin(2f * Mathf.PI * Mathf.Lerp(160f, 50f, t / duration) * t) * 0.65f;
+                float squelch = (Random.value * 2f - 1f) * Mathf.Exp(-t * 60f) * 0.50f;
+
+                data[i] = Mathf.Clamp((tone + squelch) * env, -1f, 1f);
+            }
+
+            AudioClip clip = AudioClip.Create("Synth_GibBounce", count, 1, sampleRate, false);
             clip.SetData(data, 0);
             return clip;
         }

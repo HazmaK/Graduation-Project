@@ -59,6 +59,11 @@ sysinfo.txt
 *.unitypackage
 *.app
 
+# Nested repos / Workspace extras
+Graduation-Project/
+Project G Game/
+
+
 # OS generated
 .DS_Store
 .DS_Store?

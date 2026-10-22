@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using RetroFPS.Combat;
 
 namespace RetroFPS
 {
@@ -25,6 +26,8 @@ namespace RetroFPS
         private bool _hasImpacted = false;
         private bool _isDeflected = false;
         private Renderer _renderer;
+        private TrailRenderer _trail;
+        private Vector3 _baseScale;
 
         public bool IsDeflected => _isDeflected;
         public float Damage => damage;
@@ -51,6 +54,39 @@ namespace RetroFPS
             _hasImpacted = false;
             _isDeflected = false;
             _renderer = GetComponent<Renderer>();
+            _baseScale = transform.localScale != Vector3.zero ? transform.localScale : new Vector3(0.40f, 0.40f, 0.40f);
+            SetupTrail();
+        }
+
+        private void SetupTrail()
+        {
+            if (_trail == null)
+            {
+                _trail = GetComponent<TrailRenderer>();
+                if (_trail == null)
+                {
+                    _trail = gameObject.AddComponent<TrailRenderer>();
+                }
+            }
+
+            _trail.time = 0.22f;
+            _trail.startWidth = 0.28f;
+            _trail.endWidth = 0.02f;
+            _trail.minVertexDistance = 0.05f;
+
+            Shader shader = Shader.Find("Universal Render Pipeline/Unlit")
+                         ?? Shader.Find("Sprites/Default");
+            if (shader != null && _trail.material == null)
+            {
+                _trail.material = new Material(shader);
+            }
+
+            Gradient gradient = new Gradient();
+            gradient.SetKeys(
+                new GradientColorKey[] { new GradientColorKey(new Color(0.95f, 0.2f, 1.0f), 0.0f), new GradientColorKey(new Color(0.40f, 0.05f, 0.65f), 1.0f) },
+                new GradientAlphaKey[] { new GradientAlphaKey(0.85f, 0.0f), new GradientAlphaKey(0.0f, 1.0f) }
+            );
+            _trail.colorGradient = gradient;
         }
 
         /// <summary>
@@ -75,7 +111,20 @@ namespace RetroFPS
             }
 
             // Hafif büyütme
-            transform.localScale = Vector3.one * 0.55f;
+            _baseScale = Vector3.one * 0.55f;
+            transform.localScale = _baseScale;
+
+            if (_trail != null)
+            {
+                Gradient deflectGrad = new Gradient();
+                deflectGrad.SetKeys(
+                    new GradientColorKey[] { new GradientColorKey(new Color(0.2f, 0.95f, 1.0f), 0.0f), new GradientColorKey(new Color(1.0f, 0.85f, 0.2f), 1.0f) },
+                    new GradientAlphaKey[] { new GradientAlphaKey(0.95f, 0.0f), new GradientAlphaKey(0.0f, 1.0f) }
+                );
+                _trail.colorGradient = deflectGrad;
+                _trail.time = 0.32f;
+                _trail.startWidth = 0.36f;
+            }
 
             Debug.Log($"<color=cyan><b>[PARRY DEFLECTION!]</b></color> Mermi {damage:F0} hasarla geri püskürtüldü!");
         }
@@ -90,6 +139,10 @@ namespace RetroFPS
                 Destroy(gameObject);
                 return;
             }
+
+            // Nabız gibi atan okült enerji çekirdeği
+            float pulse = 1f + Mathf.Sin(Time.time * 18f) * 0.12f;
+            transform.localScale = _baseScale * pulse;
 
             float stepDistance = speed * Time.deltaTime;
             Vector3 stepMove = transform.forward * stepDistance;
@@ -137,6 +190,12 @@ namespace RetroFPS
         {
             if (_hasImpacted) return;
             _hasImpacted = true;
+
+            // Okült enerji patlaması VFX (Parry yansıması ise mavi-altın, normal ise karanlık mor)
+            if (CombatVFXManager.Instance != null)
+            {
+                CombatVFXManager.Instance.SpawnOccultEnergyBurst(point, _isDeflected);
+            }
 
             IDamageable damageable = hitCollider.GetComponentInParent<IDamageable>();
             if (damageable != null)
