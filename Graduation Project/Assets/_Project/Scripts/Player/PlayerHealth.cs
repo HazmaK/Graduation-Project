@@ -60,7 +60,7 @@ namespace RetroFPS
             // 1. Dash sırasında I-Frame kontrolü (Hasar almama penceresi)
             if (_movement != null && _movement.IsInvincible)
             {
-                Debug.Log("<color=cyan><b>[DASH I-FRAME DODGE!]</b></color> Düşman saldırısı Dash ile başarıyla savuşturuldu!");
+                Debug.Log("<color=cyan><b>[DASH I-FRAME DODGE!]</b></color> Enemy attack successfully evaded with Dash!");
                 return;
             }
 
@@ -87,7 +87,7 @@ namespace RetroFPS
             }
 
             OnDamageTaken?.Invoke(amount);
-            Debug.Log($"<color=red><b>[PLAYER DAMAGED]</b></color> -{amount:F0} HP | Kalan Can: <b>{_currentHealth:F0}/{maxHealth}</b>");
+            Debug.Log($"<color=red><b>[PLAYER DAMAGED]</b></color> -{amount:F0} HP | Remaining Health: <b>{_currentHealth:F0}/{maxHealth}</b>");
 
             if (_currentHealth <= 0f && !_isDead)
             {
@@ -128,7 +128,7 @@ namespace RetroFPS
             }
 
             OnDied?.Invoke();
-            Debug.Log("<color=red><b>[PLAYER DIED]</b></color> Oyuncu hayatını kaybetti. Yeniden başlatma bekleniyor.");
+            Debug.Log("<color=red><b>[PLAYER DIED]</b></color> Player perished. Awaiting restart.");
         }
 
         /// <summary>

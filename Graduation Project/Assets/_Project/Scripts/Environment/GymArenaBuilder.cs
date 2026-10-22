@@ -14,6 +14,10 @@ namespace RetroFPS
         [SerializeField] private bool buildOnStart = true;
         [SerializeField] private Vector2 arenaSize = new Vector2(34f, 34f);
 
+        [Header("Statik Test Düşmanları")]
+        [Tooltip("Arena inşa edilirken statik test düşmanları doğurulsun mu? (WaveSpawnDirector dalga sistemi kullanıldığında False olmalıdır)")]
+        [SerializeField] private bool spawnStaticEnemies = false;
+
         [Header("Dark Fantasy Atmosfer Ayarları")]
         [SerializeField] private bool enableDarkAtmosphere = true;
         [SerializeField] private bool spawnTorches = true;
@@ -48,7 +52,37 @@ namespace RetroFPS
             }
             else if (existing != null)
             {
+                if (!spawnStaticEnemies)
+                {
+                    RemoveStaticEnemiesFromGeometry(existing);
+                }
                 ApplyDarkFantasyToExistingGeometry(existing);
+            }
+        }
+
+        [ContextMenu("Remove Static Enemies From Arena")]
+        public void RemoveStaticEnemies()
+        {
+            Transform existing = transform.Find("Gym_Geometry");
+            if (existing != null)
+            {
+                RemoveStaticEnemiesFromGeometry(existing);
+            }
+        }
+
+        private void RemoveStaticEnemiesFromGeometry(Transform root)
+        {
+            if (root == null) return;
+            for (int i = root.childCount - 1; i >= 0; i--)
+            {
+                Transform child = root.GetChild(i);
+                if (child != null && (child.name.StartsWith("Ghoul_Stalker") || child.name.StartsWith("FlyingEye_Watcher")))
+                {
+                    if (Application.isPlaying)
+                        Destroy(child.gameObject);
+                    else
+                        DestroyImmediate(child.gameObject);
+                }
             }
         }
 
@@ -136,25 +170,28 @@ namespace RetroFPS
             // 7. 1.80m Boyunda İnsan Referans Mankeni (Pasif DPS / Boyut Kıyaslaması)
             CreateHumanReferenceDummy(root.transform, new Vector3(-3.5f, 0f, -8.5f), dummyMat, "Combat_Dummy_Target");
 
-            // 8. Agresif Gotik Düşmanlar (Ghoul Stalker - Koyu çürük ceset derisi, paslı zırh, kanlı pençeler)
-            Material ghoulSkin = CreateColoredMaterial("Ghoul_Skin", new Color(0.12f, 0.13f, 0.14f), 0.15f);
-            Material ghoulArmor = CreateColoredMaterial("Ghoul_Armor", new Color(0.16f, 0.12f, 0.12f), 0.25f, 0.5f);
-            Material ghoulClaw = CreateColoredMaterial("Ghoul_Claw", new Color(0.38f, 0.08f, 0.08f), 0.30f);
-            Material ghoulEye = CreateUnlitMaterial("Ghoul_Eye", new Color(1.0f, 0.15f, 0.02f));
+            // 8. Agresif Gotik Düşmanlar (Sadece statik test modu açıksa)
+            if (spawnStaticEnemies)
+            {
+                Material ghoulSkin = CreateColoredMaterial("Ghoul_Skin", new Color(0.12f, 0.13f, 0.14f), 0.15f);
+                Material ghoulArmor = CreateColoredMaterial("Ghoul_Armor", new Color(0.16f, 0.12f, 0.12f), 0.25f, 0.5f);
+                Material ghoulClaw = CreateColoredMaterial("Ghoul_Claw", new Color(0.38f, 0.08f, 0.08f), 0.30f);
+                Material ghoulEye = CreateUnlitMaterial("Ghoul_Eye", new Color(1.0f, 0.15f, 0.02f));
 
-            // Sürü Düşmanları
-            CreateGhoulEnemy(root.transform, new Vector3(0f, 0f, 1.0f), ghoulSkin, ghoulArmor, ghoulClaw, ghoulEye, "Ghoul_Stalker_Center");
-            CreateGhoulEnemy(root.transform, new Vector3(4.0f, 0f, 0.5f), ghoulSkin, ghoulArmor, ghoulClaw, ghoulEye, "Ghoul_Stalker_Packmate");
-            CreateGhoulEnemy(root.transform, new Vector3(-10.5f, 0f, 9.5f), ghoulSkin, ghoulArmor, ghoulClaw, ghoulEye, "Ghoul_Stalker_DistantGuard");
+                // Sürü Düşmanları
+                CreateGhoulEnemy(root.transform, new Vector3(0f, 0f, 1.0f), ghoulSkin, ghoulArmor, ghoulClaw, ghoulEye, "Ghoul_Stalker_Center");
+                CreateGhoulEnemy(root.transform, new Vector3(4.0f, 0f, 0.5f), ghoulSkin, ghoulArmor, ghoulClaw, ghoulEye, "Ghoul_Stalker_Packmate");
+                CreateGhoulEnemy(root.transform, new Vector3(-10.5f, 0f, 9.5f), ghoulSkin, ghoulArmor, ghoulClaw, ghoulEye, "Ghoul_Stalker_DistantGuard");
 
-            // 9. Havada Uçan Göz (Occult Watcher - Hastalıklı fildişi sklera, kara büyü moru iris, kömür boynuzlar)
-            Material eyeSclera = CreateColoredMaterial("Eye_Sclera", new Color(0.68f, 0.64f, 0.50f), 0.20f);
-            Material eyeIris = CreateUnlitMaterial("Eye_Iris", new Color(0.45f, 0.04f, 0.58f));
-            Material eyePupil = CreateColoredMaterial("Eye_Pupil", new Color(0.02f, 0.02f, 0.03f), 0.05f);
-            Material eyeHorn = CreateColoredMaterial("Eye_Horn", new Color(0.08f, 0.08f, 0.09f), 0.15f);
-            Material eyeTendril = CreateColoredMaterial("Eye_Tendril", new Color(0.22f, 0.07f, 0.11f), 0.15f);
+                // 9. Havada Uçan Göz (Occult Watcher - Hastalıklı fildişi sklera, kara büyü moru iris, kömür boynuzlar)
+                Material eyeSclera = CreateColoredMaterial("Eye_Sclera", new Color(0.68f, 0.64f, 0.50f), 0.20f);
+                Material eyeIris = CreateUnlitMaterial("Eye_Iris", new Color(0.45f, 0.04f, 0.58f));
+                Material eyePupil = CreateColoredMaterial("Eye_Pupil", new Color(0.02f, 0.02f, 0.03f), 0.05f);
+                Material eyeHorn = CreateColoredMaterial("Eye_Horn", new Color(0.08f, 0.08f, 0.09f), 0.15f);
+                Material eyeTendril = CreateColoredMaterial("Eye_Tendril", new Color(0.22f, 0.07f, 0.11f), 0.15f);
 
-            CreateFlyingEyeEnemy(root.transform, new Vector3(2.0f, 2.7f, 4.0f), eyeSclera, eyeIris, eyePupil, eyeHorn, eyeTendril, "FlyingEye_Watcher");
+                CreateFlyingEyeEnemy(root.transform, new Vector3(2.0f, 2.7f, 4.0f), eyeSclera, eyeIris, eyePupil, eyeHorn, eyeTendril, "FlyingEye_Watcher");
+            }
 
             if (enableDarkAtmosphere)
             {
@@ -204,6 +241,19 @@ namespace RetroFPS
                 {
                     r.material = dummyMat;
                 }
+            }
+
+            // Düşman geometrisini ve materyallerini de denetle ve onar (Pembe/Mor Missing Material koruması)
+            BasicEnemyAI[] ghouls = root.GetComponentsInChildren<BasicEnemyAI>(true);
+            for (int i = 0; i < ghouls.Length; i++)
+            {
+                if (ghouls[i] != null) ghouls[i].ValidateAndRepairMaterials();
+            }
+
+            FlyingEyeAI[] eyes = root.GetComponentsInChildren<FlyingEyeAI>(true);
+            for (int i = 0; i < eyes.Length; i++)
+            {
+                if (eyes[i] != null) eyes[i].ValidateAndRepairMaterials();
             }
 
             // Mevcut veya eski konumu bozuk meşale objesi varsa temizle ve güncel 34m arena konumlarıyla yeniden üret

@@ -22,11 +22,14 @@ namespace RetroFPS
     /// - Gözbebeği Kritik Vuruş Noktasıdır (2x Headshot / Crit).
     /// </summary>
     [RequireComponent(typeof(CharacterController))]
-    public class FlyingEyeAI : MonoBehaviour, IDamageable, IAlertableEnemy, IStunnable
+    public class FlyingEyeAI : MonoBehaviour, IDamageable, IAlertableEnemy, IStunnable, IEncounterEnemy
     {
         [Header("Sağlık ve Ödül")]
         [SerializeField] private float maxHealth = 90f; // Havada olduğu için biraz daha kırılgan
         [SerializeField] private float respawnTime = 4.0f;
+        [SerializeField] private bool autoRespawn = true;
+
+        public bool AutoRespawn { get => autoRespawn; set => autoRespawn = value; }
 
         [Header("Uçuş ve Hareket")]
         [SerializeField] private float flySpeed = 3.8f;
@@ -105,6 +108,12 @@ namespace RetroFPS
         public Vector3 Position => transform.position;
         public bool IsDead => _currentState == FlyingEyeState.Dead;
 
+        // IEncounterEnemy Uygulaması
+        public event System.Action<IEncounterEnemy> OnEnemyDeath;
+        public bool IsAlive => _currentState != FlyingEyeState.Dead;
+        public Transform EnemyTransform => transform;
+        public GameObject EnemyGameObject => gameObject;
+
         private void OnEnable()
         {
             EnemyAlertHub.Register(this);
@@ -128,6 +137,8 @@ namespace RetroFPS
             _renderers = GetComponentsInChildren<Renderer>();
             _colliders = GetComponentsInChildren<Collider>();
             _propBlock = new MaterialPropertyBlock();
+
+            ValidateAndRepairMaterials();
 
             FindPlayer();
             SetupHitboxes();
@@ -237,7 +248,14 @@ namespace RetroFPS
 
                 if (_stateTimer <= 0f)
                 {
-                    Respawn();
+                    if (autoRespawn)
+                    {
+                        Respawn();
+                    }
+                    else
+                    {
+                        gameObject.SetActive(false);
+                    }
                 }
                 return;
             }
@@ -506,7 +524,7 @@ namespace RetroFPS
             EnemyProjectile proj = projGO.AddComponent<EnemyProjectile>();
             proj.Initialize(transform, projectileSpeed, projectileDamage);
 
-            Debug.Log("<color=magenta><b>[UÇAN GÖZ SALDIRISI]</b></color> Okült plazma mermisi ateşlendi!");
+            Debug.Log("<color=magenta><b>[FLYING EYE ATTACK]</b></color> Occult plasma bolt fired!");
         }
 
         private void ExecuteStagger()
@@ -602,7 +620,7 @@ namespace RetroFPS
             {
                 _playerTransform = target;
                 StartCombat(false);
-                Debug.Log($"<color=yellow>[Sürü Uyarısı]</color> <b>{gameObject.name} (Uçan Göz)</b> müttefik alarmıyla savaşa dahil oldu!");
+                Debug.Log($"<color=yellow>[Pack Alert]</color> <b>{gameObject.name} (Flying Eye)</b> alerted by ally!");
             }
         }
 
@@ -633,7 +651,7 @@ namespace RetroFPS
                     HitstopManager.Instance.TriggerHitstop(0.04f, 0.03f);
             }
 
-            Debug.Log($"<color=magenta>[Uçan Göz Vuruldu]</color> -{amount:F0} HP | Kalan: <b>{Mathf.Max(0, _currentHealth):F0}/{maxHealth}</b> {(isCritical ? "<color=yellow>CRIT EYE-SHOT!</color>" : "")}");
+            Debug.Log($"<color=magenta>[Flying Eye Hit]</color> -{amount:F0} HP | Remaining: <b>{Mathf.Max(0, _currentHealth):F0}/{maxHealth}</b> {(isCritical ? "<color=yellow>CRIT EYE-SHOT!</color>" : "")}");
 
             if (_currentHealth <= 0f)
             {
@@ -669,7 +687,7 @@ namespace RetroFPS
                 HitstopManager.Instance.TriggerHitstop(0.08f, 0.02f);
             }
 
-            Debug.Log($"<color=yellow><b>[UÇAN GÖZ SERSEMLETİLDİ / STUN!]</b></color> {gameObject.name} {duration:F1}s boyunca havada felç oldu!");
+            Debug.Log($"<color=yellow><b>[FLYING EYE STUNNED!]</b></color> {gameObject.name} immobilized in mid-air for {duration:F1}s!");
         }
 
         private void Die(Vector3 hitPoint, Vector3 hitNormal, float killingDamage, bool isCritical)
@@ -677,6 +695,8 @@ namespace RetroFPS
             _currentState = FlyingEyeState.Dead;
             _stateTimer = respawnTime;
             ClearFlash();
+
+            OnEnemyDeath?.Invoke(this);
 
             // 1. Çarpışma kutularını anında kapat
             SetCollidersActive(false);
@@ -703,7 +723,7 @@ namespace RetroFPS
                 SetRenderersActive(false);
                 transform.localScale = _initialScale;
 
-                Debug.Log("<color=red><b>[UÇAN GÖZ PARÇALANDI / GIBBED!]</b></color> Okült plazma ve et parçaları saçıldı!");
+                Debug.Log("<color=red><b>[FLYING EYE GIBBED!]</b></color> Occult plasma and flesh fragments scattered!");
             }
             else
             {
@@ -723,14 +743,17 @@ namespace RetroFPS
                     CombatAudio.Instance.PlayFleshImpact(transform.position, false);
                 }
 
-                Debug.Log("<color=red><b>[UÇAN GÖZ DÜŞÜYOR]</b></color> Havadan spiral çizerek yere çakılıyor.");
+                Debug.Log("<color=red><b>[FLYING EYE FALLING]</b></color> Spiraling down from the sky.");
             }
         }
 
         private void Respawn()
         {
+            if (_controller != null) _controller.enabled = false;
             transform.position = _spawnPosition;
             transform.rotation = _spawnRotation;
+            if (_controller != null) _controller.enabled = true;
+
             transform.localScale = _initialScale;
             _deathAnimTimer = 0f;
             _isGibbed = false;
@@ -750,7 +773,41 @@ namespace RetroFPS
                 CombatVFXManager.Instance.SpawnHitImpact(transform.position, Vector3.up, false, false);
             }
 
-            Debug.Log("<color=green>[Uçan Göz Yeniden Doğdu]</color> Havada devriye için hazır!");
+            Debug.Log("<color=green>[Flying Eye Respawned]</color> Ready for aerial patrol!");
+        }
+
+        /// <summary>
+        /// WaveSpawnDirector tarafından havuzdan çağrıldığında düşmanı hazır konuma getirir.
+        /// </summary>
+        public void OnSpawnFromDirector(Vector3 spawnPosition, Quaternion spawnRotation)
+        {
+            autoRespawn = false;
+            _spawnPosition = spawnPosition;
+            _spawnRotation = spawnRotation;
+
+            if (_controller != null) _controller.enabled = false;
+            transform.position = spawnPosition;
+            transform.rotation = spawnRotation;
+            if (_controller != null) _controller.enabled = true;
+
+            if (_playerTransform == null)
+            {
+                FindPlayer();
+            }
+
+            gameObject.SetActive(true);
+            Respawn();
+            StartCombat(true);
+        }
+
+        /// <summary>
+        /// WaveSpawnDirector tarafından dalga bittiğinde veya havuz temizliğinde çağrılır.
+        /// </summary>
+        public void OnDespawnToDirector()
+        {
+            autoRespawn = false;
+            _currentState = FlyingEyeState.Dead;
+            gameObject.SetActive(false);
         }
 
         private void SetColor(Color col)
@@ -775,6 +832,177 @@ namespace RetroFPS
                 _renderers[i].SetPropertyBlock(null);
             }
         }
+
+        #region Fallback / Eksik Materyal Onarımı (Anti-Purple Defense)
+
+        private static Material _sharedFallbackSclera;
+        private static Material _sharedFallbackPupil;
+        private static Material _sharedFallbackIris;
+        private static Material _sharedFallbackHorn;
+        private static Material _sharedFallbackTendril;
+
+        /// <summary>
+        /// Uçan Göz parçalarını tarar; eksik veya mor hata materyallerini procedural Dark Fantasy materyalleriyle onarır.
+        /// </summary>
+        public void ValidateAndRepairMaterials()
+        {
+            EnsureFeaturesExist();
+
+            if (_renderers == null || _renderers.Length == 0)
+            {
+                _renderers = GetComponentsInChildren<Renderer>(true);
+            }
+
+            if (_renderers == null) return;
+
+            for (int i = 0; i < _renderers.Length; i++)
+            {
+                Renderer r = _renderers[i];
+                if (r == null) continue;
+
+                Material m = r.sharedMaterial;
+                bool isBroken = m == null || m.shader == null || m.shader.name.Contains("InternalError") || m.shader.name.Contains("Error");
+
+                if (isBroken)
+                {
+                    string n = r.gameObject.name;
+                    if (n.Contains("Pupil") || n.Contains("Head"))
+                    {
+                        if (_sharedFallbackPupil == null)
+                            _sharedFallbackPupil = CreateFallbackMaterial("Fallback_Eye_Pupil", new Color(0.02f, 0.02f, 0.03f), false, 0.05f);
+                        r.material = _sharedFallbackPupil;
+                    }
+                    else if (n.Contains("Iris"))
+                    {
+                        if (_sharedFallbackIris == null)
+                            _sharedFallbackIris = CreateFallbackMaterial("Fallback_Eye_Iris", new Color(0.45f, 0.04f, 0.58f), true);
+                        r.material = _sharedFallbackIris;
+                    }
+                    else if (n.Contains("Horn"))
+                    {
+                        if (_sharedFallbackHorn == null)
+                            _sharedFallbackHorn = CreateFallbackMaterial("Fallback_Eye_Horn", new Color(0.08f, 0.08f, 0.09f), false, 0.15f);
+                        r.material = _sharedFallbackHorn;
+                    }
+                    else if (n.Contains("Tendril"))
+                    {
+                        if (_sharedFallbackTendril == null)
+                            _sharedFallbackTendril = CreateFallbackMaterial("Fallback_Eye_Tendril", new Color(0.22f, 0.07f, 0.11f), false, 0.15f);
+                        r.material = _sharedFallbackTendril;
+                    }
+                    else
+                    {
+                        if (_sharedFallbackSclera == null)
+                            _sharedFallbackSclera = CreateFallbackMaterial("Fallback_Eye_Sclera", new Color(0.68f, 0.64f, 0.50f), false, 0.20f);
+                        r.material = _sharedFallbackSclera;
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Uçan Göz modelinin iris, boynuz ve dokunaç gibi okült parçalarını denetler; eksikse tamamlar.
+        /// </summary>
+        public void EnsureFeaturesExist()
+        {
+            bool needRefresh = false;
+
+            if (transform.Find("Eye_Iris") == null)
+            {
+                CreatePrimitivePart(transform, PrimitiveType.Sphere, "Eye_Iris", new Vector3(0f, 0f, 0.38f), Quaternion.identity, new Vector3(0.55f, 0.55f, 0.25f), _sharedFallbackIris ?? GetOrCreateFallbackIris());
+                needRefresh = true;
+            }
+
+            if (transform.Find("Horn_Top") == null)
+            {
+                CreatePrimitivePart(transform, PrimitiveType.Cube, "Horn_Top", new Vector3(0f, 0.52f, -0.15f), Quaternion.Euler(-25f, 0f, 0f), new Vector3(0.14f, 0.32f, 0.14f), _sharedFallbackHorn ?? GetOrCreateFallbackHorn());
+                needRefresh = true;
+            }
+            if (transform.Find("Horn_L") == null)
+            {
+                CreatePrimitivePart(transform, PrimitiveType.Cube, "Horn_L", new Vector3(-0.48f, 0.25f, -0.10f), Quaternion.Euler(-15f, 0f, 35f), new Vector3(0.14f, 0.32f, 0.14f), _sharedFallbackHorn ?? GetOrCreateFallbackHorn());
+                needRefresh = true;
+            }
+            if (transform.Find("Horn_R") == null)
+            {
+                CreatePrimitivePart(transform, PrimitiveType.Cube, "Horn_R", new Vector3(0.48f, 0.25f, -0.10f), Quaternion.Euler(-15f, 0f, -35f), new Vector3(0.14f, 0.32f, 0.14f), _sharedFallbackHorn ?? GetOrCreateFallbackHorn());
+                needRefresh = true;
+            }
+
+            if (transform.Find("Tendril_Center") == null)
+            {
+                CreatePrimitivePart(transform, PrimitiveType.Cylinder, "Tendril_Center", new Vector3(0f, -0.65f, 0f), Quaternion.identity, new Vector3(0.08f, 0.25f, 0.08f), _sharedFallbackTendril ?? GetOrCreateFallbackTendril());
+                needRefresh = true;
+            }
+            if (transform.Find("Tendril_L") == null)
+            {
+                CreatePrimitivePart(transform, PrimitiveType.Cylinder, "Tendril_L", new Vector3(-0.25f, -0.60f, -0.12f), Quaternion.identity, new Vector3(0.08f, 0.25f, 0.08f), _sharedFallbackTendril ?? GetOrCreateFallbackTendril());
+                needRefresh = true;
+            }
+            if (transform.Find("Tendril_R") == null)
+            {
+                CreatePrimitivePart(transform, PrimitiveType.Cylinder, "Tendril_R", new Vector3(0.25f, -0.60f, -0.12f), Quaternion.identity, new Vector3(0.08f, 0.25f, 0.08f), _sharedFallbackTendril ?? GetOrCreateFallbackTendril());
+                needRefresh = true;
+            }
+
+            if (transform.Find("FirePoint") == null)
+            {
+                GameObject fp = new GameObject("FirePoint");
+                fp.transform.SetParent(transform);
+                fp.transform.localPosition = new Vector3(0f, 0f, 0.65f);
+                SetFirePoint(fp.transform);
+            }
+
+            if (needRefresh)
+            {
+                _renderers = GetComponentsInChildren<Renderer>(true);
+            }
+        }
+
+        private static GameObject CreatePrimitivePart(Transform parent, PrimitiveType type, string name, Vector3 pos, Quaternion rot, Vector3 scale, Material mat)
+        {
+            GameObject obj = GameObject.CreatePrimitive(type);
+            obj.name = name;
+            obj.transform.SetParent(parent);
+            obj.transform.localPosition = pos;
+            obj.transform.localRotation = rot;
+            obj.transform.localScale = scale;
+            if (mat != null) obj.GetComponent<Renderer>().material = mat;
+            Collider c = obj.GetComponent<Collider>();
+            if (c != null)
+            {
+                if (Application.isPlaying) Destroy(c);
+                else DestroyImmediate(c);
+            }
+            return obj;
+        }
+
+        private static Material GetOrCreateFallbackIris() => _sharedFallbackIris ?? (_sharedFallbackIris = CreateFallbackMaterial("Fallback_Eye_Iris", new Color(0.45f, 0.04f, 0.58f), true));
+        private static Material GetOrCreateFallbackHorn() => _sharedFallbackHorn ?? (_sharedFallbackHorn = CreateFallbackMaterial("Fallback_Eye_Horn", new Color(0.08f, 0.08f, 0.09f), false, 0.15f));
+        private static Material GetOrCreateFallbackTendril() => _sharedFallbackTendril ?? (_sharedFallbackTendril = CreateFallbackMaterial("Fallback_Eye_Tendril", new Color(0.22f, 0.07f, 0.11f), false, 0.15f));
+
+        private static Material CreateFallbackMaterial(string matName, Color color, bool unlit = false, float smoothness = 0.15f, float metallic = 0f)
+        {
+            Shader shader = unlit
+                ? Shader.Find("Universal Render Pipeline/Unlit")
+                : Shader.Find("Universal Render Pipeline/Lit");
+
+            if (shader == null) shader = Shader.Find("Standard");
+
+            Material mat = new Material(shader)
+            {
+                name = matName,
+                hideFlags = HideFlags.DontSave
+            };
+
+            mat.color = color;
+            if (mat.HasProperty(BaseColorId)) mat.SetColor(BaseColorId, color);
+            if (mat.HasProperty(Shader.PropertyToID("_Smoothness"))) mat.SetFloat(Shader.PropertyToID("_Smoothness"), smoothness);
+            if (mat.HasProperty(Shader.PropertyToID("_Metallic"))) mat.SetFloat(Shader.PropertyToID("_Metallic"), metallic);
+            return mat;
+        }
+
+        #endregion
 
         private Material CreateEmissiveMaterial(string matName, Color col)
         {

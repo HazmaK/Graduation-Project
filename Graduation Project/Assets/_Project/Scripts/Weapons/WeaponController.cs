@@ -202,7 +202,7 @@ namespace RetroFPS.Weapons
                 InitializeWeapons();
                 if (!_weaponMap.TryGetValue(slot, out newWeapon) || newWeapon == null)
                 {
-                    Debug.LogWarning($"[WeaponController] Slot {slot} bulunamadı!");
+                    Debug.LogWarning($"[WeaponController] Slot {slot} not found!");
                     return;
                 }
             }

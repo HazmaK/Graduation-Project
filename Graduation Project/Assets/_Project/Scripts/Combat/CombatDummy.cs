@@ -100,7 +100,7 @@ namespace RetroFPS
             }
 
             string critText = isCritical ? "<color=yellow><b>[CRITICAL HEADSHOT!]</b></color>" : "";
-            Debug.Log($"<color=orange>[CombatDummy]</color> Hasar Aldı: <b>-{amount:F0}</b> HP | Kalan: <b>{_currentHealth:F0}/{maxHealth}</b> {critText}");
+            Debug.Log($"<color=orange>[CombatDummy]</color> Damaged: <b>-{amount:F0}</b> HP | Remaining: <b>{_currentHealth:F0}/{maxHealth}</b> {critText}");
         }
 
         private void Update()

@@ -249,7 +249,7 @@ namespace RetroFPS
             // İlk karede hemen tara
             CheckAndReflectProjectiles();
 
-            Debug.Log("<color=yellow><b>[PARRY AKTİF]</b></color> Kalkan savruldu! 0.35s aktif savuşturma penceresi açıldı.");
+            Debug.Log("<color=yellow><b>[PARRY ACTIVE]</b></color> Shield swung! 0.35s active parry window opened.");
         }
 
         /// <summary>
@@ -443,7 +443,7 @@ namespace RetroFPS
 
             OnParrySuccess?.Invoke(isProjectile);
 
-            Debug.Log($"<color=cyan><b>[KUSURSUZ PARRY BAŞARISI!]</b></color> {(isProjectile ? "Mermi elektro-maviyle yansıtıldı!" : "Ghul saldırısı savuşturuldu ve felç edildi!")}");
+            Debug.Log($"<color=cyan><b>[PERFECT PARRY SUCCESS!]</b></color> {(isProjectile ? "Projectile reflected with electro-blue surge!" : "Melee strike deflected and enemy staggered!")}");
         }
 
         private void UpdateShieldProceduralAnimation()

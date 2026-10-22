@@ -126,7 +126,7 @@ namespace RetroFPS
                 _trail.startWidth = 0.36f;
             }
 
-            Debug.Log($"<color=cyan><b>[PARRY DEFLECTION!]</b></color> Mermi {damage:F0} hasarla geri püskürtüldü!");
+            Debug.Log($"<color=cyan><b>[PARRY DEFLECTION!]</b></color> Projectile deflected with {damage:F0} damage!");
         }
 
         private void Update()
