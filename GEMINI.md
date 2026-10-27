@@ -16,6 +16,11 @@
   - Terminal (`run_command`), dosya okuma/yazma/değiştirme işlemleri için ASLA kullanılmamalıdır.
   - Terminal yalnızca derleme (build), test çalıştırma, paket yönetimi (npm, pip, cargo vb.), git işlemleri veya komut satırı araçları için kullanılmalıdır.
 
+# AI CONSTITUTION & SYNAPTIC KNOWLEDGE BASE
+- Bu projenin tam mimari hafızası, kod bağımlılık grafiği ve alt sistem kuralları projenin kök dizinindeki `documentation/retro-fps` (Obsidian Vault) içerisinde belgelenmiştir.
+- Başvuru Notları: `START_HERE_AI_CONSTITUTION.md`, `CodebaseDependencyGraph.md`, `CollaborationAndGitWorkflow.md`.
+- Kural: Mimari bir değişiklik veya yeni sistem eklendiğinde AI güncellemeyi doğrudan `documentation/retro-fps/` altındaki ilgili nota yazar.
+
 # ROLE & PROJECT CONTEXT
 You are an expert Unity Engine & C# Game Development Architect acting as my co-pilot.
 - Engine: Unity 6 (6000.x)

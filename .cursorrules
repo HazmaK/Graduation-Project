@@ -1,0 +1,29 @@
+# Cursor AI Project Rules (Unity 6 Boomer Shooter / Rogue-lite)
+
+## AI CONSTITUTION & MEMORY INTEGRATION
+- **Proje Mimarisi & Obsidian Bilgi Merkezi:** Projenin tüm mimari detayları, kod bağımlılıkları ve sistem kuralları projenin kök dizinindeki `documentation/retro-fps` (Obsidian Vault) içinde belgelenmiştir.
+- Bir modülde değişiklik yapmadan önce `START_HERE_AI_CONSTITUTION.md` ve `CodebaseDependencyGraph.md` prensiplerine uyun.
+- Yeni bir ana modül veya mimari genişletme yaptığınızda güncellemeyi doğrudan `documentation/retro-fps/` altındaki ilgili nota işleyin.
+
+## PLATFORM & TEKNOLOJİ
+- **Engine:** Unity 6 (6000.x)
+- **Render Pipeline:** Universal Render Pipeline (URP)
+- **Input System:** Yalnızca New Input System (`UnityEngine.InputSystem`). Eski `Input.GetKeyDown/GetAxis` ASLA kullanılmaz.
+- **Hedef:** Sıfır GC (Garbage Collection) tahsisli, yüksek performanslı ve modüler mimari.
+
+## SIFIR GC VE PERFORMANS KURALLARI
+1. `Update()`, `FixedUpdate()`, `LateUpdate()` içerisinde ASLA `GetComponent<T>()`, `FindAnyObjectByType<T>()`, `new`, LINQ veya string concatenation kullanmayın.
+2. Tüm referansları `Awake()` veya `OnEnable()` anında önbelleğe (cache) alın.
+3. Fizik sorgularında sıfır bellek ayıran `NonAlloc` API'lerini kullanın (`Physics.RaycastNonAlloc`, `Physics.OverlapSphereNonAlloc`).
+4. Geçici veri paketleri için `class` yerine `readonly struct` tercih edin.
+5. Değişkenleri Inspector'a açmak için ASLA `public` yapmayın; daima `[SerializeField] private` kullanın ve dışarıya `public float Val => _val;` getter property açın.
+6. Unity 6 uyumluluğu: `FindObjectOfType` yerine `FindFirstObjectByType` veya `FindAnyObjectByType` kullanın.
+
+## İKİ KİŞİLİK EKİP VE ÇOKLU AI İŞBİRLİĞİ (NON-DESTRUCTIVE EXTENSION)
+1. **Mevcut Çalışan Kodları Ezmeyin:**
+   - Yeni düşman mı ekliyorsunuz? `BasicEnemyAI.cs`'yi değiştirmeyin. `IDamageable`, `IStunnable`, `IEncounterEnemy` arayüzlerini uygulayan bağımsız bir sınıf oluşturun.
+   - Yeni silah mı ekliyorsunuz? `WeaponController.cs`'yi değiştirmeyin. `WeaponBase` soyut sınıfından türetilen yeni bir silah scripti yazın.
+2. **Ayrık Mimari (Decoupling):**
+   - Sistemler birbirinin iç alanlarına doğrudan erişemez. İletişim C# delegeleri (`System.Action`), arayüzler (`IDamageable`) ve event'ler ile sağlanır.
+3. **Sahne (.unity) Dosyası Çakışması Yasağı:**
+   - Ana sahneyi (`SampleScene.unity`) doğrudan düzenlemeyin. Sandbox sahnelerinde çalışın ve her varlığı `Prefab` olarak üretin.

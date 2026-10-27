@@ -6674,6 +6674,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Enemy_FlyingEye_Watcher
       objectReference: {fileID: 0}
+    - target: {fileID: 4635542418398187382, guid: 02177a9e23183124fbe40a546e414de1, type: 3}
+      propertyPath: autoRespawn
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 6936372329282221822, guid: 02177a9e23183124fbe40a546e414de1, type: 3}
       propertyPath: m_LocalPosition.x
       value: 1.3850944
@@ -15012,6 +15016,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 4833318221340059759, guid: 9ac052f5657dabe478d13eea780617b6, type: 3}
+      propertyPath: autoRespawn
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 5349570471886633040, guid: 9ac052f5657dabe478d13eea780617b6, type: 3}
       propertyPath: m_Name
       value: Enemy_Ghoul_Stalker
