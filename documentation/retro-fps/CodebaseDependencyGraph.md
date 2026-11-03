@@ -35,11 +35,13 @@ flowchart TD
         WC["WeaponController\n(Silah Orkestrasyonu)"]
     end
 
-    subgraph WEAPONS["⚔️ Silah Cephaneliği"]
+    subgraph WEAPONS["⚔️ Silah Cephaneliği & Envanter"]
         WB["WeaponBase (Soyut Sınıf)"]
         PV["ProceduralViewmodel\n(Sway, Bob, Recoil)"]
         W1["RepeaterArbalestWeapon\n(Hitscan Seri Delici)"]
         W2["ExecutionerBladeWeapon\n(Geniş Savurma / Saplama)"]
+        W3["GothicShotgunWeapon\n(Çifte Saçma & Meat Hook)"]
+        AmmoInv["PlayerAmmoInventory\n(Bolts & Shells Rezervi)"]
     end
 
     subgraph COMBAT_CORE["🩸 Dövüş & Geri Bildirim Çekirdeği"]
@@ -54,6 +56,10 @@ flowchart TD
         BloodDecal["BloodDecalManager (Kan Lekeleri)"]
         DamageNum["DamageNumberSystem (Retro Popups)"]
         CombatAudio["CombatAudio (Sentetik Sesler)"]
+        HealthOrb["HealthOrb & HealthOrbManager\n(Adaptif Can Küresi Havuzu)"]
+        HealthDropper["EnemyHealthDropper\n(Modüler Düşüş Tetikleyici)"]
+        AmmoPick["AmmoPickup\n(Manyetik Cephane Kutusu)"]
+        AmmoDrop["EnemyAmmoDropper\n(Akıllı Cephane Saçma)"]
     end
 
     subgraph ENEMIES["👹 Düşman Yapay Zekası"]
@@ -75,6 +81,7 @@ flowchart TD
     subgraph UI_SYS["🖥️ Arayüz Katmanı"]
         HUD["CrosshairHUD (Dinamik Nişangah)"]
         DebugHUD["PlayerDebugHUD (Hız, State, FPS)"]
+        AmmoHUD["AmmoHUD (Retro Cephane Paneli)"]
     end
 
     %% Bağlantılar
@@ -85,12 +92,15 @@ flowchart TD
     PH -.->|OnDamageTaken| PDF
     PH -.->|OnDamageTaken| PL
     
-    WC --> W1 & W2
+    WC --> W1 & W2 & W3
     W1 --|> WB
     W2 --|> WB
+    W3 --|> WB
     WB --> PV
+    WB -.->|Tüketim| AmmoInv
+    W3 -.->|StartGrapple| PM
     
-    W1 & W2 -->|Raycast / OverlapSphere| Hitbox
+    W1 & W2 & W3 -->|Raycast / OverlapSphere| Hitbox
     Hitbox -->|TakeDamage| IDamage
     
     IDamage <|.. Ghoul
@@ -103,12 +113,20 @@ flowchart TD
     
     PP -->|Stun| IStun
     PP -->|Reflect| Projectile
+    W3 -.->|MeatHook Stun| IStun
     
     Ghoul & FlyingEye -->|Tetikler| AlertHub
     AlertHub -->|Alert| IAlert
     IAlert <|.. Ghoul
     
     Ghoul & FlyingEye & Dummy -->|Hit & Death| Hitstop & CombatVFX & BloodDecal & DamageNum & CombatAudio
+    Ghoul & FlyingEye -->|Death Drop| HealthDropper -->|TryDropOrbs| HealthOrb
+    Ghoul & FlyingEye -->|Death Drop| AmmoDrop -->|Spawn| AmmoPick
+    HealthOrb -->|Magnetic Vacuum & Heal| PH
+    HealthOrb -.->|Heal Popup| DamageNum
+    HealthOrb -.->|Pickup Chime| CombatAudio
+    AmmoPick -->|Magnetic Vacuum| AmmoInv
+    AmmoPick -.->|Pickup Chime| CombatAudio
     
     Trigger -->|OnPlayerEnter| Area
     Area --> Director
@@ -118,6 +136,7 @@ flowchart TD
     IEncounter <|.. FlyingEye
     
     WC -.->|OnWeaponHit| HUD
+    AmmoInv -.->|OnAmmoChanged| AmmoHUD
 ```
 
 ---
@@ -126,12 +145,13 @@ flowchart TD
 
 | Modül | Scriptler | Dışa Bağımlılıklar (Çağırdığı) | Olaylar (Events) & Yayınlar |
 | :--- | :--- | :--- | :--- |
-| **Player** | `PlayerMovement`, `PlayerLook`, `PlayerHealth`, `PlayerParryController`, `PlayerDamageFeedback` | `UnityEngine.InputSystem`, `IDamageable`, `IStunnable` | `OnDamageTaken`, `OnDied`, `OnParrySuccess` |
-| **Weapons** | `WeaponBase`, `WeaponController`, `ProceduralViewmodel`, `RepeaterArbalestWeapon`, `ExecutionerBladeWeapon` | `PlayerLook`, `Hitbox`, `IDamageable`, `CombatAudio`, `CombatVFXManager`, `HitstopManager` | `OnWeaponHit(isCrit)`, `OnWeaponSwitched(slot)` |
+| **Player** | `PlayerMovement`, `PlayerLook`, `PlayerHealth`, `PlayerParryController`, `PlayerDamageFeedback` | `UnityEngine.InputSystem`, `IDamageable`, `IStunnable` | `OnDamageTaken`, `OnDied`, `OnParrySuccess`, `OnGrappleEnded` |
+| **Weapons** | `WeaponBase`, `WeaponController`, `ProceduralViewmodel`, `RepeaterArbalestWeapon`, `ExecutionerBladeWeapon`, `GothicShotgunWeapon`, `PlayerAmmoInventory` | `PlayerLook`, `PlayerMovement`, `Hitbox`, `IDamageable`, `IStunnable`, `CombatAudio`, `CombatVFXManager`, `HitstopManager` | `OnWeaponHit(isCrit)`, `OnWeaponSwitched(slot)`, `OnAmmoChanged(type, cur, max)` |
 | **Enemies** | `BasicEnemyAI`, `FlyingEyeAI`, `EnemyAlertHub`, `EnemyProjectile`, `CombatDummy` | `IDamageable`, `IStunnable`, `IEncounterEnemy`, `PlayerHealth`, `CombatVFXManager`, `BloodDecalManager` | `OnEnemyDeath`, `OnAlertTriggered` |
 | **Encounter** | `WaveSpawnDirector`, `EncounterArea`, `EncounterTriggerVolume`, `EncounterSpawnPoint`, `OccultSpawnTelegraph` | `IEncounterEnemy`, `CombatAudio` | `OnWaveStarted`, `OnWaveCompleted`, `OnEncounterCleared` |
 | **Feedback/VFX**| `CombatVFXManager`, `BloodDecalManager`, `HitstopManager`, `DamageNumberSystem`, `CombatAudio`, `ParryVFX` | Yok (Statik Tekil Yönetici / Olay Temelli Dinleyici) | Bağımsız havuzlanmış parçacık ve ses üretimi |
-| **UI** | `CrosshairHUD`, `PlayerDebugHUD` | `WeaponController`, `PlayerMovement`, `PlayerHealth` | `WeaponController.OnWeaponHit` dinler |
+| **Pickups/Loot**| `HealthOrb`, `HealthOrbManager`, `EnemyHealthDropper`, `AmmoPickup`, `EnemyAmmoDropper` | `PlayerHealth`, `PlayerAmmoInventory`, `DamageNumberSystem`, `CombatAudio` | `TryDropOrbs`, `OnHealed`, `SpawnHealNumber`, `AddAmmo` |
+| **UI** | `CrosshairHUD`, `PlayerDebugHUD`, `AmmoHUD` | `WeaponController`, `PlayerMovement`, `PlayerHealth`, `PlayerAmmoInventory` | `WeaponController.OnWeaponHit`, `PlayerAmmoInventory.OnAmmoChanged` dinler |
 
 ---
 
@@ -169,5 +189,6 @@ flowchart TD
 - [[WeaponArsenalArchitecture]] ➔ `coordinates_weapons`
 - [[EnemyAIAndSpawning]] ➔ `coordinates_enemies`
 - [[PlayerSubsystemArchitecture]] ➔ `coordinates_player`
+- [[HealthOrbAndDropSystem]] ➔ `coordinates_health_drops`
 - [[HitstopAndAudioFeedback]] ➔ `coordinates_feedback`
 - ⬅️ [[ProjectOverview]] ➔ `mapped_by` *(gelen)*

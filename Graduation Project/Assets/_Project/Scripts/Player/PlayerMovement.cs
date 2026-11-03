@@ -63,21 +63,33 @@ namespace RetroFPS
         private float _dashRechargeTimer;
         private bool _isInvincible;
 
+        // Grapple Hook (Kanca ile Çekilme) durumları
+        private bool _isGrappling;
+        private Vector3 _grappleTargetPoint;
+        private Transform _grappleTargetTransform;
+        private float _grappleSpeed = 28f;
+        private float _grappleTimer;
+        private const float GrappleStopDistance = 2.0f;
+        private const float GrappleMaxDuration = 1.6f;
+
         // Jump tamponu & Coyote time
         private float _jumpBufferTimer;
         private float _coyoteTimer;
         private const float JumpBufferDuration = 0.15f;
         private const float CoyoteDuration = 0.12f;
 
-        // Dışarıya açık özellikler (Getters)
+        // Dışarıya açık özellikler (Getters) & Olaylar
+        public event System.Action OnGrappleEnded;
         public Vector2 InputVector => _inputVector;
         public float CurrentHorizontalSpeed => new Vector3(_velocity.x, 0f, _velocity.z).magnitude;
         public bool IsGrounded => _isGrounded;
         public bool IsSliding => _isSliding;
         public bool IsCrouching => _isCrouching;
         public bool IsDashing => _isDashing;
+        public bool IsGrappling => _isGrappling;
         public bool IsInvincible => _isInvincible;
         public int CurrentDashCharges => _currentDashCharges;
+        public Vector3 GrappleTargetPoint => (_grappleTargetTransform != null) ? _grappleTargetTransform.position : _grappleTargetPoint;
 
         private void Awake()
         {
@@ -155,6 +167,10 @@ namespace RetroFPS
             if (_isDashing)
             {
                 ExecuteDash();
+            }
+            else if (_isGrappling)
+            {
+                ExecuteGrapple();
             }
             else
             {
@@ -488,6 +504,85 @@ namespace RetroFPS
             {
                 _dashRechargeTimer = 0f;
             }
+        }
+        #endregion
+
+        #region Grapple Hook (Kanca ile Çekilme)
+        /// <summary>
+        /// Kanca hedefe saplandığında oyuncuyu hedefe doğru yüksek hızla çeker.
+        /// </summary>
+        public void StartGrapple(Vector3 targetPoint, float speed = 28f, Transform targetTransform = null)
+        {
+            _isGrappling = true;
+            _grappleTargetPoint = targetPoint;
+            _grappleTargetTransform = targetTransform;
+            _grappleSpeed = Mathf.Max(speed, 16f);
+            _grappleTimer = 0f;
+
+            if (_isSliding) StopSlide();
+            _isDashing = false;
+
+            if (_look != null)
+            {
+                _look.DoFovKick(10f);
+            }
+        }
+
+        /// <summary>
+        /// Kanca çekilmesini sonlandırır. keepMomentum true ise kazanılan kinetik hız korunur.
+        /// </summary>
+        public void StopGrapple(bool keepMomentum = true)
+        {
+            if (!_isGrappling) return;
+
+            _isGrappling = false;
+            _grappleTargetTransform = null;
+
+            if (!keepMomentum)
+            {
+                _velocity = Vector3.zero;
+            }
+            else
+            {
+                Vector3 horiz = new Vector3(_velocity.x, 0f, _velocity.z);
+                if (horiz.magnitude > walkSpeed * 1.4f)
+                {
+                    _velocity = horiz.normalized * (walkSpeed * 1.55f) + Vector3.up * Mathf.Max(_velocity.y, 3.2f);
+                }
+            }
+
+            OnGrappleEnded?.Invoke();
+        }
+
+        private void ExecuteGrapple()
+        {
+            _grappleTimer += Time.deltaTime;
+
+            Vector3 currentTarget = (_grappleTargetTransform != null) ? _grappleTargetTransform.position : _grappleTargetPoint;
+            Vector3 playerCenter = transform.position + Vector3.up * 1.0f;
+            Vector3 toTarget = currentTarget - playerCenter;
+            float distance = toTarget.magnitude;
+
+            // 1. Slingshot Jump Cancel: Space'e basılırsa kanca kopar ve ileri fırlar
+            if (Keyboard.current != null && Keyboard.current.spaceKey.wasPressedThisFrame)
+            {
+                Vector3 launchDir = (_look != null && _look.PlayerCam != null) ? _look.PlayerCam.transform.forward : toTarget.normalized;
+                _velocity = launchDir * (_grappleSpeed * 0.95f) + Vector3.up * jumpForce * 1.2f;
+                StopGrapple(true);
+                if (_look != null) _look.DoFovKick(14f);
+                return;
+            }
+
+            // 2. Hedefe temas veya zaman aşımı
+            if (distance <= GrappleStopDistance || _grappleTimer >= GrappleMaxDuration)
+            {
+                StopGrapple(true);
+                return;
+            }
+
+            // 3. Hedefe doğru ivmeli çekilme
+            Vector3 pullDir = toTarget.normalized;
+            _velocity = pullDir * _grappleSpeed;
         }
         #endregion
     }

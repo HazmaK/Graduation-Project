@@ -88,12 +88,29 @@ namespace RetroFPS
     public enum WeaponSlot
     {
         RepeaterArbalest = 0, // Slot 1: Hızlı Seri Menzilli Arbalest / Çivi Silahı
-        ExecutionerBlade = 1  // Slot 2: Ağır Yakın Dövüş Cellat Kılıcı
+        ExecutionerBlade = 1, // Slot 2: Ağır Yakın Dövüş Cellat Kılıcı
+        GothicShotgun = 2     // Slot 3: Gotik Çift Namlulu Pompalı & Meat Hook
     }
 }
 ```
 
-### 2. `ExecutionerBladeWeapon.cs` (Cellat Kılıcı)
+### 2. `GothicShotgunWeapon.cs` (Gotik Çift Namlulu Pompalı & Meat Hook)
+- **Sol Tık (Birincil Saldırı):** Ağır çift namlu saçma patlaması (`pelletCount = 18`, `damagePerPellet = 18f`, `range = 42m`, `spreadAngle = 5.8°`).
+  * Tek atışta 2 adet Pompalı Fişeği (`Shells`) tüketir. Nokta atışı temasında ~320+ hasar ile elit olmayan yaratıkları anında parçalar (Gibs).
+  * **Havadayken Geri Tepme (Airborne Knockback):** Havada ateş edildiğinde Quake/TF2 roket zıplamasına benzer şekilde oyuncuyu hafifçe geriye fırlatır.
+- **Sağ Tık (İkincil Saldırı - Meat Hook / Grapple):** Namlu altından fırlayan zincirli gotik et kancası (`hookRange = 32m`, `hookPullSpeed = 29m/s`).
+  * **Düşmana Saplanma:** Düşmana saplandığında onu `IStunnable.TakeStun(1.5f)` ile sersemletip yerine çiviler ve oyuncuyu düşmanın göğsüne doğru hızla çeker (point-blank çifte darbesi için ideal pozisyon).
+  * **Yüzeye Saplanma:** Duvar veya sütunlara kilitlenerek dikey/yatay hareket kabiliyeti sunar.
+  * **Sapan Zıplaması (Slingshot Jump):** Kanca ile çekilme esnasında `SPACE` tuşuna basıldığında kanca serbest bırakılır ve biriken kinetik hızla oyuncu gökyüzüne doğru fırlar.
+  * **Görsel Zincir:** Namlu altı ile hedef arasına anlık gerilen ve hedef hareket ettikçe güncellenen dinamik `LineRenderer` zincir efekti.
+
+### 3. Cephane Sistemi (`PlayerAmmoInventory` & `AmmoPickup`)
+- **Cephane Türleri (`AmmoType`):** `Bolts` (Arbalest, Max 120, Başlangıç 60) ve `Shells` (Pompalı, Max 32, Başlangıç 16).
+- **Kuru Tetik (Dry Fire):** Cephane tükendiğinde silah ateş etmez; boş tetik düşme sesi (`CombatAudio.PlayDryFire`) çalar.
+- **Dinamik Düşüş Döngüsü (`EnemyAmmoDropper`):** DOOM Eternal esintili kaynak mekaniği; kritik veya yakın dövüşle öldürülen düşmanlar daha bol cephane düşürür. Oyuncunun hangi cephanesi azsa düşüş algoritması o türe öncelik tanır.
+- **Arayüz (`AmmoHUD`):** Ekranın sağ alt köşesinde aktif silahın cephane sayısını, parlayan retro renk paletini ve doluluk barını sıfır GC tahsisiyle sunar.
+
+### 4. `ExecutionerBladeWeapon.cs` (Cellat Kılıcı)
 - **Sol Tık (Birincil Saldırı):** Yatay geniş savurma (`slashRange = 2.8m`, `angle = 110°`, `damage = 55f`).
   * `Physics.OverlapSphereNonAlloc` kullanarak ön konideki birden fazla düşmanı biçer.
   * **Multi-Hitbox Tamponu (Anti-Duplicate):** Tek bir savurmada aynı düşmanın kafa ve gövde collider'larına ayrı ayrı çarpıp çift hasar vurmasını engelleyen `HashSet<IDamageable>` tamponu içerir.
@@ -102,12 +119,12 @@ namespace RetroFPS
   * İsabet anında `HitstopManager.TriggerHitstop(0.08f)` mikro dondurması ile ağır tokluk hissi.
 - **Görsel Sunum ve Kinematik:** Savurmalar yapay ekran şeritleri yerine doğrudan viewmodel model animasyonu, kamera ileri atılma sarsıntısı ve et kesme yönlü partikülleriyle sunulur.
 
-### 3. `RepeaterArbalestWeapon.cs` (Seri Arbalest)
-- **Hitscan Mermi Fiziği:** Hızlı delici cıvata atışları.
+### 5. `RepeaterArbalestWeapon.cs` (Seri Arbalest)
+- **Hitscan Mermi Fiziği:** Hızlı delici cıvata atışları (Atış başı 1 Ok tüketir).
 - **Recoil Bloom (Nişangah Yaylanması):** Seri atış yaptıkça mermi dağılım açısı artar; ateş kesildiğinde toparlanır.
 - **Görsel Fişek:** Arbalest bolt mermisi tracer çizgisi ve darbe noktasında kıvılcım/kan patlaması.
 
-### 4. `ProceduralViewmodel.cs` (Prosedürel Görünüm)
+### 6. `ProceduralViewmodel.cs` (Prosedürel Görünüm)
 - **Sway (Dönüş Yaylanması):** Fare hareketine göre silahın yumuşak gecikmeli takibi (Lag & Tilt).
 - **Bobbing (Yürüme/Kayma Sallantısı):** Koşarken, kayarken ve zıplarken sinüs dalgasıyla doğal silah adımlaması.
 - **Recoil Spring (Dinamik Yay):** Ateş edildiğinde silah geriye teper ve yay katsayısıyla orijinal pozisyonuna döner.

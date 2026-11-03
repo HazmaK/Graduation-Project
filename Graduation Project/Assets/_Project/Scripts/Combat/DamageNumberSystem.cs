@@ -40,6 +40,7 @@ namespace RetroFPS.Combat
         [SerializeField] private Color normalDamageColor = new Color(1f, 0.90f, 0.65f, 1f); // Fildişi sarı
         [SerializeField] private Color critDamageColor = new Color(1f, 0.82f, 0.12f, 1f);   // Altın sarısı
         [SerializeField] private Color reflectedDamageColor = new Color(0.2f, 0.95f, 1f, 1f); // Cyan mavi
+        [SerializeField] private Color healColor = new Color(0.20f, 1.0f, 0.45f, 1f);       // Zümrüt yeşili
         [SerializeField] private Color shadowColor = new Color(0.02f, 0.02f, 0.04f, 0.90f); // Kontrast gölge
 
         private struct PopupEntry
@@ -51,6 +52,7 @@ namespace RetroFPS.Combat
             public int Amount;
             public bool IsCrit;
             public bool IsReflected;
+            public bool IsHeal;
         }
 
         private const int MaxPopups = 32;
@@ -61,6 +63,7 @@ namespace RetroFPS.Combat
         private GUIStyle _styleNormal;
         private GUIStyle _styleCrit;
         private GUIStyle _styleReflected;
+        private GUIStyle _styleHeal;
         private GUIStyle _shadowStyle;
         private bool _stylesInitialized = false;
 
@@ -97,6 +100,12 @@ namespace RetroFPS.Combat
             _styleReflected.alignment = TextAnchor.MiddleCenter;
             _styleReflected.normal.textColor = reflectedDamageColor;
 
+            _styleHeal = new GUIStyle();
+            _styleHeal.fontSize = 20;
+            _styleHeal.fontStyle = FontStyle.Bold;
+            _styleHeal.alignment = TextAnchor.MiddleCenter;
+            _styleHeal.normal.textColor = healColor;
+
             _shadowStyle = new GUIStyle(_styleNormal);
             _shadowStyle.normal.textColor = shadowColor;
 
@@ -120,6 +129,27 @@ namespace RetroFPS.Combat
             _pool[index].Amount = Mathf.RoundToInt(amount);
             _pool[index].IsCrit = isCrit;
             _pool[index].IsReflected = isReflected;
+            _pool[index].IsHeal = false;
+        }
+
+        /// <summary>
+        /// Can küresi toplandığında zümrüt yeşili kinetik iyileşme sayısı oluşturur (+X HP). Sıfır GC üretir.
+        /// </summary>
+        public void SpawnHealNumber(Vector3 worldPos, float amount)
+        {
+            if (!showDamageNumbers) return;
+
+            int index = _nextIndex;
+            _nextIndex = (_nextIndex + 1) % MaxPopups;
+
+            _pool[index].Active = true;
+            _pool[index].WorldPos = worldPos + Vector3.up * 0.4f + Random.insideUnitSphere * 0.1f;
+            _pool[index].Velocity = Vector3.up * (upwardForce * 1.15f) + new Vector3(Random.Range(-0.35f, 0.35f), 0f, Random.Range(-0.35f, 0.35f));
+            _pool[index].Timer = popupLifetime * 1.1f;
+            _pool[index].Amount = Mathf.RoundToInt(amount);
+            _pool[index].IsCrit = false;
+            _pool[index].IsReflected = false;
+            _pool[index].IsHeal = true;
         }
 
         private void Update()
@@ -171,12 +201,37 @@ namespace RetroFPS.Combat
                 float scale = _pool[i].IsCrit ? Mathf.Lerp(1.4f, 1.0f, progress) : 1.0f;
                 float alpha = Mathf.Clamp01(_pool[i].Timer / (popupLifetime * 0.35f));
 
-                GUIStyle baseStyle = _pool[i].IsCrit ? _styleCrit : (_pool[i].IsReflected ? _styleReflected : _styleNormal);
-                Color fontColor = _pool[i].IsCrit ? critDamageColor : (_pool[i].IsReflected ? reflectedDamageColor : normalDamageColor);
+                GUIStyle baseStyle;
+                Color fontColor;
+                string text;
+
+                if (_pool[i].IsHeal)
+                {
+                    baseStyle = _styleHeal;
+                    fontColor = healColor;
+                    text = $"+{_pool[i].Amount} HP";
+                }
+                else if (_pool[i].IsCrit)
+                {
+                    baseStyle = _styleCrit;
+                    fontColor = critDamageColor;
+                    text = $"CRIT! {_pool[i].Amount}";
+                }
+                else if (_pool[i].IsReflected)
+                {
+                    baseStyle = _styleReflected;
+                    fontColor = reflectedDamageColor;
+                    text = $"PARRY {_pool[i].Amount}";
+                }
+                else
+                {
+                    baseStyle = _styleNormal;
+                    fontColor = normalDamageColor;
+                    text = _pool[i].Amount.ToString();
+                }
+
                 fontColor.a = alpha;
                 baseStyle.normal.textColor = fontColor;
-
-                string text = _pool[i].IsCrit ? $"CRIT! {_pool[i].Amount}" : (_pool[i].IsReflected ? $"PARRY {_pool[i].Amount}" : _pool[i].Amount.ToString());
 
                 float w = 180f * scale;
                 float h = 40f * scale;

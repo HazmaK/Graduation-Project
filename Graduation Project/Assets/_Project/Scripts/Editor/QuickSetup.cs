@@ -225,6 +225,23 @@ namespace RetroFPS.Editor
             ExecutionerBladeWeapon bladeWep = greatsword.GetComponent<ExecutionerBladeWeapon>();
             if (bladeWep == null) bladeWep = greatsword.gameObject.AddComponent<ExecutionerBladeWeapon>();
 
+            // Slot 3: Gotik Çift Namlulu Pompalı & Meat Hook (Ağır Saçma & Kanca Modeli Proxy)
+            Transform shotgun = weaponHolder.Find("Weapon_GothicShotgun");
+            if (shotgun == null)
+            {
+                GameObject shotgunGO = CreateShotgunModelProxy(weaponHolder);
+                shotgun = shotgunGO.transform;
+            }
+            GothicShotgunWeapon shotgunWep = shotgun.GetComponent<GothicShotgunWeapon>();
+            if (shotgunWep == null) shotgunWep = shotgun.gameObject.AddComponent<GothicShotgunWeapon>();
+
+            // Cephane Envanteri ve Cephane HUD Bileşenleri
+            PlayerAmmoInventory ammoInv = player.GetComponent<PlayerAmmoInventory>();
+            if (ammoInv == null) ammoInv = player.AddComponent<PlayerAmmoInventory>();
+
+            AmmoHUD ammoHUD = player.GetComponent<AmmoHUD>();
+            if (ammoHUD == null) ammoHUD = player.AddComponent<AmmoHUD>();
+
             // Player üzerine WeaponController ekle ve bağla
             WeaponController wc = player.GetComponent<WeaponController>();
             if (wc == null) wc = player.AddComponent<WeaponController>();
@@ -232,6 +249,7 @@ namespace RetroFPS.Editor
             SerializedObject soWc = new SerializedObject(wc);
             soWc.FindProperty("rangedWeaponVisual").objectReferenceValue = arbalest.gameObject;
             soWc.FindProperty("meleeWeaponVisual").objectReferenceValue = greatsword.gameObject;
+            soWc.FindProperty("shotgunWeaponVisual").objectReferenceValue = shotgun.gameObject;
             Transform firePoint = arbalest.Find("FirePoint");
             if (firePoint != null)
             {
@@ -254,20 +272,21 @@ namespace RetroFPS.Editor
             if (combatSystems.GetComponent<CombatVFXManager>() == null) combatSystems.AddComponent<CombatVFXManager>();
             if (combatSystems.GetComponent<DamageNumberSystem>() == null) combatSystems.AddComponent<DamageNumberSystem>();
             if (combatSystems.GetComponent<HitstopManager>() == null) combatSystems.AddComponent<HitstopManager>();
+            if (combatSystems.GetComponent<HealthOrbManager>() == null) combatSystems.AddComponent<HealthOrbManager>();
 
             // Sahneyi kirli olarak işaretle, diske kaydet ve Player'ı seç
             EditorSceneManager.MarkSceneDirty(EditorSceneManager.GetActiveScene());
             EditorSceneManager.SaveOpenScenes();
             Selection.activeGameObject = player;
 
-            Debug.Log("<color=green><b>[RetroFPS QuickSetup]</b></color> Tok Combat Hissiyatı (Juice) ve Savaş Sistemleri Başarıyla Kuruldu!");
+            Debug.Log("<color=green><b>[RetroFPS QuickSetup]</b></color> Gotik Çift Namlulu Pompalı, Meat Hook, Cephane ve Savaş Sistemleri Başarıyla Kuruldu!");
             EditorUtility.DisplayDialog(
-                "RetroFPS Combat Juice & Savaş Sistemleri Kuruldu!",
-                "1. Kinetik Hasar Sayıları: Vurulan hedeflerin üzerinde sıçrayan, yerçekimiyle süzülen 3D hasar sayıları (Normal, CRIT!, PARRY)!\n\n" +
-                "2. Kan & Parçalanma VFX: Et darbelerinde yönlü kan spreyleri, kritik vuruşta altın kıvılcımlar ve düşman ölümünde çevreye fırlayan low-poly et parçaları (Gibs)!\n\n" +
-                "3. Katmanlı Tok Sesler: Arbalest teli, kılıç savuruşu, et delinmesi, kemik kırma ve tok hitmarker tık sesleri!\n\n" +
-                "4. Nişangah Kinetiği: Ateş edildiğinde geri tepmeyle açılıp yaylanan (Bloom) ve vuruş anında sıçrayan nişangah!\n\n" +
-                "5. Squash & Stretch: Darbe alan düşmanların organik fiziksel ezilip yaylanma tepkisi!\n\n" +
+                "RetroFPS Gotik Arsenal & Cephane Sistemi Kuruldu!",
+                "1. [1] Repeater Arbalest: Hızlı seri hitscan arbalet okları (Bolts tüketir)!\n\n" +
+                "2. [2] Executioner Blade: Geniş yatay biçme ve ağır zırh delici saplama darbesi!\n\n" +
+                "3. [3] Gotik Çift Namlulu Pompalı (Super Shotgun): 18 saçmalı çifte darbesi (Shells tüketir) & Sağ tık ile fırlayan Et Kancası (Meat Hook / Grapple)!\n\n" +
+                "4. Grapple Hook Slingshot: Kanca çekilirken SPACE'e basarak havaya sapan gibi fırlayabilirsiniz!\n\n" +
+                "5. Cephane & Manyetik Vakum: Ölen düşmanlardan saçılan fişek ve ok kutuları, HUD cephane göstergesi!\n\n" +
                 "Şimdi Play (▶) butonuna basarak savaşa başlayın!",
                 "Harika, Savaşa Başla!"
             );
@@ -371,6 +390,118 @@ namespace RetroFPS.Editor
             fuller.transform.localScale = new Vector3(0.02f, 0.005f, 0.65f);
             fuller.GetComponent<Renderer>().material = edgeRed;
             Object.DestroyImmediate(fuller.GetComponent<Collider>());
+
+            root.SetActive(false); // Başlangıçta 1. silah aktif
+            return root;
+        }
+
+        private static GameObject CreateShotgunModelProxy(Transform parent)
+        {
+            GameObject root = new GameObject("Weapon_GothicShotgun");
+            root.transform.SetParent(parent);
+            root.transform.localPosition = new Vector3(0.20f, -0.22f, 0.40f);
+            root.transform.localRotation = Quaternion.identity;
+
+            ProceduralViewmodel vm = root.AddComponent<ProceduralViewmodel>();
+            vm.SetRestPose(new Vector3(0.20f, -0.22f, 0.40f), Vector3.zero);
+
+            Material darkWood = CreateColoredMaterial("Wep_DarkWalnut", new Color(0.14f, 0.09f, 0.05f));
+            Material gunmetal = CreateColoredMaterial("Wep_Gunmetal", new Color(0.13f, 0.14f, 0.16f));
+            Material gothicBrass = CreateColoredMaterial("Wep_GothicBrass", new Color(0.68f, 0.50f, 0.14f));
+
+            // Kundak & Kabza (Stock & Grip)
+            GameObject stock = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            stock.name = "Stock";
+            stock.transform.SetParent(root.transform);
+            stock.transform.localPosition = new Vector3(0f, -0.04f, -0.05f);
+            stock.transform.localScale = new Vector3(0.055f, 0.085f, 0.32f);
+            stock.GetComponent<Renderer>().material = darkWood;
+            Object.DestroyImmediate(stock.GetComponent<Collider>());
+
+            // Gövde & Kilit Bloğu (Receiver)
+            GameObject receiver = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            receiver.name = "Receiver";
+            receiver.transform.SetParent(root.transform);
+            receiver.transform.localPosition = new Vector3(0f, 0.015f, 0.12f);
+            receiver.transform.localScale = new Vector3(0.076f, 0.072f, 0.18f);
+            receiver.GetComponent<Renderer>().material = gunmetal;
+            Object.DestroyImmediate(receiver.GetComponent<Collider>());
+
+            // Çift Namlu: Sol Namlu (Left Barrel)
+            GameObject leftBarrel = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+            leftBarrel.name = "LeftBarrel";
+            leftBarrel.transform.SetParent(root.transform);
+            leftBarrel.transform.localPosition = new Vector3(-0.024f, 0.022f, 0.36f);
+            leftBarrel.transform.localRotation = Quaternion.Euler(90f, 0f, 0f);
+            leftBarrel.transform.localScale = new Vector3(0.030f, 0.22f, 0.030f);
+            leftBarrel.GetComponent<Renderer>().material = gunmetal;
+            Object.DestroyImmediate(leftBarrel.GetComponent<Collider>());
+
+            // Çift Namlu: Sağ Namlu (Right Barrel)
+            GameObject rightBarrel = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+            rightBarrel.name = "RightBarrel";
+            rightBarrel.transform.SetParent(root.transform);
+            rightBarrel.transform.localPosition = new Vector3(0.024f, 0.022f, 0.36f);
+            rightBarrel.transform.localRotation = Quaternion.Euler(90f, 0f, 0f);
+            rightBarrel.transform.localScale = new Vector3(0.030f, 0.22f, 0.030f);
+            rightBarrel.GetComponent<Renderer>().material = gunmetal;
+            Object.DestroyImmediate(rightBarrel.GetComponent<Collider>());
+
+            // Namlu Üstü Gotik Nervür & Pirinç İşleme (Top Rib & Filigree)
+            GameObject rib = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            rib.name = "TopRib";
+            rib.transform.SetParent(root.transform);
+            rib.transform.localPosition = new Vector3(0f, 0.040f, 0.36f);
+            rib.transform.localScale = new Vector3(0.016f, 0.012f, 0.44f);
+            rib.GetComponent<Renderer>().material = gothicBrass;
+            Object.DestroyImmediate(rib.GetComponent<Collider>());
+
+            // Çift Horoz (Twin Hammers)
+            GameObject hammers = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            hammers.name = "TwinHammers";
+            hammers.transform.SetParent(root.transform);
+            hammers.transform.localPosition = new Vector3(0f, 0.058f, 0.04f);
+            hammers.transform.localScale = new Vector3(0.052f, 0.032f, 0.022f);
+            hammers.GetComponent<Renderer>().material = gothicBrass;
+            Object.DestroyImmediate(hammers.GetComponent<Collider>());
+
+            // Namlu Altı Et Kancası Mekanizması (Meat Hook Launcher Block)
+            GameObject hookBlock = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            hookBlock.name = "HookLauncherBlock";
+            hookBlock.transform.SetParent(root.transform);
+            hookBlock.transform.localPosition = new Vector3(0f, -0.025f, 0.30f);
+            hookBlock.transform.localScale = new Vector3(0.060f, 0.042f, 0.14f);
+            hookBlock.GetComponent<Renderer>().material = gunmetal;
+            Object.DestroyImmediate(hookBlock.GetComponent<Collider>());
+
+            // Kanca Sivri Pençeleri: Sol Çengel
+            GameObject hookLeft = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            hookLeft.name = "HookClawLeft";
+            hookLeft.transform.SetParent(root.transform);
+            hookLeft.transform.localPosition = new Vector3(-0.028f, -0.052f, 0.38f);
+            hookLeft.transform.localRotation = Quaternion.Euler(22f, -12f, 0f);
+            hookLeft.transform.localScale = new Vector3(0.014f, 0.065f, 0.014f);
+            hookLeft.GetComponent<Renderer>().material = gothicBrass;
+            Object.DestroyImmediate(hookLeft.GetComponent<Collider>());
+
+            // Kanca Sivri Pençeleri: Sağ Çengel
+            GameObject hookRight = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            hookRight.name = "HookClawRight";
+            hookRight.transform.SetParent(root.transform);
+            hookRight.transform.localPosition = new Vector3(0.028f, -0.052f, 0.38f);
+            hookRight.transform.localRotation = Quaternion.Euler(22f, 12f, 0f);
+            hookRight.transform.localScale = new Vector3(0.014f, 0.065f, 0.014f);
+            hookRight.GetComponent<Renderer>().material = gothicBrass;
+            Object.DestroyImmediate(hookRight.GetComponent<Collider>());
+
+            // Ateş Noktaları (FirePoint & HookFirePoint)
+            GameObject fp = new GameObject("FirePoint");
+            fp.transform.SetParent(root.transform);
+            fp.transform.localPosition = new Vector3(0f, 0.022f, 0.58f);
+
+            GameObject hfp = new GameObject("HookFirePoint");
+            hfp.transform.SetParent(root.transform);
+            hfp.transform.localPosition = new Vector3(0f, -0.035f, 0.40f);
 
             root.SetActive(false); // Başlangıçta 1. silah aktif
             return root;
@@ -524,7 +655,7 @@ namespace RetroFPS.Editor
             GetOrCreateEnemyPrefabs(out GameObject ghoulPrefab, out GameObject eyePrefab);
 
             // 2. Sahnede bulunan tüm düşmanların eksik kollarını/bacaklarını tamamla ve materyallerini kalıcı assetlere bağla
-            BasicEnemyAI[] ghouls = Object.FindObjectsByType<BasicEnemyAI>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+            BasicEnemyAI[] ghouls = Object.FindObjectsByType<BasicEnemyAI>(FindObjectsInactive.Include);
             foreach (var ghoul in ghouls)
             {
                 EnsureGhoulLimbsExist(ghoul.transform, skin, armor, claw, eyeMat);
@@ -542,7 +673,7 @@ namespace RetroFPS.Editor
                 EditorUtility.SetDirty(ghoul.gameObject);
             }
 
-            FlyingEyeAI[] eyes = Object.FindObjectsByType<FlyingEyeAI>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+            FlyingEyeAI[] eyes = Object.FindObjectsByType<FlyingEyeAI>(FindObjectsInactive.Include);
             foreach (var eye in eyes)
             {
                 EnsureFlyingEyeFeaturesExist(eye.transform, sclera, iris, pupil, horn, tendril);
@@ -710,6 +841,9 @@ namespace RetroFPS.Editor
             CreateLeg(root.transform, new Vector3(0.20f, 0.36f, 0f), skin, "Leg_R");
 
             root.AddComponent<BasicEnemyAI>();
+            EnemyHealthDropper ghoulDropper = root.AddComponent<EnemyHealthDropper>();
+            ghoulDropper.EnemyTier = 1;
+            root.AddComponent<EnemyAmmoDropper>();
             return root;
         }
 
@@ -763,6 +897,9 @@ namespace RetroFPS.Editor
 
             FlyingEyeAI ai = root.AddComponent<FlyingEyeAI>();
             ai.SetFirePoint(fp.transform);
+            EnemyHealthDropper eyeDropper = root.AddComponent<EnemyHealthDropper>();
+            eyeDropper.EnemyTier = 2;
+            root.AddComponent<EnemyAmmoDropper>();
             return root;
         }
 
@@ -931,7 +1068,7 @@ namespace RetroFPS.Editor
         [MenuItem("RetroFPS/Create Encounter Room (Oda: Manuel Düşman + Dalga)", false, 4)]
         public static void CreateEncounterAreaGameObject(MenuCommand menuCommand)
         {
-            var existingRooms = Object.FindObjectsByType<EncounterArea>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+            var existingRooms = Object.FindObjectsByType<EncounterArea>(FindObjectsInactive.Include);
             string roomName = $"Encounter_Room_{existingRooms.Length + 1:D2}";
 
             GameObject go = new GameObject(roomName);

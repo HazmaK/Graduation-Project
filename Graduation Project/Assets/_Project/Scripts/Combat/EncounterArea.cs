@@ -181,7 +181,7 @@ namespace RetroFPS.Combat
                 Bounds bounds = _areaCollider.bounds;
 
                 // Sahnede aktif olan tüm IEncounterEnemy bileşenlerini tara
-                MonoBehaviour[] allMonos = Object.FindObjectsByType<MonoBehaviour>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
+                MonoBehaviour[] allMonos = Object.FindObjectsByType<MonoBehaviour>(FindObjectsInactive.Exclude);
                 for (int i = 0; i < allMonos.Length; i++)
                 {
                     if (allMonos[i] is IEncounterEnemy enemy && enemy.EnemyGameObject != null)
@@ -593,7 +593,7 @@ namespace RetroFPS.Combat
             else if (!Application.isPlaying && _areaCollider != null)
             {
                 Bounds b = _areaCollider.bounds;
-                var allMonos = Object.FindObjectsByType<MonoBehaviour>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
+                var allMonos = Object.FindObjectsByType<MonoBehaviour>(FindObjectsInactive.Exclude);
                 for (int i = 0; i < allMonos.Length; i++)
                 {
                     if (allMonos[i] is IEncounterEnemy enemy && enemy.EnemyGameObject != null)

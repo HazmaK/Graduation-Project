@@ -17,6 +17,7 @@ namespace RetroFPS
         [Header("Kan Perdesi & Acı Flaşı (Vignette)")]
         [SerializeField] private bool enableBloodVignette = true;
         [SerializeField] private Color vignetteColor = new Color(0.75f, 0.04f, 0.06f, 1f);
+        [SerializeField] private Color healVignetteColor = new Color(0.10f, 0.95f, 0.42f, 1f);
         [SerializeField] private float vignetteDecaySpeed = 2.4f;
 
         [Header("Gotik Ortam Karartması (Dark Fantasy Ambient Vignette)")]
@@ -48,6 +49,7 @@ namespace RetroFPS
         private Texture2D _vignetteTexture;
         private Texture2D _indicatorTexture;
         private float _currentPainAlpha = 0f;
+        private float _currentHealAlpha = 0f;
 
         // Yönlü Darbe Havuzu (Maksimum 4 eşzamanlı yönlü darbe)
         private struct DirectionalHit
@@ -201,6 +203,14 @@ namespace RetroFPS
             }
         }
 
+        /// <summary>
+        /// Can küresi toplandığında ekranda tatmin edici zümrüt yeşili bir iyileşme parıltısı tetikler.
+        /// </summary>
+        public void TriggerHealFlash(float intensity = 0.35f)
+        {
+            _currentHealAlpha = Mathf.Max(_currentHealAlpha, Mathf.Clamp01(intensity));
+        }
+
         private void AddDirectionalHit(float angle)
         {
             if (!enableDirectionalIndicators) return;
@@ -222,6 +232,12 @@ namespace RetroFPS
             if (_currentPainAlpha > 0f)
             {
                 _currentPainAlpha = Mathf.MoveTowards(_currentPainAlpha, 0f, dt * vignetteDecaySpeed);
+            }
+
+            // Can alma yeşil parlamasının sönmesi
+            if (_currentHealAlpha > 0f)
+            {
+                _currentHealAlpha = Mathf.MoveTowards(_currentHealAlpha, 0f, dt * (vignetteDecaySpeed * 1.2f));
             }
 
             // Yönlü darbe göstergelerinin ömür takibi
@@ -278,6 +294,15 @@ namespace RetroFPS
                     GUI.color = vCol;
                     GUI.DrawTexture(new Rect(0, 0, screenW, screenH), _vignetteTexture);
                 }
+            }
+
+            // 1.5. Zümrüt Yeşili İyileşme Perdesi (Heal Vignette Flash)
+            if (_currentHealAlpha > 0.01f && _vignetteTexture != null)
+            {
+                Color hCol = healVignetteColor;
+                hCol.a = _currentHealAlpha;
+                GUI.color = hCol;
+                GUI.DrawTexture(new Rect(0, 0, screenW, screenH), _vignetteTexture);
             }
 
             // 2. Yönlü Darbe Göstergeleri (360 Derece Radial Hit Indicators)

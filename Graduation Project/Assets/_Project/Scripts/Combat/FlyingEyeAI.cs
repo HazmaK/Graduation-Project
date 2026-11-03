@@ -698,6 +698,24 @@ namespace RetroFPS
 
             OnEnemyDeath?.Invoke(this);
 
+            // Can Küresi Düşüşü (Uçan Düşman - Tier 2 Ödülü)
+            EnemyHealthDropper dropper = GetComponent<EnemyHealthDropper>();
+            if (dropper != null)
+            {
+                dropper.TriggerDrop(isCritical, killingDamage >= 35f);
+            }
+            else if (HealthOrbManager.Instance != null)
+            {
+                HealthOrbManager.Instance.TryDropOrbs(transform.position, 2, isCritical, killingDamage >= 35f);
+            }
+
+            // Cephane Düşüşü (DOOM Kaynak Döngüsü)
+            EnemyAmmoDropper ammoDropper = GetComponent<EnemyAmmoDropper>();
+            if (ammoDropper != null)
+            {
+                ammoDropper.TriggerDrop(isCritical, killingDamage >= 35f);
+            }
+
             // 1. Çarpışma kutularını anında kapat
             SetCollidersActive(false);
 

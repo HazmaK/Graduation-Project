@@ -72,3 +72,5 @@ Project G Game/
 .Trashes
 ehthumbs.db
 Thumbs.db
+*.bak
+~$*

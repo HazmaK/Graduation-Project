@@ -60,6 +60,8 @@ flowchart LR
 - **Konum:** `Assets/_Project/Scripts/Player/PlayerHealth.cs`
 - **Uyguladığı Arayüz:** `IDamageable`
 - **I-Frame Kontrolü:** `PlayerMovement.IsDashing` aktifse hasar sıfırlanır; oyuncu atılma esnasında hasar almaz.
+- **Can Küresi İyileşmesi (Heal API):** `Heal(amount, allowOverheal, overhealCap)` metodu ile can yeniler; `OnHealed` olayını tetikler. Can tavandaysa küre israf edilmez.
+- **Overheal Sönümlenmesi (Decay):** 100 HP üzeri aşırı can durumunda saniyede 3.5 birim hızla yumuşakça 100 HP'ye geri iner (Retro Quake/DOOM standardı).
 - **Otomatik Can Yenileme (Regen):** Çatışmadan çıkıp 4.5 saniye hasar alınmadığında saniyede 12 birim can tazeler.
 - **Ölüm Durumu:** Can 0 olunca `OnDied` olayını tetikler, kontrolleri ve silahları kilitler, imleci serbest bırakır.
 
@@ -82,6 +84,7 @@ flowchart LR
 ### 4. `PlayerDamageFeedback.cs` (Hasar ve Darbe Algısı)
 - **Konum:** `Assets/_Project/Scripts/Player/PlayerDamageFeedback.cs`
 - **Kırmızı Vinyet Parlaması:** Darbe anında ekran kenarlarında URP Color Adjustments / Vignette üzerinden anlık kan kırmızısı parlama oluşturur.
+- **Zümrüt Yeşili İyileşme Parlaması:** `TriggerHealFlash` ile can küresi toplandığında ekran kenarlarında ferahlatıcı yeşil parlama oluşturur.
 - **Darbe Yönü Sarsıntısı:** Hasarın geldiği yönün tersine doğru kameraya küçük bir geri itme darbesi uygular.
 
 ### 5. `PlayerDebugHUD.cs` (Performans ve Hız Göstergesi)

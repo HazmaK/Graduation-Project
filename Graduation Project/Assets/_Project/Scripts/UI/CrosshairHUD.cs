@@ -119,6 +119,21 @@ namespace RetroFPS.UI
                 GUI.DrawTexture(new Rect(cx - 1, cy - spread - 8, 2, 8), Texture2D.whiteTexture);
                 GUI.DrawTexture(new Rect(cx - 1, cy + spread, 2, 8), Texture2D.whiteTexture);
             }
+            else if (currentSlot == WeaponSlot.GothicShotgun)
+            {
+                // Çift Namlulu Pompalı için Geniş Braket Nişangahı + Alt Kanca İğnesi
+                float spread = (baseCrosshairSpread * 1.7f) + _recoilBloom;
+                GUI.color = normalCrosshairColor;
+
+                // Geniş Köşebentler (Shotgun Brackets)
+                GUI.DrawTexture(new Rect(cx - spread - 6, cy - 6, 2, 12), Texture2D.whiteTexture);
+                GUI.DrawTexture(new Rect(cx + spread + 4, cy - 6, 2, 12), Texture2D.whiteTexture);
+                GUI.DrawTexture(new Rect(cx - 6, cy - spread - 6, 12, 2), Texture2D.whiteTexture);
+                GUI.DrawTexture(new Rect(cx - 6, cy + spread + 4, 12, 2), Texture2D.whiteTexture);
+
+                // Alt Meat Hook Nişan İğnesi
+                GUI.DrawTexture(new Rect(cx - 1, cy + spread + 9, 2, 5), Texture2D.whiteTexture);
+            }
             else
             {
                 // Kılıç için dinamik kavis çizgisi

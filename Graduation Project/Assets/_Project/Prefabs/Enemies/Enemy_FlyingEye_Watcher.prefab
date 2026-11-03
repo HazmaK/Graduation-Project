@@ -101,6 +101,8 @@ GameObject:
   - component: {fileID: 6936372329282221822}
   - component: {fileID: 8231333569938516922}
   - component: {fileID: 4635542418398187382}
+  - component: {fileID: 2490054315732593398}
+  - component: {fileID: 282678557762163184}
   m_Layer: 0
   m_Name: Enemy_FlyingEye_Watcher
   m_TagString: Untagged
@@ -199,6 +201,36 @@ MonoBehaviour:
   windupGlowColor: {r: 1, g: 0.15, b: 0.9, a: 1}
   damageFlashColor: {r: 1, g: 0.2, b: 0.2, a: 1}
   critFlashColor: {r: 1, g: 0.9, b: 0.1, a: 1}
+--- !u!114 &2490054315732593398
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3659605130630274911}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6233f93a703c0444db892cbe8c09c334, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RetroFPS.Combat.EnemyHealthDropper
+  enemyTier: 2
+  guaranteedDrop: 0
+  dropHeightOffset: 0.8
+--- !u!114 &282678557762163184
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3659605130630274911}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5eb14c72e63f816c3d5e428fa755b3e5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RetroFPS.Combat.EnemyAmmoDropper
+  dropChance: 0.65
+  dropHeightOffset: 0.6
+  guaranteedDrop: 0
 --- !u!1 &4742996005405602349
 GameObject:
   m_ObjectHideFlags: 0

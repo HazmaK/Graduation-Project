@@ -34,6 +34,7 @@ namespace RetroFPS
         public bool IsDead => _isDead;
 
         public event System.Action<float> OnDamageTaken;
+        public event System.Action<float> OnHealed;
         public event System.Action OnDied;
 
         private void Awake()
@@ -93,6 +94,37 @@ namespace RetroFPS
             {
                 Die();
             }
+        }
+
+        /// <summary>
+        /// Can küresi veya iyileştirici kaynaklardan can yeniler.
+        /// Can zaten tavandaysa ve allowOverheal kapalıysa false döner.
+        /// </summary>
+        /// <param name="amount">Yenilenecek can miktarı</param>
+        /// <param name="allowOverheal">100 HP üzerine çıkmaya izin verilsin mi?</param>
+        /// <param name="overhealCap">İzin verilen maksimum aşırı can (örn. 125 HP)</param>
+        /// <returns>Can yenilendiyse true, yenilenmediyse (tavan doluysa) false döner.</returns>
+        public bool Heal(float amount, bool allowOverheal = false, float overhealCap = 125f)
+        {
+            if (_isDead || amount <= 0f) return false;
+
+            float cap = allowOverheal ? overhealCap : maxHealth;
+            if (_currentHealth >= cap) return false;
+
+            float previousHealth = _currentHealth;
+            _currentHealth = Mathf.Min(cap, _currentHealth + amount);
+            float actualHealed = _currentHealth - previousHealth;
+
+            if (actualHealed <= 0.001f) return false;
+
+            if (_damageFeedback != null)
+            {
+                _damageFeedback.TriggerHealFlash(0.35f);
+            }
+
+            OnHealed?.Invoke(actualHealed);
+            Debug.Log($"<color=green><b>[PLAYER HEALED]</b></color> +{actualHealed:F0} HP | Remaining Health: <b>{_currentHealth:F0}/{maxHealth}</b>");
+            return true;
         }
 
         private void Die()
@@ -156,11 +188,19 @@ namespace RetroFPS
                 return;
             }
 
-            // Çatışma dışı can yenilenmesi
-            _timeSinceLastDamage += Time.deltaTime;
-            if (_timeSinceLastDamage >= autoHealDelay && _currentHealth < maxHealth)
+            // Fazla can (Overheal) sönümlenmesi (Retro Quake / DOOM standardı: max üstü yavaşça 100'e iner)
+            if (_currentHealth > maxHealth)
             {
-                _currentHealth = Mathf.MoveTowards(_currentHealth, maxHealth, autoHealRate * Time.deltaTime);
+                _currentHealth = Mathf.MoveTowards(_currentHealth, maxHealth, 3.5f * Time.deltaTime);
+            }
+            // Çatışma dışı can yenilenmesi
+            else
+            {
+                _timeSinceLastDamage += Time.deltaTime;
+                if (_timeSinceLastDamage >= autoHealDelay && _currentHealth < maxHealth)
+                {
+                    _currentHealth = Mathf.MoveTowards(_currentHealth, maxHealth, autoHealRate * Time.deltaTime);
+                }
             }
         }
     }

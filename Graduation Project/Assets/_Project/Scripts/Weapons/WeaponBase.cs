@@ -18,6 +18,7 @@ namespace RetroFPS.Weapons
 
         protected PlayerLook _look;
         protected Camera _cam;
+        protected PlayerAmmoInventory _ammoInventory;
 
         /// <summary>
         /// Silahın ait olduğu yuva (Slot). Her alt sınıf tarafından kesin ve değişmez olarak tanımlanır.
@@ -27,6 +28,11 @@ namespace RetroFPS.Weapons
         public string WeaponDisplayName => weaponDisplayName;
         public GameObject WeaponVisual => weaponVisual;
         public ProceduralViewmodel Viewmodel => viewmodel;
+        public PlayerAmmoInventory AmmoInventory => _ammoInventory;
+
+        public virtual AmmoType RequiredAmmoType => AmmoType.None;
+        public virtual int PrimaryAmmoCost => 0;
+        public virtual int AltAmmoCost => 0;
 
         public abstract bool IsFullAuto { get; }
         public abstract bool CanFirePrimary { get; }
@@ -85,11 +91,13 @@ namespace RetroFPS.Weapons
             _cam = playerCamera;
 
             ResolveViewmodel();
+            ResolveAmmoInventory();
         }
 
         protected virtual void Start()
         {
             ResolveViewmodel();
+            ResolveAmmoInventory();
             _ = PlayerCamera;
         }
 
@@ -100,6 +108,28 @@ namespace RetroFPS.Weapons
             viewmodel = GetComponent<ProceduralViewmodel>()
                      ?? GetComponentInParent<ProceduralViewmodel>()
                      ?? GetComponentInChildren<ProceduralViewmodel>();
+        }
+
+        private void ResolveAmmoInventory()
+        {
+            if (_ammoInventory != null) return;
+
+            _ammoInventory = GetComponentInParent<PlayerAmmoInventory>()
+                          ?? FindAnyObjectByType<PlayerAmmoInventory>();
+        }
+
+        protected bool HasAmmo(int amount)
+        {
+            if (RequiredAmmoType == AmmoType.None || amount <= 0) return true;
+            ResolveAmmoInventory();
+            return _ammoInventory == null || _ammoInventory.HasAmmo(RequiredAmmoType, amount);
+        }
+
+        protected bool TryConsumeAmmo(int amount)
+        {
+            if (RequiredAmmoType == AmmoType.None || amount <= 0) return true;
+            ResolveAmmoInventory();
+            return _ammoInventory == null || _ammoInventory.TryConsumeAmmo(RequiredAmmoType, amount);
         }
 
         public virtual void OnEquip()

@@ -150,6 +150,13 @@ namespace RetroFPS.Combat
         private float _muzzleLightTimer = 0f;
         private float _muzzleLightDuration = 0.04f;
 
+        // Mermi / Saçma İzi Havuzu (Bullet Tracer Pool)
+        private const int TracerPoolSize = 12;
+        private readonly LineRenderer[] _tracerPool = new LineRenderer[TracerPoolSize];
+        private readonly float[] _tracerTimers = new float[TracerPoolSize];
+        private Material _tracerSharedMaterial;
+        private int _tracerIndex = 0;
+
         private void Awake()
         {
             if (_instance != null && _instance != this)
@@ -163,6 +170,7 @@ namespace RetroFPS.Combat
             InitializeParticlePools();
             InitializeAnatomicalGibPool();
             InitializeMuzzleLight();
+            InitializeTracerPool();
         }
 
         private void GenerateVFXTextures()
@@ -591,6 +599,33 @@ namespace RetroFPS.Combat
             _muzzlePointLight.enabled = false;
         }
 
+        private void InitializeTracerPool()
+        {
+            if (_tracerSharedMaterial == null)
+            {
+                Shader shader = Shader.Find("Universal Render Pipeline/Unlit")
+                             ?? Shader.Find("Sprites/Default")
+                             ?? Shader.Find("Unlit/Color");
+                _tracerSharedMaterial = new Material(shader);
+            }
+
+            for (int i = 0; i < TracerPoolSize; i++)
+            {
+                if (_tracerPool[i] != null) continue;
+
+                GameObject tracerGO = new GameObject($"VFX_BulletTracer_{i}");
+                tracerGO.transform.SetParent(transform);
+                LineRenderer lr = tracerGO.AddComponent<LineRenderer>();
+                lr.useWorldSpace = true;
+                lr.startWidth = 0.035f;
+                lr.endWidth = 0.012f;
+                lr.positionCount = 2;
+                lr.material = _tracerSharedMaterial;
+                lr.enabled = false;
+                _tracerPool[i] = lr;
+            }
+        }
+
         private void Update()
         {
             if (_muzzleLightTimer > 0f)
@@ -600,6 +635,18 @@ namespace RetroFPS.Combat
                 {
                     _muzzlePointLight.intensity = 0f;
                     _muzzlePointLight.enabled = false;
+                }
+            }
+
+            for (int i = 0; i < TracerPoolSize; i++)
+            {
+                if (_tracerTimers[i] > 0f)
+                {
+                    _tracerTimers[i] -= Time.deltaTime;
+                    if (_tracerTimers[i] <= 0f && _tracerPool[i] != null)
+                    {
+                        _tracerPool[i].enabled = false;
+                    }
                 }
             }
 
@@ -617,6 +664,27 @@ namespace RetroFPS.Combat
         }
 
         #region Public VFX & Gore Tetikleyicileri
+
+        /// <summary>
+        /// Mermi veya saçma atışlarında anlık yüksek hızlı parlayan iz çizgisi (Bullet Tracer).
+        /// </summary>
+        public void SpawnBulletTracer(Vector3 start, Vector3 end, Color tracerColor)
+        {
+            if (_tracerPool[0] == null) InitializeTracerPool();
+
+            LineRenderer lr = _tracerPool[_tracerIndex];
+            if (lr != null)
+            {
+                lr.startColor = tracerColor;
+                lr.endColor = tracerColor * 0.4f;
+                lr.SetPosition(0, start);
+                lr.SetPosition(1, end);
+                lr.enabled = true;
+                _tracerTimers[_tracerIndex] = 0.06f;
+            }
+
+            _tracerIndex = (_tracerIndex + 1) % TracerPoolSize;
+        }
 
         /// <summary>
         /// Kılıç savurulduğunda kamera önünde beliren hilal şerit efekti (Kullanıcı tercihi doğrultusunda kaldırıldı).

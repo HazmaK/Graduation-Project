@@ -8,7 +8,8 @@ namespace RetroFPS
     public enum WeaponSlot
     {
         RepeaterArbalest = 0, // Slot 1: Hızlı Menzilli Arbalest / Nailgun
-        ExecutionerBlade = 1  // Slot 2: Ağır Yakın Dövüş Kılıcı / Cleaver
+        ExecutionerBlade = 1, // Slot 2: Ağır Yakın Dövüş Kılıcı / Cleaver
+        GothicShotgun = 2     // Slot 3: Gotik Çift Namlulu Pompalı & Grapple Meat Hook
     }
 }
 
@@ -26,6 +27,7 @@ namespace RetroFPS.Weapons
         [Header("Silah Görsel Objeleri")]
         [SerializeField] private GameObject rangedWeaponVisual;
         [SerializeField] private GameObject meleeWeaponVisual;
+        [SerializeField] private GameObject shotgunWeaponVisual;
         [SerializeField] private Transform firePoint;
 
         [Header("Kayıtlı Silahlar")]
@@ -78,6 +80,13 @@ namespace RetroFPS.Weapons
                 if (found != null) meleeWeaponVisual = found.gameObject;
             }
 
+            if (shotgunWeaponVisual == null)
+            {
+                Transform found = FindDeepChild(transform, "Weapon_Shotgun")
+                               ?? FindDeepChild(transform, "Weapon_GothicShotgun");
+                if (found != null) shotgunWeaponVisual = found.gameObject;
+            }
+
             if (firePoint == null && rangedWeaponVisual != null)
             {
                 Transform found = rangedWeaponVisual.transform.Find("FirePoint");
@@ -128,7 +137,23 @@ namespace RetroFPS.Weapons
             }
             RegisterWeapon(WeaponSlot.ExecutionerBlade, meleeWep);
 
-            // 3. Varsa diğer kayıtlı silahları tara
+            // 3. Slot 3: Gotik Çift Namlulu Pompalı & Grapple Hook'u bağla
+            GothicShotgunWeapon shotgunWep = null;
+            if (shotgunWeaponVisual != null)
+            {
+                shotgunWep = shotgunWeaponVisual.GetComponent<GothicShotgunWeapon>()
+                          ?? shotgunWeaponVisual.AddComponent<GothicShotgunWeapon>();
+            }
+            if (shotgunWep == null)
+            {
+                shotgunWep = GetComponentInChildren<GothicShotgunWeapon>(true);
+            }
+            if (shotgunWep != null)
+            {
+                RegisterWeapon(WeaponSlot.GothicShotgun, shotgunWep);
+            }
+
+            // 4. Varsa diğer kayıtlı silahları tara
             if (registeredWeapons != null)
             {
                 foreach (var wep in registeredWeapons)
@@ -180,17 +205,25 @@ namespace RetroFPS.Weapons
             {
                 EquipWeapon(WeaponSlot.ExecutionerBlade);
             }
+            // 3 Tuşu: Gotik Çift Namlulu Pompalı
+            else if (Keyboard.current.digit3Key.wasPressedThisFrame && CurrentSlot != WeaponSlot.GothicShotgun)
+            {
+                EquipWeapon(WeaponSlot.GothicShotgun);
+            }
 
-            // Fare Tekerleği
+            // Fare Tekerleği (Tüm Silahları Sırayla Gez)
             if (Mouse.current != null)
             {
                 float scroll = Mouse.current.scroll.ReadValue().y;
-                if (scroll > 0.5f || scroll < -0.5f)
+                if (scroll > 0.5f)
                 {
-                    WeaponSlot next = CurrentSlot == WeaponSlot.RepeaterArbalest
-                        ? WeaponSlot.ExecutionerBlade
-                        : WeaponSlot.RepeaterArbalest;
-                    EquipWeapon(next);
+                    int next = ((int)CurrentSlot + 1) % 3;
+                    EquipWeapon((WeaponSlot)next);
+                }
+                else if (scroll < -0.5f)
+                {
+                    int prev = ((int)CurrentSlot + 2) % 3;
+                    EquipWeapon((WeaponSlot)prev);
                 }
             }
         }
@@ -222,6 +255,10 @@ namespace RetroFPS.Weapons
             if (meleeWeaponVisual != null)
             {
                 meleeWeaponVisual.SetActive(slot == WeaponSlot.ExecutionerBlade);
+            }
+            if (shotgunWeaponVisual != null)
+            {
+                shotgunWeaponVisual.SetActive(slot == WeaponSlot.GothicShotgun);
             }
 
             OnWeaponSwitched?.Invoke(slot);

@@ -36,6 +36,22 @@ namespace RetroFPS.Combat
         [Tooltip("Arbalest ikincil yay (shotgun) atış sesi.")]
         [SerializeField] private AudioClip arbalestAltSound;
 
+        [Header("Gotik Çift Namlulu Pompalı & Grapple Hook Sesleri")]
+        [Tooltip("Çift namlulu pompalı gök gürültüsü patlama sesi.")]
+        [SerializeField] private AudioClip shotgunFireSound;
+
+        [Tooltip("Kanca fırlatma ve zincir boşalma sesi.")]
+        [SerializeField] private AudioClip grappleLaunchSound;
+
+        [Tooltip("Kancanın hedefe saplanma ve metalik kilitlenme sesi.")]
+        [SerializeField] private AudioClip grappleHookLatchSound;
+
+        [Tooltip("Boş tetik tıkı (Kuru tetik / Dry Fire).")]
+        [SerializeField] private AudioClip dryFireSound;
+
+        [Tooltip("Cephane toplandığında çalan metalik kurma/doldurma sesi.")]
+        [SerializeField] private AudioClip ammoPickupSound;
+
         [Header("Yakın Dövüş Sesleri")]
         [Tooltip("Kılıç savurma hava sesi (Whoosh).")]
         [SerializeField] private AudioClip bladeSwingSound;
@@ -69,6 +85,10 @@ namespace RetroFPS.Combat
         [Tooltip("Can %25 altına düştüğünde çalan boğuk kalp atışı.")]
         [SerializeField] private AudioClip lowHealthHeartbeatSound;
 
+        [Header("Ödül & İyileşme Sesleri")]
+        [Tooltip("Can küresi toplandığında çalan ferahlatıcı/okült kristal ses.")]
+        [SerializeField] private AudioClip healthPickupSound;
+
         [Header("Ses Seviyesi & Ayarlar")]
         [Range(0f, 1f)]
         [SerializeField] private float masterCombatVolume = 0.95f;
@@ -89,6 +109,12 @@ namespace RetroFPS.Combat
         private static AudioClip _synthGibBounce;
         private static AudioClip _synthPlayerPain;
         private static AudioClip _synthHeartbeat;
+        private static AudioClip _synthHealthPickup;
+        private static AudioClip _synthShotgunFire;
+        private static AudioClip _synthGrappleLaunch;
+        private static AudioClip _synthGrappleHookLatch;
+        private static AudioClip _synthDryFire;
+        private static AudioClip _synthAmmoPickup;
 
         // Ses çalma için ayrılmış havuz AudioSource'ları
         private AudioSource _audioSource2D;
@@ -124,9 +150,49 @@ namespace RetroFPS.Combat
             if (gibBounceSound == null && _synthGibBounce == null) _synthGibBounce = CreateGibBounceClip();
             if (playerPainSound == null && _synthPlayerPain == null) _synthPlayerPain = CreatePlayerPainClip();
             if (lowHealthHeartbeatSound == null && _synthHeartbeat == null) _synthHeartbeat = CreateHeartbeatClip();
+            if (healthPickupSound == null && _synthHealthPickup == null) _synthHealthPickup = CreateHealthPickupClip();
+            if (shotgunFireSound == null && _synthShotgunFire == null) _synthShotgunFire = CreateShotgunFireClip();
+            if (grappleLaunchSound == null && _synthGrappleLaunch == null) _synthGrappleLaunch = CreateGrappleLaunchClip();
+            if (grappleHookLatchSound == null && _synthGrappleHookLatch == null) _synthGrappleHookLatch = CreateGrappleHookLatchClip();
+            if (dryFireSound == null && _synthDryFire == null) _synthDryFire = CreateDryFireClip();
+            if (ammoPickupSound == null && _synthAmmoPickup == null) _synthAmmoPickup = CreateAmmoPickupClip();
         }
 
         #region Public Ses Çalma Metotları
+
+        public void PlayShotgunFire()
+        {
+            AudioClip clip = shotgunFireSound != null ? shotgunFireSound : _synthShotgunFire;
+            Play2DWithPitchVariation(clip, 1.0f, 0.05f);
+        }
+
+        public void PlayGrappleLaunch()
+        {
+            AudioClip clip = grappleLaunchSound != null ? grappleLaunchSound : _synthGrappleLaunch;
+            Play2DWithPitchVariation(clip, 0.95f, 0.04f);
+        }
+
+        public void PlayGrappleHookLatch(Vector3 position)
+        {
+            AudioClip clip = grappleHookLatchSound != null ? grappleHookLatchSound : _synthGrappleHookLatch;
+            if (clip != null)
+            {
+                AudioSource.PlayClipAtPoint(clip, position, 1.0f * masterCombatVolume);
+            }
+            Play2DWithPitchVariation(clip, 0.85f, 0.05f);
+        }
+
+        public void PlayDryFire()
+        {
+            AudioClip clip = dryFireSound != null ? dryFireSound : _synthDryFire;
+            Play2DWithPitchVariation(clip, 0.85f, 0.04f);
+        }
+
+        public void PlayAmmoPickup()
+        {
+            AudioClip clip = ammoPickupSound != null ? ammoPickupSound : _synthAmmoPickup;
+            Play2DWithPitchVariation(clip, 0.95f, 0.05f);
+        }
 
         public void PlayArbalestFire()
         {
@@ -219,6 +285,12 @@ namespace RetroFPS.Combat
                     _audioSource2D.PlayOneShot(hbClip, 0.85f * masterCombatVolume);
                 }
             }
+        }
+
+        public void PlayHealthPickup()
+        {
+            AudioClip clip = healthPickupSound != null ? healthPickupSound : _synthHealthPickup;
+            Play2DWithPitchVariation(clip, 0.95f, 0.05f);
         }
 
         private void Play2DWithPitchVariation(AudioClip clip, float volumeScale, float extraVariation)
@@ -534,6 +606,159 @@ namespace RetroFPS.Combat
             }
 
             AudioClip clip = AudioClip.Create("Synth_Heartbeat", count, 1, sampleRate, false);
+            clip.SetData(data, 0);
+            return clip;
+        }
+
+        private static AudioClip CreateHealthPickupClip()
+        {
+            int sampleRate = 44100;
+            float duration = 0.28f;
+            int count = (int)(sampleRate * duration);
+            float[] data = new float[count];
+
+            for (int i = 0; i < count; i++)
+            {
+                float t = (float)i / sampleRate;
+                float progress = t / duration;
+
+                // İki aşamalı yükselen kristal tınısı (520Hz -> 880Hz -> 1320Hz arpej)
+                float freq = Mathf.Lerp(520f, 1320f, Mathf.Pow(progress, 0.65f));
+                float env = Mathf.Exp(-t * 11f);
+
+                // Temel tını + 2. harmonik kristal çınlaması
+                float fundamental = Mathf.Sin(2f * Mathf.PI * freq * t) * 0.70f;
+                float overtone = Mathf.Sin(2f * Mathf.PI * freq * 2.02f * t) * 0.30f;
+                float shimmer = Mathf.Sin(2f * Mathf.PI * 2640f * t) * Mathf.Exp(-t * 22f) * 0.25f;
+
+                data[i] = Mathf.Clamp((fundamental + overtone + shimmer) * env, -1f, 1f);
+            }
+
+            AudioClip clip = AudioClip.Create("Synth_HealthPickup", count, 1, sampleRate, false);
+            clip.SetData(data, 0);
+            return clip;
+        }
+
+        private static AudioClip CreateShotgunFireClip()
+        {
+            int sampleRate = 44100;
+            float duration = 0.42f;
+            int count = (int)(sampleRate * duration);
+            float[] data = new float[count];
+
+            for (int i = 0; i < count; i++)
+            {
+                float t = (float)i / sampleRate;
+                float env = Mathf.Exp(-t * 9.5f);
+
+                // Çift namlulu patlama: 75Hz derin gök gürültüsü bası + 180Hz göğüs darbesi
+                float bass1 = Mathf.Sin(2f * Mathf.PI * Mathf.Lerp(90f, 38f, t / duration) * t) * 0.85f;
+                float bass2 = Mathf.Sin(2f * Mathf.PI * 55f * t) * 0.45f;
+                // Barut alevi ve saçma patlaması gürültüsü
+                float noise = (Random.value * 2f - 1f) * Mathf.Exp(-t * 32f) * 0.95f;
+                float lowRumble = (Random.value * 2f - 1f) * Mathf.Exp(-t * 6f) * 0.25f;
+
+                data[i] = Mathf.Clamp((bass1 + bass2 + noise + lowRumble) * env, -1f, 1f);
+            }
+
+            AudioClip clip = AudioClip.Create("Synth_ShotgunFire", count, 1, sampleRate, false);
+            clip.SetData(data, 0);
+            return clip;
+        }
+
+        private static AudioClip CreateGrappleLaunchClip()
+        {
+            int sampleRate = 44100;
+            float duration = 0.18f;
+            int count = (int)(sampleRate * duration);
+            float[] data = new float[count];
+
+            for (int i = 0; i < count; i++)
+            {
+                float t = (float)i / sampleRate;
+                float env = Mathf.Exp(-t * 18f);
+
+                // Basınçlı kanca fırlatma ıslığı ve çelik kablo boşalması
+                float freq = Mathf.Lerp(1400f, 420f, t / duration);
+                float whoosh = Mathf.Sin(2f * Mathf.PI * freq * t) * 0.65f;
+                float cableNoise = (Random.value * 2f - 1f) * Mathf.Exp(-t * 22f) * 0.45f;
+
+                data[i] = Mathf.Clamp((whoosh + cableNoise) * env, -1f, 1f);
+            }
+
+            AudioClip clip = AudioClip.Create("Synth_GrappleLaunch", count, 1, sampleRate, false);
+            clip.SetData(data, 0);
+            return clip;
+        }
+
+        private static AudioClip CreateGrappleHookLatchClip()
+        {
+            int sampleRate = 44100;
+            float duration = 0.16f;
+            int count = (int)(sampleRate * duration);
+            float[] data = new float[count];
+
+            for (int i = 0; i < count; i++)
+            {
+                float t = (float)i / sampleRate;
+                float env = Mathf.Exp(-t * 24f);
+
+                // Sivri çengelin hedefe kilitlenme çınlaması (1850Hz metal tınısı + et darbesi)
+                float metalRing = Mathf.Sin(2f * Mathf.PI * 1850f * t) * 0.7f;
+                float boneCrunch = (Random.value * 2f - 1f) * Mathf.Exp(-t * 65f) * 0.6f;
+
+                data[i] = Mathf.Clamp((metalRing + boneCrunch) * env, -1f, 1f);
+            }
+
+            AudioClip clip = AudioClip.Create("Synth_GrappleLatch", count, 1, sampleRate, false);
+            clip.SetData(data, 0);
+            return clip;
+        }
+
+        private static AudioClip CreateDryFireClip()
+        {
+            int sampleRate = 44100;
+            float duration = 0.07f;
+            int count = (int)(sampleRate * duration);
+            float[] data = new float[count];
+
+            for (int i = 0; i < count; i++)
+            {
+                float t = (float)i / sampleRate;
+                float env = Mathf.Exp(-t * 75f);
+
+                // İğnenin boş yuvaya vurma tıkı (Kuru horoz düşmesi)
+                float click = Mathf.Sin(2f * Mathf.PI * 2200f * t) * 0.5f;
+                float metallicHollow = Mathf.Sin(2f * Mathf.PI * 650f * t) * 0.5f;
+
+                data[i] = Mathf.Clamp((click + metallicHollow) * env, -1f, 1f);
+            }
+
+            AudioClip clip = AudioClip.Create("Synth_DryFire", count, 1, sampleRate, false);
+            clip.SetData(data, 0);
+            return clip;
+        }
+
+        private static AudioClip CreateAmmoPickupClip()
+        {
+            int sampleRate = 44100;
+            float duration = 0.20f;
+            int count = (int)(sampleRate * duration);
+            float[] data = new float[count];
+
+            for (int i = 0; i < count; i++)
+            {
+                float t = (float)i / sampleRate;
+                float env = Mathf.Exp(-t * 16f);
+
+                // Pirinç fişeklerin şarjör yatağına oturma çift çınlaması (980Hz & 1420Hz)
+                float clink1 = Mathf.Sin(2f * Mathf.PI * 980f * t) * 0.5f;
+                float clink2 = (t > 0.05f) ? Mathf.Sin(2f * Mathf.PI * 1420f * (t - 0.05f)) * 0.6f * Mathf.Exp(-(t - 0.05f) * 22f) : 0f;
+
+                data[i] = Mathf.Clamp((clink1 + clink2) * env, -1f, 1f);
+            }
+
+            AudioClip clip = AudioClip.Create("Synth_AmmoPickup", count, 1, sampleRate, false);
             clip.SetData(data, 0);
             return clip;
         }

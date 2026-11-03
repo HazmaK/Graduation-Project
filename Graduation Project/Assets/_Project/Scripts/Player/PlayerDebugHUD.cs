@@ -145,12 +145,14 @@ namespace RetroFPS
 
         private const string LabelWepArbalest = "WEAPON: <b><color=#00E5FF>[1] REPEATER ARBALEST</color></b>";
         private const string LabelWepBlade = "WEAPON: <b><color=#FF5533>[2] EXECUTIONER BLADE</color></b>";
+        private const string LabelWepShotgun = "WEAPON: <b><color=#FFB300>[3] GOTHIC SUPER SHOTGUN</color></b>";
 
         private const string StateGround = "STATE: <color=#AAAAAA>GROUND</color>";
         private const string StateDash = "STATE: <color=#00E5FF>DASHING (I-FRAME)</color>";
         private const string StateSlide = "STATE: <color=#FF9900>SLIDING</color>";
         private const string StateCrouch = "STATE: <color=#FFCC00>CROUCH WALK</color>";
         private const string StateAir = "STATE: <color=#55FF55>AIR (BHOP)</color>";
+        private const string StateGrapple = "STATE: <color=#FF4488>GRAPPLING (MEAT HOOK)</color>";
 
         private readonly StringBuilder _sb = new StringBuilder(512);
 
@@ -738,7 +740,9 @@ namespace RetroFPS
             // Silah
             if (_weapons != null)
             {
-                string wepLabel = _weapons.CurrentSlot == WeaponSlot.RepeaterArbalest ? LabelWepArbalest : LabelWepBlade;
+                string wepLabel = LabelWepArbalest;
+                if (_weapons.CurrentSlot == WeaponSlot.ExecutionerBlade) wepLabel = LabelWepBlade;
+                else if (_weapons.CurrentSlot == WeaponSlot.GothicShotgun) wepLabel = LabelWepShotgun;
                 GUILayout.Label(wepLabel, _labelStyle);
             }
 
@@ -794,6 +798,7 @@ namespace RetroFPS
                 // Hareket Durumu
                 string stateLabel = StateGround;
                 if (_movement.IsDashing) stateLabel = StateDash;
+                else if (_movement.IsGrappling) stateLabel = StateGrapple;
                 else if (_movement.IsSliding) stateLabel = StateSlide;
                 else if (_movement.IsCrouching) stateLabel = StateCrouch;
                 else if (!_movement.IsGrounded) stateLabel = StateAir;

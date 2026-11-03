@@ -38,6 +38,9 @@ namespace RetroFPS.Weapons
 
         public override WeaponSlot Slot => WeaponSlot.RepeaterArbalest;
         public override bool IsFullAuto => true;
+        public override AmmoType RequiredAmmoType => AmmoType.Bolts;
+        public override int PrimaryAmmoCost => 1;
+        public override int AltAmmoCost => 5;
         public override bool CanFirePrimary => _primaryCooldownTimer <= 0f;
         public override bool CanFireAlt => _altCooldownTimer <= 0f;
 
@@ -109,6 +112,15 @@ namespace RetroFPS.Weapons
             Camera cam = PlayerCamera;
             if (cam == null) return;
 
+            // Cephane kontrolü: Ok yoksa kuru tetik tıkı çal
+            if (!HasAmmo(PrimaryAmmoCost))
+            {
+                _primaryCooldownTimer = 0.22f;
+                if (CombatAudio.Instance != null) CombatAudio.Instance.PlayDryFire();
+                return;
+            }
+
+            TryConsumeAmmo(PrimaryAmmoCost);
             _primaryCooldownTimer = primaryFireRate;
 
             Vector3 shootDir = cam.transform.forward;
@@ -159,6 +171,15 @@ namespace RetroFPS.Weapons
             Camera cam = PlayerCamera;
             if (cam == null) return;
 
+            // Cephane kontrolü: 5 ok yoksa kuru tetik tıkı çal
+            if (!HasAmmo(AltAmmoCost))
+            {
+                _altCooldownTimer = 0.30f;
+                if (CombatAudio.Instance != null) CombatAudio.Instance.PlayDryFire();
+                return;
+            }
+
+            TryConsumeAmmo(AltAmmoCost);
             _altCooldownTimer = altCooldown;
             _primaryCooldownTimer = 0.35f;
 

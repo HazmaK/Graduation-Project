@@ -759,6 +759,24 @@ namespace RetroFPS
 
             OnEnemyDeath?.Invoke(this);
 
+            // Can Küresi Düşüşü (Adaptif Dengeleme & Ödül)
+            EnemyHealthDropper dropper = GetComponent<EnemyHealthDropper>();
+            if (dropper != null)
+            {
+                dropper.TriggerDrop(isCritical, killingDamage >= 40f);
+            }
+            else if (HealthOrbManager.Instance != null)
+            {
+                HealthOrbManager.Instance.TryDropOrbs(transform.position + Vector3.up * 0.8f, 1, isCritical, killingDamage >= 40f);
+            }
+
+            // Cephane Düşüşü (DOOM Kaynak Döngüsü)
+            EnemyAmmoDropper ammoDropper = GetComponent<EnemyAmmoDropper>();
+            if (ammoDropper != null)
+            {
+                ammoDropper.TriggerDrop(isCritical, killingDamage >= 40f);
+            }
+
             // 1. Çarpışma kutularını devre dışı bırak (Yerde takılma ve hayalet mermi bloklama yok)
             SetCollidersActive(false);
 
