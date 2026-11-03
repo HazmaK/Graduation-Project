@@ -99,8 +99,8 @@ namespace RetroFPS
   * Tek atışta 2 adet Pompalı Fişeği (`Shells`) tüketir. Nokta atışı temasında ~320+ hasar ile elit olmayan yaratıkları anında parçalar (Gibs).
   * **Havadayken Geri Tepme (Airborne Knockback):** Havada ateş edildiğinde Quake/TF2 roket zıplamasına benzer şekilde oyuncuyu hafifçe geriye fırlatır.
 - **Sağ Tık (İkincil Saldırı - Meat Hook / Grapple):** Namlu altından fırlayan zincirli gotik et kancası (`hookRange = 32m`, `hookPullSpeed = 29m/s`).
-  * **Düşmana Saplanma:** Düşmana saplandığında onu `IStunnable.TakeStun(1.5f)` ile sersemletip yerine çiviler ve oyuncuyu düşmanın göğsüne doğru hızla çeker (point-blank çifte darbesi için ideal pozisyon).
-  * **Yüzeye Saplanma:** Duvar veya sütunlara kilitlenerek dikey/yatay hareket kabiliyeti sunar.
+  * **Yalnızca Düşmanlara Saplanma (Enemy-Only Lock):** Harita geometrisi, duvar veya zeminlere saplanması engellenmiştir. Yalnızca `IDamageable`, `IStunnable` veya `IEncounterEnemy` sözleşmesine sahip düşman varlıklarına kilitlenir; düşmanı `IStunnable.Stun(1.5f, Vector3.zero)` ile sersemletip yerine çiviler ve oyuncuyu hedefin göğsüne doğru hızla çeker (point-blank çifte darbesi için ideal pozisyon).
+  * **Hedef Takip Ofseti:** Düşmanın taban pivotu (Y=0) yerine kancanın vurduğu uzuv/gövde noktasını dinamik ofsetle takip eder.
   * **Sapan Zıplaması (Slingshot Jump):** Kanca ile çekilme esnasında `SPACE` tuşuna basıldığında kanca serbest bırakılır ve biriken kinetik hızla oyuncu gökyüzüne doğru fırlar.
   * **Görsel Zincir:** Namlu altı ile hedef arasına anlık gerilen ve hedef hareket ettikçe güncellenen dinamik `LineRenderer` zincir efekti.
 

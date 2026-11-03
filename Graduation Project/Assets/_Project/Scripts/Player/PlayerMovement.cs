@@ -67,6 +67,7 @@ namespace RetroFPS
         private bool _isGrappling;
         private Vector3 _grappleTargetPoint;
         private Transform _grappleTargetTransform;
+        private Vector3 _grappleTargetOffset;
         private float _grappleSpeed = 28f;
         private float _grappleTimer;
         private const float GrappleStopDistance = 2.0f;
@@ -89,7 +90,7 @@ namespace RetroFPS
         public bool IsGrappling => _isGrappling;
         public bool IsInvincible => _isInvincible;
         public int CurrentDashCharges => _currentDashCharges;
-        public Vector3 GrappleTargetPoint => (_grappleTargetTransform != null) ? _grappleTargetTransform.position : _grappleTargetPoint;
+        public Vector3 GrappleTargetPoint => (_grappleTargetTransform != null) ? (_grappleTargetTransform.position + _grappleTargetOffset) : _grappleTargetPoint;
 
         private void Awake()
         {
@@ -516,6 +517,7 @@ namespace RetroFPS
             _isGrappling = true;
             _grappleTargetPoint = targetPoint;
             _grappleTargetTransform = targetTransform;
+            _grappleTargetOffset = (targetTransform != null) ? (targetPoint - targetTransform.position) : Vector3.zero;
             _grappleSpeed = Mathf.Max(speed, 16f);
             _grappleTimer = 0f;
 
@@ -537,6 +539,7 @@ namespace RetroFPS
 
             _isGrappling = false;
             _grappleTargetTransform = null;
+            _grappleTargetOffset = Vector3.zero;
 
             if (!keepMomentum)
             {
@@ -558,7 +561,7 @@ namespace RetroFPS
         {
             _grappleTimer += Time.deltaTime;
 
-            Vector3 currentTarget = (_grappleTargetTransform != null) ? _grappleTargetTransform.position : _grappleTargetPoint;
+            Vector3 currentTarget = GrappleTargetPoint;
             Vector3 playerCenter = transform.position + Vector3.up * 1.0f;
             Vector3 toTarget = currentTarget - playerCenter;
             float distance = toTarget.magnitude;

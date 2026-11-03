@@ -39,6 +39,7 @@ namespace RetroFPS.Weapons
 
         // Çoklu saçma tekil hedef tamponu (aynı saçmada aynı düşmanın collider'larına doğru hasar)
         private readonly HashSet<IDamageable> _hitTargetBuffer = new HashSet<IDamageable>();
+        private readonly RaycastHit[] _hookHitsBuffer = new RaycastHit[16];
 
         public override WeaponSlot Slot => WeaponSlot.GothicShotgun;
         public override bool IsFullAuto => false;
@@ -226,47 +227,176 @@ namespace RetroFPS.Weapons
 
             _altCooldownTimer = hookCooldown;
 
+            // YALNIZCA düşman hedeflerine kanca atılabilir (harita, zemin ve duvarlar filtrelenir)
+            if (TryFindEnemyHookTarget(cam, out RaycastHit bestHit, out IDamageable damageable, out IStunnable stunnable, out Transform enemyTransform))
+            {
+                // Düşmanı sersemlet ve yerine çivile
+                if (stunnable != null)
+                {
+                    stunnable.Stun(1.5f, Vector3.zero);
+                }
+
+                if (damageable != null)
+                {
+                    damageable.TakeDamage(10f, bestHit.point, bestHit.normal, false);
+                    NotifyHit(false);
+                }
+
+                // Vuruş darbesi ve kıvılcımı
+                if (CombatVFXManager.Instance != null)
+                {
+                    CombatVFXManager.Instance.SpawnHitImpact(bestHit.point, bestHit.normal, false, true);
+                }
+
+                // Kancayı sapla ve çekilmeyi başlat!
+                _movement.StartGrapple(bestHit.point, hookPullSpeed, enemyTransform);
+
+                if (CombatAudio.Instance != null)
+                {
+                    CombatAudio.Instance.PlayGrappleHookLatch(bestHit.point);
+                }
+
+                if (Viewmodel != null) Viewmodel.AddRecoil(0.08f, 6.0f, 1.5f);
+                if (_look != null) _look.AddTrauma(0.12f);
+            }
+            else
+            {
+                // Düşman bulunamadı veya haritada başka bir yere nişan alındı - Kanca tutunmaz, sadece fırlatma ıslığı çalar
+                if (CombatAudio.Instance != null)
+                {
+                    CombatAudio.Instance.PlayGrappleLaunch();
+                }
+            }
+        }
+
+        /// <summary>
+        /// Nişangah doğrultusundaki tekil düşmanı tespit eder.
+        /// Duvar, zemin veya harita geometrisine kanca atılmasını kesinlikle engeller.
+        /// </summary>
+        private bool TryFindEnemyHookTarget(
+            Camera cam,
+            out RaycastHit bestHit,
+            out IDamageable targetDamageable,
+            out IStunnable targetStunnable,
+            out Transform targetTransform)
+        {
+            bestHit = default;
+            targetDamageable = null;
+            targetStunnable = null;
+            targetTransform = null;
+
             Vector3 rayOrigin = cam.transform.position + cam.transform.forward * 0.35f;
             Vector3 rayDir = cam.transform.forward;
 
-            if (Physics.SphereCast(rayOrigin, 0.35f, rayDir, out RaycastHit hit, hookRange, ~0, QueryTriggerInteraction.Ignore))
+            // 1. Aşama: Doğrudan merkez ışın (Raycast) kontrolü
+            float maxSearchDistance = hookRange;
+            if (Physics.Raycast(rayOrigin, rayDir, out RaycastHit directHit, hookRange, ~0, QueryTriggerInteraction.Ignore))
             {
-                if (!hit.collider.transform.IsChildOf(transform.root))
+                if (TryValidateEnemy(directHit.collider, out targetDamageable, out targetStunnable, out targetTransform))
                 {
-                    // Düşmana mı çarptı?
-                    IStunnable stunnable = hit.collider.GetComponentInParent<IStunnable>();
-                    if (stunnable != null)
+                    bestHit = directHit;
+                    if (bestHit.point == Vector3.zero && directHit.collider != null)
                     {
-                        stunnable.Stun(1.5f, Vector3.zero); // Düşmanı yerine çivile / sersemlet
+                        bestHit.point = directHit.collider.bounds.center;
+                    }
+                    return true;
+                }
+
+                // Doğrudan ışın haritaya (duvar/zemin) çarptıysa, arama mesafesini bu engelle sınırla (duvar arkasındaki düşmanı çekemez)
+                maxSearchDistance = directHit.distance;
+            }
+
+            // 2. Aşama: Nişangah hafif sapmaları için toleranslı küre taraması (SphereCastNonAlloc - Sıfır GC)
+            int hitCount = Physics.SphereCastNonAlloc(rayOrigin, 0.60f, rayDir, _hookHitsBuffer, maxSearchDistance, ~0, QueryTriggerInteraction.Ignore);
+            float closestDist = float.MaxValue;
+            bool found = false;
+
+            for (int i = 0; i < hitCount; i++)
+            {
+                Collider col = _hookHitsBuffer[i].collider;
+                if (col == null) continue;
+
+                if (TryValidateEnemy(col, out var dmg, out var stun, out var enemyTf))
+                {
+                    // Duvar arkası görüş engeli kontrolü (Line of sight check)
+                    Vector3 enemyTargetPos = col.bounds.center;
+                    if (Physics.Linecast(rayOrigin, enemyTargetPos, out RaycastHit wallHit, ~0, QueryTriggerInteraction.Ignore))
+                    {
+                        if (wallHit.collider != col && !wallHit.collider.transform.IsChildOf(enemyTf))
+                        {
+                            continue; // Araya duvar girmiş, görüş engeli var
+                        }
                     }
 
-                    IDamageable damageable = hit.collider.GetComponentInParent<IDamageable>();
-                    if (damageable != null)
+                    float dist = _hookHitsBuffer[i].distance;
+                    if (dist < closestDist)
                     {
-                        damageable.TakeDamage(10f, hit.point, hit.normal, false);
-                        NotifyHit(false);
+                        closestDist = dist;
+                        bestHit = _hookHitsBuffer[i];
+                        if (bestHit.point == Vector3.zero)
+                        {
+                            bestHit.point = col.bounds.center;
+                        }
+                        targetDamageable = dmg;
+                        targetStunnable = stun;
+                        targetTransform = enemyTf;
+                        found = true;
                     }
-
-                    // Kancayı sapla ve çekilmeyi başlat!
-                    _movement.StartGrapple(hit.point, hookPullSpeed, hit.transform);
-
-                    if (CombatAudio.Instance != null)
-                    {
-                        CombatAudio.Instance.PlayGrappleHookLatch(hit.point);
-                    }
-
-                    if (Viewmodel != null) Viewmodel.AddRecoil(0.08f, 6.0f, 1.5f);
-                    if (_look != null) _look.AddTrauma(0.12f);
-
-                    return;
                 }
             }
 
-            // Iska geçildiyse kanca boşluğa atılma sesi
-            if (CombatAudio.Instance != null)
+            return found;
+        }
+
+        /// <summary>
+        /// Verilen collider'ın geçerli bir düşman olup olmadığını doğrular.
+        /// Harita nesneleri, duvarlar, zemin ve oyuncunun kendisi false döner.
+        /// </summary>
+        private bool TryValidateEnemy(
+            Collider col,
+            out IDamageable damageable,
+            out IStunnable stunnable,
+            out Transform enemyTransform)
+        {
+            damageable = null;
+            stunnable = null;
+            enemyTransform = null;
+
+            if (col == null || col.transform.IsChildOf(transform.root)) return false;
+
+            // 1. Hitbox bileşeni (kafa, gövde, uzuvlar)
+            Hitbox hitbox = col.GetComponentInParent<Hitbox>();
+            if (hitbox != null)
             {
-                CombatAudio.Instance.PlayGrappleLaunch();
+                damageable = hitbox.Target ?? hitbox.GetComponentInParent<IDamageable>();
             }
+            else
+            {
+                damageable = col.GetComponentInParent<IDamageable>();
+            }
+
+            // Oyuncunun kendi gövdesi asla düşman değildir
+            if (damageable is PlayerHealth)
+            {
+                damageable = null;
+                return false;
+            }
+
+            // 2. Düşman sözleşmeleri (IStunnable, IEncounterEnemy)
+            stunnable = col.GetComponentInParent<IStunnable>();
+            IEncounterEnemy encounterEnemy = col.GetComponentInParent<IEncounterEnemy>();
+
+            bool isEnemy = damageable != null || stunnable != null || encounterEnemy != null;
+            if (isEnemy)
+            {
+                enemyTransform = (encounterEnemy as Component)?.transform
+                              ?? (stunnable as Component)?.transform
+                              ?? (damageable as Component)?.transform
+                              ?? col.transform.root;
+                return true;
+            }
+
+            return false;
         }
 
         private void ApplyPelletDamage(RaycastHit hit, float damage)
