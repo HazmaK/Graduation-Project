@@ -14,7 +14,7 @@ tags:
 > [!abstract] Sinaptik Varlık Bilgisi
 > - **Proje:** `retro-fps`
 > - **Tür:** `GameDesign`
-> - **Son Güncelleme:** 2026-10-27 21:40:00
+> - **Son Güncelleme:** 2026-11-04 01:27:00
 
 ## Gözlemler (Hafıza Kayıtları)
 - **Tür:** Fast-Paced Retro Boomer Shooter / Rogue-lite / Dark Fantasy. İlham: DUSK, ULTRAKILL, Quake 1, Devil Daggers.
@@ -34,6 +34,7 @@ tags:
 - **Düşman Algı ve Hissiyat:** [[EnemyAIAndCombatFeel]]
 - **Düşman Tipleri ve Mermiler:** [[EnemyAIAndSpawning]]
 - **Dövüş ve Hasar Arayüzleri:** [[CombatAndDamageInterfaces]]
+- **Can Küresi ve Düşüş Sistemi:** [[HealthOrbAndDropSystem]]
 - **Karşılaşma ve Dalga Direktörü:** [[WaveAndEncounterArchitecture]]
 - **Görsel Efekt ve Parçalanma:** [[CombatVFXAndDecalSystem]]
 - **Vuruş Tokluğu ve Ses:** [[HitstopAndAudioFeedback]]
@@ -51,6 +52,7 @@ tags:
 - [[EnemyAIAndCombatFeel]] ➔ `utilizes_ai`
 - [[EnemyAIAndSpawning]] ➔ `spawns_enemies`
 - [[CombatAndDamageInterfaces]] ➔ `utilizes_interfaces`
+- [[HealthOrbAndDropSystem]] ➔ `utilizes_health_drops`
 - [[WaveAndEncounterArchitecture]] ➔ `orchestrates_encounters`
 - [[CombatVFXAndDecalSystem]] ➔ `utilizes_vfx`
 - [[HitstopAndAudioFeedback]] ➔ `utilizes_feedback`
