@@ -221,7 +221,7 @@ namespace RetroFPS.Weapons
                 cam.transform.position,
                 range,
                 _overlapBuffer,
-                ~0,
+                GameLayers.PlayerAttackMask,
                 QueryTriggerInteraction.Ignore
             );
 
@@ -239,7 +239,7 @@ namespace RetroFPS.Weapons
                 if (angle <= angleLimit * 0.5f)
                 {
                     // Duvar arkasına vurulmasını engelle
-                    if (Physics.Linecast(cam.transform.position, targetPos, out RaycastHit wallHit, ~0, QueryTriggerInteraction.Ignore))
+                    if (Physics.Linecast(cam.transform.position, targetPos, out RaycastHit wallHit, GameLayers.PlayerAttackMask, QueryTriggerInteraction.Ignore))
                     {
                         if (wallHit.collider != col && !wallHit.collider.transform.IsChildOf(col.transform.root))
                         {
@@ -344,7 +344,7 @@ namespace RetroFPS.Weapons
             Ray ray = new Ray(cam.transform.position, lungeDir);
             float sweepDist = 7.5f;
 
-            int hitCount = Physics.SphereCastNonAlloc(ray, 0.75f, _lungeHitsBuffer, sweepDist, ~0, QueryTriggerInteraction.Ignore);
+            int hitCount = Physics.SphereCastNonAlloc(ray, 0.75f, _lungeHitsBuffer, sweepDist, GameLayers.PlayerAttackMask, QueryTriggerInteraction.Ignore);
             _hitEntitiesBuffer.Clear();
 
             bool triggeredHarvest = false;
@@ -455,7 +455,7 @@ namespace RetroFPS.Weapons
             }
 
             // Çevredeki tüm düşmanları yere ser (Stun) ve 80 alan hasarı vur
-            int hitCount = Physics.OverlapSphereNonAlloc(center, slamRadius, _overlapBuffer, ~0, QueryTriggerInteraction.Ignore);
+            int hitCount = Physics.OverlapSphereNonAlloc(center, slamRadius, _overlapBuffer, GameLayers.PlayerAttackMask, QueryTriggerInteraction.Ignore);
             _hitEntitiesBuffer.Clear();
 
             for (int i = 0; i < hitCount; i++)

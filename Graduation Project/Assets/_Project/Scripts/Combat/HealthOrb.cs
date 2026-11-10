@@ -176,7 +176,7 @@ namespace RetroFPS.Combat
             _velocity = new Vector3(randomCircle.x, Random.Range(3.2f, 4.8f), randomCircle.y);
 
             // Zemin temas yüksekliğini raycast ile bul
-            if (Physics.Raycast(spawnPosition + Vector3.up * 0.5f, Vector3.down, out RaycastHit hit, 6f, ~0, QueryTriggerInteraction.Ignore))
+            if (Physics.Raycast(spawnPosition + Vector3.up * 0.5f, Vector3.down, out RaycastHit hit, 6f, GameLayers.GroundMask, QueryTriggerInteraction.Ignore))
             {
                 _restingY = hit.point.y + hoverHeight;
             }

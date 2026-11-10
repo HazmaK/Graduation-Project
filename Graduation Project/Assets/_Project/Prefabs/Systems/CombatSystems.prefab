@@ -1,0 +1,149 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &3968999177832690506
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 809741402437893602}
+  - component: {fileID: 9081357616158787722}
+  - component: {fileID: 7530888822722753572}
+  - component: {fileID: 2643248780253008453}
+  - component: {fileID: 2828259531135211416}
+  - component: {fileID: 6644210518955310778}
+  m_Layer: 0
+  m_Name: CombatSystems
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &809741402437893602
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3968999177832690506}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &9081357616158787722
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3968999177832690506}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 20bdf29ecdd9d7b429d5aef12ca0d341, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RetroFPS.Combat.CombatAudio
+  arbalestFireSound: {fileID: 0}
+  arbalestAltSound: {fileID: 0}
+  shotgunFireSound: {fileID: 0}
+  grappleLaunchSound: {fileID: 0}
+  grappleHookLatchSound: {fileID: 0}
+  dryFireSound: {fileID: 0}
+  ammoPickupSound: {fileID: 0}
+  bladeSwingSound: {fileID: 0}
+  bladeThrustSound: {fileID: 0}
+  hitmarkerTickSound: {fileID: 0}
+  critCrunchSound: {fileID: 0}
+  fleshImpactSound: {fileID: 0}
+  gibExplosionSound: {fileID: 0}
+  decapitationSound: {fileID: 0}
+  gibBounceSound: {fileID: 0}
+  playerPainSound: {fileID: 0}
+  lowHealthHeartbeatSound: {fileID: 0}
+  healthPickupSound: {fileID: 0}
+  masterCombatVolume: 0.95
+  pitchVariation: 0.08
+--- !u!114 &7530888822722753572
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3968999177832690506}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53eee801699c02441b50feb34e108091, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RetroFPS.Combat.CombatVFXManager
+  enableBloodVFX: 1
+  bloodColor: {r: 0.65, g: 0.04, b: 0.06, a: 0.95}
+  bloodDarkColor: {r: 0.25, g: 0.01, b: 0.02, a: 0.95}
+  bloodDropCount: 20
+  enableCritSparks: 1
+  critSparkColor: {r: 1, g: 0.88, b: 0.2, a: 1}
+  critSparkCount: 28
+  enableWallSparks: 1
+  wallSparkColor: {r: 1, g: 0.75, b: 0.35, a: 1}
+  dustColor: {r: 0.55, g: 0.52, b: 0.48, a: 0.7}
+  enableFleshGibs: 1
+  gibsPerDeath: 5
+  gibExplosionForce: 7.5
+--- !u!114 &2643248780253008453
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3968999177832690506}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 34d24a9b7632be64a9993921bf67318b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RetroFPS.Combat.DamageNumberSystem
+  showDamageNumbers: 1
+  popupLifetime: 0.7
+  upwardForce: 2.8
+  gravity: 5.5
+  normalDamageColor: {r: 1, g: 0.9, b: 0.65, a: 1}
+  critDamageColor: {r: 1, g: 0.82, b: 0.12, a: 1}
+  reflectedDamageColor: {r: 0.2, g: 0.95, b: 1, a: 1}
+  healColor: {r: 0.2, g: 1, b: 0.45, a: 1}
+  shadowColor: {r: 0.02, g: 0.02, b: 0.04, a: 0.9}
+--- !u!114 &2828259531135211416
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3968999177832690506}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0a858d53212ac1f4a9e867b6a86a818d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RetroFPS.HitstopManager
+--- !u!114 &6644210518955310778
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3968999177832690506}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 32aa1caa6e8f24b4e80102a98e32ee58, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RetroFPS.Combat.HealthOrbManager
+  healthOrbPrefab: {fileID: 0}
+  poolCapacity: 24
+  baseDropChance: 0.5
+  lowHealthBonusChance: 0.45
+  highHealthPenaltyChance: 0.25
+  critKillBonusChance: 0.25
+  meleeKillBonusChance: 0.35
+  standardOrbHeal: 15
+  heavyOrbHeal: 30

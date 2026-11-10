@@ -158,7 +158,7 @@ namespace RetroFPS.Weapons
                 Vector3 endPos = startPos + pelletDir * range;
                 Vector3 rayOrigin = cam.transform.position + pelletDir * 0.35f;
 
-                if (Physics.Raycast(rayOrigin, pelletDir, out RaycastHit hit, range, ~0, QueryTriggerInteraction.Ignore))
+                if (Physics.Raycast(rayOrigin, pelletDir, out RaycastHit hit, range, GameLayers.PlayerAttackMask, QueryTriggerInteraction.Ignore))
                 {
                     if (!hit.collider.transform.IsChildOf(transform.root))
                     {
@@ -290,7 +290,7 @@ namespace RetroFPS.Weapons
 
             // 1. Aşama: Doğrudan merkez ışın (Raycast) kontrolü
             float maxSearchDistance = hookRange;
-            if (Physics.Raycast(rayOrigin, rayDir, out RaycastHit directHit, hookRange, ~0, QueryTriggerInteraction.Ignore))
+            if (Physics.Raycast(rayOrigin, rayDir, out RaycastHit directHit, hookRange, GameLayers.PlayerAttackMask, QueryTriggerInteraction.Ignore))
             {
                 if (TryValidateEnemy(directHit.collider, out targetDamageable, out targetStunnable, out targetTransform))
                 {
@@ -307,7 +307,7 @@ namespace RetroFPS.Weapons
             }
 
             // 2. Aşama: Nişangah hafif sapmaları için toleranslı küre taraması (SphereCastNonAlloc - Sıfır GC)
-            int hitCount = Physics.SphereCastNonAlloc(rayOrigin, 0.60f, rayDir, _hookHitsBuffer, maxSearchDistance, ~0, QueryTriggerInteraction.Ignore);
+            int hitCount = Physics.SphereCastNonAlloc(rayOrigin, 0.60f, rayDir, _hookHitsBuffer, maxSearchDistance, GameLayers.PlayerAttackMask, QueryTriggerInteraction.Ignore);
             float closestDist = float.MaxValue;
             bool found = false;
 
@@ -320,7 +320,7 @@ namespace RetroFPS.Weapons
                 {
                     // Duvar arkası görüş engeli kontrolü (Line of sight check)
                     Vector3 enemyTargetPos = col.bounds.center;
-                    if (Physics.Linecast(rayOrigin, enemyTargetPos, out RaycastHit wallHit, ~0, QueryTriggerInteraction.Ignore))
+                    if (Physics.Linecast(rayOrigin, enemyTargetPos, out RaycastHit wallHit, GameLayers.PlayerAttackMask, QueryTriggerInteraction.Ignore))
                     {
                         if (wallHit.collider != col && !wallHit.collider.transform.IsChildOf(enemyTf))
                         {

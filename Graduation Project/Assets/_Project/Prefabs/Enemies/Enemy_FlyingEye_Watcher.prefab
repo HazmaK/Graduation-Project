@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 7098347514921669471}
   - component: {fileID: 3234421613962674699}
   - component: {fileID: 5462631022359920629}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: Tendril_R
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -103,7 +103,7 @@ GameObject:
   - component: {fileID: 4635542418398187382}
   - component: {fileID: 2490054315732593398}
   - component: {fileID: 282678557762163184}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: Enemy_FlyingEye_Watcher
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -243,7 +243,7 @@ GameObject:
   - component: {fileID: 5116984138078270049}
   - component: {fileID: 4289093921341515881}
   - component: {fileID: 4281750862924389647}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: Pupil_Head
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -354,7 +354,7 @@ GameObject:
   - component: {fileID: 1530595008770720558}
   - component: {fileID: 6417062687664321672}
   - component: {fileID: 1460178779599533000}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: Tendril_L
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -444,7 +444,7 @@ GameObject:
   - component: {fileID: 4240970683337915205}
   - component: {fileID: 6037225439116799327}
   - component: {fileID: 3609444809666211450}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: Tendril_Center
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -534,7 +534,7 @@ GameObject:
   - component: {fileID: 3130241835115232382}
   - component: {fileID: 5271126589324411363}
   - component: {fileID: 4594731367087929247}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: Horn_L
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -624,7 +624,7 @@ GameObject:
   - component: {fileID: 9055961560358979443}
   - component: {fileID: 7734469422076300694}
   - component: {fileID: 5200415409648103850}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: Body_Sclera
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -714,7 +714,7 @@ GameObject:
   - component: {fileID: 6227507307090638369}
   - component: {fileID: 468085896069546216}
   - component: {fileID: 5017354413983512490}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: Horn_Top
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -804,7 +804,7 @@ GameObject:
   - component: {fileID: 3703631213725866763}
   - component: {fileID: 7864419306980063131}
   - component: {fileID: 3007168202308970547}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: Horn_R
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -892,7 +892,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 4337315263256490796}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: FirePoint
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -925,7 +925,7 @@ GameObject:
   - component: {fileID: 2016153659916245891}
   - component: {fileID: 6327593508614861846}
   - component: {fileID: 2968236935473608738}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: Eye_Iris
   m_TagString: Untagged
   m_Icon: {fileID: 0}

@@ -46,16 +46,32 @@ Unity'de iki kişi aynı anda `SampleScene.unity` dosyasını değiştirirse Git
 
 ## 3. SPAGETTİ KODA KARŞI: ASSEMBLY DEFINITIONS (.ASMDEF)
 
-Kodların birbirine doğrudan bağlanmasını ve başka bir AI'ın rastgele `GetComponent` atmasını engellemek için kod tabanını Assembly Definition'lar ile fiziksel olarak sınırlandırın:
+Kodların birbirine doğrudan bağlanmasını ve başka bir AI'ın rastgele `GetComponent` atmasını engellemek için kod tabanı Assembly Definition'lar ile fiziksel olarak sınırlandırılır.
 
-- `RetroFPS.Core.asmdef` ➔ Arayüzler (`IDamageable`, `IStunnable`, `IEncounterEnemy`)
-- `RetroFPS.Player.asmdef` ➔ Oyuncu hareket, kamera, parry
-- `RetroFPS.Combat.asmdef` ➔ Düşman AI, sürü alarmı, mermiler
-- `RetroFPS.Weapons.asmdef` ➔ Silah tabanı, viewmodel
-- `RetroFPS.UI.asmdef` ➔ HUD, menüler
+### Mevcut Durum (2026-11-11, uygulandı)
+
+| Assembly | Klasör | İçerik | Referanslar |
+| :--- | :--- | :--- | :--- |
+| `RetroFPS.Core` | `Scripts/Core/` | `IDamageable`, `IStunnable`, `IEncounterEnemy` (`Core/Interfaces/`), `AmmoType`, `GameLayers`, `GameResolutionManager` | Yok (yalnızca UnityEngine) |
+| `RetroFPS.Gameplay` | `Scripts/` (Player, Weapons, Combat, UI, Environment) | Tüm oynanış kodu | `RetroFPS.Core`, `Unity.InputSystem` |
+| `RetroFPS.Editor` | `Scripts/Editor/` | `QuickSetup` (yalnızca Editor platformu) | `RetroFPS.Core`, `RetroFPS.Gameplay`, `Unity.InputSystem` |
+
+- `RetroFPS.Core` **hiçbir oynanış assembly'sine referans veremez.** Yeni arayüz, enum ve sözleşmeler buraya eklenir.
+- Bir dosyayı taşırken `.meta` dosyası da birlikte taşınmalıdır (Unity Editor içinden sürükleyin); aksi halde prefab/sahne referansları kopar.
+
+### Hedef Durum (henüz uygulanmadı)
+
+`Player` / `Weapons` / `Combat` / `UI` ayrı assembly'lere bölünecek. Bunun önünde şu **döngüsel bağımlılıklar** var ve önce bunlar kırılmalıdır:
+
+- `Combat ➔ Player`: `BasicEnemyAI`, `FlyingEyeAI`, `HealthOrb`, `AmmoPickup` doğrudan `PlayerMovement` / `PlayerHealth` arıyor.
+- `Combat ➔ Weapons`: `AmmoPickup`, `EnemyAmmoDropper` doğrudan `PlayerAmmoInventory` kullanıyor.
+- `Weapons ➔ UI`: Silahlar `CrosshairHUD` arıyor (olay ile değiştirilmeli).
+- `Player ➔ Weapons/Combat`: `PlayerDebugHUD` `WeaponController` ve `WaveSpawnDirector` okuyor.
+
+Çözüm deseni: hedef bilgisi için Core'da bir arayüz (örn. `IPlayerTarget`), UI'a giden çağrılar için C# event.
 
 > [!tip] ASMDEF GÜCÜ
-> UI klasöründeki bir script veya AI, `RetroFPS.Combat` referansı eklenmediği sürece doğrudan `BasicEnemyAI` sınıfını çağıramaz; proje derlenmez! Bu durum hem arkadaşınızı hem de onun AI'ını **Event-Driven (Olay Güdümlü)** çalışmaya zorlar.
+> Bölünme tamamlandığında UI klasöründeki bir script, `RetroFPS.Combat` referansı eklenmediği sürece doğrudan `BasicEnemyAI` sınıfını çağıramaz; proje derlenmez! Bu durum hem arkadaşınızı hem de onun AI'ını **Event-Driven (Olay Güdümlü)** çalışmaya zorlar.
 
 ---
 

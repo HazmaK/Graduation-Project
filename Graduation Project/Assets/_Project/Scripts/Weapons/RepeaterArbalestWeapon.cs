@@ -134,7 +134,7 @@ namespace RetroFPS.Weapons
             // Oyuncunun kendi gövdesini (CharacterController) atlamak için ışını hafifçe önden başlat
             Vector3 rayOrigin = cam.transform.position + shootDir * 0.35f;
 
-            if (Physics.Raycast(rayOrigin, shootDir, out RaycastHit hit, primaryRange, ~0, QueryTriggerInteraction.Ignore))
+            if (Physics.Raycast(rayOrigin, shootDir, out RaycastHit hit, primaryRange, GameLayers.PlayerAttackMask, QueryTriggerInteraction.Ignore))
             {
                 // Kendi parçalarımıza çarpmayı engelle
                 if (!hit.collider.transform.IsChildOf(transform.root))
@@ -192,7 +192,7 @@ namespace RetroFPS.Weapons
                 Vector3 endPos = startPos + shootDir * (primaryRange * 0.8f);
                 Vector3 rayOrigin = cam.transform.position + shootDir * 0.35f;
 
-                if (Physics.Raycast(rayOrigin, shootDir, out RaycastHit hit, primaryRange * 0.8f, ~0, QueryTriggerInteraction.Ignore))
+                if (Physics.Raycast(rayOrigin, shootDir, out RaycastHit hit, primaryRange * 0.8f, GameLayers.PlayerAttackMask, QueryTriggerInteraction.Ignore))
                 {
                     if (!hit.collider.transform.IsChildOf(transform.root))
                     {

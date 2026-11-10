@@ -394,7 +394,7 @@ namespace RetroFPS
 
             // Engelden kaçınma
             Vector3 rayOrigin = transform.position + Vector3.up * 0.5f;
-            if (Physics.Raycast(rayOrigin, dirToDest, 1.2f, ~0, QueryTriggerInteraction.Ignore))
+            if (Physics.Raycast(rayOrigin, dirToDest, 1.2f, GameLayers.EnemyObstacleMask, QueryTriggerInteraction.Ignore))
             {
                 dirToDest = Quaternion.Euler(0f, 45f, 0f) * dirToDest;
             }
@@ -557,7 +557,7 @@ namespace RetroFPS
             dir.Normalize();
 
             Vector3 rayOrigin = transform.position + Vector3.up * 0.5f;
-            if (Physics.Raycast(rayOrigin, dir, 1.2f, ~0, QueryTriggerInteraction.Ignore))
+            if (Physics.Raycast(rayOrigin, dir, 1.2f, GameLayers.EnemyObstacleMask, QueryTriggerInteraction.Ignore))
             {
                 dir = Quaternion.Euler(0f, 45f, 0f) * dir;
             }
@@ -595,7 +595,7 @@ namespace RetroFPS
             // 1. Çok yakın mesafe algısı (arkadan yaklaşma)
             if (dist <= proximityRange)
             {
-                if (Physics.Raycast(eyePos, toPlayer.normalized, out RaycastHit proxHit, dist, ~0, QueryTriggerInteraction.Ignore))
+                if (Physics.Raycast(eyePos, toPlayer.normalized, out RaycastHit proxHit, dist, GameLayers.EnemySightMask, QueryTriggerInteraction.Ignore))
                 {
                     if (proxHit.transform == _playerTransform || proxHit.transform.IsChildOf(_playerTransform))
                     {
@@ -611,7 +611,7 @@ namespace RetroFPS
             if (angle > fieldOfView * 0.5f) return false;
 
             // 3. Line of Sight (Doğrudan görüş hattı) Raycast'i
-            if (Physics.Raycast(eyePos, dirToPlayer, out RaycastHit hit, dist, ~0, QueryTriggerInteraction.Ignore))
+            if (Physics.Raycast(eyePos, dirToPlayer, out RaycastHit hit, dist, GameLayers.EnemySightMask, QueryTriggerInteraction.Ignore))
             {
                 if (hit.transform == _playerTransform || hit.transform.IsChildOf(_playerTransform))
                 {

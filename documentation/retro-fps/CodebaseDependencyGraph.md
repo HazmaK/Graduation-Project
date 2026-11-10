@@ -159,6 +159,14 @@ flowchart TD
 
 ---
 
+## 2.1 ASSEMBLY, KATMAN VE PREFAB YERLEŞİMİ (2026-11-11)
+
+- **Assembly'ler:** `RetroFPS.Core` (arayüzler, `AmmoType`, `GameLayers`) ⬅ `RetroFPS.Gameplay` (tüm oynanış) ⬅ `RetroFPS.Editor`. Ayrıntı ve hedef bölünme: [[CollaborationAndGitWorkflow]].
+- **Katmanlar:** `GameLayers` tüm fizik maskelerinin tek kaynağıdır. Silahlar ve parry `PlayerAttackMask`, düşman görüşü `EnemySightMask` (diğer düşmanların arkasını görür), engelden kaçınma `EnemyObstacleMask`, düşman mermisi `EnemyProjectileMask`, zemin taraması `GroundMask` kullanır.
+- **Prefab'lar:** `Prefabs/Player/Player.prefab` (oyuncu, kamera, üç silah, HUD bileşenleri) ve `Prefabs/Systems/CombatSystems.prefab` (`CombatAudio`, `CombatVFXManager`, `DamageNumberSystem`, `HitstopManager`, `HealthOrbManager`). Yeni bir sahneye bu iki prefab sürüklenerek oyun kurulur. `HitstopManager` yalnızca `CombatSystems` içinde bulunmalıdır: ikinci bir kopya singleton `Destroy(gameObject)` ile tüm `CombatSystems` objesini yok edebilir.
+
+---
+
 ## 3. BAŞKA BİR AI'IN UYMASI GEREKEN ENTEGRASYON KURALLARI
 
 1. **Yeni Silah Eklerken:**

@@ -188,6 +188,7 @@ namespace RetroFPS.Combat
 
             Collider col = go.GetComponent<Collider>();
             if (col != null) col.isTrigger = true;
+            go.layer = GameLayers.Pickup;
 
             AmmoPickup pickup = go.AddComponent<AmmoPickup>();
             pickup.Initialize(type, amount, position);

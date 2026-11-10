@@ -148,7 +148,7 @@ namespace RetroFPS
             Vector3 stepMove = transform.forward * stepDistance;
 
             // Çarpışma testi (SphereCast)
-            if (Physics.SphereCast(transform.position, collisionRadius, transform.forward, out RaycastHit hit, stepDistance, ~0, QueryTriggerInteraction.Collide))
+            if (Physics.SphereCast(transform.position, collisionRadius, transform.forward, out RaycastHit hit, stepDistance, GameLayers.EnemyProjectileMask, QueryTriggerInteraction.Collide))
             {
                 // 1. Oyuncuya çarpıyorsa ve oyuncu şu an aktif Parry yapıyorsa: ANINDA YANSIT!
                 if (!_isDeflected)

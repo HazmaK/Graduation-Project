@@ -374,7 +374,7 @@ namespace RetroFPS
             // 2. Saldırgan null ise etraftaki en yakın düşmanı bul ve sersemlet
             if (!stunned)
             {
-                int hitCount = Physics.OverlapSphereNonAlloc(transform.position, 4.0f, _overlapResults, ~0, QueryTriggerInteraction.Ignore);
+                int hitCount = Physics.OverlapSphereNonAlloc(transform.position, 4.0f, _overlapResults, GameLayers.PlayerAttackMask, QueryTriggerInteraction.Ignore);
                 for (int i = 0; i < hitCount; i++)
                 {
                     Collider col = _overlapResults[i];

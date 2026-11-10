@@ -520,6 +520,7 @@ namespace RetroFPS
             // Merminin collider'ını trigger yap (fiziksel engelleme yapmasın ama raycast/overlap sorguları bulabilsin)
             Collider col = projGO.GetComponent<Collider>();
             if (col != null) col.isTrigger = true;
+            projGO.layer = GameLayers.Projectile;
 
             EnemyProjectile proj = projGO.AddComponent<EnemyProjectile>();
             proj.Initialize(transform, projectileSpeed, projectileDamage);
@@ -542,7 +543,7 @@ namespace RetroFPS
             float groundY = 0f;
             // Gözün kendi collider'ına çarpmaması için gözün altından (Y - 0.65m) aşağıya tara
             Vector3 rayOrigin = transform.position - Vector3.up * 0.65f;
-            int hitCount = Physics.RaycastNonAlloc(rayOrigin, Vector3.down, _groundHits, 25f, ~0, QueryTriggerInteraction.Ignore);
+            int hitCount = Physics.RaycastNonAlloc(rayOrigin, Vector3.down, _groundHits, 25f, GameLayers.GroundMask, QueryTriggerInteraction.Ignore);
 
             for (int i = 0; i < hitCount; i++)
             {
@@ -590,7 +591,7 @@ namespace RetroFPS
 
             if (dist <= proximityRange)
             {
-                if (Physics.Raycast(eyePos, toPlayer.normalized, out RaycastHit proxHit, dist, ~0, QueryTriggerInteraction.Ignore))
+                if (Physics.Raycast(eyePos, toPlayer.normalized, out RaycastHit proxHit, dist, GameLayers.EnemySightMask, QueryTriggerInteraction.Ignore))
                 {
                     if (proxHit.transform == _playerTransform || proxHit.transform.IsChildOf(_playerTransform))
                     {
@@ -603,7 +604,7 @@ namespace RetroFPS
             float angle = Vector3.Angle(transform.forward, dirToPlayer);
             if (angle > fieldOfView * 0.5f) return false;
 
-            if (Physics.Raycast(eyePos, dirToPlayer, out RaycastHit hit, dist, ~0, QueryTriggerInteraction.Ignore))
+            if (Physics.Raycast(eyePos, dirToPlayer, out RaycastHit hit, dist, GameLayers.EnemySightMask, QueryTriggerInteraction.Ignore))
             {
                 if (hit.transform == _playerTransform || hit.transform.IsChildOf(_playerTransform))
                 {

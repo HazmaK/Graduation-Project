@@ -36,7 +36,11 @@ tags:
    - Bir değişkeni Inspector'da göstermek için ASLA `public` yapılmaz.
    - DAİMA `[SerializeField] private` kullanılır ve mantıklı varsayılan değerler atanır.
    - Dışarıdan salt okunur (read-only) erişim için public getter property tanımlanır: `public float Speed => speed;`.
-3. **Eski (Deprecated) API Yasağı:**
+3. **Fizik Katmanları (Layers) ve Sorgu Maskeleri:**
+   - Fizik sorgularında ASLA `~0` (Everything) kullanılmaz. Maskeler tek kaynaktan, `RetroFPS.GameLayers` sınıfından alınır: `PlayerAttackMask`, `EnemySightMask`, `EnemyObstacleMask`, `EnemyProjectileMask`, `GroundMask`.
+   - Katmanlar: `6 Player`, `7 Enemy`, `8 Projectile`, `9 Pickup`. Statik dünya `Default` katmanında kalır. Gibs ve decal'lar `Ignore Raycast` (2) katmanındadır ve tüm maskelerden dışlanır.
+   - Kodla oluşturulan mermi/pickup nesnelerine katman atanmalıdır (`go.layer = GameLayers.Projectile;`). Yeni düşman prefab'ları tüm hiyerarşisiyle `Enemy` katmanında olmalıdır.
+4. **Eski (Deprecated) API Yasağı:**
    - `FindObjectOfType<T>()` yerine Unity 6 uyumlu `FindFirstObjectByType<T>()` veya `FindAnyObjectByType<T>()` kullanılmalıdır.
    - Gereksiz Coroutine zincirleri yerine modern timer yapıları, async/await veya UniTask kullanılmalıdır.
 
