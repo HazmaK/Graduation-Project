@@ -69,7 +69,7 @@ flowchart LR
 - **Birincil Ateş:** Geniş konili çift namlulu kurşun saçması (Pellet spread). Yakın mesafeden Ghoul ve uçan gözleri paramparça eder.
 - **İkincil Ateş (Meat Hook / Grapple):**
   * Namlunun altındaki kancayı fırlatır. Yalnızca düşman hedeflere (`IDamageable`) kenetlenir.
-  * Oyuncuyu 32f sabit hızla düşmana doğru çeker (`PlayerMovement.StartGrapple`). Düşman hareket etse bile dinamik olarak takip eder.
+  * Oyuncuyu 29f sabit hızla (`hookPullSpeed`) düşmana doğru çeker (`PlayerMovement.StartGrapple`). Düşman hareket etse bile dinamik olarak takip eder.
   * Hedefe 2.0m kala kanca çözülür ve oyuncu yüksek hız ivmesiyle düşmanın tepesinde pompalı veya kılıçla ölümcül kombinasyon yapabilir.
 
 ### 4. `Spiked Buckler` (Çivili Savuşturma Kalkanı - Opsiyonel Sol El)
@@ -80,7 +80,7 @@ flowchart LR
 ---
 
 ## 3. BAŞKA BİR AI İÇİN DENGELEME KURALLARI
-1. Yeni bir silah dengelenirken Arbalest'in DPS'i (saniyede ~238 hasar) ve Kılıcın tek vuruşluk saplama hasarı (110 hasar) referans alınmalıdır.
+1. Yeni bir silah dengelenirken Arbalest'in DPS'i (saniyede ~238 hasar) ve Kılıcın en ağır tek vuruşları (Finisher ve Lunge: 95 hasar) referans alınmalıdır.
 2. Yakın dövüş silahlarında mutlaka `HashSet<IDamageable>` ile çoklu darbe koruması uygulanmalıdır.
 
 ---

@@ -39,7 +39,7 @@ flowchart TD
         Slide["Slide: Boy 1.0m, İvme 18f, Düşük Sürtünme"]
         SlideJump["Slide-Jump: Yatay İvmeyi Havaya Aktarma"]
         Dash["Dash: 30f Hız Patlaması, 0.2s I-Frames"]
-        Hook["Meat Hook: Düşmana Kilitlenme & 32f Çekilme"]
+        Hook["Meat Hook: Düşmana Kilitlenme & 29f Çekilme"]
         Lunge["Cellat Lunge: 28f İnfaz Atılması & I-Frames"]
         Slam["Meteor Slam: 34f Dikey Çakılma & Alan Stun"]
     end
@@ -90,7 +90,7 @@ flowchart TD
 ### 5. Düşman Kancası (Meat Hook / Grapple Entegrasyonu)
 - **Tetiklenme:** Gotik Pompalı (`GothicShotgunWeapon`) ikincil ateşi düşmana isabet ettiğinde `PlayerMovement.StartGrapple(targetTransform, offset, speed)` çağrılır.
 - **Dinamik Takip:** Kanca yalnızca düşman hedeflere tutunur; düşman hareket etse dahi hedef pozisyonu dinamik transform offseti ile canlı takip edilir.
-- **Çekilme Hızı & Mesafe:** 32f sabit hızla hedefe doğru çekilir. Hedefe 2.0m kala veya 1.6s zaman aşımında kanca otomatik sonlanır (`StopGrapple`).
+- **Çekilme Hızı & Mesafe:** `GothicShotgunWeapon.hookPullSpeed` (varsayılan 29f; `StartGrapple` en az 16f'e sabitler) hızla hedefe doğru çekilir. Hedefe 2.0m kala veya 1.6s zaman aşımında kanca otomatik sonlanır (`StopGrapple`).
 
 ### 6. Cellat Kılıcı Hareket Entegrasyonu (Lunge & Meteor Slam)
 - **İnfaz Hücumu (Executioner's Lunge):**

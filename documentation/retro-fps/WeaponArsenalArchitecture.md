@@ -47,12 +47,11 @@ classDiagram
     }
 
     class ExecutionerBladeWeapon {
-        -float slashDamage = 55f
-        -float thrustDamage = 110f
-        -float slashRange = 2.8f
-        -float thrustRange = 3.6f
-        +FirePrimary() : Wide Horizontal Slash
-        +FireAlt() : High Damage Thrust
+        -float slashRange = 3.4f
+        -float lungeSpeed = 28f
+        -float slamDownwardSpeed = 34f
+        +FirePrimary() : 3-Hit Combo (45 / 55 / 95)
+        +FireAlt() : Lunge (ground) / Meteor Slam (air)
     }
 
     class WeaponController {
@@ -112,8 +111,8 @@ namespace RetroFPS
 
 ### 4. `ExecutionerBladeWeapon.cs` (Cellat Kılıcı 2.0 - Overhaul)
 - **Sol Tık (3'lü Akıcı Kombo Sistemi):**
-  * **Hit 1 (Yatay Kesik - Slash):** Hızlı sağdan sola kesik (`damage = 45f`, `range = 3.0m`).
-  * **Hit 2 (Ters Açı Kesik - Backhand):** Hızlı soldan sağa geri savurma (`damage = 55f`, `range = 3.0m`).
+  * **Hit 1 (Yatay Kesik - Slash):** Hızlı sağdan sola kesik (`damage = 45f`, `range = 3.4m`).
+  * **Hit 2 (Ters Açı Kesik - Backhand):** Hızlı soldan sağa geri savurma (`damage = 55f`, `range = 3.4m`).
   * **Hit 3 (Ağır İndirme - Finisher):** Yukarıdan aşağı yıkıcı cellat darbesi (`damage = 95f`, `range = 3.4m`, `knockback = 12m/s`). İsabet eden düşmanı `IStunnable.Stun(1.2f, knockback)` ile sersemletir ve mikro hitstop tetikler.
   * **Kombo Zamanlayıcısı:** Vuruşlar arasında 0.70 saniyelik kombo hafıza penceresi bulunur. Süre aşılırsa zincir başa döner.
 - **Mermi Dilimleme (Projectile Slicing):**
@@ -123,7 +122,7 @@ namespace RetroFPS
     - 8-10 metre ileriye şimşek hızında atılma (`PlayerMovement.StartLunge`, `damage = 95f`).
     - **Blood Harvest (Kan Hasadı):** Hücum sırasında sersemlemiş (`IStunnable`) bir düşmana çarpılırsa veya darbeyle düşman ölürse parçalama (gibs) tetiklenir, oyuncuya **+25 HP Can Çalma (Vampiric Leech)** ve 1.5 saniye boyunca **+%35 Adrenalin Hız Bonusu** kazandırır.
   * **Havada ve Aşağıya Bakarken: Meteor Çakılması (Meteor Slam):**
-    - Oyuncu havadayken aşağı yöne (Zemin açısı < -30°) bakarak sağ tık yaptığında yere doğru sonic hızla dalar (`PlayerMovement.StartMeteorSlam`, `downwardSpeed = 26m/s`).
+    - Oyuncu havadayken aşağı yöne (Zemin açısı < -30°) bakarak sağ tık yaptığında yere doğru sonic hızla dalar (`PlayerMovement.StartMeteorSlam`, `slamDownwardSpeed = 34m/s`).
     - Yere çarptığı anda 5.5 metre çapında şok dalgası (`80 damage`) oluşturur, çevredeki tüm düşmanları sarsarak 2.2 saniye sersemletir (`IStunnable.Stun`).
 - **Görsel ve İşitsel Sunum:**
   * Prosedürel viewmodel animasyonları (`ProceduralViewmodel.TriggerMeleeSlash`, `TriggerMeleeBackhand`, `TriggerMeleeOverhead`, `TriggerMeleeLunge`, `TriggerMeleeSlam`) ile her vuruşa özel fiziksel savurma ve geri toparlanma eğrileri.
