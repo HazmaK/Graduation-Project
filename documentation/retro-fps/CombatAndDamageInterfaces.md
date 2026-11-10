@@ -55,8 +55,8 @@ namespace RetroFPS.Combat
 ```
 
 ### Kurallar:
-- `PlayerParryController` tarafından yakın dövüş saldırısı savuşturulduğunda düşmana uygulanır.
-- Ağır kılıç saplamaları veya yüksek darbe gücüne sahip özel saldırılar düşmanı sersemletmek için bu metodu tetikler.
+- Cellat Kılıcı kombo bitiricisi (`ExecutionerBladeWeapon` 3. vuruş / Meteor Slam) veya Gotik Pompalı kancası (`GothicShotgunWeapon` Meat Hook) düşmanı sersemletmek için bu metodu tetikler.
+- *(Not: Çivili Buckler kalkanı oyun temposunu sadeleştirmek adına geçici olarak pasife alınmıştır; ilerde ihtiyaç duyulursa yeniden aktif edilebilir).*
 - Düşman bu süre boyunca hareket edemez, saldırı başlatamaz ve animasyonunda sersemleme durumuna (`EnemyState.Stagger`) geçer.
 
 ---

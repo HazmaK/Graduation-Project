@@ -99,6 +99,9 @@ flowchart TD
     WB --> PV
     WB -.->|Tüketim| AmmoInv
     W3 -.->|StartGrapple| PM
+    W2 -.->|StartLunge / StartMeteorSlam / ApplySpeedBoost| PM
+    W2 -.->|BloodHarvest Leech| PH
+    W2 -.->|Slice & Deflect| Projectile
     
     W1 & W2 & W3 -->|Raycast / OverlapSphere| Hitbox
     Hitbox -->|TakeDamage| IDamage
@@ -113,6 +116,7 @@ flowchart TD
     
     PP -->|Stun| IStun
     PP -->|Reflect| Projectile
+    W2 -.->|Finisher / Meteor Slam Stun| IStun
     W3 -.->|MeatHook Stun| IStun
     
     Ghoul & FlyingEye -->|Tetikler| AlertHub

@@ -44,7 +44,6 @@ namespace RetroFPS
             _movement = GetComponent<PlayerMovement>();
             _look = GetComponent<PlayerLook>();
             _parry = GetComponent<PlayerParryController>();
-            if (_parry == null) _parry = gameObject.AddComponent<PlayerParryController>();
             _damageFeedback = GetComponent<PlayerDamageFeedback>();
             if (_damageFeedback == null) _damageFeedback = gameObject.AddComponent<PlayerDamageFeedback>();
         }
@@ -65,9 +64,9 @@ namespace RetroFPS
                 return;
             }
 
-            // 2. Kalkan Savuşturma (Parry) kontrolü
+            // 2. Kalkan Savuşturma (Parry) kontrolü (Kalkan aktif ise)
             if (_parry == null) _parry = GetComponent<PlayerParryController>();
-            if (_parry != null && _parry.TryParryMelee(hitPoint, hitNormal, amount, attacker))
+            if (_parry != null && _parry.enabled && _parry.TryParryMelee(hitPoint, hitNormal, amount, attacker))
             {
                 _timeSinceLastDamage = 0f;
                 return;

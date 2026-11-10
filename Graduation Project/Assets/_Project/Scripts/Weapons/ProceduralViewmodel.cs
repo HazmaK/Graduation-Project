@@ -139,19 +139,83 @@ namespace RetroFPS
         }
 
         /// <summary>
-        /// Kılıçla saldırıldığında ekranda sert ve savurgan bir darbe arkı çizer.
+        /// Kılıçla saldırıldığında ekranda sert ve savurgan bir darbe arkı çizer (Kombo 1: Sağdan Sola Yatay Kesiş).
         /// </summary>
-        public void TriggerMeleeSlash(float duration = 0.22f)
+        public void TriggerMeleeSlash(float duration = 0.20f)
         {
             _isSlashing = true;
             _slashTimer = 0f;
             _slashDuration = duration;
 
-            _slashStartPos = restPosition + new Vector3(0.15f, 0.12f, -0.05f);
-            _slashPeakPos = restPosition + new Vector3(-0.35f, -0.18f, 0.10f);
+            _slashStartPos = restPosition + new Vector3(0.20f, 0.12f, -0.06f);
+            _slashPeakPos = restPosition + new Vector3(-0.35f, -0.16f, 0.10f);
 
             _slashStartRot = Quaternion.Euler(restRotation + new Vector3(-20f, 45f, -30f));
             _slashPeakRot = Quaternion.Euler(restRotation + new Vector3(35f, -65f, 50f));
+        }
+
+        /// <summary>
+        /// Kombo 2: Soldan Sağa Geri Dönüş Ters Kesişi (Backhand Slash).
+        /// </summary>
+        public void TriggerMeleeBackhand(float duration = 0.20f)
+        {
+            _isSlashing = true;
+            _slashTimer = 0f;
+            _slashDuration = duration;
+
+            _slashStartPos = restPosition + new Vector3(-0.30f, -0.14f, 0.05f);
+            _slashPeakPos = restPosition + new Vector3(0.32f, 0.14f, -0.05f);
+
+            _slashStartRot = Quaternion.Euler(restRotation + new Vector3(30f, -55f, 45f));
+            _slashPeakRot = Quaternion.Euler(restRotation + new Vector3(-18f, 55f, -35f));
+        }
+
+        /// <summary>
+        /// Kombo 3: Yukarıdan Aşağıya Ağır İnfaz Ezici Darbesi (Overhead Heavy Finisher).
+        /// </summary>
+        public void TriggerMeleeOverhead(float duration = 0.28f)
+        {
+            _isSlashing = true;
+            _slashTimer = 0f;
+            _slashDuration = duration;
+
+            _slashStartPos = restPosition + new Vector3(0.04f, 0.32f, -0.12f);
+            _slashPeakPos = restPosition + new Vector3(-0.02f, -0.26f, 0.18f);
+
+            _slashStartRot = Quaternion.Euler(restRotation + new Vector3(-55f, 8f, 10f));
+            _slashPeakRot = Quaternion.Euler(restRotation + new Vector3(65f, -4f, -8f));
+        }
+
+        /// <summary>
+        /// Sağ Tık: Cellat İnfaz Hücumu (Executioner's Lunge Thrust).
+        /// </summary>
+        public void TriggerMeleeLunge(float duration = 0.28f)
+        {
+            _isSlashing = true;
+            _slashTimer = 0f;
+            _slashDuration = duration;
+
+            _slashStartPos = restPosition + new Vector3(-0.08f, 0.04f, -0.22f);
+            _slashPeakPos = restPosition + new Vector3(0.02f, 0.02f, 0.36f);
+
+            _slashStartRot = Quaternion.Euler(restRotation + new Vector3(-12f, 10f, -14f));
+            _slashPeakRot = Quaternion.Euler(restRotation + new Vector3(6f, -3f, 4f));
+        }
+
+        /// <summary>
+        /// Havada Sağ Tık: Kılıç Yere Dik Çakılma (Meteor Slam).
+        /// </summary>
+        public void TriggerMeleeSlam(float duration = 0.35f)
+        {
+            _isSlashing = true;
+            _slashTimer = 0f;
+            _slashDuration = duration;
+
+            _slashStartPos = restPosition + new Vector3(0f, 0.22f, -0.06f);
+            _slashPeakPos = restPosition + new Vector3(0f, -0.35f, 0.22f);
+
+            _slashStartRot = Quaternion.Euler(restRotation + new Vector3(15f, 0f, 0f));
+            _slashPeakRot = Quaternion.Euler(restRotation + new Vector3(88f, 0f, 0f));
         }
 
         private void ExecuteSlashAnimation()
@@ -159,11 +223,19 @@ namespace RetroFPS
             _slashTimer += Time.deltaTime;
             float t = Mathf.Clamp01(_slashTimer / _slashDuration);
 
-            // Vurucu Easing: Hızlı ve sert savuruş
-            float ease = Mathf.Sin(t * Mathf.PI * 0.5f);
-
-            transform.localPosition = Vector3.Lerp(_slashStartPos, _slashPeakPos, ease);
-            transform.localRotation = Quaternion.Slerp(_slashStartRot, _slashPeakRot, ease);
+            // İki aşamalı kinetik eğri: Hızlı sert vuruş darbesi (%40) + akıcı toparlanma (%60)
+            if (t <= 0.40f)
+            {
+                float strikeT = Mathf.Sin((t / 0.40f) * Mathf.PI * 0.5f);
+                transform.localPosition = Vector3.Lerp(_slashStartPos, _slashPeakPos, strikeT);
+                transform.localRotation = Quaternion.Slerp(_slashStartRot, _slashPeakRot, strikeT);
+            }
+            else
+            {
+                float returnT = Mathf.SmoothStep(0f, 1f, (t - 0.40f) / 0.60f);
+                transform.localPosition = Vector3.Lerp(_slashPeakPos, restPosition, returnT);
+                transform.localRotation = Quaternion.Slerp(_slashPeakRot, Quaternion.Euler(restRotation), returnT);
+            }
 
             if (t >= 1.0f)
             {

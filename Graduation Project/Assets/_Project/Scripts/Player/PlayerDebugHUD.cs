@@ -746,8 +746,8 @@ namespace RetroFPS
                 GUILayout.Label(wepLabel, _labelStyle);
             }
 
-            // Sol El Savunma / Parry
-            if (_parry != null)
+            // Sol El Savunma / Parry (Yalnızca Kalkan Sistemi Aktifse Göster)
+            if (_parry != null && _parry.enabled)
             {
                 if (_parry.IsParrying)
                 {
@@ -799,6 +799,8 @@ namespace RetroFPS
                 string stateLabel = StateGround;
                 if (_movement.IsDashing) stateLabel = StateDash;
                 else if (_movement.IsGrappling) stateLabel = StateGrapple;
+                else if (_movement.IsLunging) stateLabel = "STATE: <color=#FF3366>SWORD LUNGE</color>";
+                else if (_movement.IsMeteorSlamming) stateLabel = "STATE: <color=#FF8800>METEOR SLAM</color>";
                 else if (_movement.IsSliding) stateLabel = StateSlide;
                 else if (_movement.IsCrouching) stateLabel = StateCrouch;
                 else if (!_movement.IsGrounded) stateLabel = StateAir;

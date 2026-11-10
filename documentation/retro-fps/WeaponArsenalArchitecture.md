@@ -110,14 +110,24 @@ namespace RetroFPS
 - **Dinamik Düşüş Döngüsü (`EnemyAmmoDropper`):** DOOM Eternal esintili kaynak mekaniği; kritik veya yakın dövüşle öldürülen düşmanlar daha bol cephane düşürür. Oyuncunun hangi cephanesi azsa düşüş algoritması o türe öncelik tanır.
 - **Arayüz (`AmmoHUD`):** Ekranın sağ alt köşesinde aktif silahın cephane sayısını, parlayan retro renk paletini ve doluluk barını sıfır GC tahsisiyle sunar.
 
-### 4. `ExecutionerBladeWeapon.cs` (Cellat Kılıcı)
-- **Sol Tık (Birincil Saldırı):** Yatay geniş savurma (`slashRange = 2.8m`, `angle = 110°`, `damage = 55f`).
-  * `Physics.OverlapSphereNonAlloc` kullanarak ön konideki birden fazla düşmanı biçer.
-  * **Multi-Hitbox Tamponu (Anti-Duplicate):** Tek bir savurmada aynı düşmanın kafa ve gövde collider'larına ayrı ayrı çarpıp çift hasar vurmasını engelleyen `HashSet<IDamageable>` tamponu içerir.
-- **Sağ Tık (İkincil Saldırı):** Dar sivri saplama darbesi (`thrustRange = 3.6m`, `damage = 110f`).
-  * Tekil hedefe odaklı yüksek zırh delici darbe.
-  * İsabet anında `HitstopManager.TriggerHitstop(0.08f)` mikro dondurması ile ağır tokluk hissi.
-- **Görsel Sunum ve Kinematik:** Savurmalar yapay ekran şeritleri yerine doğrudan viewmodel model animasyonu, kamera ileri atılma sarsıntısı ve et kesme yönlü partikülleriyle sunulur.
+### 4. `ExecutionerBladeWeapon.cs` (Cellat Kılıcı 2.0 - Overhaul)
+- **Sol Tık (3'lü Akıcı Kombo Sistemi):**
+  * **Hit 1 (Yatay Kesik - Slash):** Hızlı sağdan sola kesik (`damage = 45f`, `range = 3.0m`).
+  * **Hit 2 (Ters Açı Kesik - Backhand):** Hızlı soldan sağa geri savurma (`damage = 55f`, `range = 3.0m`).
+  * **Hit 3 (Ağır İndirme - Finisher):** Yukarıdan aşağı yıkıcı cellat darbesi (`damage = 95f`, `range = 3.4m`, `knockback = 12m/s`). İsabet eden düşmanı `IStunnable.Stun(1.2f, knockback)` ile sersemletir ve mikro hitstop tetikler.
+  * **Kombo Zamanlayıcısı:** Vuruşlar arasında 0.70 saniyelik kombo hafıza penceresi bulunur. Süre aşılırsa zincir başa döner.
+- **Mermi Dilimleme (Projectile Slicing):**
+  * Kılıç savrulurken oyuncunun ön konisinde bulunan düşman mermilerini (`EnemyProjectile.ActiveProjectiles`) tespit eder; mermileri ikiye bölerek hedefe geri saptırır (`Deflect`). Menzilli saldırılara karşı yakın dövüş kalkanı vazifesi görür.
+- **Sağ Tık (Dinamik İkincil Saldırı Modları):**
+  * **Zeminde / Yatay Bakışta: Cellat Hücumu (Executioner's Lunge):**
+    - 8-10 metre ileriye şimşek hızında atılma (`PlayerMovement.StartLunge`, `damage = 95f`).
+    - **Blood Harvest (Kan Hasadı):** Hücum sırasında sersemlemiş (`IStunnable`) bir düşmana çarpılırsa veya darbeyle düşman ölürse parçalama (gibs) tetiklenir, oyuncuya **+25 HP Can Çalma (Vampiric Leech)** ve 1.5 saniye boyunca **+%35 Adrenalin Hız Bonusu** kazandırır.
+  * **Havada ve Aşağıya Bakarken: Meteor Çakılması (Meteor Slam):**
+    - Oyuncu havadayken aşağı yöne (Zemin açısı < -30°) bakarak sağ tık yaptığında yere doğru sonic hızla dalar (`PlayerMovement.StartMeteorSlam`, `downwardSpeed = 26m/s`).
+    - Yere çarptığı anda 5.5 metre çapında şok dalgası (`80 damage`) oluşturur, çevredeki tüm düşmanları sarsarak 2.2 saniye sersemletir (`IStunnable.Stun`).
+- **Görsel ve İşitsel Sunum:**
+  * Prosedürel viewmodel animasyonları (`ProceduralViewmodel.TriggerMeleeSlash`, `TriggerMeleeBackhand`, `TriggerMeleeOverhead`, `TriggerMeleeLunge`, `TriggerMeleeSlam`) ile her vuruşa özel fiziksel savurma ve geri toparlanma eğrileri.
+  * `CombatAudio` üzerinden dinamik ses tonlamaları (vuruş sırasına göre artan pitch, finisher çan sesi, lunge rüzgarı ve meteor şok patlaması).
 
 ### 5. `RepeaterArbalestWeapon.cs` (Seri Arbalest)
 - **Hitscan Mermi Fiziği:** Hızlı delici cıvata atışları (Atış başı 1 Ok tüketir).

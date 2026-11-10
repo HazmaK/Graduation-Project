@@ -24,22 +24,23 @@ tags:
 flowchart LR
     subgraph ANA_SILAHLAR["Sağ El Ana Silahları (Loot & Swap)"]
         W1["Repeater Arbalest\nSeri Delici Cıvata (Menzilli)"]
-        W2["Executioner Blade\nGeniş Savurma / Sivri Saplama (Melee)"]
+        W2["Executioner Blade 2.0\n3'lü Kombo / Lunge / Meteor Slam / Deflect"]
+        W3["Gothic Shotgun\nÇifte Saçma & Meat Hook"]
     end
     
-    subgraph IKINCIL_TAKTIK["Sol El Sabit Ekipmanı"]
-        Buckler["Spiked Buckler (Parry Kalkanı)\nMermi Yansıtma & Sersemletme"]
+    subgraph IKINCIL_TAKTIK["Sol El Modüler Ekipmanı"]
+        Buckler["Spiked Buckler (İsteğe Bağlı Parry)\nMermi Yansıtma & Sersemletme"]
     end
     
-    W1 <-->|Hızlı Silah Değişimi (Q / Tekerlek)| W2
-    W1 & W2 <-->|Anında Parry İptali (Q / MMB)| Buckler
+    W1 <-->|Silah Değişimi (1/2/3 veya Tekerlek)| W2 <--> W3
+    W1 & W2 & W3 -.->|Parry Aktifken (Q / MMB)| Buckler
 ```
 
 ---
 
 ## 2. SİLAH DENGE VE KİNEMATİK PARAMETRELERİ
 
-### 1. `Repeater Arbalest` (Seri Delici Arbalest)
+### 1. `Repeater Arbalest` (Seri Delici Arbalest - Slot 1)
 - **Silah Rolü:** Yüksek tempolu menzilli baskı ateşi ve zırh delme.
 - **Mermi Tipi:** Hızlı Hitscan cıvata mermisi ve doğrusal tracer fişeği.
 - **Ateş Hızı:** Saniyede 8.5 atış (`fireRate = 8.5f`).
@@ -49,27 +50,32 @@ flowchart LR
   * Oyuncu parmağını tetikten çektiğinde 0.15 saniye içinde başlangıç hassasiyetine geri döner.
 - **Vuruş Geri Bildirimi:** Hedefe çarptığında anlık kıvılcım ve kan damlası saçar; nişangaha hitmarker çizer.
 
-### 2. `Executioner Blade` (Cellat Kılıcı)
-- **Silah Rolü:** Yüksek hasarlı kalabalık biçme ve tekil zırh delme.
-- **Birincil Saldırı (Sol Tık - Yatay Geniş Savurma):**
-  * **Menzil & Açı:** 2.8 metre menzil, 110 derecelik yatay ön koni.
-  * **Hasar:** Darbe başına 55 birim taban hasar.
-  * **Çoklu Hitbox Önleme Tamponu (Anti-Duplicate):** Kılıç tek bir savurmada aynı hedefin kafa ve gövde collider'larına ayrı ayrı çarpıp çift hasar vermesin diye `HashSet<IDamageable>` tamponu kullanır. Her düşman tek bir savurmadan yalnızca 1 kez hasar alır.
-- **İkincil Saldırı (Sağ Tık - Sivri Saplama):**
-  * **Menzil & Hasar:** 3.6 metre menzil, 110 birim yüksek zırh delici hasar.
-  * **Hitstop:** İsabet anında `HitstopManager.TriggerHitstop(0.08f)` mikro dondurması ile ağır tokluk hissi sağlar.
-- **Görsel Sunum ve Vuruş Kinematiği:**
-  * Görsel netliği korumak adına ekran ortasını kaplayan yapay hilal/trail şeritleri kullanılmaz.
-  * Vuruş hissi; prosedürel viewmodel savurma kinematiği, kamera ileri atılma sarsıntısı ve et temas partikülleriyle sağlanır.
+### 2. `Executioner Blade` (Cellat Kılıcı 2.0 - Slot 2)
+- **Silah Rolü:** Yakın dövüş infazı, mermi kesme, agresif hücum ve alan sersemletme.
+- **Birincil Saldırı (Sol Tık - 3'lü Akıcı Kombo):**
+  * **Hit 1 (Yatay Kesik):** Hızlı sağdan sola darbe (`damage = 45f`, `range = 3.4m`).
+  * **Hit 2 (Ters Açı Kesik):** Hızlı soldan sağa geri savurma (`damage = 55f`, `range = 3.4m`).
+  * **Hit 3 (Ağır Finisher):** Yukarıdan aşağı infaz darbesi (`damage = 95f`, `range = 3.4m`, `knockback = 12m/s`). İsabet ettiği düşmanı 1.2 saniye sersemletir (`IStunnable.Stun`).
+  * **Kombo Hafızası:** Vuruşlar arası 0.70s tolerans süresi bulunur.
+- **Mermi Dilimleme (Projectile Slicing):**
+  * Savurma açısına giren düşman plazma mermilerini (`EnemyProjectile`) havada keser ve crosshair hedefine geri saptırır (`Deflect`).
+- **İkincil Saldırı (Sağ Tık - Çift Fonksiyonlu Hareket Darbesi):**
+  * **Düz / Yerde (Executioner's Lunge):** 8-10 metre ileriye şimşek hızında atılma (`damage = 95f`, `lungeSpeed = 28f`, I-Frames). Sersemlemiş düşmana vurulduğunda veya düşman öldürüldüğünde **Blood Harvest** tetiklenir: Oyuncuya **+25 HP Can Sömürüsü** ve 1.5s boyunca **+%35 Adrenalin Hız Bonusu** verir.
+  * **Havada Aşağı Bakarken (Meteor Slam):** Oyuncu havadayken yere doğru -34f hızla çakılır. Yere indiğinde 5.5 metre çapında 80 alan hasarı vurur ve tüm düşmanları 2.2 saniye sersemletir (`IStunnable.Stun`).
+- **Görsel Sunum ve Vuruş Kinematiği:** Prosedürel viewmodel savurma, lunge saplama ve çakılma animasyonları, hitstop mikro dondurması ve dinamik pitch/çan sesleri.
 
-### 3. `Spiked Buckler` (Çivili Savuşturma Kalkanı)
-- **Savuşturma (Parry) Penceresi:** 0.35 saniye aktif kabul süresi.
-- **Toparlanma & Bekleme:** 0.20 saniye toparlanma, 0.50 saniye bekleme süresi.
-- **Mermi Yansıtma (Deflection):**
-  * Baktığınız yöne doğru 130 derecelik kabul açısı ve 4.2 metre tarama menzili.
-  * Mermiyi crosshair yönüne 1.7x hız ve 2.5x hasar çarpanıyla geri püskürtür; mermi rengini elektro maviye dönüştürür.
-- **Yakın Dövüş Sersemletme (Stun):**
-  * Ghoul vb. yakın dövüş saldırılarını %100 bloke eder ve saldıran düşmanı 2.2 saniye boyunca hareketsiz bırakır (`IStunnable.Stun`).
+### 3. `Gothic Shotgun` (Gotik Pompalı & Meat Hook - Slot 3)
+- **Silah Rolü:** Yakın temas yüksek burst hasar ve düşmana çekilerek mesafe kapatma.
+- **Birincil Ateş:** Geniş konili çift namlulu kurşun saçması (Pellet spread). Yakın mesafeden Ghoul ve uçan gözleri paramparça eder.
+- **İkincil Ateş (Meat Hook / Grapple):**
+  * Namlunun altındaki kancayı fırlatır. Yalnızca düşman hedeflere (`IDamageable`) kenetlenir.
+  * Oyuncuyu 32f sabit hızla düşmana doğru çeker (`PlayerMovement.StartGrapple`). Düşman hareket etse bile dinamik olarak takip eder.
+  * Hedefe 2.0m kala kanca çözülür ve oyuncu yüksek hız ivmesiyle düşmanın tepesinde pompalı veya kılıçla ölümcül kombinasyon yapabilir.
+
+### 4. `Spiked Buckler` (Çivili Savuşturma Kalkanı - Opsiyonel Sol El)
+- **Modülerlik:** `PlayerParryController.enableShield` ile tercihe bağlıdır (varsayılan: pasif).
+- **Savuşturma Penceresi:** 0.35s aktif süre, 0.50s bekleme.
+- **Yansıtma & Sersemletme:** Düşman mermilerini crosshair'a 1.7x hız ve 2.5x hasarla yansıtır; yakın dövüş saldırılarını %100 bloke edip düşmanı 2.2 saniye sersemletir (`IStunnable.Stun`).
 
 ---
 

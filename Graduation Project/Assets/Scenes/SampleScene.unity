@@ -1197,13 +1197,25 @@ MonoBehaviour:
   weaponVisual: {fileID: 0}
   firePoint: {fileID: 0}
   viewmodel: {fileID: 0}
-  meleeSlashDamage: 75
-  meleeSlashRange: 3.2
-  meleeSlashAngle: 75
-  meleeSlashRate: 0.35
-  meleeThrustDamage: 130
-  meleeThrustRange: 4
-  meleeThrustCooldown: 1.1
+  combo1Damage: 45
+  combo2Damage: 55
+  combo3Damage: 95
+  comboResetTime: 0.7
+  slashRange: 3.4
+  slashAngle: 85
+  lungeDamage: 95
+  lungeSpeed: 28
+  lungeDuration: 0.22
+  lungeCooldown: 0.95
+  lungeHealAmount: 25
+  adrenalineDuration: 1.5
+  slamDownwardSpeed: 34
+  slamDamage: 80
+  slamRadius: 5.5
+  slamStunDuration: 2.2
+  slamCooldown: 1.25
+  enableProjectileSlice: 1
+  projectileSliceRadius: 2.8
 --- !u!1 &89706084
 GameObject:
   m_ObjectHideFlags: 0
@@ -8668,6 +8680,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e1ad13cecfc9936468e57460795920d6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RetroFPS.PlayerParryController
+  enableShield: 0
   parryActiveWindow: 0.35
   parryRecoveryDuration: 0.2
   parryCooldown: 0.5

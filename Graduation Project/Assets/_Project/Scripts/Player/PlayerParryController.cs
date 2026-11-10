@@ -18,6 +18,10 @@ namespace RetroFPS
     [DisallowMultipleComponent]
     public class PlayerParryController : MonoBehaviour
     {
+        [Header("Kalkan Sistemi Durumu")]
+        [Tooltip("Kalkan sistemini tamamen aktif veya pasif yapar. Pasifken kalkan modeli oluşturulmaz ve tuş dinlenmez.")]
+        [SerializeField] private bool enableShield = false;
+
         [Header("Parry & Zamanlama Parametreleri")]
         [Tooltip("Kusursuz savuşturma (Parry) aktif penceresi (saniye)")]
         [SerializeField] private float parryActiveWindow = 0.35f;
@@ -79,6 +83,24 @@ namespace RetroFPS
 
         private void Awake()
         {
+            if (!enableShield)
+            {
+                enabled = false;
+                _look = GetComponent<PlayerLook>();
+                Transform holder = _look != null ? _look.CameraHolder : null;
+                if (holder == null && Camera.main != null) holder = Camera.main.transform.parent ?? Camera.main.transform;
+                if (holder != null)
+                {
+                    Transform found = holder.Find("FP_LeftHand_Socket");
+                    if (found != null)
+                    {
+                        if (Application.isPlaying) Destroy(found.gameObject);
+                        else DestroyImmediate(found.gameObject);
+                    }
+                }
+                return;
+            }
+
             _look = GetComponent<PlayerLook>();
             if (_look != null)
             {
@@ -184,6 +206,8 @@ namespace RetroFPS
 
         private void Update()
         {
+            if (!enableShield) return;
+
             HandleCooldownAndTimers();
             HandleInput();
 

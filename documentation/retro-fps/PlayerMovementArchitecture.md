@@ -35,10 +35,13 @@ flowchart TD
         DotProduct["Vector3.Dot(Velocity, WishDir)"]
     end
     
-    subgraph AKROBASI["Hız Artırıcı Manevralar"]
+    subgraph AKROBASI["Hız Artırıcı Manevralar & Silah Entegrasyonu"]
         Slide["Slide: Boy 1.0m, İvme 18f, Düşük Sürtünme"]
         SlideJump["Slide-Jump: Yatay İvmeyi Havaya Aktarma"]
         Dash["Dash: 30f Hız Patlaması, 0.2s I-Frames"]
+        Hook["Meat Hook: Düşmana Kilitlenme & 32f Çekilme"]
+        Lunge["Cellat Lunge: 28f İnfaz Atılması & I-Frames"]
+        Slam["Meteor Slam: 34f Dikey Çakılma & Alan Stun"]
     end
     
     Girdi --> ZEMIN_FIZIGI & HAVA_FIZIGI & AKROBASI
@@ -83,6 +86,23 @@ flowchart TD
 - **Dönüş Eğimi (Strafe Tilt):** Yana strafe yaparken kamera Z ekseninde 2.5° organik olarak eğilir (`Mathf.Lerp`).
 - **Hıza Bağlı FOV Genişlemesi:** Oyuncu taban hızdan slide veya bunny-hop ile 20f+ hızlara çıktığında kamera FOV'u yumuşakça 90 dereceden 110 dereceye açılır.
 - **Trauma Tabanlı Sarsıntı:** Hasar alındığında artan `Trauma` katsayısı karesel sönümlenerek (`trauma^2`) Perlin noise ile sarsıntı üretir.
+
+### 5. Düşman Kancası (Meat Hook / Grapple Entegrasyonu)
+- **Tetiklenme:** Gotik Pompalı (`GothicShotgunWeapon`) ikincil ateşi düşmana isabet ettiğinde `PlayerMovement.StartGrapple(targetTransform, offset, speed)` çağrılır.
+- **Dinamik Takip:** Kanca yalnızca düşman hedeflere tutunur; düşman hareket etse dahi hedef pozisyonu dinamik transform offseti ile canlı takip edilir.
+- **Çekilme Hızı & Mesafe:** 32f sabit hızla hedefe doğru çekilir. Hedefe 2.0m kala veya 1.6s zaman aşımında kanca otomatik sonlanır (`StopGrapple`).
+
+### 6. Cellat Kılıcı Hareket Entegrasyonu (Lunge & Meteor Slam)
+- **İnfaz Hücumu (Executioner's Lunge):**
+  * `PlayerMovement.StartLunge(direction, speed=28f, duration=0.22f)`: İleriye doğru şimşek hızında fırlatır, 0.22 saniye boyunca I-Frames (hasar almama) sağlar ve FOV Kick (14°) uygular.
+  * Tamamlandığında oyuncunun hızını yumuşakça koşu hızının 1.35x katına aktararak momentum kaybını önler.
+- **Meteor Çakılması (Meteor Slam):**
+  * `PlayerMovement.StartMeteorSlam(downwardSpeed=34f)`: Oyuncu havadayken aşağı daldığında dikey hızı -34f'e kilitler, yatay sapmaları sönümler.
+  * Zemine temas anında `_isGrounded` ile inişi yakalar; yatay hızı sıfırlayıp `PlayerLook.AddTrauma(0.42f)` ağır iniş sarsıntısı ve kılıcın alan hasarı/sersemletme callback'ini tetikler.
+
+### 7. Adrenalin Hız Bonusu (`ApplySpeedBoost`)
+- **Tetiklenme:** Kılıçla sersemlemiş düşmanı infaz etme veya öldürme anında (`TriggerBloodHarvest`).
+- **Etki:** 1.5 saniye boyunca hem yürüme hızını hem de Quake bunny-hop hava hız tavanını (`maxAirSpeed`) 1.35x (%35) çarparak hız zincirlemesine olanak tanır.
 
 ---
 

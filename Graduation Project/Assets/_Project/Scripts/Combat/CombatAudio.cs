@@ -206,16 +206,47 @@ namespace RetroFPS.Combat
             Play2DWithPitchVariation(clip, 1.0f, 0.04f);
         }
 
-        public void PlayBladeSwing()
+        public void PlayBladeSwing(float pitchMult = 1.0f)
         {
             AudioClip clip = bladeSwingSound != null ? bladeSwingSound : _synthBladeSwing;
-            Play2DWithPitchVariation(clip, 0.95f, 0.08f);
+            if (clip == null || _audioSource2D == null) return;
+            float variation = pitchVariation + 0.06f;
+            _audioSource2D.pitch = pitchMult + Random.Range(-variation, variation);
+            _audioSource2D.PlayOneShot(clip, 0.95f * masterCombatVolume);
         }
 
         public void PlayBladeThrust()
         {
             AudioClip clip = bladeThrustSound != null ? bladeThrustSound : _synthBladeThrust;
             Play2DWithPitchVariation(clip, 1.0f, 0.05f);
+        }
+
+        public void PlayBladeFinisher()
+        {
+            AudioClip clip = bladeThrustSound != null ? bladeThrustSound : _synthBladeThrust;
+            Play2DWithPitchVariation(clip, 1.20f, 0.04f);
+        }
+
+        public void PlayBladeLunge()
+        {
+            AudioClip clip = grappleLaunchSound != null ? grappleLaunchSound : _synthGrappleLaunch;
+            Play2DWithPitchVariation(clip, 1.10f, 0.05f);
+        }
+
+        public void PlayBladeSlam(Vector3 position)
+        {
+            AudioClip clip = gibExplosionSound != null ? gibExplosionSound : _synthGibExplosion;
+            if (clip != null)
+            {
+                AudioSource.PlayClipAtPoint(clip, position, 1.2f * masterCombatVolume);
+            }
+            Play2DWithPitchVariation(clip, 0.85f, 0.05f);
+        }
+
+        public void PlayCritCrunch()
+        {
+            AudioClip critClip = critCrunchSound != null ? critCrunchSound : _synthCritCrunch;
+            Play2DWithPitchVariation(critClip, 1.0f, 0.05f);
         }
 
         public void PlayHitmarker(bool isCrit)

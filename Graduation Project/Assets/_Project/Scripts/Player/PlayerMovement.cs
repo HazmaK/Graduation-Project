@@ -73,6 +73,20 @@ namespace RetroFPS
         private const float GrappleStopDistance = 2.0f;
         private const float GrappleMaxDuration = 1.6f;
 
+        // Cellat Kılıcı Lunge & Meteor Slam Durumları
+        private bool _isLunging;
+        private float _lungeTimer;
+        private float _lungeSpeed;
+        private Vector3 _lungeDirection;
+        private System.Action _onLungeFinished;
+
+        private bool _isMeteorSlamming;
+        private float _meteorSlamSpeed;
+        private System.Action _onMeteorLanded;
+
+        private float _speedBoostMultiplier = 1.0f;
+        private float _speedBoostTimer = 0f;
+
         // Jump tamponu & Coyote time
         private float _jumpBufferTimer;
         private float _coyoteTimer;
@@ -88,6 +102,8 @@ namespace RetroFPS
         public bool IsCrouching => _isCrouching;
         public bool IsDashing => _isDashing;
         public bool IsGrappling => _isGrappling;
+        public bool IsLunging => _isLunging;
+        public bool IsMeteorSlamming => _isMeteorSlamming;
         public bool IsInvincible => _isInvincible;
         public int CurrentDashCharges => _currentDashCharges;
         public Vector3 GrappleTargetPoint => (_grappleTargetTransform != null) ? (_grappleTargetTransform.position + _grappleTargetOffset) : _grappleTargetPoint;
@@ -161,6 +177,16 @@ namespace RetroFPS
             ReadInput();
             UpdateRechargeTimers();
 
+            // Adrenalin hız bonusu sayacı
+            if (_speedBoostTimer > 0f)
+            {
+                _speedBoostTimer -= Time.deltaTime;
+                if (_speedBoostTimer <= 0f)
+                {
+                    _speedBoostMultiplier = 1.0f;
+                }
+            }
+
             // Zemin kontrolü
             CheckGround();
 
@@ -172,6 +198,14 @@ namespace RetroFPS
             else if (_isGrappling)
             {
                 ExecuteGrapple();
+            }
+            else if (_isLunging)
+            {
+                ExecuteLunge();
+            }
+            else if (_isMeteorSlamming)
+            {
+                ExecuteMeteorSlam();
             }
             else
             {
@@ -311,7 +345,7 @@ namespace RetroFPS
             wishDir.Normalize();
 
             ApplyFriction(groundFriction);
-            float targetSpeed = _isCrouching ? crouchSpeed : walkSpeed;
+            float targetSpeed = _isCrouching ? crouchSpeed : (walkSpeed * _speedBoostMultiplier);
             Accelerate(wishDir, targetSpeed, groundAcceleration);
         }
 
@@ -321,13 +355,14 @@ namespace RetroFPS
             wishDir.Normalize();
 
             // Quake air strafe ile kontrollü hava yönlendirmesi
-            Accelerate(wishDir, airWishSpeed, airAcceleration);
+            Accelerate(wishDir, airWishSpeed * _speedBoostMultiplier, airAcceleration);
 
             // Bunny hop hız tavanı: Hızın kontrolsüz parkur oyununa dönüşmesini engeller
             Vector3 horizontalVel = new Vector3(_velocity.x, 0f, _velocity.z);
-            if (horizontalVel.magnitude > maxAirSpeed)
+            float currentAirCap = maxAirSpeed * _speedBoostMultiplier;
+            if (horizontalVel.magnitude > currentAirCap)
             {
-                horizontalVel = horizontalVel.normalized * maxAirSpeed;
+                horizontalVel = horizontalVel.normalized * currentAirCap;
                 _velocity.x = horizontalVel.x;
                 _velocity.z = horizontalVel.z;
             }
@@ -586,6 +621,105 @@ namespace RetroFPS
             // 3. Hedefe doğru ivmeli çekilme
             Vector3 pullDir = toTarget.normalized;
             _velocity = pullDir * _grappleSpeed;
+        }
+        #endregion
+
+        #region Cellat Kılıcı Hareket Entegrasyonu (Lunge, Slam & Adrenalin)
+        /// <summary>
+        /// Kılıçla ileriye doğru sert ve ivmeli bir infaz atılması (Lunge) gerçekleştirir.
+        /// </summary>
+        public void StartLunge(Vector3 direction, float speed = 28f, float duration = 0.22f, System.Action onFinished = null)
+        {
+            _isLunging = true;
+            _isInvincible = true;
+            _lungeDirection = direction.sqrMagnitude > 0.01f ? direction.normalized : transform.forward;
+            _lungeSpeed = speed;
+            _lungeTimer = duration;
+            _onLungeFinished = onFinished;
+
+            if (_isSliding) StopSlide();
+            _isDashing = false;
+            _isGrappling = false;
+            _isMeteorSlamming = false;
+
+            _velocity = _lungeDirection * _lungeSpeed;
+
+            if (_look != null)
+            {
+                _look.DoFovKick(14f);
+            }
+        }
+
+        public void StopLunge()
+        {
+            if (!_isLunging) return;
+            _isLunging = false;
+            _isInvincible = false;
+            _velocity = _lungeDirection * (walkSpeed * 1.35f);
+            var cb = _onLungeFinished;
+            _onLungeFinished = null;
+            cb?.Invoke();
+        }
+
+        private void ExecuteLunge()
+        {
+            _lungeTimer -= Time.deltaTime;
+            _velocity = _lungeDirection * _lungeSpeed;
+
+            if (_lungeTimer <= 0f)
+            {
+                StopLunge();
+            }
+        }
+
+        /// <summary>
+        /// Havada iken kılıçla yere dikey/sert çakılma (Meteor Slam) başlatır.
+        /// </summary>
+        public void StartMeteorSlam(float downwardSpeed = 34f, System.Action onLanded = null)
+        {
+            _isMeteorSlamming = true;
+            _meteorSlamSpeed = downwardSpeed;
+            _onMeteorLanded = onLanded;
+
+            if (_isSliding) StopSlide();
+            _isDashing = false;
+            _isGrappling = false;
+            _isLunging = false;
+
+            _velocity = new Vector3(_velocity.x * 0.25f, -_meteorSlamSpeed, _velocity.z * 0.25f);
+
+            if (_look != null)
+            {
+                _look.DoFovKick(14f);
+            }
+        }
+
+        private void ExecuteMeteorSlam()
+        {
+            _velocity = new Vector3(_velocity.x * 0.85f, -_meteorSlamSpeed, _velocity.z * 0.85f);
+
+            if (_isGrounded)
+            {
+                _isMeteorSlamming = false;
+                _velocity = Vector3.zero;
+                var cb = _onMeteorLanded;
+                _onMeteorLanded = null;
+                cb?.Invoke();
+
+                if (_look != null)
+                {
+                    _look.AddTrauma(0.42f);
+                }
+            }
+        }
+
+        /// <summary>
+        /// İnfaz gerçekleştiğinde geçici adrenalin hız patlaması uygular.
+        /// </summary>
+        public void ApplySpeedBoost(float multiplier = 1.35f, float duration = 1.2f)
+        {
+            _speedBoostMultiplier = Mathf.Max(_speedBoostMultiplier, multiplier);
+            _speedBoostTimer = Mathf.Max(_speedBoostTimer, duration);
         }
         #endregion
     }

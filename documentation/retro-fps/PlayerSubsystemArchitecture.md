@@ -67,6 +67,7 @@ flowchart LR
 
 ### 2. `PlayerParryController.cs` (Çivili Buckler / Parry Kalkanı)
 - **Konum:** `Assets/_Project/Scripts/Player/PlayerParryController.cs`
+- **Modülerlik Durumu (`enableShield`):** Kalkan sistemi oyun akışını ve hızlı taarruz temposunu desteklemek için tercihe bağlı (`[SerializeField] private bool enableShield = false;`) hale getirilmiştir. Pasifken sol el soketi ve nesneleri hiyerarşiden temizlenir, tuş dinlenmez. Açıldığında anında devreye girer.
 - **Girdi:** `Q` veya `Fare Orta Tuşu (MMB)`.
 - **Aktif Pencere:** 0.35 saniye aktif kabul süresi, 0.20 saniye toparlanma, 0.50 saniye bekleme süresi (Cooldown).
 - **Kabul Açısı:** Oyuncunun baktığı yöne doğru 130 derecelik geniş koni.
