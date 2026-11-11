@@ -21,12 +21,12 @@ namespace RetroFPS
     /// - Devriye ve Gezinme: Oyuncuyu görmediğinde etrafta sakin devriye gezer.
     /// - Sürü Bilinci (Pack Mentality): Bir düşman saldırdığında yakındaki müttefikler de alarma geçer, uzaktakiler etkilenmez.
     /// - NavMesh bağımsız, CharacterController tabanlı akıllı takip ve engelden kaçınma
-    /// - Saldırı öncesi net telgraf uyarısı (Windup Flash: Oyuncuya Dash ile kaçma fırsatı verir)
-    /// - Ağır hasarlarda tökezleme (Stagger) ve kafa vuruşlarını (Headshot: 2x Hasar) algılama
+    /// - İki pençeli kombo ve yönlendirilen sıçrama; her hazırlıkta parry parıltısı.
+    /// - Hasar biriktiren poise, kararlı vuruş zırhı ve ortak saldırı kotasıyla kuşatma.
     /// - Ölümden 4 saniye sonra otomatik yeniden doğma (Kesintisiz arena testi)
     /// </summary>
     [RequireComponent(typeof(CharacterController))]
-    public class BasicEnemyAI : MonoBehaviour, IDamageable, IAlertableEnemy, IStunnable, IEncounterEnemy, IThreatCost
+    public class BasicEnemyAI : MonoBehaviour, IDamageable, IAlertableEnemy, IStunnable, IEncounterEnemy, IThreatCost, IEliteScalable
     {
         [Header("Sağlık ve Ödül")]
         [SerializeField] private float maxHealth = 150f;
@@ -61,17 +61,11 @@ namespace RetroFPS
         [SerializeField] private float alertRadius = 10.0f; // Yakındaki müttefikleri uyarma mesafesi
 
         [Header("Saldırı Telgrafı & Parry Uyarısı")]
-        [Tooltip("Saldırı hazırlık süresi (saniye)")]
-        [SerializeField] private float windupDuration = 0.58f;
-        [Tooltip("Darbe inmeden önce parry flaşının ve sesinin tetikleneceği an (saniye)")]
-        [SerializeField] private float parryGlintTiming = 0.20f;
         [SerializeField] private Color glintColor = new Color(1.0f, 0.95f, 0.25f);
         [SerializeField] private AudioClip customGlintSound;
 
         [Header("Saldırı Parametreleri")]
-        [SerializeField] private float attackRange = 2.2f;
         [SerializeField] private float attackDamage = 20f;
-        [SerializeField] private float attackCooldown = 1.2f;
 
         [Header("Sersemleme (Stun)")]
         [Tooltip("Stun knockback hızı (m/s). knockbackDir yön olarak kabul edilir.")]
@@ -83,7 +77,16 @@ namespace RetroFPS
         [SerializeField] private Color hitFlashColor = new Color(2.2f, 2.2f, 2.2f, 1f);
         [SerializeField] private Color criticalHitFlashColor = new Color(3.2f, 2.8f, 0.35f, 1f);
 
-        private bool _glintTriggered = false;
+        [Header("Stalker Saldırı Döngüsü")]
+        [SerializeField] private GhoulAttackSettings attackSettings = new GhoulAttackSettings();
+        [SerializeField] private float sprintSpeedMultiplier = 1.35f;
+        [SerializeField] private float sprintDistance = 9f;
+        [SerializeField] private float flankRadius = 4.5f;
+        [SerializeField] private float flankSpeed = 4.2f;
+
+        private GhoulAttackLoop _attack;
+        private bool _hasAttackToken;
+        private float _orbitSign;
         private float _visualTilt = 0f;
         private float _targetVisualTilt = 0f;
         private static AudioClip _cachedGlintClip;
@@ -99,6 +102,12 @@ namespace RetroFPS
 
         private EnemyState _currentState = EnemyState.Idle;
         private float _currentHealth;
+        private bool _eliteBaseCached;
+        private bool _isElite;
+        private float _baseMaxHealth;
+        private float _baseAttackDamage;
+        private float _baseChaseSpeed;
+        private float _basePatrolSpeed;
         private Vector3 _spawnPosition;
         private Quaternion _spawnRotation;
         private Vector3 _initialScale;
@@ -109,8 +118,8 @@ namespace RetroFPS
         private float _loseSightTimer = 0f;
 
         private float _stateTimer = 0f;
-        private float _cooldownTimer = 0f;
         private float _flashTimer = 0f;
+        private Color _telegraphColor;
         private float _squashTimer = 0f;
 
         private Renderer[] _renderers;
@@ -137,6 +146,40 @@ namespace RetroFPS
         public Vector3 Position => transform.position;
         public bool IsDead => _currentState == EnemyState.Dead;
 
+        /// <summary>Bu doğuşta elit güçlendirmesi uygulanıp uygulanmadığı.</summary>
+        public bool IsElite => _isElite;
+
+        /// <summary>Temel değerleri saklayarak elit çarpanlarını doğuş başına bir kez uygular.</summary>
+        public void ApplyEliteScaling(float damageMultiplier, float speedMultiplier, float healthMultiplier)
+        {
+            if (_isElite) return;
+            if (!_eliteBaseCached)
+            {
+                _baseMaxHealth = maxHealth;
+                _baseAttackDamage = attackDamage;
+                _baseChaseSpeed = chaseSpeed;
+                _basePatrolSpeed = patrolSpeed;
+                _eliteBaseCached = true;
+            }
+
+            attackDamage = _baseAttackDamage * damageMultiplier;
+            chaseSpeed = _baseChaseSpeed * speedMultiplier;
+            patrolSpeed = _basePatrolSpeed * speedMultiplier;
+            maxHealth = _baseMaxHealth * healthMultiplier;
+            _currentHealth = maxHealth;
+            _isElite = true;
+        }
+
+        private void ResetEliteScaling()
+        {
+            if (!_eliteBaseCached) return;
+            attackDamage = _baseAttackDamage;
+            chaseSpeed = _baseChaseSpeed;
+            patrolSpeed = _basePatrolSpeed;
+            maxHealth = _baseMaxHealth;
+            _isElite = false;
+        }
+
         // IEncounterEnemy Uygulaması
         public event System.Action<IEncounterEnemy> OnEnemyDeath;
         public bool IsAlive => _currentState != EnemyState.Dead;
@@ -150,6 +193,8 @@ namespace RetroFPS
 
         private void OnDisable()
         {
+            _attack?.Cancel(0f);
+            ReleaseToken();
             EnemyAlertHub.Unregister(this);
         }
 
@@ -170,6 +215,11 @@ namespace RetroFPS
 
         private void Awake()
         {
+            _attack = new GhoulAttackLoop(attackSettings);
+            _attack.Glint += OnAttackGlint;
+            _attack.StrikeStarted += OnAttackStrikeStarted;
+            _attack.PhaseChanged += OnAttackPhaseChanged;
+            _orbitSign = Random.value < 0.5f ? -1f : 1f;
             _controller = GetComponent<CharacterController>();
             _spawnPosition = transform.position;
             _spawnRotation = transform.rotation;
@@ -295,6 +345,7 @@ namespace RetroFPS
                 return;
             }
 
+            _attack.TickCooldowns(Time.deltaTime);
             UpdateTimers();
             _visualTilt = Mathf.Lerp(_visualTilt, _targetVisualTilt, Time.deltaTime * 12f);
 
@@ -334,19 +385,24 @@ namespace RetroFPS
                 }
             }
             if (_playerTransform != null) ExecuteStateMachine();
-            else if (_currentState == EnemyState.Stagger) ExecuteStagger();
+            else
+            {
+                // Oyuncu saldırı ortasında yok olduysa döngüyü bırak; jeton sızmasın.
+                if (_attack.IsActive) _attack.Cancel(0f);
+                if (_currentState == EnemyState.Stagger) ExecuteStagger();
+            }
         }
 
         private void UpdateTimers()
         {
-            if (_cooldownTimer > 0f) _cooldownTimer -= Time.deltaTime;
-
             if (_flashTimer > 0f)
             {
                 _flashTimer -= Time.deltaTime;
-                if (_flashTimer <= 0f && _currentState != EnemyState.Windup)
+                if (_flashTimer <= 0f)
                 {
-                    ClearFlash();
+                    // Windup sırasında hit flash bitince telgraf rengini geri getir (parry uyarısı beyazda kalmasın).
+                    if (_currentState == EnemyState.Windup) SetColor(_telegraphColor);
+                    else ClearFlash();
                 }
             }
         }
@@ -370,11 +426,11 @@ namespace RetroFPS
                     break;
 
                 case EnemyState.Windup:
-                    ExecuteWindup();
+                    ExecuteAttackLoop();
                     break;
 
                 case EnemyState.Attack:
-                    ExecuteAttackState();
+                    ExecuteAttackLoop();
                     break;
 
                 case EnemyState.Stagger:
@@ -492,15 +548,35 @@ namespace RetroFPS
                 }
             }
 
-            // Saldırı mesafesine girdiğinde ve bekleme süresi dolmuşsa saldırı hazırlığı
-            if (distToPlayer <= attackRange && _cooldownTimer <= 0f)
+            GhoulAttackKind kind = _attack.ChooseAttack(distToPlayer, canSee);
+            bool tokenDenied = false;
+            if (kind != GhoulAttackKind.None)
             {
-                StartWindup();
+                if (AcquireToken())
+                {
+                    _attack.SetCooldownJitter(Random.Range(-1f, 1f));
+                    _attack.Begin(kind);
+                    AlertNearbyAllies();
+                    return;
+                }
+                tokenDenied = true;
+            }
+
+            if (canSee && distToPlayer < flankRadius + 1.5f && tokenDenied)
+            {
+                Vector3 radial = transform.position - _playerTransform.position;
+                radial.y = 0f;
+                float radius = radial.magnitude;
+                radial = radius > 0.001f ? radial / radius : -FlatForward();
+                Vector3 tangent = Vector3.Cross(Vector3.up, radial) * _orbitSign;
+                Vector3 direction = (tangent + radial * Mathf.Clamp((flankRadius - radius) / Mathf.Max(flankRadius, 0.01f), -1f, 1f)).normalized;
+                MoveTowards(transform.position + direction, flankSpeed);
             }
             else
             {
                 Vector3 target = canSee ? _playerTransform.position : _lastKnownPlayerPos;
-                MoveTowards(target, chaseSpeed);
+                float speed = canSee && distToPlayer > sprintDistance ? chaseSpeed * sprintSpeedMultiplier : chaseSpeed;
+                MoveTowards(target, speed);
             }
         }
 
@@ -530,53 +606,150 @@ namespace RetroFPS
             return _cachedGlintClip;
         }
 
-        private void ExecuteWindup()
+        private bool AcquireToken()
         {
-            if (_playerTransform != null)
-                LookAtPosition(_playerTransform.position);
+            if (_hasAttackToken) return true;
+            _hasAttackToken = EnemyAttackTokens.TryAcquire();
+            return _hasAttackToken;
+        }
 
-            _stateTimer -= Time.deltaTime;
+        private void ReleaseToken()
+        {
+            if (!_hasAttackToken) return;
+            _hasAttackToken = false;
+            EnemyAttackTokens.Release();
+        }
 
-            // Vurmadan 0.20s önce: KRİTİK PARRY UYARI PARILTISI (Sekiro / Ultrakill Tarzı)
-            if (_stateTimer <= parryGlintTiming && !_glintTriggered)
+        private void OnAttackGlint()
+        {
+            Vector3 eyePos = transform.position + Vector3.up * 1.70f + transform.forward * 0.35f;
+            if (CombatVFXManager.Instance != null)
+                CombatVFXManager.Instance.SpawnSignalBurst(eyePos, glintColor, 12);
+            AudioClip chime = customGlintSound != null ? customGlintSound : _cachedGlintClip;
+            if (chime != null && CombatAudio.Instance != null)
+                CombatAudio.Instance.PlayClipAt(chime, eyePos);
+            _telegraphColor = glintColor;
+            SetColor(glintColor);
+        }
+
+        private void OnAttackStrikeStarted()
+        {
+            ClearFlash();
+        }
+
+        private void OnAttackPhaseChanged(GhoulAttackPhase phase)
+        {
+            switch (phase)
             {
-                _glintTriggered = true;
-                Vector3 eyePos = transform.position + Vector3.up * 1.70f + transform.forward * 0.35f;
-
-                // 1. Gözlerde altın sarısı parry yıldızı flaşı
-                if (CombatVFXManager.Instance != null)
-                    CombatVFXManager.Instance.SpawnSignalBurst(eyePos, glintColor, 12);
-
-                // 2. Kristal kılıç çınlaması sesi (SHING!)
-                AudioClip chime = customGlintSound != null ? customGlintSound : _cachedGlintClip;
-                if (chime != null)
-                {
-                    if (CombatAudio.Instance != null) CombatAudio.Instance.PlayClipAt(chime, eyePos);
-                }
-
-                // 3. Gövde uyarısı: Parlak beyaz-sarı flaş
-                SetColor(glintColor);
-
-            }
-
-            if (_stateTimer <= 0f)
-            {
-                ExecuteAttack();
+                case GhoulAttackPhase.ClawWindup:
+                case GhoulAttackPhase.LungeWindup:
+                    _currentState = EnemyState.Windup;
+                    _velocity.x = 0f;
+                    _velocity.z = 0f;
+                    _telegraphColor = windupGlowColor;
+                    SetColor(windupGlowColor);
+                    break;
+                case GhoulAttackPhase.None:
+                    ReleaseToken();
+                    _currentState = EnemyState.Chase;
+                    _targetVisualTilt = 0f;
+                    break;
+                default:
+                    _currentState = EnemyState.Attack;
+                    break;
             }
         }
 
-        private void ExecuteAttackState()
+        private Vector3 FlatForward()
         {
-            _stateTimer -= Time.deltaTime;
-            if (_stateTimer <= 0f)
+            Vector3 forward = transform.forward;
+            forward.y = 0f;
+            return forward.sqrMagnitude > 0.001f ? forward.normalized : Vector3.forward;
+        }
+
+        private void MoveAttackForward(float speed)
+        {
+            Vector3 forward = FlatForward();
+            transform.rotation = Quaternion.LookRotation(forward) * Quaternion.Euler(_visualTilt, 0f, 0f);
+            Vector3 move = forward * speed;
+            _velocity.x = move.x;
+            _velocity.z = move.z;
+            _controller.Move(_velocity * Time.deltaTime);
+        }
+
+        private void ExecuteAttackLoop()
+        {
+            _attack.Tick(Time.deltaTime);
+            if (!_attack.IsActive || !isActiveAndEnabled || !_controller.enabled) return;
+
+            switch (_attack.Phase)
             {
-                _targetVisualTilt = 0f;
-                _currentState = EnemyState.Chase;
+                case GhoulAttackPhase.ClawWindup:
+                    _targetVisualTilt = -16f;
+                    LookAtPosition(_playerTransform.position);
+                    MoveAttackForward(attackSettings.ClawWindupCreepSpeed);
+                    break;
+                case GhoulAttackPhase.ClawStrike:
+                    _targetVisualTilt = 22f;
+                    Vector3 toPlayer = _playerTransform.position - transform.position;
+                    toPlayer.y = 0f;
+                    MoveAttackForward(toPlayer.sqrMagnitude > 1.1f * 1.1f ? attackSettings.ClawStrikeStepSpeed : 0f);
+                    TryAttackHit(attackSettings.ClawHitRange, attackSettings.ClawHitHalfAngle);
+                    break;
+                case GhoulAttackPhase.ClawRecover:
+                    _targetVisualTilt = 10f;
+                    LookAtPosition(_playerTransform.position, 0.25f);
+                    MoveAttackForward(0f);
+                    break;
+                case GhoulAttackPhase.LungeWindup:
+                    _targetVisualTilt = -24f;
+                    LookAtPosition(_playerTransform.position);
+                    MoveAttackForward(0f);
+                    break;
+                case GhoulAttackPhase.Lunging:
+                    _targetVisualTilt = 28f;
+                    Vector3 targetDirection = _playerTransform.position - transform.position;
+                    targetDirection.y = 0f;
+                    Vector3 forward = FlatForward();
+                    if (targetDirection.sqrMagnitude > 0.001f)
+                        forward = Vector3.RotateTowards(forward, targetDirection.normalized,
+                            attackSettings.LungeTurnRate * Mathf.Deg2Rad * Time.deltaTime, 0f);
+                    transform.rotation = Quaternion.LookRotation(forward) * Quaternion.Euler(_visualTilt, 0f, 0f);
+                    MoveAttackForward(attackSettings.LungeSpeed);
+                    // Önce isabet testi: oyuncunun kapsülüne çarpmak da Sides bayrağını kaldırır, bu bir ıska sayılmamalı.
+                    TryAttackHit(attackSettings.LungeHitRange, attackSettings.LungeHitHalfAngle);
+                    if (!_attack.IsActive || !isActiveAndEnabled || !_controller.enabled) return;
+                    if (_attack.Phase == GhoulAttackPhase.Lunging && (_controller.collisionFlags & CollisionFlags.Sides) != 0)
+                        _attack.ReportLungeBlocked();
+                    break;
+                case GhoulAttackPhase.LungeRecover:
+                    _targetVisualTilt = -10f;
+                    LookAtPosition(_playerTransform.position, 0.2f);
+                    MoveAttackForward(0f);
+                    break;
             }
+        }
+
+        private void TryAttackHit(float range, float halfAngle)
+        {
+            if (!_attack.HitWindowOpen || _playerHealth == null) return;
+            Vector3 toPlayer = _playerTransform.position - transform.position;
+            toPlayer.y = 0f;
+            if (toPlayer.sqrMagnitude > range * range || Vector3.Angle(FlatForward(), toPlayer) > halfAngle) return;
+
+            Vector3 hitPoint = _playerTransform.position + Vector3.up;
+            _playerHealth.TakeDamage(attackDamage * _attack.CurrentDamageScale, hitPoint,
+                (transform.position - _playerTransform.position).normalized, gameObject);
+            if (!isActiveAndEnabled || !_controller.enabled) return;
+            // Parry can synchronously cancel this attack from inside TakeDamage.
+            if (!_attack.IsActive || _currentState == EnemyState.Stagger || IsDead) return;
+            _attack.ReportHit();
         }
 
         private void ExecuteStagger()
         {
+            // Sersemleme/tökezleme eğimini uygula (aksi halde saldırının ileri eğimi stun boyunca donuk kalır).
+            transform.rotation = Quaternion.LookRotation(FlatForward()) * Quaternion.Euler(_visualTilt, 0f, 0f);
             _controller.Move(_velocity * Time.deltaTime);
             float decay = Mathf.Exp(-8f * Time.deltaTime);
             _velocity.x *= decay;
@@ -608,7 +781,7 @@ namespace RetroFPS
             _controller.Move(_velocity * Time.deltaTime);
         }
 
-        private void LookAtPosition(Vector3 targetPos)
+        private void LookAtPosition(Vector3 targetPos, float speedScale = 1f)
         {
             targetPos.y = transform.position.y;
             Vector3 dir = (targetPos - transform.position).normalized;
@@ -616,7 +789,7 @@ namespace RetroFPS
             if (dir.sqrMagnitude > 0.001f)
             {
                 Quaternion targetRot = Quaternion.LookRotation(dir) * Quaternion.Euler(_visualTilt, 0f, 0f);
-                transform.rotation = Quaternion.Slerp(transform.rotation, targetRot, Time.deltaTime * rotationSpeed);
+                transform.rotation = Quaternion.Slerp(transform.rotation, targetRot, Time.deltaTime * rotationSpeed * speedScale);
             }
         }
 
@@ -681,43 +854,6 @@ namespace RetroFPS
             }
         }
 
-        private void StartWindup()
-        {
-            _currentState = EnemyState.Windup;
-            _stateTimer = windupDuration;
-            _velocity = Vector3.zero;
-            _glintTriggered = false;
-            _targetVisualTilt = -16f; // Vuruşa hazırlanırken geriye çekilme (Pullback)
-
-            SetColor(windupGlowColor);
-        }
-
-        private void ExecuteAttack()
-        {
-            _currentState = EnemyState.Attack;
-            _stateTimer = 0.25f;
-            _cooldownTimer = attackCooldown;
-            _targetVisualTilt = 22f; // Sert ileri hamle / vuruş duruşu
-            _glintTriggered = false;
-            ClearFlash();
-
-            AlertNearbyAllies();
-
-            float dist = Vector3.Distance(transform.position, _playerTransform.position);
-            if (dist <= attackRange + 0.6f && _playerHealth != null)
-            {
-                Vector3 hitPoint = _playerTransform.position + Vector3.up * 1.0f;
-                _playerHealth.TakeDamage(attackDamage, hitPoint, (transform.position - _playerTransform.position).normalized, gameObject);
-
-                // Bu vuruş oyuncuyu öldürdüyse ölüm akışı (RunDirector → Araf) karşılaşmayı aynı karede sıfırlayıp
-                // bu düşmanı havuza geri göndermiş olabilir; devre dışı controller'ı hareket ettirmeye çalışma.
-                if (!isActiveAndEnabled || !_controller.enabled) return;
-            }
-
-            Vector3 lunge = transform.forward * 3.5f;
-            _controller.Move(lunge * Time.deltaTime);
-        }
-
         public void TakeDamage(float amount, Vector3 hitPoint, Vector3 hitNormal, bool isCritical = false)
         {
             if (_currentState == EnemyState.Dead) return;
@@ -729,11 +865,17 @@ namespace RetroFPS
 
             // Hasar alındığında oyuncuya kilitlen ve yakındaki müttefikleri savaşa çağır!
             bool wasStaggered = _currentState == EnemyState.Stagger;
-            if (!wasStaggered) StartChase(true);
-
-            // Ağır hasar veya kafa vuruşu tökezletme (Stagger) tetikler
-            if (isCritical || amount >= 40f)
+            if (_attack.IsActive)
             {
+                if (_playerTransform != null) _lastKnownPlayerPos = _playerTransform.position;
+            }
+            else if (!wasStaggered) StartChase(true);
+
+            // Poise eşiği ve kararlı saldırı evreleri tökezlemeyi belirler.
+            if (_attack.RegisterDamageForPoise(amount, isCritical, Time.time))
+            {
+                _attack.Cancel(Random.Range(-1f, 1f));
+                ReleaseToken();
                 _currentState = EnemyState.Stagger;
                 _stateTimer = wasStaggered ? Mathf.Max(_stateTimer, 0.35f) : 0.35f;
                 Vector3 impulse = -hitNormal;
@@ -762,11 +904,13 @@ namespace RetroFPS
 
         public void Stun(float duration, Vector3 knockbackDir)
         {
+            _attack.Cancel(Random.Range(-1f, 1f));
+            ReleaseToken();
             if (_currentState == EnemyState.Dead) return;
 
             _currentState = EnemyState.Stagger;
             _stateTimer = duration;
-            _cooldownTimer = duration + 0.5f;
+            _flashTimer = 0f; // Bekleyen hit flash süresi sersemleme rengini silmesin.
             // knockbackDir bir yöndür (çağıranlar normalize gönderir); güç stunKnockbackSpeed'den gelir.
             _velocity = knockbackDir.sqrMagnitude > 0.0001f
                 ? knockbackDir.normalized * stunKnockbackSpeed
@@ -789,6 +933,8 @@ namespace RetroFPS
         private void Die(Vector3 hitPoint, Vector3 hitNormal, float killingDamage, bool isCritical)
         {
             if (!IsAlive) return;
+            _attack.Cancel(0f);
+            ReleaseToken();
             _currentState = EnemyState.Dead;
             _stateTimer = respawnTime;
             _squashTimer = 0f;
@@ -911,6 +1057,11 @@ namespace RetroFPS
 
         private void Respawn()
         {
+            _attack.Cancel(0f);
+            ReleaseToken();
+            _attack.ResetAll();
+            _orbitSign = Random.value < 0.5f ? -1f : 1f;
+            ResetEliteScaling();
             if (_controller != null) _controller.enabled = false;
             transform.position = _spawnPosition;
             transform.rotation = _spawnRotation;
@@ -951,6 +1102,9 @@ namespace RetroFPS
             _spawnPosition = spawnPosition;
             _spawnRotation = spawnRotation;
 
+            _patrolTarget = spawnPosition;
+            _lastKnownPlayerPos = spawnPosition;
+
             if (_controller != null) _controller.enabled = false;
             transform.position = spawnPosition;
             transform.rotation = spawnRotation;
@@ -971,6 +1125,8 @@ namespace RetroFPS
         /// </summary>
         public void OnDespawnToDirector()
         {
+            _attack?.Cancel(0f); // Hiç aktive edilmemiş havuz örneğinde Awake çalışmamış olabilir.
+            ReleaseToken();
             autoRespawn = false;
             _currentState = EnemyState.Dead;
             gameObject.SetActive(false);

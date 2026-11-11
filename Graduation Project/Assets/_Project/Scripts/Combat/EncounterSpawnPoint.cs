@@ -46,6 +46,20 @@ namespace RetroFPS.Combat
         public bool IsOnCooldown => (Time.time - _lastSpawnTimestamp) < cooldownDuration;
 
         /// <summary>
+        /// Son doğuştan bu yana <paramref name="window"/> saniye geçmediyse nokta rezervedir: telgrafı süren düşman
+        /// henüz fiziksel olarak orada olmadığı için alan "boş" görünür; aynı noktaya ikinci düşman konursa
+        /// iki CharacterController üst üste doğar ve birbirini duvarın içinden dışarı itebilir.
+        /// Cooldown gevşetilse bile rezervasyon gevşetilmez.
+        /// </summary>
+        public bool IsReserved(float window) => (Time.time - _lastSpawnTimestamp) < window;
+
+        /// <summary>
+        /// Noktanın yalnızca statik dünyaya (duvar, siper, zemin) göre boş olup olmadığı; düşman/oyuncu/pickup yok sayılır.
+        /// false ise nokta geometrinin içinde kalmıştır ve oraya asla doğurulmamalıdır.
+        /// </summary>
+        public bool IsClearOfStaticGeometry(LayerMask obstacleMask) => IsPhysicallyClear(obstacleMask & GameLayers.GroundMask);
+
+        /// <summary>
         /// Doğuş noktasını kod veya editör araçları üzerinden yapılandırır.
         /// </summary>
         public void Configure(bool allowGround, bool allowAir, string tag = "", float cooldown = 2.5f)

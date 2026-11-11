@@ -84,14 +84,24 @@ namespace RetroFPS.Editor
             _showWaves = EditorGUILayout.BeginFoldoutHeaderGroup(_showWaves, "Dalga Özeti");
             if (_showWaves)
             {
-                EncounterInspectorUtil.DrawWaveSummary(director.EffectiveWaves);
+                WaveDefinition[] previewWaves = director.EffectiveWaves;
+                if ((previewWaves == null || previewWaves.Length == 0) && director.WaveSetPoolAsset != null && director.WaveSetPoolAsset.ValidCount > 0)
+                {
+                    WaveSet first = director.WaveSetPoolAsset.GetWaveSet(0);
+                    if (first != null) previewWaves = first.Waves;
+                }
+                EncounterInspectorUtil.DrawWaveSummary(previewWaves);
             }
             EditorGUILayout.EndFoldoutHeaderGroup();
         }
 
         private static void DrawRoomSummary(WaveSpawnDirector director)
         {
-            string source = director.WaveSetAsset != null ? $"WaveSet: {director.WaveSetAsset.name}" : "Satır-içi dalga listesi";
+            string source = director.WaveSetPoolAsset != null
+                ? (director.WaveSetAsset != null
+                    ? $"WaveSetPool: {director.WaveSetPoolAsset.name} → {director.WaveSetAsset.name}"
+                    : $"WaveSetPool: {director.WaveSetPoolAsset.name} ({director.WaveSetPoolAsset.ValidCount} set)")
+                : (director.WaveSetAsset != null ? $"WaveSet: {director.WaveSetAsset.name}" : "Satır-içi dalga listesi");
             EditorGUILayout.LabelField("Oda", director.RoomName);
             EditorGUILayout.LabelField("Dalga Kaynağı", source);
 

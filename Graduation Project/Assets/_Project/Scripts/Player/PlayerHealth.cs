@@ -10,13 +10,16 @@ namespace RetroFPS
     /// - Can 0'a indiğinde karakter ölür, kontroller ve silahlar kapanır, imleç serbest kalır.
     /// - Dash I-Frame (Hasar Almama Penceresi) ile entegre çalışır.
     /// - Darbe anında kamera sarsıntısı ve hasar geribildirimi tetikler.
-    /// - Çatışmadan çıkınca yavaşça can yeniler.
+    /// - Otomatik can yenilenmesi varsayılan olarak kapalıdır (enableAutoHeal); can yalnızca savaşarak kazanılır.
     /// </summary>
     [RequireComponent(typeof(PlayerMovement))]
     public class PlayerHealth : MonoBehaviour, IDamageable
     {
         [Header("Can Ayarları")]
         [SerializeField] private float maxHealth = 100f;
+
+        [Tooltip("Çatışma dışı otomatik can yenilenmesi. Kaynak ekonomisi gereği KAPALI: can yalnızca savaşarak (küre/infaz) kazanılır.")]
+        [SerializeField] private bool enableAutoHeal = false;
         [SerializeField] private float autoHealDelay = 4.5f;
         [SerializeField] private float autoHealRate = 12f;
 
@@ -252,8 +255,8 @@ namespace RetroFPS
             {
                 _currentHealth = Mathf.MoveTowards(_currentHealth, maxHealth, 3.5f * Time.deltaTime);
             }
-            // Çatışma dışı can yenilenmesi
-            else
+            // Çatışma dışı can yenilenmesi (varsayılan kapalı; bkz. enableAutoHeal)
+            else if (enableAutoHeal)
             {
                 _timeSinceLastDamage += Time.deltaTime;
                 if (_timeSinceLastDamage >= autoHealDelay && _currentHealth < maxHealth)

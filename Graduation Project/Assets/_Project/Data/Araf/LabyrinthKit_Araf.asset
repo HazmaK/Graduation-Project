@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6bbb038fda7e5ba479506b250dc6f3d5, type: 3}
+  m_Name: LabyrinthKit_Araf
+  m_EditorClassIdentifier: RetroFPS.Gameplay::RetroFPS.Run.Labyrinth.LabyrinthKit
+  wallSegment: {fileID: 927802857421448284, guid: bfeacdb066e2fbe49bfe89b130255793, type: 3}
+  floorTile: {fileID: 2501951089885822900, guid: 705c0c1c4c3628a4591b0bd9a32460c9, type: 3}
+  ceilingTile: {fileID: 4189307731756245674, guid: 1e677db60ffc5f34e9d49cbc269e5a18, type: 3}
+  pillar: {fileID: 6846618990350565217, guid: 90c531be55eb02445ae7fc9d49b4b063, type: 3}
+  veil: {fileID: 1604820090295088786, guid: a2d219e7bd6e3c6459dffc24f4f0542d, type: 3}
+  doorBarrier: {fileID: 5702752689819896866, guid: a4c0f7d0a5a6afb46bd6ebfe4c925fe0, type: 3}
+  torch: {fileID: 3615505866909191146, guid: 395bca02e09fab1428d59a7c2df06f30, type: 3}
+  wallHeight: 5
+  wallThickness: 0.6
+  torchEveryNCells: 4

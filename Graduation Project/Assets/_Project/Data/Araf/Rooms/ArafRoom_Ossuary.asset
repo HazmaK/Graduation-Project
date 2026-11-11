@@ -1,0 +1,21 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f8e59e523e67a974f82aedcfd5cadabd, type: 3}
+  m_Name: ArafRoom_Ossuary
+  m_EditorClassIdentifier: RetroFPS.Gameplay::RetroFPS.Run.Labyrinth.ArafRoomDefinition
+  displayName: Ossuary
+  kind: 3
+  prefab: {fileID: 2545167537313591342, guid: 22498c5a8f27fb04ca2241b9970f6d15, type: 3}
+  weight: 1.5
+  minDepth: 0
+  maxPerRun: 99
+  sealDoorsUntilCleared: 0

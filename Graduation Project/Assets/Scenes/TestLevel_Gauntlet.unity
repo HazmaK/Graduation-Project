@@ -29120,6 +29120,7 @@ MonoBehaviour:
   autoStartOnPlay: 0
   encounterArea: {fileID: 1014794329}
   warmupDuration: 1.5
+  waveSetPool: {fileID: 11400000, guid: d21b72a3c7a573c4dbcca908005e6671, type: 2}
   waveSet: {fileID: 11400000, guid: 18e5997ca2ca13840b1f72e6bd2032f6, type: 2}
   waves: []
   waveCooldownDuration: 2
@@ -45804,6 +45805,7 @@ MonoBehaviour:
   autoStartOnPlay: 0
   encounterArea: {fileID: 1586968793}
   warmupDuration: 1.5
+  waveSetPool: {fileID: 11400000, guid: d21b72a3c7a573c4dbcca908005e6671, type: 2}
   waveSet: {fileID: 11400000, guid: dadff8ed0b63b834f98b0274591953e5, type: 2}
   waves: []
   waveCooldownDuration: 2
@@ -52497,6 +52499,7 @@ MonoBehaviour:
   autoStartOnPlay: 0
   encounterArea: {fileID: 1864906585}
   warmupDuration: 1.5
+  waveSetPool: {fileID: 11400000, guid: d21b72a3c7a573c4dbcca908005e6671, type: 2}
   waveSet: {fileID: 11400000, guid: 972e8fb5a258f1a42b8123b77d6abe54, type: 2}
   waves: []
   waveCooldownDuration: 2

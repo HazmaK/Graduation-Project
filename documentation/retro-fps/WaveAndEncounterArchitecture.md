@@ -195,6 +195,29 @@ Eski kodda her bileşen eksik referansı **sahne genelinde** arıyordu (`FindAny
 
 ---
 
+## 8. "HERKES ÖLDÜ AMA DALGA BİTMİYOR" HATASI (2026-11-11)
+
+**Belirti:** Ara sıra son dalgada tüm görünen düşmanlar ölmesine rağmen dalga/karşılaşma bitmiyor, kapılar açılmıyordu.
+
+**Kök neden (Play Mode'da yeniden üretildi):** Oda 1'de 7 Ghoul canlı ama dünyanın binlerce metre altına düşmüştü (y ≈ -2000…-5500), hepsi duvarların DIŞINDA ve köşe doğuş noktalarının (duvara 2–3 m) yakınındaydı. Zincir:
+1. Bir parti (batch) aynı karede birden fazla nokta istiyor; normal kademelerde uygun nokta kalmayınca Tier 3 cooldown'u gevşetiyor ve **aynı noktayı tekrar** seçiyordu.
+2. Telgraf süresince düşman henüz orada olmadığı için `IsPhysicallyClear` noktayı "boş" görüyordu.
+3. İki CharacterController aynı noktada üst üste doğunca depenetrasyon birini 0.6 m'lik duvarın içinden dışarı fırlatıyor, zeminsiz boşlukta sonsuza düşüyordu. Düşman canlı kaldığı için `_activeEnemies` hiç boşalmıyordu.
+4. Ek: acil seçim (`FindAnyCompatiblePoint`) engel kontrolünü tamamen atlıyordu → siper içine gömülü noktalar (`Ground_03/04`) seçilebiliyordu.
+
+**Düzeltme:**
+- `EncounterSpawnPoint.IsReserved(window)`: son doğuştan `summonTelegraphDuration + spawnReservationPadding` (0.75 s) geçmeden nokta HİÇBİR kademede tekrar seçilmez. Parti, nokta yetmezse sonraki karelere bölünür.
+- Acil seçim de rezervasyonu ve **statik geometriyi** (`IsClearOfStaticGeometry` = engel maskesi ∩ `GameLayers.GroundMask`) asla gevşetmez. Grup yalnızca geometri dışında hiç uyumlu nokta yoksa düşürülür.
+- **Güvenlik ağı** (`UpdateLostEnemyRescue`, 0.5 s'de bir, tahsissiz): oda zemininin `fallRescueDepth` (8 m) altına düşen, `outOfRoomRescueDelay` (6 s) boyunca oda sınırı + `outOfRoomMargin` (3 m) dışında kalan, dışarıdan kapatılan veya yok edilen düşman havuza alınıp aynı prefabla yeniden kuyruğa girer (öldürülmüş SAYILMAZ). Ölü olup ölümü bildirilmemiş kayıt öldürülmüş sayılır. Sayaç: `RescuedEnemyCount`; her kurtarma konsola nedeniyle birlikte uyarı yazar.
+- Aktif düşman kaydına prefab / hava-zemin / oda-dışı süresi eklendi (`_activeEnemyPrefab`, `_activeEnemyIsAir`, `_activeEnemyOutsideTime`; tek noktadan `RemoveActiveAt`). Telgraf yükü `PayloadIsAir` taşır.
+- Validator: geometri içinde kalan doğuş noktaları artık **hata** olarak raporlanır.
+
+**Doğrulama:** Yalnızca görüş hattındaki düşmanları öldüren oyuncu taklidi; düzeltme öncesi Oda 1 + Ossuary seti takıldı. Düzeltme sonrası 2 tur × 3 oda (rastgele setler, aynı kombinasyon dahil) hepsi temizlendi, güvenlik ağı hiç devreye girmedi (`rescued=0`).
+
+**Gauntlet'te kalan iş:** Validator şu noktaları geometri içinde buluyor: Oda 1 `Ground_03`, `Ground_04` (siper içinde), `Air_11`; Oda 2 `Air_12`, `Air_13` (tavana yakın). Bu noktalar hiç kullanılmıyor, açık alana taşınmalı.
+
+---
+
 ## İlişkiler (Sinaptik Ağ Bağlantıları)
 - [[CodebaseDependencyGraph]] ➔ `orchestrates_combat_flow`
 - [[CombatAndDamageInterfaces]] ➔ `consumes_IEncounterEnemy`

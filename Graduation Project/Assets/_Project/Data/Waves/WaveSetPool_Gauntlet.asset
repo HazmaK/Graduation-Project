@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 64d4edc0cd3de234881ed64fc46b5745, type: 3}
+  m_Name: WaveSetPool_Gauntlet
+  m_EditorClassIdentifier: RetroFPS.Gameplay::RetroFPS.Combat.WaveSetPool
+  designerNotes: "Gauntlet'in 3 odas\xC4\xB1 her run'da bu 3 seti seed'e g\xC3\xB6re
+    kar\xC4\xB1\xC5\u0178t\xC4\xB1rarak \xC3\xA7eker (tekrar yok)."
+  avoidRepeatsInRun: 1
+  entries:
+  - waveSet: {fileID: 11400000, guid: 972e8fb5a258f1a42b8123b77d6abe54, type: 2}
+    weight: 1
+  - waveSet: {fileID: 11400000, guid: 18e5997ca2ca13840b1f72e6bd2032f6, type: 2}
+    weight: 1
+  - waveSet: {fileID: 11400000, guid: dadff8ed0b63b834f98b0274591953e5, type: 2}
+    weight: 1

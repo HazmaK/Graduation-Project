@@ -19,6 +19,7 @@ namespace RetroFPS.Run
     public sealed class RunState
     {
         private readonly int _seed;
+        private readonly RunRandom[] _streams = new RunRandom[7];
         private int _floorIndex;
         private bool _arafChargeUsed;
         private RunPhase _phase;
@@ -66,6 +67,13 @@ namespace RetroFPS.Run
         public void ConsumeArafCharge()
         {
             _arafChargeUsed = true;
+        }
+
+        /// <summary>Akışın koşu tohumundan türetilen, önbelleğe alınmış üretecini döndürür.</summary>
+        public RunRandom GetStream(RunStream stream)
+        {
+            int index = (int)stream;
+            return _streams[index] ?? (_streams[index] = RunRandom.Derive(Seed, stream));
         }
 
         /// <summary>

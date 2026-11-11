@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9f631cb2e5abc0347bbfd925c98e86ea, type: 3}
+  m_Name: ArafRoomTable_Default
+  m_EditorClassIdentifier: RetroFPS.Gameplay::RetroFPS.Run.Labyrinth.ArafRoomTable
+  rooms:
+  - {fileID: 11400000, guid: 2255214f1e0702f40970dd71fc50232d, type: 2}
+  - {fileID: 11400000, guid: 2e3b9e630ffe269448720c75b4a4cb39, type: 2}
+  - {fileID: 11400000, guid: 57387714a116d744685c3f356cf32d27, type: 2}
+  - {fileID: 11400000, guid: eba4396088a674b4b962ea9b666412a6, type: 2}
+  - {fileID: 11400000, guid: 6fd1c33c96d4d284aa8331cda53dde24, type: 2}
+  exitRoom: {fileID: 11400000, guid: e130428e71170d2479a207bf459b9b3f, type: 2}
+  exitBaseChance: 0.1
+  exitChancePerReveal: 0.15
+  exitMinDepth: 3

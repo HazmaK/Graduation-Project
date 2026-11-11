@@ -81,16 +81,19 @@ namespace RetroFPS.Combat
         public int PayloadWaveIndex => _payloadWaveIndex;
         public int PayloadGeneration => _payloadGeneration;
         public float PayloadThreat => _payloadThreat;
+        public bool PayloadIsAir => _payloadIsAir;
+        private bool _payloadIsAir;
 
         /// <summary>
-        /// Telgraf tamamlandığında doğurulacak düşman bağlamını (prefab, dalga, nesil, tehdit) telgrafa iliştirir.
+        /// Telgraf tamamlandığında doğurulacak düşman bağlamını (prefab, dalga, nesil, tehdit, hava/zemin) telgrafa iliştirir.
         /// </summary>
-        public void SetPayload(GameObject prefab, int waveIndex, int generation, float threat = 1f)
+        public void SetPayload(GameObject prefab, int waveIndex, int generation, float threat = 1f, bool isAir = false)
         {
             _payloadPrefab = prefab;
             _payloadWaveIndex = waveIndex;
             _payloadGeneration = generation;
             _payloadThreat = threat;
+            _payloadIsAir = isAir;
         }
 
         /// <summary>

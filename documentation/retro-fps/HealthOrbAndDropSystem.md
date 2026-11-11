@@ -97,6 +97,9 @@ Eski sistemde (çift zar ve sahte melee ile) pompalı öldürmesi başına ≈ 2
 - İnfaz: 6 fişek = 3 pompalı öldürmesi, 20 ok = ~3 Ghoul. Döngüyü bu besler.
 - Hedef: Yalnızca silahla oynayan oyuncu başlangıç cephanesiyle (60 ok / 16 fişek) yaklaşık 20-25 öldürmede kurur. Her 3-4 öldürmede bir infaz yapan oyuncu ise cephanesini sürdürebilir.
 
+> [!note] Otomatik can yenilenmesi kapalı
+> `PlayerHealth.enableAutoHeal = false`. Saklanıp beklemek can kazandırmaz. Yukarıdaki can/öldürme hesapları oyuncunun **tek** can kaynağını tanımlar.
+
 ### 2.4 Ayar Kolları (öncelik sırası)
 1. Oyun çok sert gelirse önce `meleeKillBonusChance` ile `meleeKill*` miktarlarını artır. Silah düşüşlerine dokunma, yoksa kıtlık kaybolur.
 2. Yeni oyuncu için ayar gerekiyorsa `lowHealthBonusChance` tek kaldıraçtır.

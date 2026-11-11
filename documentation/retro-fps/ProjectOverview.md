@@ -27,6 +27,7 @@ tags:
 - **Kod ve Bağımlılık Haritası:** [[CodebaseDependencyGraph]]
 - **Ekip ve Git Protokolü:** [[CollaborationAndGitWorkflow]]
 - **Temel Döngü ve Araf Mekaniği:** [[CoreLoopAndPurgatory]]
+- **Araf Labirenti ve Oda Zarları:** [[ArafLabyrinthSystem]]
 - **Oyuncu Hareket Fiziği:** [[PlayerMovementArchitecture]]
 - **Oyuncu Alt Sistemleri:** [[PlayerSubsystemArchitecture]]
 - **Silah Dövüş Dinamikleri:** [[DualLoadoutAndWeapons]]
@@ -36,6 +37,7 @@ tags:
 - **Dövüş ve Hasar Arayüzleri:** [[CombatAndDamageInterfaces]]
 - **Can Küresi ve Düşüş Sistemi:** [[HealthOrbAndDropSystem]]
 - **Karşılaşma ve Dalga Direktörü:** [[WaveAndEncounterArchitecture]]
+- **Seed'li Rastgelelik ve Dalga Havuzları:** [[RunRandomness]]
 - **Görsel Efekt ve Parçalanma:** [[CombatVFXAndDecalSystem]]
 - **Vuruş Tokluğu ve Ses:** [[HitstopAndAudioFeedback]]
 - **Oyun Hissi (Kamera, Spring, Kill Confirm):** [[GameFeelArchitecture]]
@@ -46,6 +48,8 @@ tags:
 - [[CodebaseDependencyGraph]] ➔ `mapped_by`
 - [[CollaborationAndGitWorkflow]] ➔ `defines_collaboration`
 - [[CoreLoopAndPurgatory]] ➔ `features_mechanic`
+- [[ArafLabyrinthSystem]] ➔ `features_mechanic`
+- [[RunRandomness]] ➔ `features_system`
 - [[PlayerMovementArchitecture]] ➔ `utilizes_movement`
 - [[PlayerSubsystemArchitecture]] ➔ `utilizes_player`
 - [[DualLoadoutAndWeapons]] ➔ `utilizes_combat`

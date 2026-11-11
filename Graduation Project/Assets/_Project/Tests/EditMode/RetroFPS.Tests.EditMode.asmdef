@@ -1,0 +1,14 @@
+{
+    "name": "RetroFPS.Tests.EditMode",
+    "references": [
+        "RetroFPS.Core",
+        "RetroFPS.Gameplay",
+        "UnityEngine.TestRunner",
+        "UnityEditor.TestRunner"
+    ],
+    "includePlatforms": ["Editor"],
+    "overrideReferences": true,
+    "precompiledReferences": ["nunit.framework.dll"],
+    "autoReferenced": false,
+    "defineConstraints": ["UNITY_INCLUDE_TESTS"]
+}

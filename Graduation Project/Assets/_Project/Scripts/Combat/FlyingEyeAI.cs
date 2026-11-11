@@ -22,7 +22,7 @@ namespace RetroFPS
     /// - Gözbebeği Kritik Vuruş Noktasıdır (2x Headshot / Crit).
     /// </summary>
     [RequireComponent(typeof(CharacterController))]
-    public class FlyingEyeAI : MonoBehaviour, IDamageable, IAlertableEnemy, IStunnable, IEncounterEnemy, IThreatCost
+    public class FlyingEyeAI : MonoBehaviour, IDamageable, IAlertableEnemy, IStunnable, IEncounterEnemy, IThreatCost, IEliteScalable
     {
         [Header("Sağlık ve Ödül")]
         [SerializeField] private float maxHealth = 90f; // Havada olduğu için biraz daha kırılgan
@@ -87,6 +87,11 @@ namespace RetroFPS
 
         private FlyingEyeState _currentState = FlyingEyeState.Idle;
         private float _currentHealth;
+        private bool _eliteBaseCached;
+        private bool _isElite;
+        private float _baseMaxHealth;
+        private float _baseProjectileDamage;
+        private float _baseFlySpeed;
         private Vector3 _spawnPosition;
         private float _lastGroundY; // Son bilinen zemin yüksekliği (uçuş sınırları buna GÖRELİ uygulanır)
         private Quaternion _spawnRotation;
@@ -125,6 +130,37 @@ namespace RetroFPS
         public float MaxHealth => maxHealth;
         public Vector3 Position => transform.position;
         public bool IsDead => _currentState == FlyingEyeState.Dead;
+
+        /// <summary>Bu doğuşta elit güçlendirmesi uygulanıp uygulanmadığı.</summary>
+        public bool IsElite => _isElite;
+
+        /// <summary>Temel değerleri saklayarak elit çarpanlarını doğuş başına bir kez uygular.</summary>
+        public void ApplyEliteScaling(float damageMultiplier, float speedMultiplier, float healthMultiplier)
+        {
+            if (_isElite) return;
+            if (!_eliteBaseCached)
+            {
+                _baseMaxHealth = maxHealth;
+                _baseProjectileDamage = projectileDamage;
+                _baseFlySpeed = flySpeed;
+                _eliteBaseCached = true;
+            }
+
+            projectileDamage = _baseProjectileDamage * damageMultiplier;
+            flySpeed = _baseFlySpeed * speedMultiplier;
+            maxHealth = _baseMaxHealth * healthMultiplier;
+            _currentHealth = maxHealth;
+            _isElite = true;
+        }
+
+        private void ResetEliteScaling()
+        {
+            if (!_eliteBaseCached) return;
+            projectileDamage = _baseProjectileDamage;
+            flySpeed = _baseFlySpeed;
+            maxHealth = _baseMaxHealth;
+            _isElite = false;
+        }
 
         // IEncounterEnemy Uygulaması
         public event System.Action<IEncounterEnemy> OnEnemyDeath;
@@ -591,8 +627,8 @@ namespace RetroFPS
         {
             // Zemin bulunamazsa son bilinen zemini kullan (dünya Y=0 varsayılmaz; Araf gibi yüksekteki alanlarda da çalışır)
             float groundY = _lastGroundY;
-            // Gözün kendi collider'ına çarpmaması için gözün altından (Y - 0.65m) aşağıya tara
-            Vector3 rayOrigin = transform.position - Vector3.up * 0.65f;
+            // Zemin seviyesinde doğan göz de zemini bulabilsin; kendi collider'ları aşağıda elenir.
+            Vector3 rayOrigin = transform.position + Vector3.up * 0.5f;
             int hitCount = Physics.RaycastNonAlloc(rayOrigin, Vector3.down, _groundHits, 25f, GameLayers.GroundMask, QueryTriggerInteraction.Ignore);
 
             for (int i = 0; i < hitCount; i++)
@@ -804,6 +840,7 @@ namespace RetroFPS
 
         private void Respawn()
         {
+            ResetEliteScaling();
             if (_controller != null) _controller.enabled = false;
             transform.position = _spawnPosition;
             transform.rotation = _spawnRotation;
@@ -839,6 +876,8 @@ namespace RetroFPS
             autoRespawn = false;
             _spawnPosition = spawnPosition;
             _spawnRotation = spawnRotation;
+            _patrolTarget = spawnPosition;
+            _lastKnownPlayerPos = spawnPosition;
             _lastGroundY = spawnPosition.y - hoverHeight;
 
             if (_controller != null) _controller.enabled = false;

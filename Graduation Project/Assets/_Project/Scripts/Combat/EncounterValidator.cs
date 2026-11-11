@@ -136,7 +136,33 @@ namespace RetroFPS.Combat
             if (director == null) return;
 
             WaveDefinition[] waves = director.EffectiveWaves;
-            ValidateWaves(waves, issues);
+            WaveSetPool pool = director.WaveSetPoolAsset;
+            if (pool != null)
+            {
+                int validCount = pool.ValidCount;
+                if (validCount == 0)
+                {
+                    issues.Add(new ValidationIssue(ValidationSeverity.Error, $"WaveSetPool ('{pool.name}') içinde geçerli (atanmış ve ağırlığı > 0) WaveSet yok."));
+                }
+                else
+                {
+                    for (int i = 0; i < validCount; i++)
+                    {
+                        WaveSet ws = pool.GetWaveSet(i);
+                        if (ws != null) ValidateWaves(ws.Waves, issues);
+                    }
+
+                    if (waves == null || waves.Length == 0)
+                    {
+                        WaveSet first = pool.GetWaveSet(0);
+                        if (first != null) waves = first.Waves;
+                    }
+                }
+            }
+            else
+            {
+                ValidateWaves(waves, issues);
+            }
 
             // --- Oda bağlantıları ---
             EncounterArea area = director.EncounterArea;
@@ -169,6 +195,13 @@ namespace RetroFPS.Combat
                 if (sp == null)
                 {
                     issues.Add(new ValidationIssue(ValidationSeverity.Warning, "Doğuş noktası listesinde boş (null) eleman var."));
+                    continue;
+                }
+
+                if (!sp.IsClearOfStaticGeometry(director.ObstacleLayerMask))
+                {
+                    issues.Add(new ValidationIssue(ValidationSeverity.Error,
+                        "'" + sp.name + "' duvar/siper/zemin geometrisinin içinde (" + sp.Position + "). Buraya hiç doğum yapılmaz; noktayı açık alana taşıyın."));
                     continue;
                 }
 

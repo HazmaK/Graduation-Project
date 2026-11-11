@@ -29,9 +29,11 @@ flowchart TD
     Katlar & Boss -->|Can Sıfırlandı (PlayerHealth <= 0)| ArafGecisi["Araf'a Düşüş (Purgatory Labyrinth)\nİkinci Şans"]
     
     subgraph ARAF_LABIRENTI["Kemik Duvarlı Araf Labirenti"]
+        LabyrinthFlow["Perdeli oda yuvaları → zar → Çıkış odası (pity)"]
         ElitDusmanlar["Yüksek Hasarlı Elit Yaratıklar"]
         CursedLoots["Çift Taraflı Lanetli Eşyalar (Curse/Blessing)"]
         EscapePortal["Araf Kaçış Portalı"]
+        LabyrinthFlow --> EscapePortal
     end
     
     ArafGecisi --> ARAF_LABIRENTI
@@ -110,14 +112,20 @@ stateDiagram-v2
 
 ### Otomatik Kurulum: `ArafSceneBuilder` (Editor)
 - Menü: **RetroFPS ▸ Build Araf Scene + RunDirector** (`Scripts/Editor/ArafSceneBuilder.cs`, `BuildAll()`; idempotent, tekrar çalıştırılabilir).
-- Üretir: `Assets/_Project/Prefabs/Systems/RunDirector.prefab` (RunDirector + ArafTransition), `Assets/_Project/Data/Materials/Araf/` (Bone, Floor, emisif Portal), `Assets/Scenes/Araf.unity` (40×40 kemik duvarlı mini labirent, giriş (-16,-16) → kan portalı (+16,+16), kızıl nokta ışıklar, kızıl sis/ambient, 3 Ghoul + 1 Flying Eye bağımsız yerleştirilmiş), Build Settings kaydı ve `TestLevel_Gauntlet`'e RunDirector örneği.
+- Üretir: `Assets/_Project/Prefabs/Systems/RunDirector.prefab` (RunDirector + ArafTransition), `Assets/_Project/Data/Materials/Araf/` (Bone, Floor, emisif Portal), `Assets/Scenes/Araf.unity` (Araf artık prosedürel labirent — ayrıntılar [[ArafLabyrinthSystem]]; portal yalnızca çıkış odasında, muhafızlar ölünce açılır), Build Settings kaydı ve `TestLevel_Gauntlet`'e RunDirector örneği.
 - Düşmanlar Araf'ta `WaveSpawnDirector` olmadan, kendi idle/patrol durumlarıyla çalışır.
 - **Doğrulama (2026-11-11, Play Mode):** İlk ölüm → `InAraf` (Y≈1000, aktif sahne Araf, kızıl sis) → portal → `Tower`; ikinci ölüm → `TrueDeath`. Karşılaşma ortasında ölüm → kaçışta oyuncu odanın `retryCheckpoint`'inde dirilir, karşılaşma 1. dalgadan yeniden başlar ve `RunEvents.ActiveEncounter` olarak yeniden kaydolur.
 
+### Faz 2 — Araf Sınavı (2026-11-11)
+- **Araf Labirenti:** Araf artık prosedürel labirent — ayrıntılar [[ArafLabyrinthSystem]]; portal yalnızca çıkış odasında, muhafızlar ölünce açılır. Eski `ArafTrial` ve aday noktaları kaldırılmıştır.
+- **Elit Ölçeklendirme (`IEliteScalable`):** `Core/Interfaces` altında; `BasicEnemyAI` ve `FlyingEyeAI` uygular: hasar ×1.4, hız ×1.4, can ×1.25; temel değerler saklanır, üst üste binmez, `OnSpawnFromDirector`'da sıfırlanır.
+- **Run Arayüzü (`RunHUD`):** `Scripts/UI/RunHUD.cs` (OnGUI, sıfır GC); Araf hakkı (HAZIR/KULLANILDI), Araf'tayken görev metni; F3 ile seed / kat / run süresi debug paneli.
+
 ### Sonraki Fazlar
-- **Faz 2:** Seed'li `RunRandom` + `WaveSetPool`.
-- **Faz 3:** Lanet/lütuf kartları (`CurseBlessingDefinition`) ve sunak etkileşimi.
-- **Midterm Sonrası:** Prosedürel kemik labirenti jeneratörü.
+- **Faz 2:** Tamamlandı (Seed'li `RunRandom`, `WaveSetPool`, `RunHUD`).
+- **Faz 2.5 (Labirent):** tamamlandı (Ayrıntılar: [[ArafLabyrinthSystem]]).
+- **Faz 3:** Lanet/lütuf kartları (`CurseBlessingDefinition`) + stat modifier katmanı ve sunak etkileşimi.
+- **Faz 4:** Run özeti + Araf müziği.
 
 ---
 
@@ -131,5 +139,7 @@ stateDiagram-v2
 - [[WaveAndEncounterArchitecture]] ➔ `manages_tower_rooms`
 - [[PlayerSubsystemArchitecture]] ➔ `monitors_player_death`
 - [[CombatAndDamageInterfaces]] ➔ `evaluates_combat_stakes`
+- [[RunRandomness]] ➔ `seeds_run`
+- [[ArafLabyrinthSystem]] ➔ `implements_labyrinth`
 - ⬅️ [[ProjectOverview]] ➔ `features_mechanic` *(gelen)*
 - ⬅️ [[START_HERE_AI_CONSTITUTION]] ➔ `mandated_by_constitution` *(gelen)*

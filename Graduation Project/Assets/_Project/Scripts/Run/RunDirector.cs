@@ -12,6 +12,7 @@ namespace RetroFPS.Run
     /// yöneten ana orkestratör bileşen.
     /// </summary>
     [DisallowMultipleComponent]
+    [DefaultExecutionOrder(-500)]
     public class RunDirector : MonoBehaviour
     {
         [Header("Referanslar")]
@@ -61,6 +62,11 @@ namespace RetroFPS.Run
         {
             int seed = fixedSeed != 0 ? fixedSeed : Environment.TickCount;
             _state = new RunState(seed);
+            RunEvents.SetCurrentRun(_state);
+            if (logTransitions)
+            {
+                Debug.Log($"<color=crimson><b>[RUN DIRECTOR]</b></color> Koşu başladı (Seed: {_state.Seed}).");
+            }
 
             _towerScene = SceneManager.GetActiveScene();
             if (string.IsNullOrEmpty(towerSceneName))
@@ -104,6 +110,10 @@ namespace RetroFPS.Run
 
         private void OnDestroy()
         {
+            if (RunEvents.CurrentRun == _state)
+            {
+                RunEvents.SetCurrentRun(null);
+            }
             if (player != null)
             {
                 player.ExternalDeathControl = false;

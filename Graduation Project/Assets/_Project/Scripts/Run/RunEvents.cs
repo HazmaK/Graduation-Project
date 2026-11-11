@@ -10,6 +10,32 @@ namespace RetroFPS.Run
     public static class RunEvents
     {
         private static IRetryableEncounter _activeEncounter;
+        private static RunState _currentRun;
+        private static RunRandom[] _fallbackStreams;
+        private static int _fallbackSeed;
+
+        /// <summary>Sahnedeki etkin koşu; yönetici bulunmadığında null döndürür.</summary>
+        public static RunState CurrentRun => _currentRun;
+
+        /// <summary>Etkin koşuyu kaydeder veya null ile temizler.</summary>
+        public static void SetCurrentRun(RunState state)
+        {
+            _currentRun = state;
+        }
+
+        /// <summary>Etkin koşunun akışını veya koşu yoksa süreç boyunca paylaşılan yedek akışı döndürür.</summary>
+        public static RunRandom GetStream(RunStream stream)
+        {
+            if (_currentRun != null) return _currentRun.GetStream(stream);
+            if (_fallbackStreams == null)
+            {
+                _fallbackSeed = Environment.TickCount;
+                _fallbackStreams = new RunRandom[7];
+            }
+            int index = (int)stream;
+            return _fallbackStreams[index] ??
+                (_fallbackStreams[index] = RunRandom.Derive(_fallbackSeed, stream));
+        }
 
         /// <summary>
         /// Koşu evresi değiştiğinde tetiklenir.
@@ -35,6 +61,9 @@ namespace RetroFPS.Run
         /// Oyuncu Araf içindeki kan/kaçış portalına ulaştığında tetiklenir.
         /// </summary>
         public static event Action OnEscapePortalReached;
+
+        /// <summary>Araf oda keşif sayıları ve çıkış odası durumu değiştiğinde yükseltilir.</summary>
+        public static event Action<int, int, bool> OnArafRoomsChanged;
 
         /// <summary>
         /// Oyuncunun şu anda içinde savaştığı aktif yeniden denenebilir karşılaşma.
@@ -90,6 +119,10 @@ namespace RetroFPS.Run
         public static void RaiseEscapePortalReached()
             => OnEscapePortalReached?.Invoke();
 
+        /// <summary>Araf oda keşif durumunu arayüze ve diğer dinleyicilere iletir.</summary>
+        public static void RaiseArafRoomsChanged(int revealed, int total, bool exitRevealed)
+            => OnArafRoomsChanged?.Invoke(revealed, total, exitRevealed);
+
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStatics()
         {
@@ -98,7 +131,11 @@ namespace RetroFPS.Run
             OnEscapedAraf = null;
             OnTrueDeath = null;
             OnEscapePortalReached = null;
+            OnArafRoomsChanged = null;
             _activeEncounter = null;
+            _currentRun = null;
+            _fallbackStreams = null;
+            _fallbackSeed = 0;
         }
     }
 }

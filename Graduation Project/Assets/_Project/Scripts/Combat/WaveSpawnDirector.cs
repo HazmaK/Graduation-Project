@@ -78,6 +78,9 @@ namespace RetroFPS.Combat
         [SerializeField] private float warmupDuration = 1.5f;
 
         [Header("Dalga Tanımları")]
+        [Tooltip("Atanırsa her run başında havuzdan seed'li rastgele bir WaveSet seçilir; 'waveSet' alanı yok sayılır.")]
+        [SerializeField] private WaveSetPool waveSetPool;
+
         [Tooltip("Atanırsa dalga listesi bu WaveSet preset'inden okunur ve aşağıdaki satır-içi 'waves' listesi yok sayılır. Aynı preset birden fazla arenada paylaşılabilir.")]
         [SerializeField] private WaveSet waveSet;
 
@@ -120,6 +123,19 @@ namespace RetroFPS.Combat
 
         [Tooltip("Uygun doğuş noktası bulunamazsa bu süre sonra (saniye) kısıtlar gevşetilir ve dalganın kilitlenmesi önlenir")]
         [SerializeField] private float spawnBlockedTimeout = 2.0f;
+
+        [Tooltip("Telgraf süresine eklenen güvenlik payı (sn). Bir noktaya doğan düşman ortaya çıkıp uzaklaşana kadar aynı noktaya ikinci düşman konmaz; üst üste doğan düşmanlar birbirini duvardan dışarı itip dünyadan düşebiliyordu.")]
+        [SerializeField] private float spawnReservationPadding = 0.75f;
+
+        [Header("Kayıp Düşman Kurtarma (Güvenlik Ağı)")]
+        [Tooltip("Düşman oda zemininin bu kadar metre altına düşerse (dünyadan düştü) havuza alınıp yeniden doğurulur")]
+        [SerializeField] private float fallRescueDepth = 8f;
+
+        [Tooltip("Düşman oda sınırlarının (EncounterArea) dışında bu kadar saniye kalırsa yeniden doğurulur. 0 = kapalı")]
+        [SerializeField] private float outOfRoomRescueDelay = 6f;
+
+        [Tooltip("Oda sınırına eklenen tolerans (metre); kapı eşiğindeki düşmanlar hemen 'dışarıda' sayılmasın")]
+        [SerializeField] private float outOfRoomMargin = 3f;
 
         [Header("Oda Kimliği")]
         [Tooltip("Log ve HUD'da görünen oda adı. Boşsa GameObject adı kullanılır.")]
@@ -188,11 +204,19 @@ namespace RetroFPS.Combat
         [Tooltip("Telgraf noktasında 3D olarak çalınır (oyuncu arkasındaki doğuşu duyabilsin)")]
         [SerializeField] private AudioClip summonTelegraphSound;
 
-        public WaveSet WaveSetAsset => waveSet;
+        public WaveSetPool WaveSetPoolAsset => waveSetPool;
+        public WaveSet WaveSetAsset => _runtimeWaveSet != null ? _runtimeWaveSet : waveSet;
         public string RoomName => string.IsNullOrEmpty(roomDisplayName) ? name : roomDisplayName;
 
-        /// <summary>WaveSet atanmışsa onun dalgaları, değilse satır-içi liste (Editor doğrulaması ve araçlar için).</summary>
-        public WaveDefinition[] EffectiveWaves => waveSet != null && waveSet.WaveCount > 0 ? waveSet.Waves : waves;
+        /// <summary>WaveSet atanmışsa (veya havuzdan seçilmişse) onun dalgaları, değilse satır-içi liste (Editor doğrulaması ve araçlar için).</summary>
+        public WaveDefinition[] EffectiveWaves
+        {
+            get
+            {
+                WaveSet activeSet = WaveSetAsset;
+                return activeSet != null && activeSet.WaveCount > 0 ? activeSet.Waves : waves;
+            }
+        }
         public GameObject[] ArenaBarriers => arenaBarriers;
         public float MinSpawnDistance => minSpawnDistance;
         public float MaxSpawnDistance => maxSpawnDistance;
@@ -212,6 +236,8 @@ namespace RetroFPS.Combat
         private bool _forceEmergencyPick = false;
         private bool _warnedSpawnBlocked = false;
         private bool _usingWaveSet = false;
+        private float _fallbackFloorY = 0f; // EncounterArea yoksa "dünyadan düştü" eşiği için en alçak doğuş noktası
+        private WaveSet _runtimeWaveSet;
 
         // Telgraf bekleyen (henüz doğmamış) düşmanlar ve Reset sonrası eski callback'leri eleyen nesil sayacı
         private int _pendingSpawns = 0;
@@ -246,6 +272,16 @@ namespace RetroFPS.Combat
         private readonly List<IEncounterEnemy> _activeEnemies = new List<IEncounterEnemy>(32);
         private readonly List<int> _activeEnemyWave = new List<int>(32);
         private readonly List<float> _activeEnemyThreat = new List<float>(32);
+        private readonly List<GameObject> _activeEnemyPrefab = new List<GameObject>(32);
+        private readonly List<bool> _activeEnemyIsAir = new List<bool>(32);
+        private readonly List<float> _activeEnemyOutsideTime = new List<float>(32);
+
+        private const float RescueCheckInterval = 0.5f;
+        private float _rescueCheckTimer;
+        private int _rescuedEnemyCount;
+
+        /// <summary>Bu karşılaşmada güvenlik ağının kurtardığı (düşen / odadan çıkan / kaybolan) düşman sayısı.</summary>
+        public int RescuedEnemyCount => _rescuedEnemyCount;
         private readonly List<SpawnStream> _streams = new List<SpawnStream>(16);
         private readonly List<EncounterSpawnPoint> _candidatePoints = new List<EncounterSpawnPoint>(32);
         private readonly List<int> _candidateIndices = new List<int>(32);
@@ -380,7 +416,21 @@ namespace RetroFPS.Combat
             _retryHandler = HandleRetryRequest;
             _difficultyModel = new EncounterDifficultyModel(dynamicDifficulty);
 
-            if (waveSet != null && waveSet.WaveCount > 0)
+            _runtimeWaveSet = null;
+            if (waveSetPool != null)
+            {
+                int seed = RetroFPS.Run.RunEvents.CurrentRun != null ? RetroFPS.Run.RunEvents.CurrentRun.Seed : 0;
+                WaveSet picked = waveSetPool.Pick(RetroFPS.Run.RunEvents.GetStream(RetroFPS.Run.RunStream.Encounter), seed);
+                if (picked != null && picked.WaveCount > 0)
+                {
+                    _runtimeWaveSet = picked;
+                    waves = _runtimeWaveSet.Waves;
+                    _usingWaveSet = true;
+                    Debug.Log($"<color=cyan>[WaveSpawnDirector]</color> '{RoomName}': '{waveSetPool.name}' havuzundan '{_runtimeWaveSet.name}' dalga seti seçildi (Seed: {seed}).");
+                }
+            }
+
+            if (!_usingWaveSet && waveSet != null && waveSet.WaveCount > 0)
             {
                 waves = waveSet.Waves;
                 _usingWaveSet = true;
@@ -393,6 +443,7 @@ namespace RetroFPS.Combat
             FindSpawnPointsIfEmpty();
             ValidateAndRepairWaveEntries();
             InitializeObjectPools();
+            CacheFallbackFloor();
             _totalEnemiesInAllWaves = CalculateTotalEnemiesAllWaves();
         }
 
@@ -749,6 +800,7 @@ namespace RetroFPS.Combat
             if (!isRetry)
             {
                 _difficultyModel.ResetAll();
+                _rescuedEnemyCount = 0;
                 RecordCheckpoint();
             }
 
@@ -908,6 +960,9 @@ namespace RetroFPS.Combat
             // 2. Grup akışlarından doğuş
             UpdateSpawning(currentWave);
 
+            // 2b. Güvenlik ağı: dünyadan düşen / odadan çıkan / kaybolan düşmanları kurtar
+            UpdateLostEnemyRescue();
+
             // 3. Straggler (Kayıp Düşman) Hızlandırma: Son birkaç düşman saklanıyorsa oyuncuya yönlendir
             if (_queuedRemaining == 0 && _pendingSpawns == 0 && _activeEnemies.Count > 0 && _activeEnemies.Count <= stragglerAlertThreshold)
             {
@@ -966,19 +1021,19 @@ namespace RetroFPS.Combat
                     EncounterSpawnPoint point = FindPointForStream(ref s);
                     if (point == null)
                     {
-                        if (_forceEmergencyPick)
+                        if (_forceEmergencyPick && !HasAnyStaticallyValidPoint(s.IsAir))
                         {
-                            DropStream(ref s); // Bu tip için hiç uyumlu nokta yok
+                            DropStream(ref s); // Bu tip için geometri dışında kalan hiç uyumlu nokta yok
                         }
                         else
                         {
-                            blocked = true;
+                            blocked = true; // Noktalar geçici olarak dolu/rezerve: bekle (parti sonraki karelere bölünür)
                         }
                         break;
                     }
 
                     point.MarkAsSpawned();
-                    SpawnEnemyWithTelegraph(s.Prefab, point.Position, point.Rotation, s.Threat);
+                    SpawnEnemyWithTelegraph(s.Prefab, point.Position, point.Rotation, s.Threat, s.IsAir);
                     s.Remaining--;
                     _queuedRemaining--;
                     spawnedNow++;
@@ -1145,6 +1200,130 @@ namespace RetroFPS.Combat
             _activeEnemies.Clear();
             _activeEnemyWave.Clear();
             _activeEnemyThreat.Clear();
+            _activeEnemyPrefab.Clear();
+            _activeEnemyIsAir.Clear();
+            _activeEnemyOutsideTime.Clear();
+        }
+
+        /// <summary>Aktif düşman kaydını tüm paralel listelerden birlikte siler.</summary>
+        private void RemoveActiveAt(int index)
+        {
+            _activeEnemies.RemoveAt(index);
+            _activeEnemyWave.RemoveAt(index);
+            _activeEnemyThreat.RemoveAt(index);
+            _activeEnemyPrefab.RemoveAt(index);
+            _activeEnemyIsAir.RemoveAt(index);
+            _activeEnemyOutsideTime.RemoveAt(index);
+        }
+
+        // ───────────────────────────── Kayıp Düşman Kurtarma (Güvenlik Ağı) ─────────────────────────────
+
+        /// <summary>
+        /// Yarım saniyede bir aktif düşmanları denetler. Dalganın "herkes öldü ama bitmiyor" durumuna takılmasını önler:
+        /// - Ölmüş ama ölümü bildirilmemiş kayıt → öldürülmüş sayılır.
+        /// - Yok edilmiş / dışarıdan kapatılmış kayıt → yeniden doğurulur.
+        /// - Oda zemininin altına düşmüş veya uzun süre oda dışında kalmış düşman → havuza alınıp yeniden doğurulur.
+        /// Kurtarılan düşman öldürülmüş SAYILMAZ; kuyruğa geri girer, yani oyuncu yine öldürmek zorundadır. Tahsissizdir.
+        /// </summary>
+        private void UpdateLostEnemyRescue()
+        {
+            _rescueCheckTimer -= Time.deltaTime;
+            if (_rescueCheckTimer > 0f) return;
+            _rescueCheckTimer = RescueCheckInterval;
+
+            bool hasArea = encounterArea != null;
+            Bounds roomBounds = hasArea ? encounterArea.WorldBounds : default;
+            float floorY = hasArea ? roomBounds.min.y : _fallbackFloorY;
+            if (hasArea) roomBounds.Expand(outOfRoomMargin * 2f);
+
+            for (int i = _activeEnemies.Count - 1; i >= 0; i--)
+            {
+                IEncounterEnemy enemy = _activeEnemies[i];
+                bool destroyed = (enemy as Object) == null || enemy.EnemyGameObject == null;
+
+                if (!destroyed && !enemy.IsAlive)
+                {
+                    // Öldü ama OnEnemyDeath bize ulaşmadı: öldürülmüş say
+                    Debug.LogWarning($"<color=yellow>[WaveSpawnDirector]</color> '{RoomName}': '{enemy.EnemyGameObject.name}' ölü ama ölümü bildirilmemişti; öldürülmüş sayıldı.", this);
+                    HandleEnemyDeath(enemy);
+                    continue;
+                }
+
+                if (destroyed || !enemy.EnemyGameObject.activeInHierarchy)
+                {
+                    RescueEnemy(i, destroyed ? "yok edilmiş" : "dışarıdan kapatılmış");
+                    continue;
+                }
+
+                Vector3 p = enemy.EnemyTransform.position;
+                if (p.y < floorY - fallRescueDepth)
+                {
+                    RescueEnemy(i, $"dünyadan düştü (y={p.y:F0})");
+                    continue;
+                }
+
+                if (hasArea && outOfRoomRescueDelay > 0f && !roomBounds.Contains(p))
+                {
+                    float outside = _activeEnemyOutsideTime[i] + RescueCheckInterval;
+                    _activeEnemyOutsideTime[i] = outside;
+                    if (outside >= outOfRoomRescueDelay)
+                    {
+                        RescueEnemy(i, $"{outside:F0} sn oda dışında kaldı ({p})");
+                    }
+                }
+                else
+                {
+                    _activeEnemyOutsideTime[i] = 0f;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Kayıp düşmanı havuza alır; mevcut dalgaya aitse aynı prefabı tek kişilik bir akışla yeniden kuyruğa koyar.
+        /// Dalga toplamı ve öldürme sayısı değişmez (oyuncu yeniden doğanı öldürünce dalga normal biter).
+        /// </summary>
+        private void RescueEnemy(int index, string reason)
+        {
+            IEncounterEnemy enemy = _activeEnemies[index];
+            int wave = _activeEnemyWave[index];
+            float threat = _activeEnemyThreat[index];
+            GameObject prefab = _activeEnemyPrefab[index];
+            bool isAir = _activeEnemyIsAir[index];
+
+            RemoveActiveAt(index);
+            _rescuedEnemyCount++;
+
+            string enemyName = prefab != null ? prefab.name : "?";
+            if ((enemy as Object) != null)
+            {
+                enemyName = enemy.EnemyGameObject.name;
+                enemy.OnEnemyDeath -= HandleEnemyDeath;
+                enemy.OnDespawnToDirector();
+            }
+
+            bool requeue = wave == _currentWaveIndex && prefab != null && _state == EncounterState.WaveSpawningAndCombat;
+            if (requeue)
+            {
+                _streams.Add(new SpawnStream
+                {
+                    Prefab = prefab,
+                    IsAir = isAir,
+                    ZoneTag = null,
+                    Interval = 0.5f,
+                    BatchSize = 1,
+                    Pattern = SpawnPattern.Random,
+                    Threat = threat,
+                    Delay = 0f,
+                    Started = true,
+                    Remaining = 1,
+                    NextTime = _waveElapsedTime,
+                    LastSpawnTime = _waveElapsedTime,
+                    RoundRobinCursor = 0
+                });
+                _queuedRemaining++;
+            }
+
+            Debug.LogWarning($"<color=yellow>[WaveSpawnDirector]</color> '{RoomName}': kayıp düşman kurtarıldı → '{enemyName}' {reason}. {(requeue ? "Yeniden doğurulacak." : "Önceki dalgaya aitti, kaldırıldı.")}", this);
         }
 
         private void CompleteEncounter()
@@ -1338,11 +1517,14 @@ namespace RetroFPS.Combat
             bool hasZoneFilter = !string.IsNullOrEmpty(zoneFilter);
             float minSqr = minSpawnDistance * minSpawnDistance;
             float maxSqr = maxSpawnDistance * maxSpawnDistance;
+            float reservation = ReservationWindow;
 
             for (int i = 0; i < spawnPoints.Length; i++)
             {
                 EncounterSpawnPoint sp = spawnPoints[i];
                 if (sp == null) continue;
+                // Rezervasyon hiçbir kademede gevşetilmez (aynı noktaya üst üste doğuşu engeller)
+                if (sp.IsReserved(reservation)) continue;
                 if (respectCooldown && sp.IsOnCooldown) continue;
 
                 if (isAirEnemy ? !sp.AllowAirEnemies : !sp.AllowGroundEnemies) continue;
@@ -1463,16 +1645,58 @@ namespace RetroFPS.Combat
         {
             if (spawnPoints == null) return null;
 
+            // Acil seçim de iki şeyi ASLA gevşetmez: rezervasyon (üst üste doğuş) ve statik geometri
+            // (duvar/siper içindeki nokta). Aksi halde düşman duvarın içinde doğup dünyadan düşebiliyordu.
+            float reservation = ReservationWindow;
             _candidatePoints.Clear();
             for (int i = 0; i < spawnPoints.Length; i++)
             {
                 EncounterSpawnPoint sp = spawnPoints[i];
                 if (sp == null) continue;
                 if (isAirEnemy ? !sp.AllowAirEnemies : !sp.AllowGroundEnemies) continue;
+                if (sp.IsReserved(reservation)) continue;
+                if (!sp.IsClearOfStaticGeometry(obstacleLayerMask)) continue;
                 _candidatePoints.Add(sp);
             }
 
             return _candidatePoints.Count > 0 ? _candidatePoints[Random.Range(0, _candidatePoints.Count)] : null;
+        }
+
+        private void CacheFallbackFloor()
+        {
+            _fallbackFloorY = transform.position.y;
+            if (spawnPoints == null) return;
+
+            bool found = false;
+            for (int i = 0; i < spawnPoints.Length; i++)
+            {
+                if (spawnPoints[i] == null) continue;
+                float y = spawnPoints[i].Position.y;
+                if (!found || y < _fallbackFloorY)
+                {
+                    _fallbackFloorY = y;
+                    found = true;
+                }
+            }
+        }
+
+        private float ReservationWindow => summonTelegraphDuration + Mathf.Max(0f, spawnReservationPadding);
+
+        /// <summary>
+        /// Bu tip (zemin/hava) için statik geometrinin içinde KALMAYAN en az bir nokta var mı?
+        /// Yoksa grup kalıcı olarak doğurulamaz ve düşürülür; varsa noktalar yalnızca geçici olarak doludur.
+        /// </summary>
+        private bool HasAnyStaticallyValidPoint(bool isAirEnemy)
+        {
+            if (spawnPoints == null) return false;
+            for (int i = 0; i < spawnPoints.Length; i++)
+            {
+                EncounterSpawnPoint sp = spawnPoints[i];
+                if (sp == null) continue;
+                if (isAirEnemy ? !sp.AllowAirEnemies : !sp.AllowGroundEnemies) continue;
+                if (sp.IsClearOfStaticGeometry(obstacleLayerMask)) return true;
+            }
+            return false;
         }
 
         private int CountAliveInWave(int waveIndex)
@@ -1500,7 +1724,7 @@ namespace RetroFPS.Combat
         /// <summary>
         /// Telgraf çemberini tetikler, süre bitince havuzdaki düşmanı uyandırır.
         /// </summary>
-        private void SpawnEnemyWithTelegraph(GameObject prefab, Vector3 position, Quaternion rotation, float threat)
+        private void SpawnEnemyWithTelegraph(GameObject prefab, Vector3 position, Quaternion rotation, float threat, bool isAir)
         {
             OccultSpawnTelegraph telegraph = GetPooledTelegraph();
             if (telegraph != null)
@@ -1508,13 +1732,13 @@ namespace RetroFPS.Combat
                 // Telgraf bitene kadar bu doğuş sınıra "bekleyen" olarak sayılır; lambda yerine önbellekli delege (Sıfır GC)
                 _pendingSpawns++;
                 _pendingThreat += threat;
-                telegraph.SetPayload(prefab, _currentWaveIndex, _encounterGeneration, threat);
+                telegraph.SetPayload(prefab, _currentWaveIndex, _encounterGeneration, threat, isAir);
                 telegraph.Activate(position, rotation, summonTelegraphDuration, _onTelegraphCompleted);
                 telegraph.PlayCue(summonTelegraphSound);
             }
             else
             {
-                MaterializeEnemyFromPool(prefab, position, rotation, _currentWaveIndex, threat);
+                MaterializeEnemyFromPool(prefab, position, rotation, _currentWaveIndex, threat, isAir);
             }
         }
 
@@ -1533,10 +1757,10 @@ namespace RetroFPS.Combat
 
             if (_state == EncounterState.Inactive || !waveCarriesOver) return;
 
-            MaterializeEnemyFromPool(telegraph.PayloadPrefab, telegraph.transform.position, telegraph.transform.rotation, waveIndex, telegraph.PayloadThreat);
+            MaterializeEnemyFromPool(telegraph.PayloadPrefab, telegraph.transform.position, telegraph.transform.rotation, waveIndex, telegraph.PayloadThreat, telegraph.PayloadIsAir);
         }
 
-        private void MaterializeEnemyFromPool(GameObject prefab, Vector3 position, Quaternion rotation, int waveIndex, float threat)
+        private void MaterializeEnemyFromPool(GameObject prefab, Vector3 position, Quaternion rotation, int waveIndex, float threat, bool isAir)
         {
             if (prefab == null)
             {
@@ -1559,6 +1783,9 @@ namespace RetroFPS.Combat
                 _activeEnemies.Add(encounterEnemy);
                 _activeEnemyWave.Add(waveIndex);
                 _activeEnemyThreat.Add(threat);
+                _activeEnemyPrefab.Add(prefab);
+                _activeEnemyIsAir.Add(isAir);
+                _activeEnemyOutsideTime.Add(0f);
             }
             else
             {
@@ -1580,9 +1807,7 @@ namespace RetroFPS.Combat
             if (idx >= 0)
             {
                 spawnedWave = _activeEnemyWave[idx];
-                _activeEnemies.RemoveAt(idx);
-                _activeEnemyWave.RemoveAt(idx);
-                _activeEnemyThreat.RemoveAt(idx);
+                RemoveActiveAt(idx);
             }
 
             if (spawnedWave == _currentWaveIndex)
@@ -1704,6 +1929,7 @@ namespace RetroFPS.Combat
         public void ConfigureWaves(WaveDefinition[] newWaves)
         {
             waves = newWaves;
+            _runtimeWaveSet = null;
             _usingWaveSet = false;
             if (waves != null)
             {

@@ -65,7 +65,7 @@ flowchart LR
 - **I-Frame Kontrolü:** `PlayerMovement.IsDashing` aktifse hasar sıfırlanır; oyuncu atılma esnasında hasar almaz.
 - **Can Küresi İyileşmesi (Heal API):** `Heal(amount, allowOverheal, overhealCap)` metodu ile can yeniler; `OnHealed` olayını tetikler. Can tavandaysa küre israf edilmez.
 - **Overheal Sönümlenmesi (Decay):** 100 HP üzeri aşırı can durumunda saniyede 3.5 birim hızla yumuşakça 100 HP'ye geri iner (Retro Quake/DOOM standardı).
-- **Otomatik Can Yenileme (Regen):** Çatışmadan çıkıp 4.5 saniye hasar alınmadığında saniyede 12 birim can tazeler.
+- **Otomatik Can Yenileme (Regen): KAPALI (2026-11-11).** `enableAutoHeal = false` (varsayılan). Açılırsa 4.5 saniye hasar alınmadığında saniyede 12 birim can tazeler. Kaynak kıtlığı ekonomisi gereği can yalnızca küre ve infazla kazanılır, bkz. [[HealthOrbAndDropSystem]]. Overheal sönümü bu ayardan bağımsız olarak çalışmaya devam eder.
 - **Ölüm Durumu:** Can 0 olunca `OnDied` olayını tetikler, kontrolleri ve silahları kilitler, imleci serbest bırakır.
 
 ### 2. `PlayerParryController.cs` (Çivili Buckler / Parry Kalkanı)
