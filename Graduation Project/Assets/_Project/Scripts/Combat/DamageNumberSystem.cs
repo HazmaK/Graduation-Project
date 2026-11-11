@@ -13,21 +13,49 @@ namespace RetroFPS.Combat
     public class DamageNumberSystem : MonoBehaviour
     {
         private static DamageNumberSystem _instance;
+        private static bool _isQuitting;
+
+        /// <summary>
+        /// Tembel (lazy) erişim: sahne-yükleme ön ısıtmasından önce (ör. Awake içinde) veya additive
+        /// sahnelerde de null dönmez. Sıcak yolda yalnızca tek bir null kontrolü maliyeti vardır.
+        /// </summary>
         public static DamageNumberSystem Instance
         {
             get
             {
-                if (_instance == null)
-                {
-                    _instance = Object.FindAnyObjectByType<DamageNumberSystem>();
-                    if (_instance == null)
-                    {
-                        GameObject go = new GameObject("DamageNumberSystem");
-                        _instance = go.AddComponent<DamageNumberSystem>();
-                    }
-                }
+                if (_instance == null && !_isQuitting) EnsureInstance();
                 return _instance;
             }
+        }
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetInstance()
+        {
+            _instance = null;
+            _isQuitting = false;
+            Application.quitting -= HandleQuitting;
+            Application.quitting += HandleQuitting;
+            UnityEngine.SceneManagement.SceneManager.sceneLoaded -= EnsureSceneInstance;
+            UnityEngine.SceneManagement.SceneManager.sceneLoaded += EnsureSceneInstance;
+        }
+
+        private static void HandleQuitting() => _isQuitting = true;
+
+        private static void EnsureSceneInstance(UnityEngine.SceneManagement.Scene scene, UnityEngine.SceneManagement.LoadSceneMode mode)
+        {
+            if (_instance != null || _isQuitting) return;
+            EnsureInstance();
+        }
+
+        private static void EnsureInstance()
+        {
+            _instance = Object.FindAnyObjectByType<DamageNumberSystem>();
+            if (_instance == null) _instance = new GameObject("DamageNumberSystem").AddComponent<DamageNumberSystem>();
+        }
+
+        private void OnDestroy()
+        {
+            if (_instance == this) _instance = null;
         }
 
         [Header("Görsel & Sistem Ayarları")]
@@ -45,17 +73,25 @@ namespace RetroFPS.Combat
 
         private struct PopupEntry
         {
-            public bool Active;
-            public Vector3 WorldPos;
-            public Vector3 Velocity;
-            public float Timer;
-            public int Amount;
-            public bool IsCrit;
-            public bool IsReflected;
-            public bool IsHeal;
+            internal bool Active { get; set; }
+            internal Vector3 WorldPos { get; set; }
+            internal Vector3 Velocity { get; set; }
+            internal float Timer { get; set; }
+            internal int Amount { get; set; }
+            internal bool IsCrit { get; set; }
+            internal bool IsReflected { get; set; }
+            internal bool IsHeal { get; set; }
+            internal string Label { get; set; }
+            internal int PartCount { get; set; }
         }
 
         private const int MaxPopups = 32;
+        private const int CachedAmounts = 4096;
+        private const int MaxLabelParts = 12;
+        private readonly string[][] _labels = new string[4][];
+        private readonly GUIContent[] _contents = new GUIContent[MaxPopups];
+        private readonly GUIContent[] _largeLabelParts = new GUIContent[MaxPopups * MaxLabelParts];
+        private readonly string[] _digits = new string[10];
         private readonly PopupEntry[] _pool = new PopupEntry[MaxPopups];
         private int _nextIndex = 0;
 
@@ -76,6 +112,73 @@ namespace RetroFPS.Combat
             }
             _instance = this;
             _cam = Camera.main;
+            InitializeLabels();
+            InitStyles();
+        }
+
+        private void InitializeLabels()
+        {
+            for (int kind = 0; kind < _labels.Length; kind++) _labels[kind] = new string[CachedAmounts];
+            for (int amount = 0; amount < CachedAmounts; amount++)
+            {
+                string number = amount.ToString(System.Globalization.CultureInfo.InvariantCulture);
+                _labels[0][amount] = number;
+                _labels[1][amount] = "CRIT! " + number;
+                _labels[2][amount] = "PARRY " + number;
+                _labels[3][amount] = "+" + number + " HP";
+                if (amount < 10) _digits[amount] = number;
+            }
+            for (int i = 0; i < _contents.Length; i++) _contents[i] = new GUIContent();
+            for (int i = 0; i < _largeLabelParts.Length; i++) _largeLabelParts[i] = new GUIContent();
+        }
+
+        private void SetLabel(int index, int kind)
+        {
+            int amount = Mathf.Max(0, _pool[index].Amount);
+            if (amount < CachedAmounts)
+            {
+                _pool[index].Label = _labels[kind][amount];
+                _contents[index].text = _pool[index].Label;
+                _pool[index].PartCount = 0;
+                return;
+            }
+
+            // Preserve arbitrary integer totals without allocating strings on a hit.
+            int offset = index * MaxLabelParts;
+            int count = 0;
+            string prefix = kind == 1 ? "CRIT! " : kind == 2 ? "PARRY " : kind == 3 ? "+" : "";
+            _pool[index].Label = prefix;
+            if (prefix.Length > 0) _largeLabelParts[offset + count++].text = prefix;
+            int divisor = 1;
+            while (amount / divisor >= 10 && divisor <= 100000000) divisor *= 10;
+            while (divisor > 0)
+            {
+                _largeLabelParts[offset + count++].text = _digits[amount / divisor % 10];
+                divisor /= 10;
+            }
+            if (kind == 3) _largeLabelParts[offset + count++].text = " HP";
+            _pool[index].PartCount = count;
+        }
+
+        private void DrawLabel(Rect rect, int index, GUIStyle style)
+        {
+            int count = _pool[index].PartCount;
+            if (count == 0)
+            {
+                GUI.Label(rect, _contents[index], style);
+                return;
+            }
+            int offset = index * MaxLabelParts;
+            float width = 0f;
+            for (int i = 0; i < count; i++) width += style.CalcSize(_largeLabelParts[offset + i]).x;
+            float x = rect.center.x - width * 0.5f;
+            for (int i = 0; i < count; i++)
+            {
+                GUIContent content = _largeLabelParts[offset + i];
+                float partWidth = style.CalcSize(content).x;
+                GUI.Label(new Rect(x, rect.y, partWidth, rect.height), content, style);
+                x += partWidth;
+            }
         }
 
         private void InitStyles()
@@ -130,6 +233,7 @@ namespace RetroFPS.Combat
             _pool[index].IsCrit = isCrit;
             _pool[index].IsReflected = isReflected;
             _pool[index].IsHeal = false;
+            SetLabel(index, isCrit ? 1 : isReflected ? 2 : 0);
         }
 
         /// <summary>
@@ -150,6 +254,7 @@ namespace RetroFPS.Combat
             _pool[index].IsCrit = false;
             _pool[index].IsReflected = false;
             _pool[index].IsHeal = true;
+            SetLabel(index, 3);
         }
 
         private void Update()
@@ -168,7 +273,9 @@ namespace RetroFPS.Combat
                 }
 
                 // Fiziksel süzülme ve yerçekimi
-                _pool[i].Velocity.y -= gravity * dt;
+                Vector3 velocity = _pool[i].Velocity;
+                velocity.y -= gravity * dt;
+                _pool[i].Velocity = velocity;
                 _pool[i].WorldPos += _pool[i].Velocity * dt;
             }
         }
@@ -182,8 +289,6 @@ namespace RetroFPS.Combat
                 _cam = Camera.main;
                 if (_cam == null) return;
             }
-
-            InitStyles();
 
             for (int i = 0; i < MaxPopups; i++)
             {
@@ -203,31 +308,26 @@ namespace RetroFPS.Combat
 
                 GUIStyle baseStyle;
                 Color fontColor;
-                string text;
 
                 if (_pool[i].IsHeal)
                 {
                     baseStyle = _styleHeal;
                     fontColor = healColor;
-                    text = $"+{_pool[i].Amount} HP";
                 }
                 else if (_pool[i].IsCrit)
                 {
                     baseStyle = _styleCrit;
                     fontColor = critDamageColor;
-                    text = $"CRIT! {_pool[i].Amount}";
                 }
                 else if (_pool[i].IsReflected)
                 {
                     baseStyle = _styleReflected;
                     fontColor = reflectedDamageColor;
-                    text = $"PARRY {_pool[i].Amount}";
                 }
                 else
                 {
                     baseStyle = _styleNormal;
                     fontColor = normalDamageColor;
-                    text = _pool[i].Amount.ToString();
                 }
 
                 fontColor.a = alpha;
@@ -243,13 +343,13 @@ namespace RetroFPS.Combat
                 _shadowStyle.fontSize = baseStyle.fontSize;
                 _shadowStyle.normal.textColor = sCol;
 
-                GUI.Label(new Rect(rect.x - 1, rect.y, rect.width, rect.height), text, _shadowStyle);
-                GUI.Label(new Rect(rect.x + 1, rect.y, rect.width, rect.height), text, _shadowStyle);
-                GUI.Label(new Rect(rect.x, rect.y - 1, rect.width, rect.height), text, _shadowStyle);
-                GUI.Label(new Rect(rect.x, rect.y + 1, rect.width, rect.height), text, _shadowStyle);
+                DrawLabel(new Rect(rect.x - 1, rect.y, rect.width, rect.height), i, _shadowStyle);
+                DrawLabel(new Rect(rect.x + 1, rect.y, rect.width, rect.height), i, _shadowStyle);
+                DrawLabel(new Rect(rect.x, rect.y - 1, rect.width, rect.height), i, _shadowStyle);
+                DrawLabel(new Rect(rect.x, rect.y + 1, rect.width, rect.height), i, _shadowStyle);
 
                 // Ana Sayı
-                GUI.Label(rect, text, baseStyle);
+                DrawLabel(rect, i, baseStyle);
             }
         }
     }

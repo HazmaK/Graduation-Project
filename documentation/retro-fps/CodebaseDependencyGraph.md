@@ -31,7 +31,8 @@ flowchart TD
         PL["PlayerLook\n(Mouse Look, Tilt, FOV, Shake)"]
         PH["PlayerHealth\n(Can, İyileşme, IDamageable)"]
         PP["PlayerParryController\n(Buckler, Yansıtma, Stun)"]
-        PDF["PlayerDamageFeedback\n(Kamera Sarsıntısı, Flash)"]
+        PDF["PlayerDamageFeedback\n(IMGUI Vinyet, Flinch)"]
+        PCF["PlayerCameraFeel + Spring\n(View Punch, Land Dip, Bob, Footsteps)"]
         WC["WeaponController\n(Silah Orkestrasyonu)"]
     end
 
@@ -49,6 +50,8 @@ flowchart TD
         IStun["IStunnable Interface"]
         IEncounter["IEncounterEnemy Interface"]
         IAlert["IAlertableEnemy Interface"]
+        Events["CombatEvents (Core)\nOnEnemyKilled"]
+        Lookup["CombatTargetLookup + CombatRaycast\n(Collider Önbelleği)"]
         
         Hitbox["Hitbox (Headshot/Limb Multiplier)"]
         Hitstop["HitstopManager (Micro-freeze)"]
@@ -89,6 +92,10 @@ flowchart TD
     
     PL --> PV
     PM --> PH
+    PM -.->|OnJumped / OnLanded / OnDashStarted / OnSlideStarted| PCF
+    PM -.->|OnJumped / OnLanded| PV
+    PCF -->|Position/RotationOffset| PL
+    PCF -.->|Footstep / Land / Jump / Dash / Slide| CombatAudio
     PH -.->|OnDamageTaken| PDF
     PH -.->|OnDamageTaken| PL
     
@@ -98,12 +105,14 @@ flowchart TD
     W3 --|> WB
     WB --> PV
     WB -.->|Tüketim| AmmoInv
-    W3 -.->|StartGrapple| PM
+    W3 -.->|StartGrapple / AddImpulse| PM
+    W1 & W2 & W3 -.->|AddViewPunch / AddTrauma| PL
     W2 -.->|StartLunge / StartMeteorSlam / ApplySpeedBoost| PM
     W2 -.->|BloodHarvest Leech| PH
     W2 -.->|Slice & Deflect| Projectile
     
-    W1 & W2 & W3 -->|Raycast / OverlapSphere| Hitbox
+    W1 & W2 & W3 -->|CombatRaycast / OverlapSphere| Lookup
+    Lookup -->|Binding| Hitbox
     Hitbox -->|TakeDamage| IDamage
     
     IDamage <|.. Ghoul
@@ -123,7 +132,11 @@ flowchart TD
     AlertHub -->|Alert| IAlert
     IAlert <|.. Ghoul
     
-    Ghoul & FlyingEye & Dummy -->|Hit & Death| Hitstop & CombatVFX & BloodDecal & DamageNum & CombatAudio
+    Ghoul & FlyingEye & Dummy -->|Hit & Death| Hitstop & CombatVFX & BloodDecal & CombatAudio
+    W1 & W2 & W3 -->|Hasar Sayısı| DamageNum
+    Ghoul & FlyingEye -->|RaiseEnemyKilled| Events
+    Events -.->|OnEnemyKilled → Kill Confirm| HUD
+    Ghoul & FlyingEye & Dummy -->|RegisterHierarchy| Lookup
     Ghoul & FlyingEye -->|Death Drop| HealthDropper -->|TryDropOrbs| HealthOrb
     Ghoul & FlyingEye -->|Death Drop| AmmoDrop -->|Spawn| AmmoPick
     HealthOrb -->|Magnetic Vacuum & Heal| PH
@@ -149,21 +162,21 @@ flowchart TD
 
 | Modül | Scriptler | Dışa Bağımlılıklar (Çağırdığı) | Olaylar (Events) & Yayınlar |
 | :--- | :--- | :--- | :--- |
-| **Player** | `PlayerMovement`, `PlayerLook`, `PlayerHealth`, `PlayerParryController`, `PlayerDamageFeedback` | `UnityEngine.InputSystem`, `IDamageable`, `IStunnable` | `OnDamageTaken`, `OnDied`, `OnParrySuccess`, `OnGrappleEnded` |
-| **Weapons** | `WeaponBase`, `WeaponController`, `ProceduralViewmodel`, `RepeaterArbalestWeapon`, `ExecutionerBladeWeapon`, `GothicShotgunWeapon`, `PlayerAmmoInventory` | `PlayerLook`, `PlayerMovement`, `Hitbox`, `IDamageable`, `IStunnable`, `CombatAudio`, `CombatVFXManager`, `HitstopManager` | `OnWeaponHit(isCrit)`, `OnWeaponSwitched(slot)`, `OnAmmoChanged(type, cur, max)` |
-| **Enemies** | `BasicEnemyAI`, `FlyingEyeAI`, `EnemyAlertHub`, `EnemyProjectile`, `CombatDummy` | `IDamageable`, `IStunnable`, `IEncounterEnemy`, `PlayerHealth`, `CombatVFXManager`, `BloodDecalManager` | `OnEnemyDeath`, `OnAlertTriggered` |
+| **Player** | `PlayerMovement`, `PlayerLook`, `PlayerHealth`, `PlayerParryController`, `PlayerDamageFeedback`, `Feel/PlayerCameraFeel`, `Feel/Spring` | `UnityEngine.InputSystem`, `IDamageable`, `IStunnable`, `CombatAudio` | `OnDamageTaken`, `OnDied`, `OnParrySuccess`, `OnGrappleEnded`, `OnJumped`, `OnLanded(impact)`, `OnDashStarted`, `OnSlideStarted`, `OnSlideEnded` |
+| **Weapons** | `WeaponBase` (+ `CombatTargetLookup`, `CombatRaycast`), `WeaponController`, `ProceduralViewmodel`, `RepeaterArbalestWeapon`, `ExecutionerBladeWeapon`, `GothicShotgunWeapon`, `PlayerAmmoInventory` | `PlayerLook`, `PlayerMovement`, `Hitbox`, `IDamageable`, `IStunnable`, `CombatAudio`, `CombatVFXManager`, `HitstopManager`, `DamageNumberSystem` | `OnWeaponHit(isCrit)`, `OnWeaponSwitched(slot)`, `OnAmmoChanged(type, cur, max)` |
+| **Enemies** | `BasicEnemyAI`, `FlyingEyeAI`, `EnemyAlertHub`, `EnemyProjectile`, `CombatDummy` | `IDamageable`, `IStunnable`, `IEncounterEnemy`, `PlayerHealth`, `CombatVFXManager`, `CombatAudio`, `HitstopManager`, `BloodDecalManager`, `CombatTargetLookup` | `OnEnemyDeath`, `CombatEvents.OnEnemyKilled`, `OnAlertTriggered` |
 | **Encounter** | `WaveSpawnDirector`, `EncounterArea`, `EncounterTriggerVolume`, `EncounterSpawnPoint`, `OccultSpawnTelegraph` | `IEncounterEnemy`, `CombatAudio` | `OnWaveStarted`, `OnWaveCompleted`, `OnEncounterCleared` |
 | **Feedback/VFX**| `CombatVFXManager`, `BloodDecalManager`, `HitstopManager`, `DamageNumberSystem`, `CombatAudio`, `ParryVFX` | Yok (Statik Tekil Yönetici / Olay Temelli Dinleyici) | Bağımsız havuzlanmış parçacık ve ses üretimi |
 | **Pickups/Loot**| `HealthOrb`, `HealthOrbManager`, `EnemyHealthDropper`, `AmmoPickup`, `EnemyAmmoDropper` | `PlayerHealth`, `PlayerAmmoInventory`, `DamageNumberSystem`, `CombatAudio` | `TryDropOrbs`, `OnHealed`, `SpawnHealNumber`, `AddAmmo` |
-| **UI** | `CrosshairHUD`, `PlayerDebugHUD`, `AmmoHUD` | `WeaponController`, `PlayerMovement`, `PlayerHealth`, `PlayerAmmoInventory` | `WeaponController.OnWeaponHit`, `PlayerAmmoInventory.OnAmmoChanged` dinler |
+| **UI** | `CrosshairHUD`, `PlayerDebugHUD`, `AmmoHUD` | `WeaponController`, `PlayerMovement`, `PlayerHealth`, `PlayerAmmoInventory`, `CombatAudio` | `WeaponController.OnWeaponHit`, `CombatEvents.OnEnemyKilled`, `PlayerAmmoInventory.OnAmmoChanged` dinler |
 
 ---
 
 ## 2.1 ASSEMBLY, KATMAN VE PREFAB YERLEŞİMİ (2026-11-11)
 
-- **Assembly'ler:** `RetroFPS.Core` (arayüzler, `AmmoType`, `GameLayers`) ⬅ `RetroFPS.Gameplay` (tüm oynanış) ⬅ `RetroFPS.Editor`. Ayrıntı ve hedef bölünme: [[CollaborationAndGitWorkflow]].
+- **Assembly'ler:** `RetroFPS.Core` (arayüzler, `AmmoType`, `GameLayers`, `CombatEvents`) ⬅ `RetroFPS.Gameplay` (tüm oynanış) ⬅ `RetroFPS.Editor`. Ayrıntı ve hedef bölünme: [[CollaborationAndGitWorkflow]].
 - **Katmanlar:** `GameLayers` tüm fizik maskelerinin tek kaynağıdır. Silahlar ve parry `PlayerAttackMask`, düşman görüşü `EnemySightMask` (diğer düşmanların arkasını görür), engelden kaçınma `EnemyObstacleMask`, düşman mermisi `EnemyProjectileMask`, zemin taraması `GroundMask` kullanır.
-- **Prefab'lar:** `Prefabs/Player/Player.prefab` (oyuncu, kamera, üç silah, HUD bileşenleri) ve `Prefabs/Systems/CombatSystems.prefab` (`CombatAudio`, `CombatVFXManager`, `DamageNumberSystem`, `HitstopManager`, `HealthOrbManager`). Yeni bir sahneye bu iki prefab sürüklenerek oyun kurulur. `HitstopManager` yalnızca `CombatSystems` içinde bulunmalıdır: ikinci bir kopya singleton `Destroy(gameObject)` ile tüm `CombatSystems` objesini yok edebilir.
+- **Prefab'lar:** `Prefabs/Player/Player.prefab` (oyuncu, kamera, üç silah, HUD bileşenleri) ve `Prefabs/Systems/CombatSystems.prefab` (`CombatAudio`, `CombatVFXManager`, `DamageNumberSystem`, `HitstopManager`, `HealthOrbManager`). Yeni bir sahneye bu iki prefab sürüklenerek oyun kurulur. `HitstopManager` yalnızca `CombatSystems` içinde bulunmalıdır (lazy oluşturulmaz). İkinci bir kopya artık yalnızca kendi bileşenini (`Destroy(this)`) siler; `CombatAudio`, `CombatVFXManager` ve `DamageNumberSystem` ise eksikse erişimde/sahne yüklemesinde kendini oluşturur.
 
 ---
 
@@ -173,7 +186,7 @@ flowchart TD
    - Asla `WeaponController.cs` kodunu değiştirmeyin.
    - `RetroFPS.Weapons.WeaponBase`'den kalıtım alan yeni bir sınıf yazın (örn: `ShotgunWeapon.cs`).
    - `Slot`, `CanFirePrimary`, `CanFireAlt`, `FirePrimary()` ve `FireAlt()` metodlarını uygulayın.
-   - Hasar verirken daima hedefteki `Hitbox` veya `IDamageable` arayüzünü arayın.
+   - Hasar verirken hedefi `CombatTargetLookup.Get(collider)` ile çözün (Hitbox → `IDamageable`); ışınlar için `CombatRaycast.Nearest` kullanın.
 
 2. **Yeni Düşman Eklerken:**
    - Asla `BasicEnemyAI.cs`'yi kopyalayıp içine farklı davranış tıkıştırmayın.
@@ -186,11 +199,16 @@ flowchart TD
 3. **Geri Bildirimleri (VFX / Audio) Tetiklerken:**
    - Düşman veya silah sınıflarında ses ve partikül instantiate etmeyin.
    - Tekil servisleri kullanın:
-     * `CombatVFXManager.Instance.SpawnBloodSplash(pos, normal, isCrit)`
+     * `CombatVFXManager.Instance.SpawnHitImpact(pos, normal, isCrit, isFlesh)`
      * `BloodDecalManager.Instance.SpawnDecal(pos, normal)`
-     * `HitstopManager.Instance.TriggerHitstop(duration)`
+     * `HitstopManager.Instance.TriggerHitstop(duration, timeScale)`
      * `DamageNumberSystem.Instance.SpawnDamageNumber(pos, damage, isCrit)`
-     * `CombatAudio.Instance.PlayFleshHit()`
+     * `CombatAudio.Instance.PlayFleshImpact(pos, isCrit)` / `PlayClipAt(clip, pos, volume, pitch)`
+   - **Tek sahip kuralı:** Et VFX'i ve et sesi hasar alan varlığın `TakeDamage`'inde üretilir; silah yalnızca hasar sayısı, duvar efekti ve kendi tepkisini üretir. Ölüm tepkileri `CombatEvents.OnEnemyKilled` üzerinden dinlenir ([[GameFeelArchitecture]]).
+
+4. **Kamera ve Hareket Hissi Eklerken:**
+   - `CameraHolder` transform'unu yalnızca `PlayerLook` yazar; yeni efektler `PlayerCameraFeel` / `AddViewPunch` / `AddTrauma` / `DoFovKick` ile eklenir.
+   - Oyuncuya dış kuvvet `PlayerMovement.AddImpulse` ile verilir; tepkiler hareket olaylarına abone olarak eklenir.
 
 ---
 
@@ -203,4 +221,5 @@ flowchart TD
 - [[PlayerSubsystemArchitecture]] ➔ `coordinates_player`
 - [[HealthOrbAndDropSystem]] ➔ `coordinates_health_drops`
 - [[HitstopAndAudioFeedback]] ➔ `coordinates_feedback`
+- [[GameFeelArchitecture]] ➔ `coordinates_game_feel`
 - ⬅️ [[ProjectOverview]] ➔ `mapped_by` *(gelen)*

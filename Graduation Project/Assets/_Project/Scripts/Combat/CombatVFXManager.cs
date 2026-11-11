@@ -24,12 +24,10 @@ namespace RetroFPS.Combat
             if (other == null) return;
 
             // Karakterlere, düşmanlara veya diğer havada uçan gib parçalarına çarpınca leke BIRAKMA!
-            if (other.GetComponentInParent<IDamageable>() != null) return;
-            if (other.GetComponentInParent<CharacterController>() != null) return;
-            if (other.GetComponentInParent<PlayerMovement>() != null) return;
-            if (other.GetComponentInParent<GibPhysicsReporter>() != null) return;
-            string otherName = other.name;
-            if (otherName.StartsWith("Gib_") || otherName.StartsWith("Arrow_") || otherName.StartsWith("Blood_")) return;
+            if ((GameLayers.GroundMask & (1 << other.gameObject.layer)) == 0) return;
+            if (CombatTargetLookup.Get(other).Damageable != null) return;
+            // Dynamic fragments and projectiles are never decal surfaces.
+            if (collision.rigidbody != null || other is CharacterController) return;
 
             if (collision.contactCount > 0)
             {
@@ -83,21 +81,49 @@ namespace RetroFPS.Combat
     public class CombatVFXManager : MonoBehaviour
     {
         private static CombatVFXManager _instance;
+        private static bool _isQuitting;
+
+        /// <summary>
+        /// Tembel (lazy) erişim: sahne-yükleme ön ısıtmasından önce (ör. Awake içinde) veya additive
+        /// sahnelerde de null dönmez. Sıcak yolda yalnızca tek bir null kontrolü maliyeti vardır.
+        /// </summary>
         public static CombatVFXManager Instance
         {
             get
             {
-                if (_instance == null)
-                {
-                    _instance = Object.FindAnyObjectByType<CombatVFXManager>();
-                    if (_instance == null)
-                    {
-                        GameObject go = new GameObject("CombatVFXManager");
-                        _instance = go.AddComponent<CombatVFXManager>();
-                    }
-                }
+                if (_instance == null && !_isQuitting) EnsureInstance();
                 return _instance;
             }
+        }
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetInstance()
+        {
+            _instance = null;
+            _isQuitting = false;
+            Application.quitting -= HandleQuitting;
+            Application.quitting += HandleQuitting;
+            UnityEngine.SceneManagement.SceneManager.sceneLoaded -= EnsureSceneInstance;
+            UnityEngine.SceneManagement.SceneManager.sceneLoaded += EnsureSceneInstance;
+        }
+
+        private static void HandleQuitting() => _isQuitting = true;
+
+        private static void EnsureSceneInstance(UnityEngine.SceneManagement.Scene scene, UnityEngine.SceneManagement.LoadSceneMode mode)
+        {
+            if (_instance != null || _isQuitting) return;
+            EnsureInstance();
+        }
+
+        private static void EnsureInstance()
+        {
+            _instance = Object.FindAnyObjectByType<CombatVFXManager>();
+            if (_instance == null) _instance = new GameObject("CombatVFXManager").AddComponent<CombatVFXManager>();
+        }
+
+        private void OnDestroy()
+        {
+            if (_instance == this) _instance = null;
         }
 
         [Header("Kan & Et Efektleri")]
@@ -132,6 +158,9 @@ namespace RetroFPS.Combat
         private ParticleSystem _dustParticleSystem;
         private ParticleSystem _neckFountainSystem;
         private ParticleSystem _occultBurstSystem;
+        private ParticleSystem _muzzleBurstSystem;
+        private ParticleSystem.EmitParams _muzzleEmitParams;
+        private ParticleSystem.EmitParams _signalEmitParams;
 
         // Havuzlanmış Anatomik Et ve Kemik Parçaları (Gibs)
         private const int TotalGibs = 36;
@@ -322,6 +351,30 @@ namespace RetroFPS.Combat
             occultObj.transform.SetParent(transform);
             _occultBurstSystem = occultObj.AddComponent<ParticleSystem>();
             SetupOccultBurstSystem(_occultBurstSystem, _texSparkParticle, particleShader);
+
+            GameObject muzzleObj = new GameObject("VFX_Pool_MuzzleBurst");
+            muzzleObj.transform.SetParent(transform, false);
+            _muzzleBurstSystem = muzzleObj.AddComponent<ParticleSystem>();
+            SetupSparkParticleSystem(_muzzleBurstSystem, _texSparkParticle, Color.white, Color.white, 0.12f, 4f, particleShader);
+            var main = _muzzleBurstSystem.main;
+            main.startLifetime = new ParticleSystem.MinMaxCurve(0.04f, 0.07f);
+            main.gravityModifier = 0f;
+            main.maxParticles = 64;
+            var shape = _muzzleBurstSystem.shape;
+            shape.shapeType = ParticleSystemShapeType.Sphere;
+            shape.radius = 0.025f;
+            var renderer = _muzzleBurstSystem.GetComponent<ParticleSystemRenderer>();
+            renderer.lengthScale = 2.2f;
+            renderer.velocityScale = 0.05f;
+            Material additive = renderer.sharedMaterial;
+            additive.SetFloat("_Surface", 1f);
+            additive.SetFloat("_Blend", 2f);
+            additive.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
+            additive.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.One);
+            additive.SetInt("_ZWrite", 0);
+            additive.EnableKeyword("_SURFACE_TYPE_TRANSPARENT");
+            additive.SetOverrideTag("RenderType", "Transparent");
+            _muzzleEmitParams.applyShapeToPosition = true;
         }
 
         private void SetupFluidParticleSystem(ParticleSystem ps, Texture2D tex, Color colorMin, Color colorMax, float startSize, float speed, bool useGravity, Shader shader)
@@ -670,7 +723,7 @@ namespace RetroFPS.Combat
         /// </summary>
         public void SpawnBulletTracer(Vector3 start, Vector3 end, Color tracerColor)
         {
-            if (_tracerPool[0] == null) InitializeTracerPool();
+            if (_tracerPool[0] == null) return;
 
             LineRenderer lr = _tracerPool[_tracerIndex];
             if (lr != null)
@@ -719,7 +772,7 @@ namespace RetroFPS.Combat
         /// </summary>
         public void SpawnHitImpact(Vector3 hitPoint, Vector3 hitNormal, bool isCrit, bool isFlesh = true)
         {
-            Quaternion rot = Quaternion.LookRotation(hitNormal);
+            Quaternion rot = Quaternion.LookRotation(hitNormal.sqrMagnitude > 0.0001f ? hitNormal : Vector3.up);
 
             if (isFlesh && enableBloodVFX && _bloodParticleSystem != null)
             {
@@ -769,7 +822,7 @@ namespace RetroFPS.Combat
         /// </summary>
         public void SpawnBladeSlashImpact(Vector3 hitPoint, Vector3 slashDir, bool isCrit)
         {
-            SpawnHitImpact(hitPoint, slashDir, isCrit, true);
+            // Flesh particles belong to the damaged entity; this adds only the slash decal.
 
             if (BloodDecalManager.Instance != null)
             {
@@ -892,8 +945,25 @@ namespace RetroFPS.Combat
         /// <summary>
         /// Namlu ucunda anlık parlayan ışık darbesi (Muzzle Flash).
         /// </summary>
+        internal void SpawnSignalBurst(Vector3 position, Color color, int count)
+        {
+            if (_sparkParticleSystem == null) return;
+            _sparkParticleSystem.transform.position = position;
+            _signalEmitParams.startColor = color;
+            _signalEmitParams.startLifetime = 0.2f;
+            _signalEmitParams.startSize = 0.1f;
+            _sparkParticleSystem.Emit(_signalEmitParams, count);
+        }
+
         public void TriggerMuzzleFlash(Vector3 position, Color flashColor, float intensity = 3.2f)
         {
+            if (_muzzleBurstSystem != null)
+            {
+                _muzzleBurstSystem.transform.position = position;
+                _muzzleEmitParams.startColor = flashColor;
+                _muzzleEmitParams.startSize = 0.07f * Mathf.Sqrt(Mathf.Max(0f, intensity));
+                _muzzleBurstSystem.Emit(_muzzleEmitParams, Random.Range(4, 7));
+            }
             if (_muzzlePointLight == null) return;
 
             _muzzlePointLight.transform.position = position;

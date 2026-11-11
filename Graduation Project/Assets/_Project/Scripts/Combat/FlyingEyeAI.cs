@@ -61,6 +61,10 @@ namespace RetroFPS
         [SerializeField] private float attackCooldown = 2.2f;
         [SerializeField] private Transform firePoint;
 
+        [Header("Sersemleme (Stun)")]
+        [Tooltip("Stun knockback başlangıç hızı (m/s). 7/s sönümle ~3.5 m itme verir.")]
+        [SerializeField] private float stunKnockbackSpeed = 24.5f;
+
         [Header("Devriye ve Sürü")]
         [SerializeField] private float patrolRadius = 7.0f;
         [SerializeField] private float alertRadius = 12.0f;
@@ -68,12 +72,18 @@ namespace RetroFPS
         [Header("Görsel Efekt Renkleri")]
         [SerializeField] private Color normalColor = Color.white;
         [SerializeField] private Color windupGlowColor = new Color(1.0f, 0.15f, 0.9f); // Parlayan büyü moru
-        [SerializeField] private Color damageFlashColor = new Color(1.0f, 0.2f, 0.2f);
-        [SerializeField] private Color critFlashColor = new Color(1.0f, 0.9f, 0.1f);
+        [SerializeField] private Color hitFlashColor = new Color(2.2f, 2.2f, 2.2f, 1f);
+        [SerializeField] private Color criticalHitFlashColor = new Color(3.2f, 2.8f, 0.35f, 1f);
 
+        private readonly RaycastHit[] _sightHits = new RaycastHit[32];
+        private EnemyHealthDropper _healthDropper;
+        private EnemyAmmoDropper _ammoDropper;
         private CharacterController _controller;
         private Transform _playerTransform;
         private PlayerHealth _playerHealth;
+        private float _playerSearchTimer;
+        private const float PlayerSearchInterval = 0.5f;
+        private const float KnockbackDecay = 7f;
 
         private FlyingEyeState _currentState = FlyingEyeState.Idle;
         private float _currentHealth;
@@ -81,6 +91,7 @@ namespace RetroFPS
         private Quaternion _spawnRotation;
         private Vector3 _initialScale;
         private Vector3 _velocity;
+        private Vector3 _knockbackVelocity;
 
         private Vector3 _patrolTarget;
         private Vector3 _lastKnownPlayerPos;
@@ -97,6 +108,8 @@ namespace RetroFPS
         private Collider[] _colliders;
         private MaterialPropertyBlock _propBlock;
         private static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
+        private bool[] _supportsEmission;
+        private static readonly int EmissionColorId = Shader.PropertyToID("_EmissionColor");
         private static readonly int ColorId = Shader.PropertyToID("_Color");
 
         // Ölüm ve Yeniden Doğuş Durum Değişkenleri
@@ -128,6 +141,20 @@ namespace RetroFPS
             EnemyAlertHub.Unregister(this);
         }
 
+        private void Start()
+        {
+            CombatTargetLookup.RegisterHierarchy(this);
+            _supportsEmission = new bool[_renderers.Length];
+            for (int i = 0; i < _renderers.Length; i++)
+            {
+                Material material = _renderers[i] != null ? _renderers[i].sharedMaterial : null;
+                _supportsEmission[i] = material != null && material.HasProperty(EmissionColorId);
+            }
+            FindPlayer();
+            _healthDropper = GetComponent<EnemyHealthDropper>();
+            _ammoDropper = GetComponent<EnemyAmmoDropper>();
+        }
+
         private void Awake()
         {
             _controller = GetComponent<CharacterController>();
@@ -146,6 +173,7 @@ namespace RetroFPS
 
             FindPlayer();
             SetupHitboxes();
+            CombatTargetLookup.RegisterHierarchy(this);
 
             _currentState = FlyingEyeState.Idle;
             _stateTimer = Random.Range(1.0f, 2.5f);
@@ -264,12 +292,6 @@ namespace RetroFPS
                 return;
             }
 
-            if (_playerTransform == null)
-            {
-                FindPlayer();
-                if (_playerTransform == null) return;
-            }
-
             UpdateTimers();
 
             // Doğuş pop yaylanması
@@ -285,8 +307,28 @@ namespace RetroFPS
                 transform.localScale = _initialScale;
             }
 
-            ExecuteStateMachine();
+            if (_playerTransform == null)
+            {
+                // Oyuncudan önce doğan gözler: seyrek (0.5 sn) yeniden arama.
+                _playerSearchTimer -= Time.deltaTime;
+                if (_playerSearchTimer <= 0f)
+                {
+                    _playerSearchTimer = PlayerSearchInterval;
+                    FindPlayer();
+                }
+            }
+            if (_playerTransform != null) ExecuteStateMachine();
+            else if (_currentState == FlyingEyeState.Stagger) ExecuteStagger();
             ApplyHoverAltitude();
+            if (_knockbackVelocity.sqrMagnitude > 0.0001f)
+            {
+                _controller.Move(_knockbackVelocity * Time.deltaTime);
+                _knockbackVelocity *= Mathf.Exp(-KnockbackDecay * Time.deltaTime);
+            }
+            else
+            {
+                _knockbackVelocity = Vector3.zero;
+            }
         }
 
         private void UpdateTimers()
@@ -518,8 +560,10 @@ namespace RetroFPS
             projGO.transform.localScale = new Vector3(0.40f, 0.40f, 0.40f);
 
             // Mermi Materyali: Parlayan Okült Mor
-            Material orbMat = CreateEmissiveMaterial("Proj_OccultPurple", new Color(0.85f, 0.15f, 0.95f));
-            projGO.GetComponent<Renderer>().material = orbMat;
+            // Tek paylaşımlı materyal (atış başına yeni Material sızıntısını önler); sharedMaterial kopya üretmez.
+            if (_sharedProjectileMaterial == null)
+                _sharedProjectileMaterial = CreateEmissiveMaterial("Proj_OccultPurple", new Color(0.85f, 0.15f, 0.95f));
+            projGO.GetComponent<Renderer>().sharedMaterial = _sharedProjectileMaterial;
 
             // Merminin collider'ını trigger yap (fiziksel engelleme yapmasın ama raycast/overlap sorguları bulabilsin)
             Collider col = projGO.GetComponent<Collider>();
@@ -529,7 +573,6 @@ namespace RetroFPS
             EnemyProjectile proj = projGO.AddComponent<EnemyProjectile>();
             proj.Initialize(transform, projectileSpeed, projectileDamage);
 
-            Debug.Log("<color=magenta><b>[FLYING EYE ATTACK]</b></color> Occult plasma bolt fired!");
         }
 
         private void ExecuteStagger()
@@ -595,7 +638,7 @@ namespace RetroFPS
 
             if (dist <= proximityRange)
             {
-                if (Physics.Raycast(eyePos, toPlayer.normalized, out RaycastHit proxHit, dist, GameLayers.EnemySightMask, QueryTriggerInteraction.Ignore))
+                if (CombatRaycast.Nearest(eyePos, toPlayer.normalized, dist, GameLayers.EnemySightMask, _sightHits, out RaycastHit proxHit))
                 {
                     if (proxHit.transform == _playerTransform || proxHit.transform.IsChildOf(_playerTransform))
                     {
@@ -608,7 +651,7 @@ namespace RetroFPS
             float angle = Vector3.Angle(transform.forward, dirToPlayer);
             if (angle > fieldOfView * 0.5f) return false;
 
-            if (Physics.Raycast(eyePos, dirToPlayer, out RaycastHit hit, dist, GameLayers.EnemySightMask, QueryTriggerInteraction.Ignore))
+            if (CombatRaycast.Nearest(eyePos, dirToPlayer, dist, GameLayers.EnemySightMask, _sightHits, out RaycastHit hit))
             {
                 if (hit.transform == _playerTransform || hit.transform.IsChildOf(_playerTransform))
                 {
@@ -625,7 +668,6 @@ namespace RetroFPS
             {
                 _playerTransform = target;
                 StartCombat(false);
-                Debug.Log($"<color=yellow>[Pack Alert]</color> <b>{gameObject.name} (Flying Eye)</b> alerted by ally!");
             }
         }
 
@@ -634,46 +676,34 @@ namespace RetroFPS
             if (_currentState == FlyingEyeState.Dead) return;
 
             _currentHealth -= amount;
-            _flashTimer = isCritical ? 0.14f : 0.08f;
-            SetColor(isCritical ? critFlashColor : damageFlashColor);
+            _flashTimer = isCritical ? 0.12f : 0.06f;
+            SetColor(isCritical ? criticalHitFlashColor : hitFlashColor);
 
-            StartCombat(true);
+            bool wasStaggered = _currentState == FlyingEyeState.Stagger;
+            if (!wasStaggered) StartCombat(true);
 
             // Geri tepme sarsıntısı
-            _controller.Move(-hitNormal * 1.8f);
+            _knockbackVelocity = -hitNormal.normalized * Mathf.Clamp(amount * 0.12f, 2f, 9f);
 
             if (isCritical || amount >= 30f)
             {
                 _currentState = FlyingEyeState.Stagger;
-                _stateTimer = 0.30f;
+                _stateTimer = wasStaggered ? Mathf.Max(_stateTimer, 0.30f) : 0.30f;
             }
 
             if (HitstopManager.Instance != null)
             {
-                if (_currentHealth <= 0f)
-                    HitstopManager.Instance.TriggerHitstop(0.08f, 0.02f);
-                else if (isCritical)
+                if (_currentHealth > 0f && isCritical)
                     HitstopManager.Instance.TriggerHitstop(0.04f, 0.03f);
             }
 
-            Debug.Log($"<color=magenta>[Flying Eye Hit]</color> -{amount:F0} HP | Remaining: <b>{Mathf.Max(0, _currentHealth):F0}/{maxHealth}</b> {(isCritical ? "<color=yellow>CRIT EYE-SHOT!</color>" : "")}");
 
+            if (CombatVFXManager.Instance != null)
+                CombatVFXManager.Instance.SpawnHitImpact(hitPoint, hitNormal, isCritical, true);
+            if (CombatAudio.Instance != null)
+                CombatAudio.Instance.PlayFleshImpact(hitPoint, isCritical);
             if (_currentHealth <= 0f)
-            {
                 Die(hitPoint, hitNormal, amount, isCritical);
-            }
-            else
-            {
-                if (CombatVFXManager.Instance != null)
-                {
-                    CombatVFXManager.Instance.SpawnHitImpact(hitPoint, hitNormal, isCritical, true);
-                }
-
-                if (CombatAudio.Instance != null)
-                {
-                    CombatAudio.Instance.PlayFleshImpact(hitPoint, isCritical);
-                }
-            }
         }
 
         public void Stun(float duration, Vector3 knockbackDir)
@@ -683,7 +713,10 @@ namespace RetroFPS
             _currentState = FlyingEyeState.Stagger;
             _stateTimer = duration;
             _cooldownTimer = duration + 0.6f;
-            _controller.Move(knockbackDir.normalized * 3.5f);
+            // knockbackDir bir yöndür; toplam kayma ~ stunKnockbackSpeed / KnockbackDecay (24.5 / 7 = 3.5 m).
+            _knockbackVelocity = knockbackDir.sqrMagnitude > 0.0001f
+                ? knockbackDir.normalized * stunKnockbackSpeed
+                : Vector3.zero;
 
             SetColor(new Color(1f, 0.9f, 0.2f));
 
@@ -692,19 +725,18 @@ namespace RetroFPS
                 HitstopManager.Instance.TriggerHitstop(0.08f, 0.02f);
             }
 
-            Debug.Log($"<color=yellow><b>[FLYING EYE STUNNED!]</b></color> {gameObject.name} immobilized in mid-air for {duration:F1}s!");
         }
 
         private void Die(Vector3 hitPoint, Vector3 hitNormal, float killingDamage, bool isCritical)
         {
+            if (!IsAlive) return;
             _currentState = FlyingEyeState.Dead;
             _stateTimer = respawnTime;
             ClearFlash();
 
-            OnEnemyDeath?.Invoke(this);
 
             // Can Küresi Düşüşü (Uçan Düşman - Tier 2 Ödülü)
-            EnemyHealthDropper dropper = GetComponent<EnemyHealthDropper>();
+            EnemyHealthDropper dropper = _healthDropper;
             if (dropper != null)
             {
                 dropper.TriggerDrop(isCritical, killingDamage >= 35f);
@@ -715,7 +747,7 @@ namespace RetroFPS
             }
 
             // Cephane Düşüşü (DOOM Kaynak Döngüsü)
-            EnemyAmmoDropper ammoDropper = GetComponent<EnemyAmmoDropper>();
+            EnemyAmmoDropper ammoDropper = _ammoDropper;
             if (ammoDropper != null)
             {
                 ammoDropper.TriggerDrop(isCritical, killingDamage >= 35f);
@@ -746,7 +778,6 @@ namespace RetroFPS
                 SetRenderersActive(false);
                 transform.localScale = _initialScale;
 
-                Debug.Log("<color=red><b>[FLYING EYE GIBBED!]</b></color> Occult plasma and flesh fragments scattered!");
             }
             else
             {
@@ -756,18 +787,13 @@ namespace RetroFPS
                 Vector3 knockback = hitNormal.sqrMagnitude > 0.01f ? -hitNormal : -transform.forward;
                 _deathFallVelocity = knockback * 2.2f + Vector3.up * 1.4f;
 
-                if (CombatVFXManager.Instance != null)
-                {
-                    CombatVFXManager.Instance.SpawnHitImpact(transform.position, hitNormal, false, false);
-                }
 
-                if (CombatAudio.Instance != null)
-                {
-                    CombatAudio.Instance.PlayFleshImpact(transform.position, false);
-                }
 
-                Debug.Log("<color=red><b>[FLYING EYE FALLING]</b></color> Spiraling down from the sky.");
             }
+            if (HitstopManager.Instance != null)
+                HitstopManager.Instance.TriggerHitstop(0.07f, 0.03f);
+            CombatEvents.RaiseEnemyKilled(transform.position, isCritical, _isGibbed);
+            OnEnemyDeath?.Invoke(this);
         }
 
         private void Respawn()
@@ -785,6 +811,7 @@ namespace RetroFPS
             _currentHealth = maxHealth;
             _currentState = FlyingEyeState.Idle;
             _velocity = Vector3.zero;
+            _knockbackVelocity = Vector3.zero;
             ClearFlash();
 
             SetRenderersActive(true);
@@ -796,7 +823,6 @@ namespace RetroFPS
                 CombatVFXManager.Instance.SpawnHitImpact(transform.position, Vector3.up, false, false);
             }
 
-            Debug.Log("<color=green>[Flying Eye Respawned]</color> Ready for aerial patrol!");
         }
 
         /// <summary>
@@ -842,6 +868,7 @@ namespace RetroFPS
                 _renderers[i].GetPropertyBlock(_propBlock);
                 _propBlock.SetColor(BaseColorId, col);
                 _propBlock.SetColor(ColorId, col);
+                if (_supportsEmission != null && i < _supportsEmission.Length && _supportsEmission[i]) _propBlock.SetColor(EmissionColorId, col);
                 _renderers[i].SetPropertyBlock(_propBlock);
             }
         }
@@ -863,6 +890,7 @@ namespace RetroFPS
         private static Material _sharedFallbackIris;
         private static Material _sharedFallbackHorn;
         private static Material _sharedFallbackTendril;
+        private static Material _sharedProjectileMaterial;
 
         /// <summary>
         /// Uçan Göz parçalarını tarar; eksik veya mor hata materyallerini procedural Dark Fantasy materyalleriyle onarır.
@@ -1027,7 +1055,7 @@ namespace RetroFPS
 
         #endregion
 
-        private Material CreateEmissiveMaterial(string matName, Color col)
+        private static Material CreateEmissiveMaterial(string matName, Color col)
         {
             Shader uLit = Shader.Find("Universal Render Pipeline/Unlit");
             if (uLit == null) uLit = Shader.Find("Universal Render Pipeline/Lit");

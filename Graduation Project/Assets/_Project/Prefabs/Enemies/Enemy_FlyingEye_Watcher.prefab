@@ -196,12 +196,13 @@ MonoBehaviour:
   attackWindup: 0.5
   attackCooldown: 2.2
   firePoint: {fileID: 4337315263256490796}
+  stunKnockbackSpeed: 24.5
   patrolRadius: 7
   alertRadius: 12
   normalColor: {r: 1, g: 1, b: 1, a: 1}
   windupGlowColor: {r: 1, g: 0.15, b: 0.9, a: 1}
-  damageFlashColor: {r: 1, g: 0.2, b: 0.2, a: 1}
-  critFlashColor: {r: 1, g: 0.9, b: 0.1, a: 1}
+  hitFlashColor: {r: 2.2, g: 2.2, b: 2.2, a: 1}
+  criticalHitFlashColor: {r: 3.2, g: 2.8, b: 0.35, a: 1}
 --- !u!114 &2490054315732593398
 MonoBehaviour:
   m_ObjectHideFlags: 0

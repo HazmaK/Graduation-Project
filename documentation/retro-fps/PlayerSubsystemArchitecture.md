@@ -37,7 +37,8 @@ flowchart LR
         PL["PlayerLook\nCamera Root"]
         PH["PlayerHealth\nIDamageable"]
         PP["PlayerParryController\nBuckler Socket"]
-        PDF["PlayerDamageFeedback\nPost-Process & Shake"]
+        PDF["PlayerDamageFeedback\nIMGUI Vinyet & Flinch"]
+        PCF["PlayerCameraFeel\nSpring Punch / Bob"]
         HUD["PlayerDebugHUD\nHız & State"]
     end
 
@@ -46,6 +47,8 @@ flowchart LR
     ParryAction --> PP
     
     PM -->|Hız ve Durum Verisi| PL
+    PM -.->|OnJumped / OnLanded / OnDashStarted / OnSlideStarted| PCF
+    PCF -->|Position/RotationOffset| PL
     PM -->|Hız ve State| HUD
     PM -->|I-Frame Durumu| PH
     PH -.->|OnDamageTaken| PDF
@@ -78,13 +81,18 @@ flowchart LR
 
 ### 3. `PlayerLook.cs` (Kamera ve Sarsıntı Motoru)
 - **Konum:** `Assets/_Project/Scripts/Player/PlayerLook.cs`
-- **Strafe Dönüş Eğimi (Camera Tilt):** A ve D tuşlarına basarak yana strafe yaparken kamera Z ekseninde 2.5° organik olarak yatar.
-- **Hıza Bağlı Dinamik FOV:** Oyuncu taban hızdan slide veya bunny-hop ile 20f+ hızlara çıktığında kamera FOV'u yumuşakça 90 dereceden 110 dereceye açılır.
-- **Trauma Tabanlı Sarsıntı:** Hasar alındığında artan `Trauma` katsayısı karesel sönümlenerek (`trauma^2`) Perlin noise ile sarsıntı üretir.
+- **Strafe Dönüş Eğimi (Camera Tilt):** Yanal hıza bağlı olarak kamera Z ekseninde `tiltAngle = 2°` (en fazla 1.5x) yatar; slide sırasında +4°.
+- **Hıza Bağlı Dinamik FOV:** Yatay hız 11 → 24 m/s aralığında FOV 65'ten 78'e açılır; `DoFovKick` kick'leri birleşir ([-12, 22]).
+- **Trauma Tabanlı Sarsıntı:** Hasar alındığında artan `Trauma` katsayısı karesel sönümlenerek (`trauma^2`) Perlin noise ile sarsıntı üretir (unscaled zaman; hitstop'ta da akar).
+- **Ham Bakış:** Mouse smoothing kaldırıldı; `[DefaultExecutionOrder(-100)]` ile pitch `Update`'te, nihai kamera pozu `LateUpdate`'te yazılır. `CameraHolder` transform'unun tek yazarı `PlayerLook`'tur.
+
+### 3.1 `Feel/PlayerCameraFeel.cs` & `Feel/Spring.cs` (Kamera Hissi)
+- **Konum:** `Assets/_Project/Scripts/Player/Feel/`
+- `PlayerCameraFeel` (`[DefaultExecutionOrder(100)]`, yoksa `PlayerLook` tarafından otomatik eklenir) `PlayerMovement` olaylarını dinleyerek view punch, iniş çökmesi, head bob, dash roll ve ayak sesleri üretir; `Spring` tahsissiz sönümlü osilatördür. Ayrıntı: [[GameFeelArchitecture]].
 
 ### 4. `PlayerDamageFeedback.cs` (Hasar ve Darbe Algısı)
 - **Konum:** `Assets/_Project/Scripts/Player/PlayerDamageFeedback.cs`
-- **Kırmızı Vinyet Parlaması:** Darbe anında ekran kenarlarında URP Color Adjustments / Vignette üzerinden anlık kan kırmızısı parlama oluşturur.
+- **Kırmızı Vinyet Parlaması:** Darbe anında ekran kenarlarında anlık kan kırmızısı parlama oluşturur. URP Volume/Vignette **kullanılmaz**; runtime üretilen vinyet dokusu `OnGUI` (IMGUI) ile çizilir (ortam karartması ve düşük can nabzı da aynı yoldan).
 - **Zümrüt Yeşili İyileşme Parlaması:** `TriggerHealFlash` ile can küresi toplandığında ekran kenarlarında ferahlatıcı yeşil parlama oluşturur.
 - **Darbe Yönü Sarsıntısı:** Hasarın geldiği yönün tersine doğru kameraya küçük bir geri itme darbesi uygular.
 
@@ -97,6 +105,7 @@ flowchart LR
 ## 3. BAŞKA BİR AI İÇİN GELİŞTİRME SÖZLEŞMESİ
 1. Oyuncunun canını veya parry özelliklerini değiştirmek için `PlayerHealth` ve `PlayerParryController`'ın public property'lerini kullanın.
 2. `PlayerLook` kamerası hiyerarşide daima `PlayerMovement` nesnesinin alt objesi (CameraRoot) olmalıdır.
+3. `CameraHolder` pozisyon/rotasyonunu `PlayerLook` dışında yazmayın; yeni kamera efektleri `PlayerCameraFeel` / `AddViewPunch` / `AddTrauma` / `DoFovKick` üzerinden eklenir ([[GameFeelArchitecture]]).
 
 ---
 
@@ -106,5 +115,6 @@ flowchart LR
 - [[PlayerMovementArchitecture]] ➔ `consumes_movement_physics`
 - [[WeaponArsenalArchitecture]] ➔ `holds_weapons`
 - [[HitstopAndAudioFeedback]] ➔ `receives_damage_feedback`
+- [[GameFeelArchitecture]] ➔ `composes_camera_feel`
 - ⬅️ [[START_HERE_AI_CONSTITUTION]] ➔ `mandated_by_constitution` *(gelen)*
 - ⬅️ [[ProjectOverview]] ➔ `utilizes_player` *(gelen)*

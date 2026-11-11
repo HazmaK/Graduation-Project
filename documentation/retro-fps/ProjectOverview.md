@@ -38,6 +38,7 @@ tags:
 - **Karşılaşma ve Dalga Direktörü:** [[WaveAndEncounterArchitecture]]
 - **Görsel Efekt ve Parçalanma:** [[CombatVFXAndDecalSystem]]
 - **Vuruş Tokluğu ve Ses:** [[HitstopAndAudioFeedback]]
+- **Oyun Hissi (Kamera, Spring, Kill Confirm):** [[GameFeelArchitecture]]
 - **Çevre, Aydınlatma ve Atmosfer:** [[EnvironmentAndAudioAtmosphere]]
 
 ## İlişkiler (Sinaptik Ağ Bağlantıları)
@@ -56,5 +57,6 @@ tags:
 - [[WaveAndEncounterArchitecture]] ➔ `orchestrates_encounters`
 - [[CombatVFXAndDecalSystem]] ➔ `utilizes_vfx`
 - [[HitstopAndAudioFeedback]] ➔ `utilizes_feedback`
+- [[GameFeelArchitecture]] ➔ `utilizes_game_feel`
 - [[EnvironmentAndAudioAtmosphere]] ➔ `utilizes_atmosphere`
 - ⬅️ [[MultiAgentSharedMemory]] ➔ `manages_project` *(gelen)*

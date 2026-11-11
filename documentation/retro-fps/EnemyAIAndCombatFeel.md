@@ -57,11 +57,14 @@ flowchart TD
 
 ### 3. Vuruş Tokluğu: Hitstop ve Tökezleme (Stagger)
 - **Hitstop (Mikro Dondurma):**
-  * Kritik vuruşlarda (Kafa / Headshot) veya kılıç saplamasında oyun motoru zaman ölçeğini (`Time.timeScale`) 0.04 - 0.08 saniye boyunca 0.05f seviyesine çeker.
+  * Canlı düşmana kritik vuruşta `TriggerHitstop(0.04s, 0.04)` (Uçan Göz `0.03`), ölümde `0.07s / 0.03`, stun'da `0.08s / 0.02`. Çakışan çağrılar birleşir (en uzun süre, en düşük ölçek).
   * Oyuncuya vuruşun hedefe derinden oturduğu hissini verir.
+- **Vuruş Tepkisi (Hit Flash & Et Geri Bildirimi):** Düşman `TakeDamage` içinde HDR beyaz (kritikte altın) hit flash (0.06s / 0.12s, `_EmissionColor` dahil), et darbe VFX'i ve et sesini **kendisi** üretir; silahlar bunları çağırmaz ([[GameFeelArchitecture]]).
 - **Tökezleme (Stagger):**
-  * Ağır darbe veya parry savuşturması alan düşman mevcut saldırı ve hareketini iptal eder, `EnemyState.Stagger` durumuna geçerek geriye doğru hafifçe itilir (`knockback`).
-  * 1.5 - 2.2 saniyelik savunmasız pencere oluşturur.
+  * Ghoul: Kritik veya ≥40 hasarda 0.35s stagger; `-hitNormal` yönünde `clamp(hasar × 0.09, 2.5, 10)` m/s yatay itme (≥60 hasarda hafif dikey sıçrama), 8/s üstel sönüm. Stagger sırasında gelen vuruşlar süreyi uzatır, chase'i yeniden başlatmaz.
+  * Uçan Göz: Her vuruşta `clamp(hasar × 0.12, 2, 9)` m/s itme (7/s sönüm); kritik veya ≥30 hasarda 0.30s stagger.
+  * Stun / parry (`IStunnable.Stun`): `knockbackDir` yalnızca yön; itme hızı `stunKnockbackSpeed` (Ghoul 5.5, Uçan Göz 24.5 ≈ 3.5 m). 1.2 - 2.2 saniyelik savunmasız pencere oluşturur.
+- **Ölüm Olayı:** `Die` → `CombatEvents.RaiseEnemyKilled(pos, wasCritical, wasGibbed)` → `OnEnemyDeath`. Kill confirm UI/ses bu olayı dinler.
 
 ### 4. Ölüm, Ragdoll Kinematiği ve Parçalanma
 - **Ölçek (Scale) Sabitliği:** Düşman öldüğünde `CharacterController` devre dışı bırakılırken `Transform.localScale` mutlak olarak kilitlenir; model boyutunda deformasyon oluşması engellenir.
@@ -73,6 +76,7 @@ flowchart TD
 ## 3. BAŞKA BİR AI İÇİN GELİŞTİRME KURALLARI
 1. Yeni bir düşman yazarken algılama mantığını baştan icat etmeyin; `BasicEnemyAI`'de kullanılan `IAlertableEnemy` ve FoV/LoS formüllerini uygulayın.
 2. Düşmanın ölüm anında modelin ölçeğini veya hiyerarşisini bozmayın; ragdoll geçişinde bileşenleri `isKinematic = false` yaparak aktif hale getirin.
+3. Yeni düşman `Awake`/`Start`'ta `CombatTargetLookup.RegisterHierarchy(this)` çağırmalı, `TakeDamage` içinde et VFX/sesini kendisi üretmeli ve `Die` içinde `CombatEvents.RaiseEnemyKilled` yayınlamalıdır ([[GameFeelArchitecture]]).
 
 ---
 
@@ -82,5 +86,6 @@ flowchart TD
 - [[EnemyAIAndSpawning]] ➔ `details_enemy_entities`
 - [[HitstopAndAudioFeedback]] ➔ `triggers_hitstop`
 - [[CombatVFXAndDecalSystem]] ➔ `triggers_gibs_on_death`
+- [[GameFeelArchitecture]] ➔ `owns_hit_reactions`
 - ⬅️ [[ProjectOverview]] ➔ `utilizes_ai` *(gelen)*
 - ⬅️ [[START_HERE_AI_CONSTITUTION]] ➔ `mandated_by_constitution` *(gelen)*

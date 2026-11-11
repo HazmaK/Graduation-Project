@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using RetroFPS.Combat;
 
 namespace RetroFPS
 {
@@ -232,13 +233,11 @@ namespace RetroFPS.Weapons
         {
             if (!_weaponMap.TryGetValue(slot, out WeaponBase newWeapon) || newWeapon == null)
             {
-                InitializeWeapons();
-                if (!_weaponMap.TryGetValue(slot, out newWeapon) || newWeapon == null)
-                {
-                    Debug.LogWarning($"[WeaponController] Slot {slot} not found!");
-                    return;
-                }
+                return;
             }
+
+            if (_activeWeapon == newWeapon) return;
+            bool isSwitch = _activeWeapon != null;
 
             if (_activeWeapon != null)
             {
@@ -261,6 +260,7 @@ namespace RetroFPS.Weapons
                 shotgunWeaponVisual.SetActive(slot == WeaponSlot.GothicShotgun);
             }
 
+            if (isSwitch && CombatAudio.Instance != null) CombatAudio.Instance.PlayWeaponSwitch();
             OnWeaponSwitched?.Invoke(slot);
         }
 

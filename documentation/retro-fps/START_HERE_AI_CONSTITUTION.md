@@ -79,6 +79,7 @@ Herhangi bir sisteme müdahale etmeden önce ilgili sinaptik düğümü mutlaka 
 - [[CombatAndDamageInterfaces]] ➔ Hasar, sersemletme ve karşılaşma arayüzleri
 - [[HealthOrbAndDropSystem]] ➔ Adaptif can küresi havuzu ve düşüş direktörü
 - [[HitstopAndAudioFeedback]] ➔ Vuruş tokluğu, sentetik ses ve hasar sayıları
+- [[GameFeelArchitecture]] ➔ Kamera kompozisyonu, spring tabanlı his, kill confirm ve tek sahipli vuruş geri bildirimi
 - [[CombatVFXAndDecalSystem]] ➔ Kan lekesi, kor kıvılcım ve gore parçalanma
 - [[CollaborationAndGitWorkflow]] ➔ İki kişilik ekip iş akışı ve Git kuralları
 

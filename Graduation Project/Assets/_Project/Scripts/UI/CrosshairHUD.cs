@@ -22,6 +22,12 @@ namespace RetroFPS.UI
         [SerializeField] private float baseCrosshairSpread = 8f;
         [SerializeField] private float bloomRecoverySpeed = 24f;
 
+        [Header("Kill Confirmation")]
+        [SerializeField] private Color killMarkerColor = new Color(1f, 0.08f, 0.06f, 1f);
+        [SerializeField] private Color criticalKillMarkerColor = new Color(1f, 0.96f, 0.65f, 1f);
+        private const float KillMarkerDuration = 0.32f;
+        private float _killMarkerTimer;
+        private bool _killMarkerIsCrit;
         private WeaponController _weaponController;
         private float _hitmarkerTimer = 0f;
         private bool _hitmarkerIsCrit = false;
@@ -38,6 +44,7 @@ namespace RetroFPS.UI
 
         private void OnEnable()
         {
+            CombatEvents.OnEnemyKilled += HandleEnemyKilled;
             if (_weaponController != null)
             {
                 _weaponController.OnWeaponHit += HandleWeaponHit;
@@ -46,6 +53,8 @@ namespace RetroFPS.UI
 
         private void OnDisable()
         {
+            CombatEvents.OnEnemyKilled -= HandleEnemyKilled;
+            _killMarkerTimer = 0f;
             if (_weaponController != null)
             {
                 _weaponController.OnWeaponHit -= HandleWeaponHit;
@@ -62,6 +71,7 @@ namespace RetroFPS.UI
 
         private void Update()
         {
+            if (_killMarkerTimer > 0f) _killMarkerTimer -= Time.unscaledDeltaTime;
             if (_hitmarkerTimer > 0f)
             {
                 _hitmarkerTimer -= Time.deltaTime;
@@ -76,6 +86,13 @@ namespace RetroFPS.UI
             {
                 _recoilBloom = 0f;
             }
+        }
+
+        private void HandleEnemyKilled(Vector3 position, bool wasCritical, bool wasGibbed)
+        {
+            _killMarkerTimer = KillMarkerDuration;
+            _killMarkerIsCrit = wasCritical;
+            if (CombatAudio.Instance != null) CombatAudio.Instance.PlayKillConfirm(wasCritical);
         }
 
         private void HandleWeaponHit(bool isCrit)
@@ -143,7 +160,7 @@ namespace RetroFPS.UI
             }
 
             // 3. Vuruş İşaretçisi (Hitmarker X) - Sıçrama Ölçeklendirmeli
-            if (_hitmarkerTimer > 0f)
+            if (_hitmarkerTimer > 0f && _killMarkerTimer <= 0f)
             {
                 float t = _hitmarkerTimer / hitmarkerDuration;
                 float popScale = Mathf.Lerp(1.35f, 1.0f, 1f - t); // Vuruşta 1.35x açılıp kapanır
@@ -154,6 +171,16 @@ namespace RetroFPS.UI
                 DrawLine(cx - hSize, cy + hSize, cx + hSize, cy - hSize, 2);
             }
 
+            if (_killMarkerTimer > 0f)
+            {
+                float progress = 1f - _killMarkerTimer / KillMarkerDuration;
+                float size = 13f * Mathf.Lerp(1.9f, 1.3f, Mathf.Clamp01(progress * 2f));
+                Color color = _killMarkerIsCrit ? criticalKillMarkerColor : killMarkerColor;
+                color.a *= Mathf.Clamp01(_killMarkerTimer / 0.08f);
+                GUI.color = color;
+                DrawLine(cx - size, cy - size, cx + size, cy + size, 3);
+                DrawLine(cx - size, cy + size, cx + size, cy - size, 3);
+            }
             GUI.color = oldCol;
         }
 

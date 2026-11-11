@@ -53,9 +53,11 @@ namespace RetroFPS.Weapons
         // Sıfır GC önbellek tamponları
         private readonly Collider[] _overlapBuffer = new Collider[32];
         private readonly RaycastHit[] _lungeHitsBuffer = new RaycastHit[16];
-        private readonly List<IDamageable> _hitEntitiesBuffer = new List<IDamageable>(16);
+        private readonly List<IDamageable> _hitEntitiesBuffer = new List<IDamageable>(32);
 
         // Önbelleğe alınmış bileşenler
+        private readonly RaycastHit[] _visibilityHits = new RaycastHit[32];
+        private System.Action _slamLandedCallback;
         private PlayerMovement _movement;
         private PlayerHealth _playerHealth;
         private CrosshairHUD _crosshairHUD;
@@ -68,6 +70,7 @@ namespace RetroFPS.Weapons
 
         private void Awake()
         {
+            _slamLandedCallback = OnMeteorSlamLanded;
             if (string.IsNullOrEmpty(weaponDisplayName) || weaponDisplayName == "Weapon")
             {
                 weaponDisplayName = "Executioner Blade";
@@ -79,6 +82,7 @@ namespace RetroFPS.Weapons
             base.Start();
             ResolveMovement();
             ResolvePlayerHealth();
+            _crosshairHUD = FindAnyObjectByType<CrosshairHUD>();
         }
 
         private void ResolveMovement()
@@ -161,8 +165,12 @@ namespace RetroFPS.Weapons
             _comboIndex = (_comboIndex + 1) % 3;
             _primaryCooldownTimer = cooldown;
 
-            if (_look != null) _look.AddTrauma(trauma);
-            if (_crosshairHUD == null) _crosshairHUD = FindAnyObjectByType<CrosshairHUD>();
+            if (_look != null)
+            {
+                _look.AddTrauma(trauma);
+                _look.AddViewPunch(currentCombo == 2 ? -2.2f : -0.6f,
+                    currentCombo == 2 ? 0f : (currentCombo == 0 ? -1.2f : 1.2f));
+            }
             if (_crosshairHUD != null) _crosshairHUD.TriggerRecoilBloom(bloom);
 
             // 1. Mermileri Kesme ve Geri Yansıtma
@@ -239,7 +247,7 @@ namespace RetroFPS.Weapons
                 if (angle <= angleLimit * 0.5f)
                 {
                     // Duvar arkasına vurulmasını engelle
-                    if (Physics.Linecast(cam.transform.position, targetPos, out RaycastHit wallHit, GameLayers.PlayerAttackMask, QueryTriggerInteraction.Ignore))
+                    if (CombatRaycast.Nearest(cam.transform.position, dirToTarget, Vector3.Distance(cam.transform.position, targetPos), GameLayers.PlayerAttackMask, _visibilityHits, out RaycastHit wallHit))
                     {
                         if (wallHit.collider != col && !wallHit.collider.transform.IsChildOf(col.transform.root))
                         {
@@ -247,10 +255,11 @@ namespace RetroFPS.Weapons
                         }
                     }
 
-                    Hitbox hitbox = col.GetComponent<Hitbox>();
+                    CombatTargetLookup.Binding binding = CombatTargetLookup.Get(col);
+                Hitbox hitbox = binding.Hitbox;
                     IDamageable rootTarget = hitbox != null && hitbox.Target != null 
                         ? hitbox.Target 
-                        : col.GetComponentInParent<IDamageable>();
+                        : binding.Entity;
 
                     if (rootTarget != null && !(rootTarget is PlayerHealth) && !_hitEntitiesBuffer.Contains(rootTarget))
                     {
@@ -267,22 +276,19 @@ namespace RetroFPS.Weapons
                         {
                             Vector3 slashDir = isFinisher ? Vector3.down : cam.transform.right;
                             CombatVFXManager.Instance.SpawnBladeSlashImpact(targetPos, slashDir, isCrit);
-                            CombatVFXManager.Instance.SpawnHitImpact(targetPos, -dirToTarget, isCrit, true);
                         }
 
                         if (DamageNumberSystem.Instance != null)
                             DamageNumberSystem.Instance.SpawnDamageNumber(targetPos, finalDamage, isCrit);
 
-                        if (CombatAudio.Instance != null)
-                            CombatAudio.Instance.PlayFleshImpact(targetPos, isCrit);
 
                         // Finisher darbesi mikro hitstop ve ekstra kan saçar
                         if (isFinisher)
                         {
+                            if (binding.Stunnable != null)
+                                binding.Stunnable.Stun(1.2f, cam.transform.forward * 12f);
                             if (HitstopManager.Instance != null)
-                            {
                                 HitstopManager.Instance.TriggerHitstop(0.08f, 0.02f);
-                            }
 
                             if (CombatVFXManager.Instance != null)
                             {
@@ -301,7 +307,6 @@ namespace RetroFPS.Weapons
             Camera cam = PlayerCamera;
             if (!CanFireAlt || cam == null) return;
 
-            ResolveMovement();
             if (_movement == null) return;
 
             bool isLookingDown = cam.transform.forward.y < -0.42f;
@@ -326,7 +331,6 @@ namespace RetroFPS.Weapons
 
             if (Viewmodel != null) Viewmodel.TriggerMeleeLunge(0.28f);
             if (CombatAudio.Instance != null) CombatAudio.Instance.PlayBladeLunge();
-            if (_crosshairHUD == null) _crosshairHUD = FindAnyObjectByType<CrosshairHUD>();
             if (_crosshairHUD != null) _crosshairHUD.TriggerRecoilBloom(24f);
 
             Vector3 lungeDir = cam.transform.forward;
@@ -355,26 +359,19 @@ namespace RetroFPS.Weapons
                 Collider col = hit.collider;
                 if (col == null || col.transform.IsChildOf(transform.root)) continue;
 
-                Hitbox hitbox = col.GetComponent<Hitbox>();
+                CombatTargetLookup.Binding binding = CombatTargetLookup.Get(col);
+                Hitbox hitbox = binding.Hitbox;
                 IDamageable target = hitbox != null && hitbox.Target != null 
                     ? hitbox.Target 
-                    : col.GetComponentInParent<IDamageable>();
+                    : binding.Entity;
 
                 if (target != null && !(target is PlayerHealth) && !_hitEntitiesBuffer.Contains(target))
                 {
                     _hitEntitiesBuffer.Add(target);
 
-                    IStunnable stunnable = col.GetComponentInParent<IStunnable>();
-                    bool isTargetStunned = stunnable != null;
-
                     float finalDamage = lungeDamage;
                     target.TakeDamage(finalDamage, hit.point, hit.normal, true);
                     NotifyHit(true);
-
-                    if (CombatVFXManager.Instance != null)
-                    {
-                        CombatVFXManager.Instance.SpawnHitImpact(hit.point, hit.normal, true, true);
-                    }
 
                     if (DamageNumberSystem.Instance != null)
                     {
@@ -394,7 +391,6 @@ namespace RetroFPS.Weapons
         private void TriggerBloodHarvest(Vector3 impactPoint)
         {
             // 1. Oyuncuya +25 HP Can Sömürüsü (Vampiric Leech)
-            ResolvePlayerHealth();
             if (_playerHealth != null)
             {
                 _playerHealth.Heal(lungeHealAmount, true, 125f);
@@ -415,7 +411,6 @@ namespace RetroFPS.Weapons
             if (CombatAudio.Instance != null)
             {
                 CombatAudio.Instance.PlayCritCrunch();
-                CombatAudio.Instance.PlayFleshImpact(impactPoint, true);
             }
 
             if (CombatVFXManager.Instance != null)
@@ -431,14 +426,14 @@ namespace RetroFPS.Weapons
 
             if (Viewmodel != null) Viewmodel.TriggerMeleeSlam(0.35f);
             if (CombatAudio.Instance != null) CombatAudio.Instance.PlayBladeLunge();
-            if (_crosshairHUD == null) _crosshairHUD = FindAnyObjectByType<CrosshairHUD>();
             if (_crosshairHUD != null) _crosshairHUD.TriggerRecoilBloom(26f);
 
-            _movement.StartMeteorSlam(slamDownwardSpeed, () => OnMeteorSlamLanded(cam));
+            _movement.StartMeteorSlam(slamDownwardSpeed, _slamLandedCallback);
         }
 
-        private void OnMeteorSlamLanded(Camera cam)
+        private void OnMeteorSlamLanded()
         {
+            if (_look != null) _look.AddViewPunch(-3f, 0f);
             Vector3 center = transform.position;
 
             // Ses & VFX
@@ -463,10 +458,11 @@ namespace RetroFPS.Weapons
                 Collider col = _overlapBuffer[i];
                 if (col == null || col.transform.IsChildOf(transform.root)) continue;
 
-                Hitbox hitbox = col.GetComponent<Hitbox>();
+                CombatTargetLookup.Binding binding = CombatTargetLookup.Get(col);
+                Hitbox hitbox = binding.Hitbox;
                 IDamageable target = hitbox != null && hitbox.Target != null 
                     ? hitbox.Target 
-                    : col.GetComponentInParent<IDamageable>();
+                    : binding.Entity;
 
                 if (target != null && !(target is PlayerHealth) && !_hitEntitiesBuffer.Contains(target))
                 {
@@ -477,23 +473,18 @@ namespace RetroFPS.Weapons
                     knockDir.y = 0.35f;
 
                     // Düşmanı sersemlet ve savur
-                    IStunnable stunnable = col.GetComponentInParent<IStunnable>();
+                    IStunnable stunnable = binding.Stunnable;
                     if (stunnable != null)
                     {
                         stunnable.Stun(slamStunDuration, knockDir * 4.5f);
                     }
 
-                    target.TakeDamage(slamDamage, hitPos, knockDir, true);
+                    target.TakeDamage(slamDamage, hitPos, -knockDir, true);
                     NotifyHit(true);
 
                     if (DamageNumberSystem.Instance != null)
                     {
                         DamageNumberSystem.Instance.SpawnDamageNumber(hitPos, slamDamage, true);
-                    }
-
-                    if (CombatVFXManager.Instance != null)
-                    {
-                        CombatVFXManager.Instance.SpawnHitImpact(hitPos, Vector3.up, true, true);
                     }
                 }
             }

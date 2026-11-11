@@ -166,8 +166,6 @@ namespace RetroFPS.Editor
             soPl.FindProperty("cameraHolder").objectReferenceValue = cameraHolder;
             soPl.FindProperty("playerCamera").objectReferenceValue = mainCam;
             soPl.FindProperty("mouseSensitivity").floatValue = 0.10f;
-            soPl.FindProperty("smoothLook").boolValue = true;
-            soPl.FindProperty("smoothSpeed").floatValue = 35f;
             soPl.FindProperty("invertY").boolValue = false;
             soPl.FindProperty("baseFOV").floatValue = 65f;
             soPl.FindProperty("maxFOV").floatValue = 78f;

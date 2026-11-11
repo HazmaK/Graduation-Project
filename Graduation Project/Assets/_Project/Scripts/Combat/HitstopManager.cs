@@ -15,12 +15,16 @@ namespace RetroFPS
 
         private float _hitstopTimer = 0f;
         private bool _isFrozen = false;
+        private float _previousTimeScale;
+        private float _previousFixedDeltaTime;
+
+        public bool IsActive => _isFrozen;
 
         private void Awake()
         {
             if (Instance != null && Instance != this)
             {
-                Destroy(gameObject);
+                Destroy(this);
                 return;
             }
             Instance = this;
@@ -35,9 +39,7 @@ namespace RetroFPS
 
             if (_hitstopTimer <= 0f)
             {
-                Time.timeScale = 1.0f;
-                Time.fixedDeltaTime = 0.02f;
-                _isFrozen = false;
+                RestoreTime();
             }
         }
 
@@ -48,18 +50,38 @@ namespace RetroFPS
         /// <param name="timeScale">Dondurma sırasındaki minimum zaman akışı</param>
         public void TriggerHitstop(float duration = 0.05f, float timeScale = 0.03f)
         {
-            if (duration <= 0f) return;
+            if (duration <= 0f || !isActiveAndEnabled || Instance != this) return;
 
-            _hitstopTimer = duration;
-            Time.timeScale = timeScale;
-            Time.fixedDeltaTime = 0.02f * timeScale;
+            if (!_isFrozen)
+            {
+                _previousTimeScale = Time.timeScale;
+                _previousFixedDeltaTime = Time.fixedDeltaTime;
+            }
+            _hitstopTimer = Mathf.Max(_hitstopTimer, duration);
+            Time.timeScale = Mathf.Min(Time.timeScale, Mathf.Clamp01(timeScale));
+            float scaleRatio = _previousTimeScale > 0f ? Time.timeScale / _previousTimeScale : 1f;
+            // Unity requires a positive physics step even for a fully paused hitstop.
+            Time.fixedDeltaTime = Mathf.Max(0.000001f, _previousFixedDeltaTime * scaleRatio);
             _isFrozen = true;
         }
 
         private void OnDisable()
         {
-            Time.timeScale = 1.0f;
-            Time.fixedDeltaTime = 0.02f;
+            RestoreTime();
+        }
+
+        private void OnDestroy()
+        {
+            RestoreTime();
+            if (Instance == this) Instance = null;
+        }
+
+        private void RestoreTime()
+        {
+            if (!_isFrozen) return;
+            Time.timeScale = _previousTimeScale;
+            Time.fixedDeltaTime = _previousFixedDeltaTime;
+            _hitstopTimer = 0f;
             _isFrozen = false;
         }
     }

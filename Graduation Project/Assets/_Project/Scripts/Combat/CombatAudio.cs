@@ -12,21 +12,49 @@ namespace RetroFPS.Combat
     public class CombatAudio : MonoBehaviour
     {
         private static CombatAudio _instance;
+        private static bool _isQuitting;
+
+        /// <summary>
+        /// Tembel (lazy) erişim: sahne-yükleme ön ısıtmasından önce (ör. Awake içinde) veya additive
+        /// sahnelerde de null dönmez. Sıcak yolda yalnızca tek bir null kontrolü maliyeti vardır.
+        /// </summary>
         public static CombatAudio Instance
         {
             get
             {
-                if (_instance == null)
-                {
-                    _instance = Object.FindAnyObjectByType<CombatAudio>();
-                    if (_instance == null)
-                    {
-                        GameObject go = new GameObject("CombatAudio");
-                        _instance = go.AddComponent<CombatAudio>();
-                    }
-                }
+                if (_instance == null && !_isQuitting) EnsureInstance();
                 return _instance;
             }
+        }
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetInstance()
+        {
+            _instance = null;
+            _isQuitting = false;
+            Application.quitting -= HandleQuitting;
+            Application.quitting += HandleQuitting;
+            UnityEngine.SceneManagement.SceneManager.sceneLoaded -= EnsureSceneInstance;
+            UnityEngine.SceneManagement.SceneManager.sceneLoaded += EnsureSceneInstance;
+        }
+
+        private static void HandleQuitting() => _isQuitting = true;
+
+        private static void EnsureSceneInstance(UnityEngine.SceneManagement.Scene scene, UnityEngine.SceneManagement.LoadSceneMode mode)
+        {
+            if (_instance != null || _isQuitting) return;
+            EnsureInstance();
+        }
+
+        private static void EnsureInstance()
+        {
+            _instance = Object.FindAnyObjectByType<CombatAudio>();
+            if (_instance == null) _instance = new GameObject("CombatAudio").AddComponent<CombatAudio>();
+        }
+
+        private void OnDestroy()
+        {
+            if (_instance == this) _instance = null;
         }
 
         [Header("Menzilli Silah Sesleri")]
@@ -93,8 +121,8 @@ namespace RetroFPS.Combat
         [Range(0f, 1f)]
         [SerializeField] private float masterCombatVolume = 0.95f;
 
-        [Range(0.8f, 1.2f)]
-        [SerializeField] private float pitchVariation = 0.08f;
+        [Range(0f, 0.06f)]
+        [SerializeField] private float pitchVariation = 0.06f;
 
         // Önbelleğe alınmış sentezlenmiş ses klipleri
         private static AudioClip _synthArbalestFire;
@@ -117,7 +145,15 @@ namespace RetroFPS.Combat
         private static AudioClip _synthAmmoPickup;
 
         // Ses çalma için ayrılmış havuz AudioSource'ları
-        private AudioSource _audioSource2D;
+        private readonly AudioSource[] _sources2D = new AudioSource[6];
+        private readonly AudioSource[] _sources3D = new AudioSource[12];
+        private int _next2D;
+        private int _next3D;
+        private float _lastHitmarkerTime = float.NegativeInfinity;
+        private float _lastFleshTime = float.NegativeInfinity;
+        private float _lastBounceTime = float.NegativeInfinity;
+        private static AudioClip _synthJump, _synthLand, _synthDash, _synthSlide;
+        private static AudioClip _synthFootstep, _synthSwitch, _synthKill, _synthCriticalKill;
 
         private void Awake()
         {
@@ -128,16 +164,38 @@ namespace RetroFPS.Combat
             }
             _instance = this;
 
-            _audioSource2D = gameObject.AddComponent<AudioSource>();
-            _audioSource2D.playOnAwake = false;
-            _audioSource2D.spatialBlend = 0f; // 2D net arayüz/oyuncu sesi
-            _audioSource2D.volume = masterCombatVolume;
-
+            InitializeSources(_sources2D, false);
+            InitializeSources(_sources3D, true);
             PrewarmSynthesizedClips();
+        }
+
+        private void InitializeSources(AudioSource[] sources, bool spatial)
+        {
+            for (int i = 0; i < sources.Length; i++)
+            {
+                GameObject child = new GameObject(spatial ? "Combat_3D_Voice" : "Combat_2D_Voice");
+                child.transform.SetParent(transform, false);
+                AudioSource source = child.AddComponent<AudioSource>();
+                source.playOnAwake = false;
+                source.spatialBlend = spatial ? 1f : 0f;
+                source.minDistance = 1f;
+                source.maxDistance = 500f;
+                source.rolloffMode = AudioRolloffMode.Logarithmic;
+                source.dopplerLevel = 0f;
+                sources[i] = source;
+            }
         }
 
         private void PrewarmSynthesizedClips()
         {
+            if (_synthJump == null) _synthJump = CreateMovementClip("Jump", 0.09f, 0);
+            if (_synthLand == null) _synthLand = CreateMovementClip("Land", 0.13f, 1);
+            if (_synthDash == null) _synthDash = CreateMovementClip("Dash", 0.18f, 2);
+            if (_synthSlide == null) _synthSlide = CreateMovementClip("Slide", 0.25f, 3);
+            if (_synthFootstep == null) _synthFootstep = CreateMovementClip("Footstep", 0.05f, 4);
+            if (_synthSwitch == null) _synthSwitch = CreateMovementClip("WeaponSwitch", 0.07f, 5);
+            if (_synthKill == null) _synthKill = CreateKillConfirmClip(false);
+            if (_synthCriticalKill == null) _synthCriticalKill = CreateKillConfirmClip(true);
             if (arbalestFireSound == null && _synthArbalestFire == null) _synthArbalestFire = CreateArbalestFireClip();
             if (arbalestAltSound == null && _synthArbalestAlt == null) _synthArbalestAlt = CreateArbalestAltClip();
             if (bladeSwingSound == null && _synthBladeSwing == null) _synthBladeSwing = CreateBladeSwingClip();
@@ -162,8 +220,7 @@ namespace RetroFPS.Combat
 
         public void PlayShotgunFire()
         {
-            AudioClip clip = shotgunFireSound != null ? shotgunFireSound : _synthShotgunFire;
-            Play2DWithPitchVariation(clip, 1.0f, 0.05f);
+            Play2D(shotgunFireSound != null ? shotgunFireSound : _synthShotgunFire, 1.0f, Random.Range(0.94f, 1.06f));
         }
 
         public void PlayGrappleLaunch()
@@ -177,7 +234,7 @@ namespace RetroFPS.Combat
             AudioClip clip = grappleHookLatchSound != null ? grappleHookLatchSound : _synthGrappleHookLatch;
             if (clip != null)
             {
-                AudioSource.PlayClipAtPoint(clip, position, 1.0f * masterCombatVolume);
+                PlayClipAt(clip, position);
             }
             Play2DWithPitchVariation(clip, 0.85f, 0.05f);
         }
@@ -196,23 +253,18 @@ namespace RetroFPS.Combat
 
         public void PlayArbalestFire()
         {
-            AudioClip clip = arbalestFireSound != null ? arbalestFireSound : _synthArbalestFire;
-            Play2DWithPitchVariation(clip, 0.90f, 0.06f);
+            Play2D(arbalestFireSound != null ? arbalestFireSound : _synthArbalestFire, 0.90f, Random.Range(0.94f, 1.06f));
         }
 
         public void PlayArbalestAlt()
         {
-            AudioClip clip = arbalestAltSound != null ? arbalestAltSound : _synthArbalestAlt;
-            Play2DWithPitchVariation(clip, 1.0f, 0.04f);
+            Play2D(arbalestAltSound != null ? arbalestAltSound : _synthArbalestAlt, 1.0f, Random.Range(0.94f, 1.06f));
         }
 
         public void PlayBladeSwing(float pitchMult = 1.0f)
         {
             AudioClip clip = bladeSwingSound != null ? bladeSwingSound : _synthBladeSwing;
-            if (clip == null || _audioSource2D == null) return;
-            float variation = pitchVariation + 0.06f;
-            _audioSource2D.pitch = pitchMult + Random.Range(-variation, variation);
-            _audioSource2D.PlayOneShot(clip, 0.95f * masterCombatVolume);
+            Play2D(clip, 0.95f, pitchMult * Random.Range(0.94f, 1.06f));
         }
 
         public void PlayBladeThrust()
@@ -238,7 +290,7 @@ namespace RetroFPS.Combat
             AudioClip clip = gibExplosionSound != null ? gibExplosionSound : _synthGibExplosion;
             if (clip != null)
             {
-                AudioSource.PlayClipAtPoint(clip, position, 1.2f * masterCombatVolume);
+                PlayClipAt(clip, position, 1.2f);
             }
             Play2DWithPitchVariation(clip, 0.85f, 0.05f);
         }
@@ -251,6 +303,9 @@ namespace RetroFPS.Combat
 
         public void PlayHitmarker(bool isCrit)
         {
+            float now = Time.unscaledTime;
+            if (now - _lastHitmarkerTime < 0.045f) return;
+            _lastHitmarkerTime = now;
             if (isCrit)
             {
                 AudioClip critClip = critCrunchSound != null ? critCrunchSound : _synthCritCrunch;
@@ -265,6 +320,9 @@ namespace RetroFPS.Combat
 
         public void PlayFleshImpact(Vector3 position, bool isCrit = false)
         {
+            float now = Time.unscaledTime;
+            if (now - _lastFleshTime < 0.03f) return;
+            _lastFleshTime = now;
             AudioClip clip = isCrit
                 ? (critCrunchSound != null ? critCrunchSound : _synthCritCrunch)
                 : (fleshImpactSound != null ? fleshImpactSound : _synthFleshImpact);
@@ -272,7 +330,7 @@ namespace RetroFPS.Combat
             if (clip != null)
             {
                 float volume = isCrit ? 1.0f : 0.85f;
-                AudioSource.PlayClipAtPoint(clip, position, volume * masterCombatVolume);
+                PlayClipAt(clip, position, volume, Random.Range(0.94f, 1.06f));
             }
         }
 
@@ -281,7 +339,7 @@ namespace RetroFPS.Combat
             AudioClip clip = gibExplosionSound != null ? gibExplosionSound : _synthGibExplosion;
             if (clip != null)
             {
-                AudioSource.PlayClipAtPoint(clip, position, 1.0f * masterCombatVolume);
+                PlayClipAt(clip, position);
             }
         }
 
@@ -290,16 +348,19 @@ namespace RetroFPS.Combat
             AudioClip clip = decapitationSound != null ? decapitationSound : _synthDecapitation;
             if (clip != null)
             {
-                AudioSource.PlayClipAtPoint(clip, position, 1.15f * masterCombatVolume);
+                PlayClipAt(clip, position, 1.15f);
             }
         }
 
         public void PlayGibBounce(Vector3 position)
         {
+            float now = Time.unscaledTime;
+            if (now - _lastBounceTime < 0.05f) return;
+            _lastBounceTime = now;
             AudioClip clip = gibBounceSound != null ? gibBounceSound : _synthGibBounce;
             if (clip != null)
             {
-                AudioSource.PlayClipAtPoint(clip, position, 0.65f * masterCombatVolume);
+                PlayClipAt(clip, position, 0.65f);
             }
         }
 
@@ -311,10 +372,7 @@ namespace RetroFPS.Combat
             if (isLowHealth)
             {
                 AudioClip hbClip = lowHealthHeartbeatSound != null ? lowHealthHeartbeatSound : _synthHeartbeat;
-                if (hbClip != null && _audioSource2D != null)
-                {
-                    _audioSource2D.PlayOneShot(hbClip, 0.85f * masterCombatVolume);
-                }
+                Play2D(hbClip, 0.85f, 1f);
             }
         }
 
@@ -326,14 +384,122 @@ namespace RetroFPS.Combat
 
         private void Play2DWithPitchVariation(AudioClip clip, float volumeScale, float extraVariation)
         {
-            if (clip == null || _audioSource2D == null) return;
+            float variation = Mathf.Min(0.06f, Mathf.Max(0f, pitchVariation + extraVariation));
+            Play2D(clip, volumeScale, 1f + Random.Range(-variation, variation));
+        }
 
-            float variation = pitchVariation + extraVariation;
-            _audioSource2D.pitch = 1.0f + Random.Range(-variation, variation);
-            _audioSource2D.PlayOneShot(clip, volumeScale * masterCombatVolume);
+        public void PlayJump() => Play2D(_synthJump, 0.55f, 1f);
+        public void PlayLand(float intensity01)
+        {
+            float intensity = Mathf.Clamp01(intensity01);
+            Play2D(_synthLand, Mathf.Lerp(0.25f, 0.95f, intensity), Mathf.Lerp(1.15f, 0.75f, intensity));
+        }
+        public void PlayDash() => Play2D(_synthDash, 0.75f, 1f);
+        public void PlaySlideStart() => Play2D(_synthSlide, 0.65f, 1f);
+        public void PlayFootstep() => Play2D(_synthFootstep, 0.25f, Random.Range(0.94f, 1.06f));
+        public void PlayWeaponSwitch() => Play2D(_synthSwitch, 0.60f, 1f);
+        public void PlayKillConfirm(bool wasCrit) => Play2D(wasCrit ? _synthCriticalKill : _synthKill, 0.85f, 1f);
+
+        public void PlayClipAt(AudioClip clip, Vector3 pos, float volume = 1f, float pitch = 1f)
+        {
+            if (clip == null) return;
+            AudioSource source = AcquireVoice(_sources3D, ref _next3D);
+            if (source == null) return;
+            source.Stop();
+            source.transform.position = pos;
+            source.clip = clip;
+            source.pitch = pitch;
+            source.volume = Mathf.Clamp01(volume * masterCombatVolume);
+            source.Play();
+        }
+
+        private void Play2D(AudioClip clip, float volume, float pitch)
+        {
+            if (clip == null) return;
+            AudioSource source = AcquireVoice(_sources2D, ref _next2D);
+            if (source == null) return;
+            source.Stop();
+            source.clip = clip;
+            source.pitch = pitch;
+            source.volume = Mathf.Clamp01(volume * masterCombatVolume);
+            source.Play();
+        }
+
+        /// <summary>
+        /// Önce çalmayan ilk sesi (halka sırasından başlayarak) seçer; hepsi meşgulse halka sırasındaki
+        /// sıradaki sesi çalar (voice stealing). Tahsis yok.
+        /// </summary>
+        private static AudioSource AcquireVoice(AudioSource[] pool, ref int next)
+        {
+            int count = pool.Length;
+            for (int i = 0; i < count; i++)
+            {
+                int index = (next + i) % count;
+                AudioSource candidate = pool[index];
+                if (candidate != null && !candidate.isPlaying)
+                {
+                    next = (index + 1) % count;
+                    return candidate;
+                }
+            }
+
+            AudioSource stolen = pool[next];
+            next = (next + 1) % count;
+            return stolen;
         }
 
         #endregion
+
+        private static AudioClip CreateMovementClip(string clipName, float duration, int kind)
+        {
+            const int rate = 44100;
+            int count = Mathf.CeilToInt(rate * duration);
+            float[] samples = new float[count];
+            float filteredNoise = 0f;
+            float phase = 0f;
+            for (int i = 0; i < count; i++)
+            {
+                float t = (float)i / rate;
+                float progress = t / duration;
+                filteredNoise = Mathf.Lerp(filteredNoise, Random.Range(-1f, 1f), kind == 3 ? 0.65f : 0.18f);
+                float frequency = kind == 1 ? Mathf.Lerp(140f, 45f, progress) :
+                    kind == 4 ? 115f : kind == 5 ? 1850f : Mathf.Lerp(480f, 130f, progress);
+                phase += 2f * Mathf.PI * frequency / rate;
+                float tone = Mathf.Sin(phase);
+                float envelope = Mathf.Min(t * 1500f, 1f) * Mathf.Pow(1f - progress, kind == 3 ? 1.4f : 2.8f);
+                float signal = kind == 1 ? tone * 0.8f + filteredNoise * 0.25f :
+                    kind == 4 ? tone * 0.45f + filteredNoise * 0.45f :
+                    kind == 5 ? tone * 0.4f + Mathf.Sin(phase * 1.47f) * 0.25f + filteredNoise * 0.5f :
+                    filteredNoise * 1.6f + tone * (kind == 0 ? 0.16f : 0.04f);
+                samples[i] = Mathf.Clamp(signal * envelope, -1f, 1f);
+            }
+            AudioClip clip = AudioClip.Create(clipName, count, 1, rate, false);
+            clip.SetData(samples, 0);
+            return clip;
+        }
+
+        private static AudioClip CreateKillConfirmClip(bool critical)
+        {
+            const int rate = 44100;
+            const float duration = 0.14f;
+            int count = Mathf.CeilToInt(rate * duration);
+            float[] samples = new float[count];
+            float frequency = critical ? 1760f : 1320f;
+            for (int i = 0; i < count; i++)
+            {
+                float t = (float)i / rate;
+                float env = Mathf.Min(t * 2000f, 1f) * Mathf.Pow(1f - t / duration, 2f);
+                float secondTime = Mathf.Max(0f, t - 0.045f);
+                float first = Mathf.Sin(2f * Mathf.PI * frequency * t) * Mathf.Exp(-t * 25f);
+                float second = Mathf.Sin(2f * Mathf.PI * frequency * 1.5f * secondTime) * Mathf.Exp(-secondTime * 18f);
+                float overtone = critical ? Mathf.Sin(2f * Mathf.PI * frequency * 3f * t) * 0.15f : 0f;
+                samples[i] = (first * 0.5f + second * 0.45f + overtone) * env;
+            }
+            AudioClip clip = AudioClip.Create(critical ? "CriticalKillConfirm" : "KillConfirm", count, 1, rate, false);
+            clip.SetData(samples, 0);
+            return clip;
+        }
+
 
         #region Prosedürel Ses Sentezleyicileri (Procedural Audio Synthesis)
 

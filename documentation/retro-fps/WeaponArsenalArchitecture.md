@@ -34,14 +34,17 @@ classDiagram
         +event Action~bool~ OnHitFeedback
         +FirePrimary()*
         +FireAlt()*
-        +Equip()
-        +Holster()
+        +Tick(deltaTime)*
+        +OnEquip()
+        +OnUnequip()
+        #NotifyHit(isCrit)
     }
 
     class RepeaterArbalestWeapon {
-        -float fireRate = 8.5f
-        -float damage = 28f
-        -float recoilBloom = 2.4f
+        -float primaryFireRate = 0.12f
+        -float primaryDamage = 22f
+        -float maxBloomSpread = 2.2f
+        -float bloomPerShot = 0.22f
         +FirePrimary() : Hitscan Arbalest Bolt
         +FireAlt() : 3-Round Burst
     }
@@ -64,10 +67,16 @@ classDiagram
     }
 
     class ProceduralViewmodel {
-        -Vector3 defaultPos
-        -Quaternion defaultRot
-        +ApplyRecoil(kickBack, rotKick)
-        +UpdateSwayAndBobbing(moveInput, lookInput)
+        -Vector3 restPosition
+        -Vector3 restRotation
+        -Spring _recoilX_Y_Z_Pitch_Yaw_Roll
+        +AddRecoil(kickZ, kickPitch, kickYaw)
+        +AddDamageFlinch(intensity)
+        +PlayEquip()
+        +SetRestPose(pos, rot)
+        +TriggerMeleeSlash(duration)
+        +TriggerMeleeLunge(duration)
+        +TriggerMeleeSlam(duration)
     }
 
     WeaponBase <|-- RepeaterArbalestWeapon
@@ -96,7 +105,8 @@ namespace RetroFPS
 ### 2. `GothicShotgunWeapon.cs` (Gotik Çift Namlulu Pompalı & Meat Hook)
 - **Sol Tık (Birincil Saldırı):** Ağır çift namlu saçma patlaması (`pelletCount = 18`, `damagePerPellet = 18f`, `range = 42m`, `spreadAngle = 5.8°`).
   * Tek atışta 2 adet Pompalı Fişeği (`Shells`) tüketir. Nokta atışı temasında ~320+ hasar ile elit olmayan yaratıkları anında parçalar (Gibs).
-  * **Havadayken Geri Tepme (Airborne Knockback):** Havada ateş edildiğinde Quake/TF2 roket zıplamasına benzer şekilde oyuncuyu hafifçe geriye fırlatır.
+  * **Atış Başı Toplama:** Tüm saçmalar önce çözülür, hedef (`IDamageable`/Hitbox) başına **tek** `TakeDamage` ve tek hasar sayısı uygulanır (kapasite 12 hedef); atış başına tek `NotifyHit`. Et VFX/sesi hedefin kendisi üretir ([[GameFeelArchitecture]]).
+  * **Havadayken Geri Tepme (Airborne Knockback):** Havada ateş edildiğinde varsa kanca bırakılır ve `PlayerMovement.AddImpulse(-camForward × airborneKnockback)` (`airborneKnockback = 6.5f`) ile oyuncu geriye itilir.
 - **Sağ Tık (İkincil Saldırı - Meat Hook / Grapple):** Namlu altından fırlayan zincirli gotik et kancası (`hookRange = 32m`, `hookPullSpeed = 29m/s`).
   * **Yalnızca Düşmanlara Saplanma (Enemy-Only Lock):** Harita geometrisi, duvar veya zeminlere saplanması engellenmiştir. Yalnızca `IDamageable`, `IStunnable` veya `IEncounterEnemy` sözleşmesine sahip düşman varlıklarına kilitlenir; düşmanı `IStunnable.Stun(1.5f, Vector3.zero)` ile sersemletip yerine çiviler ve oyuncuyu hedefin göğsüne doğru hızla çeker (point-blank çifte darbesi için ideal pozisyon).
   * **Hedef Takip Ofseti:** Düşmanın taban pivotu (Y=0) yerine kancanın vurduğu uzuv/gövde noktasını dinamik ofsetle takip eder.
@@ -113,7 +123,7 @@ namespace RetroFPS
 - **Sol Tık (3'lü Akıcı Kombo Sistemi):**
   * **Hit 1 (Yatay Kesik - Slash):** Hızlı sağdan sola kesik (`damage = 45f`, `range = 3.4m`).
   * **Hit 2 (Ters Açı Kesik - Backhand):** Hızlı soldan sağa geri savurma (`damage = 55f`, `range = 3.4m`).
-  * **Hit 3 (Ağır İndirme - Finisher):** Yukarıdan aşağı yıkıcı cellat darbesi (`damage = 95f`, `range = 3.4m`, `knockback = 12m/s`). İsabet eden düşmanı `IStunnable.Stun(1.2f, knockback)` ile sersemletir ve mikro hitstop tetikler.
+  * **Hit 3 (Ağır İndirme - Finisher):** Yukarıdan aşağı yıkıcı cellat darbesi (`damage = 95f`, `range = 3.4m`). İsabet eden düşmanı `IStunnable.Stun(1.2f, cam.forward × 12)` ile sersemletir ve mikro hitstop tetikler. (`knockbackDir` yalnızca yön kabul edilir; itme hızı düşmanın `stunKnockbackSpeed` alanından gelir.)
   * **Kombo Zamanlayıcısı:** Vuruşlar arasında 0.70 saniyelik kombo hafıza penceresi bulunur. Süre aşılırsa zincir başa döner.
 - **Mermi Dilimleme (Projectile Slicing):**
   * Kılıç savrulurken oyuncunun ön konisinde bulunan düşman mermilerini (`EnemyProjectile.ActiveProjectiles`) tespit eder; mermileri ikiye bölerek hedefe geri saptırır (`Deflect`). Menzilli saldırılara karşı yakın dövüş kalkanı vazifesi görür.
@@ -130,13 +140,14 @@ namespace RetroFPS
 
 ### 5. `RepeaterArbalestWeapon.cs` (Seri Arbalest)
 - **Hitscan Mermi Fiziği:** Hızlı delici cıvata atışları (Atış başı 1 Ok tüketir).
-- **Recoil Bloom (Nişangah Yaylanması):** Seri atış yaptıkça mermi dağılım açısı artar; ateş kesildiğinde toparlanır.
+- **Recoil Bloom (Nişangah Yaylanması):** Her atış dağılıma `bloomPerShot = 0.22` ekler (en fazla `maxBloomSpread = 2.2`); atış aralığı dolduktan sonra `bloomRecovery = 4.5`/s ile toparlanır.
 - **Görsel Fişek:** Arbalest bolt mermisi tracer çizgisi ve darbe noktasında kıvılcım/kan patlaması.
 
 ### 6. `ProceduralViewmodel.cs` (Prosedürel Görünüm)
 - **Sway (Dönüş Yaylanması):** Fare hareketine göre silahın yumuşak gecikmeli takibi (Lag & Tilt).
 - **Bobbing (Yürüme/Kayma Sallantısı):** Koşarken, kayarken ve zıplarken sinüs dalgasıyla doğal silah adımlaması.
-- **Recoil Spring (Dinamik Yay):** Ateş edildiğinde silah geriye teper ve yay katsayısıyla orijinal pozisyonuna döner.
+- **Recoil Spring (Dinamik Yay):** `AddRecoil` / `AddDamageFlinch` altı `Spring`'in yer değiştirmesini ekler; yaylar `recoilFrequency = 9 Hz`, `recoilDamping = 0.5` ile hafif overshoot yaparak döner.
+- **Dikey Atalet, İniş ve Equip:** Havadaki dikey hıza göre ofset, `OnLanded`/`OnJumped` ile çökme, `OnEquip` → `PlayEquip()` ile 0.16s'lik aşağıdan kalkış animasyonu. Tüm ofsetler `ComposePose()` içinde tek seferde transform'a yazılır. Ayrıntı: [[GameFeelArchitecture]].
 
 ---
 
@@ -145,18 +156,17 @@ Asla `WeaponController.cs` içine silahın kendi atış mantığını yazmayın.
 1. `Assets/_Project/Scripts/Weapons/` altına `YeniSilahWeapon.cs` oluşturun.
 2. `public class YeniSilahWeapon : WeaponBase` şeklinde türetin.
 3. `Slot`, `CanFirePrimary`, `CanFireAlt`, `FirePrimary()`, `FireAlt()` gövdelerini doldurun.
-4. Hedefi vururken:
+4. Hedefi vururken (sıfır GC, önbellekli çözümleme):
    ```csharp
-   if (hit.collider.TryGetComponent<Hitbox>(out var hitbox))
+   if (CombatRaycast.Nearest(origin, dir, range, GameLayers.PlayerAttackMask, _rayHits, out RaycastHit hit))
    {
-       hitbox.TakeDamage(damage, hit.point, hit.normal);
-   }
-   else if (hit.collider.TryGetComponent<IDamageable>(out var damageable))
-   {
-       damageable.TakeDamage(damage, hit.point, hit.normal);
+       CombatTargetLookup.Binding binding = CombatTargetLookup.Get(hit.collider);
+       IDamageable target = binding.Damageable; // Hitbox varsa Hitbox (çarpanı kendisi uygular)
+       if (target != null) target.TakeDamage(damage, hit.point, hit.normal, false);
    }
    ```
-5. `OnHitFeedback?.Invoke(isCrit);` olayını tetikleyin. Bu sayede nişangah hitmarker (`CrosshairHUD`) ve sesler otomatik çalışır.
+   Et VFX/sesini silahta **çağırmayın**; hedef kendi `TakeDamage`'inde üretir. Silah yalnızca hasar sayısı, duvar efekti (`isFlesh: false`) ve kendi tepkisini (`Viewmodel.AddRecoil`, `_look.AddViewPunch`, `_look.AddTrauma`) üretir ([[GameFeelArchitecture]]).
+5. `NotifyHit(isCrit);` çağırın (`OnHitFeedback` olayını tetikler). Bu sayede nişangah hitmarker (`CrosshairHUD`) ve sesler otomatik çalışır.
 
 ---
 
@@ -165,5 +175,6 @@ Asla `WeaponController.cs` içine silahın kendi atış mantığını yazmayın.
 - [[CombatAndDamageInterfaces]] ➔ `damages_via_interfaces`
 - [[HitstopAndAudioFeedback]] ➔ `triggers_audio_and_hitstop`
 - [[CombatVFXAndDecalSystem]] ➔ `spawns_combat_vfx`
+- [[GameFeelArchitecture]] ➔ `follows_feel_and_feedback_rules`
 - ⬅️ [[START_HERE_AI_CONSTITUTION]] ➔ `mandated_by_constitution` *(gelen)*
 - ⬅️ [[DualLoadoutAndWeapons]] ➔ `expands_combat_design` *(gelen)*

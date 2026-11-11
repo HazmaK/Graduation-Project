@@ -19,8 +19,8 @@ namespace RetroFPS
         [Header("Görsel Tepki (Wobble & Flash)")]
         [SerializeField] private float wobbleForce = 12f;
         [SerializeField] private float wobbleRecoverySpeed = 10f;
-        [SerializeField] private Color flashColor = new Color(1f, 0.2f, 0.2f, 1f);
-        [SerializeField] private Color critFlashColor = new Color(1f, 0.85f, 0.1f, 1f);
+        [SerializeField] private Color hitFlashColor = new Color(2.2f, 2.2f, 2.2f, 1f);
+        [SerializeField] private Color criticalHitFlashColor = new Color(3.2f, 2.8f, 0.35f, 1f);
 
         private float _currentHealth;
         private float _timeSinceLastHit;
@@ -31,10 +31,23 @@ namespace RetroFPS
         private MaterialPropertyBlock _propBlock;
         private float _flashTimer = 0f;
         private static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
+        private bool[] _supportsEmission;
+        private static readonly int EmissionColorId = Shader.PropertyToID("_EmissionColor");
         private static readonly int ColorId = Shader.PropertyToID("_Color");
 
         public float CurrentHealth => _currentHealth;
         public float MaxHealth => maxHealth;
+
+        private void Start()
+        {
+            CombatTargetLookup.RegisterHierarchy(this);
+            _supportsEmission = new bool[_renderers.Length];
+            for (int i = 0; i < _renderers.Length; i++)
+            {
+                Material material = _renderers[i] != null ? _renderers[i].sharedMaterial : null;
+                _supportsEmission[i] = material != null && material.HasProperty(EmissionColorId);
+            }
+        }
 
         private void Awake()
         {
@@ -47,6 +60,7 @@ namespace RetroFPS
 
             // Mankenin collider'larını hazırla
             SetupColliders();
+            CombatTargetLookup.RegisterHierarchy(this);
         }
 
         private void SetupColliders()
@@ -68,12 +82,16 @@ namespace RetroFPS
 
         public void TakeDamage(float amount, Vector3 hitPoint, Vector3 hitNormal, bool isCritical = false)
         {
+            if (CombatVFXManager.Instance != null)
+                CombatVFXManager.Instance.SpawnHitImpact(hitPoint, hitNormal, isCritical, true);
+            if (CombatAudio.Instance != null)
+                CombatAudio.Instance.PlayFleshImpact(hitPoint, isCritical);
             _timeSinceLastHit = 0f;
             _currentHealth = Mathf.Max(0f, _currentHealth - amount);
 
             // 1. Görsel Darbe Parlaması (Flash)
-            _flashTimer = isCritical ? 0.14f : 0.08f;
-            ApplyFlashColor(isCritical ? critFlashColor : flashColor);
+            _flashTimer = isCritical ? 0.12f : 0.06f;
+            ApplyFlashColor(isCritical ? criticalHitFlashColor : hitFlashColor);
 
             // 2. Darbe Yaylanması (Wobble): Darbe yönünün tersine doğru gövdeyi sars
             Vector3 impactDir = -hitNormal;
@@ -99,8 +117,6 @@ namespace RetroFPS
                 }
             }
 
-            string critText = isCritical ? "<color=yellow><b>[CRITICAL HEADSHOT!]</b></color>" : "";
-            Debug.Log($"<color=orange>[CombatDummy]</color> Damaged: <b>-{amount:F0}</b> HP | Remaining: <b>{_currentHealth:F0}/{maxHealth}</b> {critText}");
         }
 
         private void Update()
@@ -136,6 +152,7 @@ namespace RetroFPS
                 _renderers[i].GetPropertyBlock(_propBlock);
                 _propBlock.SetColor(BaseColorId, color);
                 _propBlock.SetColor(ColorId, color);
+                if (_supportsEmission != null && i < _supportsEmission.Length && _supportsEmission[i]) _propBlock.SetColor(EmissionColorId, color);
                 _renderers[i].SetPropertyBlock(_propBlock);
             }
         }

@@ -15,6 +15,7 @@ namespace RetroFPS
         [SerializeField] private float crouchSpeed = 3.8f;
         [SerializeField] private float groundAcceleration = 18f;
         [SerializeField] private float groundFriction = 8.5f;
+        [SerializeField] private float landingFrictionGrace = 0.08f;
 
         [Header("Hava Hareketi & Bunny Hop (Quake Physics)")]
         [SerializeField] private float airAcceleration = 4.0f;
@@ -22,6 +23,8 @@ namespace RetroFPS
         [SerializeField] private float maxAirSpeed = 11.5f;  // Bunny-hop hız tavanı (Parkur hissini önler, kontrollü hız verir)
         [SerializeField] private float jumpForce = 7.2f;
         [SerializeField] private float gravity = 25f;
+        [SerializeField] private float airOverspeedDecay = 2.5f;
+        [SerializeField] private float fallGravityMultiplier = 1.3f;
 
         [Header("Slide (Kayma)")]
         [SerializeField] private float slideBoost = 13.0f;
@@ -32,6 +35,8 @@ namespace RetroFPS
         [SerializeField] private float slideCameraY = 0.65f;
         [SerializeField] private float normalCameraY = 1.55f;
         [SerializeField] private float slideDurationMax = 0.85f;
+        [SerializeField] private float slideJumpSpeedBonus = 1.5f;
+        [SerializeField] private float cameraHeightLerpSpeed = 14f;
 
         [Header("Dash (Atılma & I-Frames)")]
         [SerializeField] private float dashSpeed = 30f;
@@ -48,6 +53,13 @@ namespace RetroFPS
         private Vector3 _velocity;
         private Vector2 _inputVector;
         private bool _isGrounded;
+        private float _airborneMinVelocityY;
+        private float _airborneTime;
+        private float _landingFrictionTimer;
+        private const float LandingFrictionMinImpactSpeed = 3f;
+        private const float LandingFrictionMinAirTime = 0.1f;
+        private float _cameraTargetHeight;
+        private float _cameraBaseHeight;
 
         // Slide & Crouch durumları
         private bool _isSliding;
@@ -95,6 +107,14 @@ namespace RetroFPS
 
         // Dışarıya açık özellikler (Getters) & Olaylar
         public event System.Action OnGrappleEnded;
+        public event System.Action OnJumped;
+        public event System.Action<float> OnLanded;
+        public event System.Action OnDashStarted;
+        public event System.Action OnSlideStarted;
+        public event System.Action OnSlideEnded;
+        public Vector3 Velocity => _velocity;
+        public float WalkSpeed => walkSpeed;
+        public float CameraBaseHeight => _cameraBaseHeight;
         public Vector2 InputVector => _inputVector;
         public float CurrentHorizontalSpeed => new Vector3(_velocity.x, 0f, _velocity.z).magnitude;
         public bool IsGrounded => _isGrounded;
@@ -132,6 +152,7 @@ namespace RetroFPS
 
             ResolveCameraHolder();
             ApplyCameraHeight(normalCameraY);
+            _cameraBaseHeight = _cameraTargetHeight;
         }
 
         private void Start()
@@ -167,6 +188,7 @@ namespace RetroFPS
         /// </summary>
         public void TeleportTo(Vector3 position, Quaternion rotation)
         {
+            if (_isSliding) StopSlide();
             _isGrappling = false;
             _grappleTargetTransform = null;
             _isLunging = false;
@@ -183,6 +205,10 @@ namespace RetroFPS
             _currentDashCharges = maxDashCharges;
             _jumpBufferTimer = 0f;
             _coyoteTimer = 0f;
+            _isGrounded = false;
+            _airborneMinVelocityY = 0f;
+            _airborneTime = 0f;
+            _landingFrictionTimer = 0f;
 
             if (_controller != null)
             {
@@ -199,20 +225,33 @@ namespace RetroFPS
             }
 
             ApplyCameraHeight(normalCameraY);
+            _cameraBaseHeight = _cameraTargetHeight;
         }
 
         private void ApplyCameraHeight(float heightY)
         {
-            if (cameraHolder != null && cameraHolder != transform)
+            _cameraTargetHeight = heightY;
+        }
+
+        public void AddImpulse(Vector3 worldVelocity)
+        {
+            if (_isDashing || _isGrappling || _isLunging || _isMeteorSlamming) return;
+
+            // Ground adhesion is artificial downward speed, not momentum to cancel a launch.
+            if (_isGrounded && worldVelocity.y > 0f && _velocity.y < 0f) _velocity.y = 0f;
+            _velocity += worldVelocity;
+            if (_isGrounded && worldVelocity.y > 0f)
             {
-                Vector3 p = cameraHolder.localPosition;
-                p.y = heightY;
-                cameraHolder.localPosition = p;
+                _isGrounded = false;
+                _coyoteTimer = 0f;
+                if (_isSliding) StopSlide();
             }
         }
 
         private void Update()
         {
+            _landingFrictionTimer = Mathf.Max(0f, _landingFrictionTimer - Time.deltaTime);
+            CheckGround();
             ReadInput();
             UpdateRechargeTimers();
 
@@ -225,9 +264,6 @@ namespace RetroFPS
                     _speedBoostMultiplier = 1.0f;
                 }
             }
-
-            // Zemin kontrolü
-            CheckGround();
 
             // Hareket durum makineleri
             if (_isDashing)
@@ -248,10 +284,10 @@ namespace RetroFPS
             }
             else
             {
-                if (_isGrounded)
+                _coyoteTimer = _isGrounded ? CoyoteDuration : _coyoteTimer - Time.deltaTime;
+                bool jumped = HandleJump();
+                if (!jumped && _isGrounded)
                 {
-                    _coyoteTimer = CoyoteDuration;
-
                     if (_isSliding)
                     {
                         ExecuteSlide();
@@ -261,22 +297,26 @@ namespace RetroFPS
                         ExecuteGroundMove();
                     }
                 }
-                else
+                else if (!jumped)
                 {
-                    _coyoteTimer -= Time.deltaTime;
                     if (_isSliding) StopSlide();
                     ExecuteAirMove();
                 }
-
-                // Zıplama denetimi
-                HandleJump();
 
                 // Yerçekimi
                 ApplyGravity();
             }
 
             // Nihai hareketi uygula
+            if (!_isGrounded)
+            {
+                _airborneMinVelocityY = Mathf.Min(_airborneMinVelocityY, _velocity.y);
+                _airborneTime += Time.deltaTime;
+            }
             _controller.Move(_velocity * Time.deltaTime);
+            CheckGround();
+            _cameraBaseHeight = Mathf.Lerp(_cameraBaseHeight, _cameraTargetHeight,
+                1f - Mathf.Exp(-cameraHeightLerpSpeed * Time.deltaTime));
 
             // Zemin Güvenlik Ağı: Karakterin zemin altına gömülmesini veya düşmesini kesin olarak engeller
             if (transform.position.y < 0f)
@@ -346,7 +386,26 @@ namespace RetroFPS
         #region Zemin Kontrolü & Sürtünme
         private void CheckGround()
         {
-            _isGrounded = _controller.isGrounded;
+            bool wasGrounded = _isGrounded;
+            // A controller can report its previous ground contact during an upward launch.
+            _isGrounded = _controller.isGrounded && _velocity.y <= 0f;
+            if (!_isGrounded)
+            {
+                _airborneMinVelocityY = Mathf.Min(_airborneMinVelocityY, _velocity.y);
+            }
+            else if (!wasGrounded)
+            {
+                float impactSpeed = -Mathf.Min(_airborneMinVelocityY, _velocity.y);
+                float airTime = _airborneTime;
+                _airborneMinVelocityY = 0f;
+                _airborneTime = 0f;
+                // Merdiven/rampa titremesinde (kısa zemin kaybı) sürtünme muafiyeti verme; sadece gerçek inişler.
+                if (impactSpeed > LandingFrictionMinImpactSpeed || airTime > LandingFrictionMinAirTime)
+                {
+                    _landingFrictionTimer = landingFrictionGrace;
+                }
+                OnLanded?.Invoke(Mathf.Max(0f, impactSpeed));
+            }
 
             // KarakterController zemin kontrolü dik inişlerde bazen titreme yapabilir;
             // Velocity y negatifken küçük bir değerde tutarak zemine yapışmasını sağlarız.
@@ -383,7 +442,7 @@ namespace RetroFPS
             Vector3 wishDir = transform.right * _inputVector.x + transform.forward * _inputVector.y;
             wishDir.Normalize();
 
-            ApplyFriction(groundFriction);
+            if (_landingFrictionTimer <= 0f) ApplyFriction(groundFriction);
             float targetSpeed = _isCrouching ? crouchSpeed : (walkSpeed * _speedBoostMultiplier);
             Accelerate(wishDir, targetSpeed, groundAcceleration);
         }
@@ -393,15 +452,18 @@ namespace RetroFPS
             Vector3 wishDir = transform.right * _inputVector.x + transform.forward * _inputVector.y;
             wishDir.Normalize();
 
-            // Quake air strafe ile kontrollü hava yönlendirmesi
+            float previousSpeed = CurrentHorizontalSpeed;
+            // Keep Quake steering, but input cannot increase existing overspeed.
             Accelerate(wishDir, airWishSpeed * _speedBoostMultiplier, airAcceleration);
 
-            // Bunny hop hız tavanı: Hızın kontrolsüz parkur oyununa dönüşmesini engeller
             Vector3 horizontalVel = new Vector3(_velocity.x, 0f, _velocity.z);
             float currentAirCap = maxAirSpeed * _speedBoostMultiplier;
-            if (horizontalVel.magnitude > currentAirCap)
+            float allowedSpeed = previousSpeed > currentAirCap
+                ? Mathf.MoveTowards(previousSpeed, currentAirCap, airOverspeedDecay * Time.deltaTime)
+                : currentAirCap;
+            if (horizontalVel.magnitude > allowedSpeed)
             {
-                horizontalVel = horizontalVel.normalized * currentAirCap;
+                horizontalVel = horizontalVel.normalized * allowedSpeed;
                 _velocity.x = horizontalVel.x;
                 _velocity.z = horizontalVel.z;
             }
@@ -425,23 +487,35 @@ namespace RetroFPS
 
         private void ApplyGravity()
         {
-            _velocity.y -= gravity * Time.deltaTime;
+            float multiplier = !_isGrounded && _velocity.y < 0f ? fallGravityMultiplier : 1f;
+            _velocity.y -= gravity * multiplier * Time.deltaTime;
         }
         #endregion
 
         #region Zıplama & Bunny Hop
-        private void HandleJump()
+        private bool HandleJump()
         {
-            // Slide sürerken zıplanamaz; slide süresi dolana kadar kilitlidir ve yarıda kesilemez
-            if (_isSliding) return;
-
             // Zıplama şartı: Tampon süresi içinde basıldıysa ve (yerdeysek veya coyote time aktifse)
             if (_jumpBufferTimer > 0f && (_isGrounded || _coyoteTimer > 0f))
             {
+                if (_isSliding)
+                {
+                    StopSlide();
+                    Vector3 horizontal = new Vector3(_velocity.x, 0f, _velocity.z);
+                    float speed = horizontal.magnitude;
+                    float bonus = Mathf.Min(slideJumpSpeedBonus, Mathf.Max(0f, maxAirSpeed + 4f - speed));
+                    if (speed > 0.001f) _velocity += horizontal * (bonus / speed);
+                }
                 _jumpBufferTimer = 0f;
                 _coyoteTimer = 0f;
                 _velocity.y = jumpForce;
+                _isGrounded = false;
+                _airborneMinVelocityY = 0f;
+                _airborneTime = 0f;
+                OnJumped?.Invoke();
+                return true;
             }
+            return false;
         }
         #endregion
 
@@ -461,6 +535,7 @@ namespace RetroFPS
 
             // Kapsülü ve kamerayı küçült
             SetPlayerHeight(slideHeight, slideCameraY);
+            OnSlideStarted?.Invoke();
         }
 
         private void ExecuteSlide()
@@ -494,6 +569,7 @@ namespace RetroFPS
                 _isCrouching = false;
                 SetPlayerHeight(normalHeight, normalCameraY);
             }
+            OnSlideEnded?.Invoke();
         }
 
         private void StartCrouch()
@@ -513,12 +589,7 @@ namespace RetroFPS
             _controller.height = height;
             _controller.center = new Vector3(0f, height * 0.5f, 0f);
 
-            if (cameraHolder != null && cameraHolder != transform)
-            {
-                Vector3 camPos = cameraHolder.localPosition;
-                camPos.y = cameraY;
-                cameraHolder.localPosition = camPos;
-            }
+            ApplyCameraHeight(cameraY);
         }
         #endregion
 
@@ -539,6 +610,7 @@ namespace RetroFPS
             // Dash sırasında dikey yerçekimini sıfırla, ani patlama hızını ver
             _velocity = _dashDirection * dashSpeed;
             _velocity.y = 0f;
+            OnDashStarted?.Invoke();
 
             // Kameraya hissedilir ve tatmin edici FOV şoku ver (Warp darbesi)
             if (_look != null)
@@ -646,6 +718,7 @@ namespace RetroFPS
                 Vector3 launchDir = (_look != null && _look.PlayerCam != null) ? _look.PlayerCam.transform.forward : toTarget.normalized;
                 _velocity = launchDir * (_grappleSpeed * 0.95f) + Vector3.up * jumpForce * 1.2f;
                 StopGrapple(true);
+                OnJumped?.Invoke();
                 if (_look != null) _look.DoFovKick(14f);
                 return;
             }

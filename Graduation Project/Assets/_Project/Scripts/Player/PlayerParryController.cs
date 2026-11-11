@@ -444,9 +444,10 @@ namespace RetroFPS
 
             // 1. İşitsel Geri Bildirim: Tok Metalik Kalkan Çınlaması (CLANG!)
             AudioClip clipToPlay = customParrySound != null ? customParrySound : GetOrCreateParryClip();
-            if (clipToPlay != null)
+            CombatAudio combatAudio = CombatAudio.Instance;
+            if (clipToPlay != null && combatAudio != null)
             {
-                AudioSource.PlayClipAtPoint(clipToPlay, effectPos, 1.0f);
+                combatAudio.PlayClipAt(clipToPlay, effectPos, 1.0f);
             }
 
             // 2. Görsel Şok Dalgası ve Kıvılcım Patlaması

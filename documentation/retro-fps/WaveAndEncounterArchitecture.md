@@ -184,6 +184,17 @@ Eski kodda her bileşen eksik referansı **sahne genelinde** arıyordu (`FindAny
 
 ---
 
+## 7. GAUNTLET TEST SEVİYESİ (2026-11-11)
+
+- **Sahne:** `Assets/Scenes/TestLevel_Gauntlet.unity` (Build Settings'e eklendi; ölümde sahne adıyla yeniden yükleme için gerekli). Üretici: `Scripts/Editor/TestLevelBuilder.cs` → menü `RetroFPS ▸ Build Test Level (Gauntlet)` (yeniden çalıştırılırsa sahneyi baştan kurar; dalga verisi `WaveSet_Gauntlet_R*.asset` olarak güncellenir).
+- **Akış (+Z ekseni boyunca, ~250 m):** Başlangıç salonu (manken) → C1 sprint koridoru (0.6 m engeller, bhop) → **Oda 1 Mezar Çukuru** (28x28x7, sütun/siper, 3 faz, yalnız Ghoul) → C2 dirsekli koridor → **Oda 2 Kemik Salonu** (28x32x9, yan balkonlar y=3 + rampalar, 4 faz, Ghoul + Göz) → C3 dirsekli koridor → **Oda 3 Kemikhane** (32x36x11, balkonlar y=4, köprü, 5 faz) → C4 boss koridoru (kızıl meşaleler) → **Boss odası** (48x48x16, sunak, dev sütunlar; boss YOK).
+- **Oda kurulumu:** `Encounter_RoomXX` = BoxCollider(trigger, duvarlardan 2 m içeride) + `EncounterArea` + `WaveSpawnDirector` + `SpawnPoints` (zemin + balkon + hava) + `Gates` (giriş/çıkış bariyeri, `arenaBarriers`) + `RetryCheckpoint`. Giriş kapısı oyuncu içeri girince kapanır, çıkış kapısı tüm fazlar bitince açılır.
+- **Boss yer tutucusu:** `BossEncounter_Placeholder` altında `Boss_ArenaBounds` (trigger), `Boss_SpawnAnchor`, `Boss_PlayerCheckpoint`. Boss eklenirken bu sınıra `EncounterArea` + direktör bağlanır.
+- **Doğrulandı (Play Mode):** 3 odanın tüm fazları (3/3, 4/4, 5/5) başlayıp bitti, kapılar savaşta kapalı, sonda açık. Oda izolasyonu korundu (her oda yalnız kendi noktalarını kullanır).
+- **Bilinen:** `Player.prefab` içindeki silah viewmodel materyallerinin 16 slotu boş (pembe görünüyor) — seviyeden bağımsız, QuickSetup'ın sahne-içi materyal üretiminden kalan eski sorun.
+
+---
+
 ## İlişkiler (Sinaptik Ağ Bağlantıları)
 - [[CodebaseDependencyGraph]] ➔ `orchestrates_combat_flow`
 - [[CombatAndDamageInterfaces]] ➔ `consumes_IEncounterEnemy`

@@ -10,6 +10,7 @@ namespace RetroFPS
     /// - Doğal FOV (Varsayılan 65 dikey = ~95 yatay derece)
     /// - Tıklama ile otomatik imleç kilitleme
     /// </summary>
+    [DefaultExecutionOrder(-100)]
     public class PlayerLook : MonoBehaviour
     {
         [Header("Referanslar")]
@@ -24,14 +25,10 @@ namespace RetroFPS
         [SerializeField] private float minPitch = -89f;
         [SerializeField] private float maxPitch = 89f;
 
-        [Header("Kamera Yumuşatma (Smooth Look)")]
-        [Tooltip("Sert/keskin piksel sıçramalarını yumuşatıp akıcı bakış sağlar")]
-        [SerializeField] private bool smoothLook = true;
-        [SerializeField] private float smoothSpeed = 35f;
-
         [Header("Strafe Kamera Eğimi (Tilt)")]
         [SerializeField] private float tiltAngle = 2.0f;
         [SerializeField] private float tiltSpeed = 10f;
+        [SerializeField] private float slideTilt = 4f;
 
         [Header("Dinamik FOV (Hızlandıkça Hafif Genişleme)")]
         [Tooltip("Standart FOV: 65 (16:9 ekranda ~95 derece yatay genişlik verir, balıkgözü yapmaz)")]
@@ -45,6 +42,7 @@ namespace RetroFPS
         [SerializeField] private float maxShakeAngle = 3.5f;
         [SerializeField] private float shakeFrequency = 24f;
         [SerializeField] private float traumaDecay = 3.5f;
+        [SerializeField] private float maxShakeOffset = 0.045f;
 
         private float _trauma = 0f;
         private Vector3 _directionalFlinch = Vector3.zero;
@@ -52,10 +50,9 @@ namespace RetroFPS
 
         private float _yaw = 0f;
         private float _pitch = 0f;
-        private float _targetYaw = 0f;
-        private float _targetPitch = 0f;
         private float _currentTilt = 0f;
         private PlayerMovement _movement;
+        private PlayerCameraFeel _feel;
 
         public Camera PlayerCam => playerCamera;
         public Transform CameraHolder => cameraHolder;
@@ -69,10 +66,11 @@ namespace RetroFPS
             }
 
             _movement = GetComponent<PlayerMovement>();
+            _feel = GetComponent<PlayerCameraFeel>();
+            if (_feel == null) _feel = gameObject.AddComponent<PlayerCameraFeel>();
 
             // Mevcut gövde rotasyonunu başlangıç yaw değeri olarak al
-            _targetYaw = transform.eulerAngles.y;
-            _yaw = _targetYaw;
+            _yaw = transform.eulerAngles.y;
 
             // Kamera ve CameraHolder otomatik tespiti / onarımı
             SetupCameraReferences();
@@ -98,18 +96,24 @@ namespace RetroFPS
         /// </summary>
         public void ResetView(float yaw)
         {
-            _targetYaw = yaw;
             _yaw = yaw;
-            _targetPitch = 0f;
             _pitch = 0f;
             _currentTilt = 0f;
             _trauma = 0f;
+            _shakePitch = 0f;
+            _shakeYaw = 0f;
+            _shakeRoll = 0f;
             _directionalFlinch = Vector3.zero;
+            _dashFovKick = 0f;
+            if (_feel != null) _feel.ResetOffsets();
+            if (playerCamera != null) playerCamera.fieldOfView = baseFOV;
             transform.rotation = Quaternion.Euler(0f, yaw, 0f);
 
             if (cameraHolder != null && cameraHolder != transform)
             {
                 cameraHolder.localRotation = Quaternion.identity;
+                if (_movement != null)
+                    cameraHolder.localPosition = new Vector3(0f, _movement.CameraBaseHeight, 0f);
             }
 
             LockCursor();
@@ -155,7 +159,6 @@ namespace RetroFPS
             if (cameraHolder != null)
             {
                 cameraHolder.localRotation = Quaternion.identity;
-                _targetPitch = 0f;
                 _pitch = 0f;
                 _currentTilt = 0f;
                 _trauma = 0f;
@@ -180,8 +183,6 @@ namespace RetroFPS
             }
 
             HandleLook();
-            HandleTilt();
-            HandleDynamicFOV();
 
             // ESC ile imleç kilidini aç / kapat
             if (Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame)
@@ -200,69 +201,91 @@ namespace RetroFPS
 
             Vector2 mouseDelta = Mouse.current.delta.ReadValue() * mouseSensitivity;
 
-            // Hedef açıları güncelle
-            _targetYaw += mouseDelta.x;
-
+            _yaw += mouseDelta.x;
             float pitchDelta = invertY ? mouseDelta.y : -mouseDelta.y;
-            _targetPitch += pitchDelta;
-            _targetPitch = Mathf.Clamp(_targetPitch, minPitch, maxPitch);
-
-            // Yumuşatma (Smooth Look) ile sert piksel sıçramalarını em
-            if (smoothLook)
-            {
-                _yaw = Mathf.Lerp(_yaw, _targetYaw, Time.deltaTime * smoothSpeed);
-                _pitch = Mathf.Lerp(_pitch, _targetPitch, Time.deltaTime * smoothSpeed);
-            }
-            else
-            {
-                _yaw = _targetYaw;
-                _pitch = _targetPitch;
-            }
+            _pitch = Mathf.Clamp(_pitch + pitchDelta, minPitch, maxPitch);
 
             // 1. Yatay dönüş (Yaw): Karakterin gövdesini sağa/sola döndür
             transform.rotation = Quaternion.Euler(0f, _yaw, 0f);
+
+            // Pitch'i bu karede hemen uygula: Update'te ateş eden silahlar güncel bakışı kullansın.
+            // LateUpdate yine nihai pozu (sarsıntı/feel dahil) yazar.
+            ApplyCameraHolderRotation();
+        }
+
+        private void LateUpdate()
+        {
+            HandleTilt();
+            HandleDynamicFOV();
 
             // 2. Dikey bakış (Pitch) ve Prosedürel Ekran Sarsıntısı (Screen Shake)
             float shakePitch = 0f;
             float shakeYaw = 0f;
             float shakeRoll = 0f;
+            Vector3 shakePosition = Vector3.zero;
 
             if (_trauma > 0.001f)
             {
-                _trauma = Mathf.Max(0f, _trauma - Time.deltaTime * traumaDecay);
+                _trauma = Mathf.Max(0f, _trauma - Time.unscaledDeltaTime * traumaDecay);
                 float shake = _trauma * _trauma;
-                float time = Time.time * shakeFrequency;
+                float time = Time.unscaledTime * shakeFrequency;
                 shakePitch = (Mathf.PerlinNoise(time, 0f) * 2f - 1f) * maxShakeAngle * shake;
                 shakeYaw = (Mathf.PerlinNoise(0f, time) * 2f - 1f) * maxShakeAngle * shake;
                 shakeRoll = (Mathf.PerlinNoise(time, time) * 2f - 1f) * (maxShakeAngle * 0.6f) * shake;
+                shakePosition.x = (Mathf.PerlinNoise(time, 31.7f) * 2f - 1f) * maxShakeOffset * shake;
+                shakePosition.y = (Mathf.PerlinNoise(73.1f, time) * 2f - 1f) * maxShakeOffset * shake;
             }
 
             // Hasar yönü yaylanması (Directional Flinch Recovery)
             if (_directionalFlinch.sqrMagnitude > 0.001f)
             {
-                _directionalFlinch = Vector3.Lerp(_directionalFlinch, Vector3.zero, Time.deltaTime * _flinchRecoverySpeed);
+                _directionalFlinch = Vector3.Lerp(_directionalFlinch, Vector3.zero,
+                    1f - Mathf.Exp(-Time.unscaledDeltaTime * _flinchRecoverySpeed));
             }
             else
             {
                 _directionalFlinch = Vector3.zero;
             }
 
+            _shakePitch = shakePitch;
+            _shakeYaw = shakeYaw;
+            _shakeRoll = shakeRoll;
+
             if (cameraHolder != null && cameraHolder != transform)
             {
-                cameraHolder.localRotation = Quaternion.Euler(
-                    _pitch + shakePitch + _directionalFlinch.x,
-                    shakeYaw + _directionalFlinch.y,
-                    _currentTilt + shakeRoll + _directionalFlinch.z
-                );
+                Vector3 feelPosition = _feel != null ? _feel.PositionOffset : Vector3.zero;
+                float baseHeight = _movement != null ? _movement.CameraBaseHeight : 1.55f;
+                cameraHolder.localPosition = new Vector3(0f, baseHeight, 0f) + feelPosition + shakePosition;
+                ApplyCameraHolderRotation();
             }
+        }
+
+        // Last frame's shake components, so Update can re-compose the pose with the fresh pitch
+        // (weapons fire in Update along cam.forward) without double-applying any offset.
+        private float _shakePitch;
+        private float _shakeYaw;
+        private float _shakeRoll;
+
+        private void ApplyCameraHolderRotation()
+        {
+            if (cameraHolder == null || cameraHolder == transform) return;
+
+            Vector3 feelRotation = _feel != null ? _feel.RotationOffset : Vector3.zero;
+            cameraHolder.localRotation = Quaternion.Euler(
+                _pitch + _shakePitch + _directionalFlinch.x - feelRotation.x,
+                _shakeYaw + _directionalFlinch.y + feelRotation.y,
+                _currentTilt + _shakeRoll + _directionalFlinch.z + feelRotation.z
+            );
         }
 
         private void HandleTilt()
         {
             if (_movement == null || cameraHolder == null) return;
 
-            float strafeInput = _movement.InputVector.x;
-            float targetTilt = -strafeInput * tiltAngle;
+            float lateralVelocity = Vector3.Dot(transform.right, _movement.Velocity);
+            float targetTilt = Mathf.Clamp(-lateralVelocity / Mathf.Max(0.01f, _movement.WalkSpeed) * tiltAngle,
+                -tiltAngle * 1.5f, tiltAngle * 1.5f);
+            if (_movement.IsSliding) targetTilt += slideTilt;
             _currentTilt = Mathf.Lerp(_currentTilt, targetTilt, Time.deltaTime * tiltSpeed);
         }
 
@@ -273,7 +296,20 @@ namespace RetroFPS
         /// </summary>
         public void DoFovKick(float amount)
         {
-            _dashFovKick = amount;
+            if (amount * _dashFovKick > 0f)
+            {
+                if (Mathf.Abs(amount) > Mathf.Abs(_dashFovKick)) _dashFovKick = amount;
+            }
+            else
+            {
+                _dashFovKick = amount;
+            }
+            _dashFovKick = Mathf.Clamp(_dashFovKick, -12f, 22f);
+        }
+
+        public void AddViewPunch(float pitchDegrees, float yawDegrees)
+        {
+            if (_feel != null) _feel.AddViewPunch(pitchDegrees, yawDegrees);
         }
 
         /// <summary>
@@ -300,14 +336,15 @@ namespace RetroFPS
 
         private void HandleDynamicFOV()
         {
+            float kick = _dashFovKick;
+            _dashFovKick = Mathf.Lerp(_dashFovKick, 0f, 1f - Mathf.Exp(-Time.unscaledDeltaTime * 6f));
             if (playerCamera == null || _movement == null) return;
 
             float horizontalSpeed = _movement.CurrentHorizontalSpeed;
             float speedRatio = Mathf.InverseLerp(fovStartSpeed, fovMaxSpeed, horizontalSpeed);
-            float targetFOV = Mathf.Lerp(baseFOV, maxFOV, speedRatio) + _dashFovKick;
-
-            _dashFovKick = Mathf.Lerp(_dashFovKick, 0f, Time.deltaTime * 6f);
-            playerCamera.fieldOfView = Mathf.Lerp(playerCamera.fieldOfView, targetFOV, Time.deltaTime * fovLerpSpeed);
+            float targetFOV = Mathf.Lerp(baseFOV, maxFOV, speedRatio) + kick;
+            playerCamera.fieldOfView = Mathf.Lerp(playerCamera.fieldOfView, targetFOV,
+                1f - Mathf.Exp(-Time.unscaledDeltaTime * fovLerpSpeed));
         }
 
         public void LockCursor()

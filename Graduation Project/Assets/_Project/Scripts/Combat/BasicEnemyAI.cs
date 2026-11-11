@@ -73,20 +73,29 @@ namespace RetroFPS
         [SerializeField] private float attackDamage = 20f;
         [SerializeField] private float attackCooldown = 1.2f;
 
+        [Header("Sersemleme (Stun)")]
+        [Tooltip("Stun knockback hızı (m/s). knockbackDir yön olarak kabul edilir.")]
+        [SerializeField] private float stunKnockbackSpeed = 5.5f;
+
         [Header("Görsel Tepkiler")]
         [SerializeField] private Color normalColor = new Color(0.18f, 0.20f, 0.24f);
         [SerializeField] private Color windupGlowColor = new Color(1.0f, 0.35f, 0.05f);
-        [SerializeField] private Color damageFlashColor = new Color(1.0f, 0.1f, 0.1f);
-        [SerializeField] private Color critFlashColor = new Color(1.0f, 0.9f, 0.1f);
+        [SerializeField] private Color hitFlashColor = new Color(2.2f, 2.2f, 2.2f, 1f);
+        [SerializeField] private Color criticalHitFlashColor = new Color(3.2f, 2.8f, 0.35f, 1f);
 
         private bool _glintTriggered = false;
         private float _visualTilt = 0f;
         private float _targetVisualTilt = 0f;
         private static AudioClip _cachedGlintClip;
 
+        private readonly RaycastHit[] _sightHits = new RaycastHit[32];
+        private EnemyHealthDropper _healthDropper;
+        private EnemyAmmoDropper _ammoDropper;
         private CharacterController _controller;
         private Transform _playerTransform;
         private PlayerHealth _playerHealth;
+        private float _playerSearchTimer;
+        private const float PlayerSearchInterval = 0.5f;
 
         private EnemyState _currentState = EnemyState.Idle;
         private float _currentHealth;
@@ -108,6 +117,8 @@ namespace RetroFPS
         private Collider[] _colliders;
         private MaterialPropertyBlock _propBlock;
         private static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
+        private bool[] _supportsEmission;
+        private static readonly int EmissionColorId = Shader.PropertyToID("_EmissionColor");
         private static readonly int ColorId = Shader.PropertyToID("_Color");
 
         // Ölüm ve Yeniden Doğuş Durum Değişkenleri
@@ -142,6 +153,21 @@ namespace RetroFPS
             EnemyAlertHub.Unregister(this);
         }
 
+        private void Start()
+        {
+            CombatTargetLookup.RegisterHierarchy(this);
+            _supportsEmission = new bool[_renderers.Length];
+            for (int i = 0; i < _renderers.Length; i++)
+            {
+                Material material = _renderers[i] != null ? _renderers[i].sharedMaterial : null;
+                _supportsEmission[i] = material != null && material.HasProperty(EmissionColorId);
+            }
+            FindPlayer();
+            _healthDropper = GetComponent<EnemyHealthDropper>();
+            _ammoDropper = GetComponent<EnemyAmmoDropper>();
+            GetOrCreateGlintClip();
+        }
+
         private void Awake()
         {
             _controller = GetComponent<CharacterController>();
@@ -160,6 +186,7 @@ namespace RetroFPS
 
             FindPlayer();
             SetupHitboxes();
+            CombatTargetLookup.RegisterHierarchy(this);
             _headTransform = transform.Find("Head");
 
             // Başlangıçta Idle modunda hafif bekleme ile başla
@@ -268,12 +295,6 @@ namespace RetroFPS
                 return;
             }
 
-            if (_playerTransform == null)
-            {
-                FindPlayer();
-                if (_playerTransform == null) return;
-            }
-
             UpdateTimers();
             _visualTilt = Mathf.Lerp(_visualTilt, _targetVisualTilt, Time.deltaTime * 12f);
 
@@ -301,8 +322,19 @@ namespace RetroFPS
                 transform.localScale = _initialScale;
             }
 
-            ExecuteStateMachine();
             ApplyGravity();
+            if (_playerTransform == null)
+            {
+                // Oyuncudan önce doğan düşmanlar: seyrek (0.5 sn) yeniden arama.
+                _playerSearchTimer -= Time.deltaTime;
+                if (_playerSearchTimer <= 0f)
+                {
+                    _playerSearchTimer = PlayerSearchInterval;
+                    FindPlayer();
+                }
+            }
+            if (_playerTransform != null) ExecuteStateMachine();
+            else if (_currentState == EnemyState.Stagger) ExecuteStagger();
         }
 
         private void UpdateTimers()
@@ -398,7 +430,7 @@ namespace RetroFPS
 
             // Engelden kaçınma
             Vector3 rayOrigin = transform.position + Vector3.up * 0.5f;
-            if (Physics.Raycast(rayOrigin, dirToDest, 1.2f, GameLayers.EnemyObstacleMask, QueryTriggerInteraction.Ignore))
+            if (CombatRaycast.Nearest(rayOrigin, dirToDest, 1.2f, GameLayers.EnemyObstacleMask, _sightHits, out _))
             {
                 dirToDest = Quaternion.Euler(0f, 45f, 0f) * dirToDest;
             }
@@ -512,19 +544,19 @@ namespace RetroFPS
                 Vector3 eyePos = transform.position + Vector3.up * 1.70f + transform.forward * 0.35f;
 
                 // 1. Gözlerde altın sarısı parry yıldızı flaşı
-                ParryVFX.SpawnGlint(eyePos);
+                if (CombatVFXManager.Instance != null)
+                    CombatVFXManager.Instance.SpawnSignalBurst(eyePos, glintColor, 12);
 
                 // 2. Kristal kılıç çınlaması sesi (SHING!)
-                AudioClip chime = customGlintSound != null ? customGlintSound : GetOrCreateGlintClip();
+                AudioClip chime = customGlintSound != null ? customGlintSound : _cachedGlintClip;
                 if (chime != null)
                 {
-                    AudioSource.PlayClipAtPoint(chime, eyePos, 1.0f);
+                    if (CombatAudio.Instance != null) CombatAudio.Instance.PlayClipAt(chime, eyePos);
                 }
 
                 // 3. Gövde uyarısı: Parlak beyaz-sarı flaş
                 SetColor(glintColor);
 
-                Debug.Log($"<color=yellow><b>[PARRY TELEGRAPH / GLINT!]</b></color> {gameObject.name} is about to strike — PARRY NOW!");
             }
 
             if (_stateTimer <= 0f)
@@ -545,6 +577,10 @@ namespace RetroFPS
 
         private void ExecuteStagger()
         {
+            _controller.Move(_velocity * Time.deltaTime);
+            float decay = Mathf.Exp(-8f * Time.deltaTime);
+            _velocity.x *= decay;
+            _velocity.z *= decay;
             _stateTimer -= Time.deltaTime;
             if (_stateTimer <= 0f)
             {
@@ -561,7 +597,7 @@ namespace RetroFPS
             dir.Normalize();
 
             Vector3 rayOrigin = transform.position + Vector3.up * 0.5f;
-            if (Physics.Raycast(rayOrigin, dir, 1.2f, GameLayers.EnemyObstacleMask, QueryTriggerInteraction.Ignore))
+            if (CombatRaycast.Nearest(rayOrigin, dir, 1.2f, GameLayers.EnemyObstacleMask, _sightHits, out _))
             {
                 dir = Quaternion.Euler(0f, 45f, 0f) * dir;
             }
@@ -599,7 +635,7 @@ namespace RetroFPS
             // 1. Çok yakın mesafe algısı (arkadan yaklaşma)
             if (dist <= proximityRange)
             {
-                if (Physics.Raycast(eyePos, toPlayer.normalized, out RaycastHit proxHit, dist, GameLayers.EnemySightMask, QueryTriggerInteraction.Ignore))
+                if (CombatRaycast.Nearest(eyePos, toPlayer.normalized, dist, GameLayers.EnemySightMask, _sightHits, out RaycastHit proxHit))
                 {
                     if (proxHit.transform == _playerTransform || proxHit.transform.IsChildOf(_playerTransform))
                     {
@@ -615,7 +651,7 @@ namespace RetroFPS
             if (angle > fieldOfView * 0.5f) return false;
 
             // 3. Line of Sight (Doğrudan görüş hattı) Raycast'i
-            if (Physics.Raycast(eyePos, dirToPlayer, out RaycastHit hit, dist, GameLayers.EnemySightMask, QueryTriggerInteraction.Ignore))
+            if (CombatRaycast.Nearest(eyePos, dirToPlayer, dist, GameLayers.EnemySightMask, _sightHits, out RaycastHit hit))
             {
                 if (hit.transform == _playerTransform || hit.transform.IsChildOf(_playerTransform))
                 {
@@ -642,7 +678,6 @@ namespace RetroFPS
                 {
                     LookAtPosition(_playerTransform.position);
                 }
-                Debug.Log($"<color=yellow>[Pack Alert]</color> <b>{gameObject.name}</b> alerted by ally!");
             }
         }
 
@@ -684,49 +719,41 @@ namespace RetroFPS
             if (_currentState == EnemyState.Dead) return;
 
             _currentHealth -= amount;
-            _flashTimer = isCritical ? 0.14f : 0.08f;
+            _flashTimer = isCritical ? 0.12f : 0.06f;
             _squashTimer = 0.18f;
-            SetColor(isCritical ? critFlashColor : damageFlashColor);
+            SetColor(isCritical ? criticalHitFlashColor : hitFlashColor);
 
             // Hasar alındığında oyuncuya kilitlen ve yakındaki müttefikleri savaşa çağır!
-            StartChase(true);
+            bool wasStaggered = _currentState == EnemyState.Stagger;
+            if (!wasStaggered) StartChase(true);
 
             // Ağır hasar veya kafa vuruşu tökezletme (Stagger) tetikler
             if (isCritical || amount >= 40f)
             {
                 _currentState = EnemyState.Stagger;
-                _stateTimer = 0.35f;
-                _velocity = -hitNormal * 3.5f; // Geriye itilme
+                _stateTimer = wasStaggered ? Mathf.Max(_stateTimer, 0.35f) : 0.35f;
+                Vector3 impulse = -hitNormal;
+                impulse.y = 0f;
+                impulse = impulse.normalized * Mathf.Clamp(amount * 0.09f, 2.5f, 10f);
+                _velocity.x = impulse.x;
+                _velocity.z = impulse.z;
+                if (amount >= 60f) _velocity.y = 1.5f;
             }
 
             // Kritik darbede veya ölümde mikro Hitstop
             if (HitstopManager.Instance != null)
             {
-                if (_currentHealth <= 0f)
-                    HitstopManager.Instance.TriggerHitstop(0.07f, 0.02f);
-                else if (isCritical)
+                if (_currentHealth > 0f && isCritical)
                     HitstopManager.Instance.TriggerHitstop(0.04f, 0.04f);
             }
 
-            Debug.Log($"<color=orange>[Enemy Hit]</color> -{amount:F0} HP | Remaining: <b>{Mathf.Max(0, _currentHealth):F0}/{maxHealth}</b> {(isCritical ? "<color=yellow>CRIT!</color>" : "")}");
 
+            if (CombatVFXManager.Instance != null)
+                CombatVFXManager.Instance.SpawnHitImpact(hitPoint, hitNormal, isCritical, true);
+            if (CombatAudio.Instance != null)
+                CombatAudio.Instance.PlayFleshImpact(hitPoint, isCritical);
             if (_currentHealth <= 0f)
-            {
                 Die(hitPoint, hitNormal, amount, isCritical);
-            }
-            else
-            {
-                // Canlıyken darbe anında kan püskürt ve çevreye kan sıçrat
-                if (CombatVFXManager.Instance != null)
-                {
-                    CombatVFXManager.Instance.SpawnHitImpact(hitPoint, hitNormal, isCritical, true);
-                }
-
-                if (CombatAudio.Instance != null)
-                {
-                    CombatAudio.Instance.PlayFleshImpact(hitPoint, isCritical);
-                }
-            }
         }
 
         public void Stun(float duration, Vector3 knockbackDir)
@@ -736,24 +763,28 @@ namespace RetroFPS
             _currentState = EnemyState.Stagger;
             _stateTimer = duration;
             _cooldownTimer = duration + 0.5f;
-            _velocity = knockbackDir.normalized * 5.5f;
+            // knockbackDir bir yöndür (çağıranlar normalize gönderir); güç stunKnockbackSpeed'den gelir.
+            _velocity = knockbackDir.sqrMagnitude > 0.0001f
+                ? knockbackDir.normalized * stunKnockbackSpeed
+                : Vector3.zero;
             _targetVisualTilt = -25f; // Sersemleme duruşu (geriye yığılma)
 
             SetColor(new Color(1f, 0.9f, 0.2f));
 
             // Baş üzerinde dönen altın sersemleme yıldızları efekti
-            ParryVFX.SpawnStunEffect(transform, duration);
+            if (CombatVFXManager.Instance != null)
+                CombatVFXManager.Instance.SpawnSignalBurst(transform.position + Vector3.up * 2.05f, glintColor, 6);
 
             if (HitstopManager.Instance != null)
             {
                 HitstopManager.Instance.TriggerHitstop(0.08f, 0.02f);
             }
 
-            Debug.Log($"<color=yellow><b>[ENEMY STUNNED!]</b></color> {gameObject.name} immobilized for {duration:F1}s!");
         }
 
         private void Die(Vector3 hitPoint, Vector3 hitNormal, float killingDamage, bool isCritical)
         {
+            if (!IsAlive) return;
             _currentState = EnemyState.Dead;
             _stateTimer = respawnTime;
             _squashTimer = 0f;
@@ -761,10 +792,9 @@ namespace RetroFPS
             _visualTilt = 0f;
             ClearFlash();
 
-            OnEnemyDeath?.Invoke(this);
 
             // Can Küresi Düşüşü (Adaptif Dengeleme & Ödül)
-            EnemyHealthDropper dropper = GetComponent<EnemyHealthDropper>();
+            EnemyHealthDropper dropper = _healthDropper;
             if (dropper != null)
             {
                 dropper.TriggerDrop(isCritical, killingDamage >= 40f);
@@ -775,7 +805,7 @@ namespace RetroFPS
             }
 
             // Cephane Düşüşü (DOOM Kaynak Döngüsü)
-            EnemyAmmoDropper ammoDropper = GetComponent<EnemyAmmoDropper>();
+            EnemyAmmoDropper ammoDropper = _ammoDropper;
             if (ammoDropper != null)
             {
                 ammoDropper.TriggerDrop(isCritical, killingDamage >= 40f);
@@ -809,7 +839,6 @@ namespace RetroFPS
                 SetRenderersActive(false);
                 transform.localScale = _initialScale;
 
-                Debug.Log("<color=red><b>[ENEMY GIBBED!]</b></color> Boomer shooter gore and bone fragments scattered!");
             }
             else if (shouldDecapitate)
             {
@@ -819,7 +848,6 @@ namespace RetroFPS
                 _deathStartPos = transform.position;
 
                 // Kafayı gizle ve uçan kafa / boyun kan fıskiyesi başlat
-                if (_headTransform == null) _headTransform = transform.Find("Head");
                 if (_headTransform != null)
                 {
                     _headTransform.gameObject.SetActive(false);
@@ -848,7 +876,6 @@ namespace RetroFPS
                 _deathTargetRot = Quaternion.LookRotation(knockbackDir) * Quaternion.Euler(60f, 0f, 0f);
                 _deathTargetPos = transform.position + knockbackDir * 0.35f - Vector3.up * 0.40f;
 
-                Debug.Log("<color=red><b>[DECAPITATION!]</b></color> Blood gushes from the neck, head rolls across the floor!");
             }
             else
             {
@@ -866,18 +893,13 @@ namespace RetroFPS
                 _deathTargetRot = Quaternion.LookRotation(knockbackDir) * Quaternion.Euler(75f, 0f, 0f);
                 _deathTargetPos = transform.position + knockbackDir * 0.45f - Vector3.up * 0.35f;
 
-                if (CombatVFXManager.Instance != null)
-                {
-                    CombatVFXManager.Instance.SpawnHitImpact(transform.position + Vector3.up * 0.9f, hitNormal, false, true);
-                }
 
-                if (CombatAudio.Instance != null)
-                {
-                    CombatAudio.Instance.PlayFleshImpact(transform.position, false);
-                }
 
-                Debug.Log("<color=red><b>[ENEMY DOWN]</b></color> Occult dissolution begun.");
             }
+            if (HitstopManager.Instance != null)
+                HitstopManager.Instance.TriggerHitstop(0.07f, 0.03f);
+            CombatEvents.RaiseEnemyKilled(transform.position, isCritical, _isGibbed);
+            OnEnemyDeath?.Invoke(this);
         }
 
         private void Respawn()
@@ -911,7 +933,6 @@ namespace RetroFPS
                 CombatVFXManager.Instance.SpawnHitImpact(transform.position + Vector3.up * 1f, Vector3.up, false, false);
             }
 
-            Debug.Log("<color=green>[Enemy Respawned]</color> Ready for combat!");
         }
 
         /// <summary>
@@ -969,6 +990,7 @@ namespace RetroFPS
                 _renderers[i].GetPropertyBlock(_propBlock);
                 _propBlock.SetColor(BaseColorId, col);
                 _propBlock.SetColor(ColorId, col);
+                if (_supportsEmission != null && i < _supportsEmission.Length && _supportsEmission[i]) _propBlock.SetColor(EmissionColorId, col);
                 _renderers[i].SetPropertyBlock(_propBlock);
             }
         }

@@ -1,0 +1,93 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6505808ee0b3b984ba7b9489e29a96cd, type: 3}
+  m_Name: WaveSet_Gauntlet_R1_Crypt
+  m_EditorClassIdentifier: RetroFPS.Gameplay::RetroFPS.Combat.WaveSet
+  designNotes: "Oda 1 (3 faz, yaln\u0131z Ghoul). Hareket ve silah \u0131s\u0131nmas\u0131:
+    tempo y\xFCksek, tehdit d\xFC\u015F\xFCk."
+  waves:
+  - waveName: "Faz 1: Uyan\u0131\u015F"
+    preWaveDelay: 1
+    maxConcurrentEnemies: 4
+    threatBudget: 0
+    transitionMode: 1
+    remainingThreshold: 2
+    percentageThreshold: 0.75
+    timeLimit: 30
+    carryOverRemainingEnemies: 1
+    rewardHealthOrbs: 1
+    rewardAmmoPickups: 1
+    spawnEntries:
+    - enemyPrefab: {fileID: 5349570471886633040, guid: 9ac052f5657dabe478d13eea780617b6, type: 3}
+      count: 5
+      spawnInterval: 0.9
+      isAirEnemy: 0
+      targetZoneTag: 
+      delayFromWaveStart: 0
+      batchSize: 1
+      spawnPattern: 1
+      runInParallel: 0
+      threatCostOverride: 0
+  - waveName: "Faz 2: S\xFCr\xFC"
+    preWaveDelay: 0.8
+    maxConcurrentEnemies: 6
+    threatBudget: 0
+    transitionMode: 4
+    remainingThreshold: 2
+    percentageThreshold: 0.65
+    timeLimit: 25
+    carryOverRemainingEnemies: 1
+    rewardHealthOrbs: 1
+    rewardAmmoPickups: 1
+    spawnEntries:
+    - enemyPrefab: {fileID: 5349570471886633040, guid: 9ac052f5657dabe478d13eea780617b6, type: 3}
+      count: 8
+      spawnInterval: 1
+      isAirEnemy: 0
+      targetZoneTag: 
+      delayFromWaveStart: 0
+      batchSize: 2
+      spawnPattern: 0
+      runInParallel: 0
+      threatCostOverride: 0
+  - waveName: "Faz 3: Kapan\u0131\u015F (Final)"
+    preWaveDelay: 0.8
+    maxConcurrentEnemies: 8
+    threatBudget: 0
+    transitionMode: 0
+    remainingThreshold: 2
+    percentageThreshold: 0.75
+    timeLimit: 30
+    carryOverRemainingEnemies: 1
+    rewardHealthOrbs: 2
+    rewardAmmoPickups: 2
+    spawnEntries:
+    - enemyPrefab: {fileID: 5349570471886633040, guid: 9ac052f5657dabe478d13eea780617b6, type: 3}
+      count: 6
+      spawnInterval: 1.2
+      isAirEnemy: 0
+      targetZoneTag: 
+      delayFromWaveStart: 0
+      batchSize: 3
+      spawnPattern: 0
+      runInParallel: 0
+      threatCostOverride: 0
+    - enemyPrefab: {fileID: 5349570471886633040, guid: 9ac052f5657dabe478d13eea780617b6, type: 3}
+      count: 4
+      spawnInterval: 1
+      isAirEnemy: 0
+      targetZoneTag: 
+      delayFromWaveStart: 6
+      batchSize: 4
+      spawnPattern: 0
+      runInParallel: 1
+      threatCostOverride: 0

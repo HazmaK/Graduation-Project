@@ -29,11 +29,38 @@ namespace RetroFPS
         [SerializeField] private float bobVerticalAmplitude = 0.022f;
 
         [Header("Recoil (Geri Tepme Yaylanması)")]
-        [SerializeField] private float recoilRecoverySpeed = 16f;
+        [SerializeField] private float recoilFrequency = 9f;
+        [SerializeField] private float recoilDamping = 0.5f;
+
+        [Header("Vertical Inertia and Landing")]
+        [SerializeField] private float verticalInertiaScale = 0.006f;
+        [SerializeField] private float maxVerticalInertia = 0.05f;
+        [SerializeField] private float maxInertiaPitch = 4f;
+        [SerializeField] private float inertiaSmooth = 12f;
+        [SerializeField] private float landingDip = 0.05f;
+        [SerializeField] private float landingPitch = 5f;
+        [SerializeField] private float jumpDip = 0.012f;
+
+        [Header("Equip Raise")]
+        [SerializeField] private float equipDropDistance = 0.28f;
+        [SerializeField] private float equipDuration = 0.16f;
+        [SerializeField] private float equipPitchDown = 35f;
 
         private PlayerMovement _movement;
-        private Vector3 _currentRecoilPos;
-        private Vector3 _currentRecoilRot;
+        private Spring _recoilX;
+        private Spring _recoilY;
+        private Spring _recoilZ;
+        private Spring _recoilPitch;
+        private Spring _recoilYaw;
+        private Spring _recoilRoll;
+        private Spring _landingY;
+        private Spring _landingPitch;
+        private float _inertiaY;
+        private float _inertiaPitch;
+        private Vector3 _posePosition;
+        private Quaternion _poseRotation;
+        private bool _isEquipping;
+        private float _equipTimer;
         private float _bobTimer = 0f;
 
         // Yakın dövüş savurma durumu
@@ -48,9 +75,66 @@ namespace RetroFPS
         private void Awake()
         {
             _movement = GetComponentInParent<PlayerMovement>();
+            _posePosition = restPosition;
+            _poseRotation = Quaternion.Euler(restRotation);
             transform.localPosition = restPosition;
             transform.localRotation = Quaternion.Euler(restRotation);
         }
+
+        #region Movement Feedback
+        private void OnEnable()
+        {
+            if (_movement == null) _movement = GetComponentInParent<PlayerMovement>();
+            if (_movement != null)
+            {
+                _movement.OnLanded += HandleLanding;
+                _movement.OnJumped += HandleJump;
+            }
+        }
+
+        private void OnDisable()
+        {
+            if (_movement != null)
+            {
+                _movement.OnLanded -= HandleLanding;
+                _movement.OnJumped -= HandleJump;
+            }
+            _recoilX = default;
+            _recoilY = default;
+            _recoilZ = default;
+            _recoilPitch = default;
+            _recoilYaw = default;
+            _recoilRoll = default;
+            _landingY = default;
+            _landingPitch = default;
+            _inertiaY = 0f;
+            _inertiaPitch = 0f;
+            _isSlashing = false;
+            _isEquipping = false;
+            _posePosition = restPosition;
+            _poseRotation = Quaternion.Euler(restRotation);
+        }
+
+        private void HandleLanding(float impact)
+        {
+            float t = Mathf.InverseLerp(4f, 22f, impact);
+            // An underdamped velocity kick with this scale peaks close to the requested offset.
+            float impulseScale = 3.7f * Mathf.PI * recoilFrequency;
+            _landingY.AddVelocity(-landingDip * t * impulseScale);
+            _landingPitch.AddVelocity(landingPitch * t * impulseScale);
+        }
+
+        private void HandleJump()
+        {
+            _landingY.AddVelocity(-jumpDip * 3.7f * Mathf.PI * recoilFrequency);
+        }
+
+        public void PlayEquip()
+        {
+            _equipTimer = 0f;
+            _isEquipping = true;
+        }
+        #endregion
 
         public void SetRestPose(Vector3 pos, Vector3 rot)
         {
@@ -60,8 +144,6 @@ namespace RetroFPS
 
         private void Update()
         {
-            HandleRecoilRecovery();
-
             if (_isSlashing)
             {
                 ExecuteSlashAnimation();
@@ -70,6 +152,9 @@ namespace RetroFPS
             {
                 ApplySwayAndBob();
             }
+            ComposePose();
+            // Display newly displaced recoil before advancing it, including at low frame rates.
+            HandleRecoilRecovery();
         }
 
         private void ApplySwayAndBob()
@@ -107,17 +192,55 @@ namespace RetroFPS
             }
 
             // Pozisyon ve rotasyonu harmanla
-            Vector3 targetPos = restPosition + targetSwayPos + bobPos + _currentRecoilPos;
-            Quaternion targetRot = Quaternion.Euler(restRotation + targetSwayRot + _currentRecoilRot);
+            Vector3 targetPos = restPosition + targetSwayPos + bobPos;
+            Quaternion targetRot = Quaternion.Euler(restRotation + targetSwayRot);
 
-            transform.localPosition = Vector3.Lerp(transform.localPosition, targetPos, Time.deltaTime * swaySmooth);
-            transform.localRotation = Quaternion.Slerp(transform.localRotation, targetRot, Time.deltaTime * swaySmooth);
+            _posePosition = Vector3.Lerp(_posePosition, targetPos, Time.deltaTime * swaySmooth);
+            _poseRotation = Quaternion.Slerp(_poseRotation, targetRot, Time.deltaTime * swaySmooth);
         }
 
         private void HandleRecoilRecovery()
         {
-            _currentRecoilPos = Vector3.Lerp(_currentRecoilPos, Vector3.zero, Time.deltaTime * recoilRecoverySpeed);
-            _currentRecoilRot = Vector3.Lerp(_currentRecoilRot, Vector3.zero, Time.deltaTime * recoilRecoverySpeed);
+            float dt = Time.deltaTime;
+            _recoilX.Step(0f, recoilFrequency, recoilDamping, dt);
+            _recoilY.Step(0f, recoilFrequency, recoilDamping, dt);
+            _recoilZ.Step(0f, recoilFrequency, recoilDamping, dt);
+            _recoilPitch.Step(0f, recoilFrequency, recoilDamping, dt);
+            _recoilYaw.Step(0f, recoilFrequency, recoilDamping, dt);
+            _recoilRoll.Step(0f, recoilFrequency, recoilDamping, dt);
+            _landingY.Step(0f, recoilFrequency, recoilDamping, dt);
+            _landingPitch.Step(0f, recoilFrequency, recoilDamping, dt);
+        }
+
+        private void ComposePose()
+        {
+            // Yerdeyken yapışma hızı (-2) kalıcı ofset üretmesin.
+            float verticalVelocity = _movement != null && !_movement.IsGrounded ? _movement.Velocity.y : 0f;
+            float targetY = Mathf.Clamp(-verticalVelocity * verticalInertiaScale, -maxVerticalInertia, maxVerticalInertia);
+            float targetPitch = -targetY / Mathf.Max(0.001f, maxVerticalInertia) * maxInertiaPitch;
+            float blend = 1f - Mathf.Exp(-inertiaSmooth * Time.deltaTime);
+            _inertiaY = Mathf.Lerp(_inertiaY, targetY, blend);
+            _inertiaPitch = Mathf.Lerp(_inertiaPitch, targetPitch, blend);
+
+            float equipOffset = 0f;
+            if (_isEquipping)
+            {
+                float t = Mathf.Clamp01(_equipTimer / Mathf.Max(0.001f, equipDuration));
+                float u = t - 1f;
+                float eased = 1f + 2.70158f * u * u * u + 1.70158f * u * u;
+                equipOffset = 1f - eased;
+                _equipTimer += Time.deltaTime;
+                if (t >= 1f) _isEquipping = false;
+            }
+
+            Vector3 positionOffset = new Vector3(_recoilX.Value,
+                _recoilY.Value + _inertiaY + Mathf.Clamp(_landingY.Value, -landingDip, landingDip)
+                - equipDropDistance * equipOffset, _recoilZ.Value);
+            Vector3 rotationOffset = new Vector3(_recoilPitch.Value + _inertiaPitch
+                + Mathf.Clamp(_landingPitch.Value, -landingPitch, landingPitch) + equipPitchDown * equipOffset,
+                _recoilYaw.Value, _recoilRoll.Value);
+            transform.localPosition = _posePosition + positionOffset;
+            transform.localRotation = _poseRotation * Quaternion.Euler(rotationOffset);
         }
 
         /// <summary>
@@ -125,8 +248,12 @@ namespace RetroFPS
         /// </summary>
         public void AddRecoil(float kickZ = 0.08f, float kickPitch = 5f, float kickYaw = 1.5f)
         {
-            _currentRecoilPos += new Vector3(Random.Range(-kickYaw * 0.005f, kickYaw * 0.005f), kickPitch * 0.006f, -kickZ);
-            _currentRecoilRot += new Vector3(-kickPitch, Random.Range(-kickYaw, kickYaw), Random.Range(-kickYaw, kickYaw));
+            _recoilX.SetValue(_recoilX.Value + Random.Range(-kickYaw * 0.005f, kickYaw * 0.005f));
+            _recoilY.SetValue(_recoilY.Value + kickPitch * 0.006f);
+            _recoilZ.SetValue(_recoilZ.Value - kickZ);
+            _recoilPitch.SetValue(_recoilPitch.Value - kickPitch);
+            _recoilYaw.SetValue(_recoilYaw.Value + Random.Range(-kickYaw, kickYaw));
+            _recoilRoll.SetValue(_recoilRoll.Value + Random.Range(-kickYaw, kickYaw));
         }
 
         /// <summary>
@@ -134,8 +261,12 @@ namespace RetroFPS
         /// </summary>
         public void AddDamageFlinch(float intensity = 1.0f)
         {
-            _currentRecoilPos += new Vector3(Random.Range(-0.025f, 0.025f) * intensity, -0.04f * intensity, -0.035f * intensity);
-            _currentRecoilRot += new Vector3(7f * intensity, Random.Range(-5f, 5f) * intensity, Random.Range(-6f, 6f) * intensity);
+            _recoilX.SetValue(_recoilX.Value + Random.Range(-0.025f, 0.025f) * intensity);
+            _recoilY.SetValue(_recoilY.Value - 0.04f * intensity);
+            _recoilZ.SetValue(_recoilZ.Value - 0.035f * intensity);
+            _recoilPitch.SetValue(_recoilPitch.Value + 7f * intensity);
+            _recoilYaw.SetValue(_recoilYaw.Value + Random.Range(-5f, 5f) * intensity);
+            _recoilRoll.SetValue(_recoilRoll.Value + Random.Range(-6f, 6f) * intensity);
         }
 
         /// <summary>
@@ -227,14 +358,14 @@ namespace RetroFPS
             if (t <= 0.40f)
             {
                 float strikeT = Mathf.Sin((t / 0.40f) * Mathf.PI * 0.5f);
-                transform.localPosition = Vector3.Lerp(_slashStartPos, _slashPeakPos, strikeT);
-                transform.localRotation = Quaternion.Slerp(_slashStartRot, _slashPeakRot, strikeT);
+                _posePosition = Vector3.Lerp(_slashStartPos, _slashPeakPos, strikeT);
+                _poseRotation = Quaternion.Slerp(_slashStartRot, _slashPeakRot, strikeT);
             }
             else
             {
                 float returnT = Mathf.SmoothStep(0f, 1f, (t - 0.40f) / 0.60f);
-                transform.localPosition = Vector3.Lerp(_slashPeakPos, restPosition, returnT);
-                transform.localRotation = Quaternion.Slerp(_slashPeakRot, Quaternion.Euler(restRotation), returnT);
+                _posePosition = Vector3.Lerp(_slashPeakPos, restPosition, returnT);
+                _poseRotation = Quaternion.Slerp(_slashPeakRot, Quaternion.Euler(restRotation), returnT);
             }
 
             if (t >= 1.0f)
