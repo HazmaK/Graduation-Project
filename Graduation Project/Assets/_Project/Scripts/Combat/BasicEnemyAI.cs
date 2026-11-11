@@ -26,14 +26,18 @@ namespace RetroFPS
     /// - Ölümden 4 saniye sonra otomatik yeniden doğma (Kesintisiz arena testi)
     /// </summary>
     [RequireComponent(typeof(CharacterController))]
-    public class BasicEnemyAI : MonoBehaviour, IDamageable, IAlertableEnemy, IStunnable, IEncounterEnemy
+    public class BasicEnemyAI : MonoBehaviour, IDamageable, IAlertableEnemy, IStunnable, IEncounterEnemy, IThreatCost
     {
         [Header("Sağlık ve Ödül")]
         [SerializeField] private float maxHealth = 150f;
         [SerializeField] private float respawnTime = 4.0f;
         [SerializeField] private bool autoRespawn = true;
 
+        [Tooltip("Dalga tehdit bütçesindeki ağırlık (Ghoul = 1 referans)")]
+        [SerializeField] private float threatCost = 1f;
+
         public bool AutoRespawn { get => autoRespawn; set => autoRespawn = value; }
+        public float ThreatCost => threatCost;
 
         [Header("Hareket ve Takip")]
         [SerializeField] private float chaseSpeed = 4.8f;

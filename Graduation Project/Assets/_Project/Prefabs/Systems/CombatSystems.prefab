@@ -67,7 +67,7 @@ MonoBehaviour:
   lowHealthHeartbeatSound: {fileID: 0}
   healthPickupSound: {fileID: 0}
   masterCombatVolume: 0.95
-  pitchVariation: 0.08
+  pitchVariation: 0.8
 --- !u!114 &7530888822722753572
 MonoBehaviour:
   m_ObjectHideFlags: 0

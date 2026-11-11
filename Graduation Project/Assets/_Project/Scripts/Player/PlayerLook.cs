@@ -93,6 +93,28 @@ namespace RetroFPS
             LockCursor();
         }
 
+        /// <summary>
+        /// Bakışı verilen yaw ile sıfırlar (pitch, sarsıntı, flinch, ölüm kamera açısı) ve imleci kilitler. Checkpoint retry için.
+        /// </summary>
+        public void ResetView(float yaw)
+        {
+            _targetYaw = yaw;
+            _yaw = yaw;
+            _targetPitch = 0f;
+            _pitch = 0f;
+            _currentTilt = 0f;
+            _trauma = 0f;
+            _directionalFlinch = Vector3.zero;
+            transform.rotation = Quaternion.Euler(0f, yaw, 0f);
+
+            if (cameraHolder != null && cameraHolder != transform)
+            {
+                cameraHolder.localRotation = Quaternion.identity;
+            }
+
+            LockCursor();
+        }
+
         private void SetupCameraReferences()
         {
             if (cameraHolder == null)

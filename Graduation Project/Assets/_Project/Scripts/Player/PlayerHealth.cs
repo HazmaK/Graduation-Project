@@ -36,6 +36,13 @@ namespace RetroFPS
         public event System.Action<float> OnDamageTaken;
         public event System.Action<float> OnHealed;
         public event System.Action OnDied;
+        public event System.Action OnRevived;
+
+        /// <summary>
+        /// Yeniden başlatma isteğini üstlenebilecek dış sistem (Örn: savaştaki odanın checkpoint/retry'ı).
+        /// true dönerse sahne yeniden YÜKLENMEZ. Aynı anda tek bir sahip olabilir.
+        /// </summary>
+        public System.Func<bool> RetryInterceptor { get; set; }
 
         private void Awake()
         {
@@ -169,8 +176,45 @@ namespace RetroFPS
         {
             Time.timeScale = 1.0f; // Mikro dondurma varsa zamanı normale çek
             Time.fixedDeltaTime = 0.02f;
+
+            // Savaştaki oda checkpoint retry'ı üstlenirse sahneyi yeniden yükleme
+            if (_isDead && RetryInterceptor != null && RetryInterceptor())
+            {
+                return;
+            }
+
             _isDead = false;
             SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+        }
+
+        /// <summary>
+        /// Oyuncuyu verilen noktada tam canla diriltir; kontrolleri, silahları ve kamerayı geri açar (checkpoint retry).
+        /// </summary>
+        public void Revive(Vector3 position, Quaternion rotation)
+        {
+            _isDead = false;
+            _currentHealth = maxHealth;
+            _timeSinceLastDamage = 0f;
+
+            if (_movement != null)
+            {
+                _movement.enabled = true;
+                _movement.TeleportTo(position, rotation);
+            }
+
+            if (_look != null)
+            {
+                _look.enabled = true;
+                _look.ResetView(rotation.eulerAngles.y);
+            }
+
+            WeaponController weapons = GetComponent<WeaponController>();
+            if (weapons != null) weapons.enabled = true;
+
+            if (_parry != null) _parry.enabled = true;
+
+            OnRevived?.Invoke();
+            Debug.Log("<color=green><b>[PLAYER REVIVED]</b></color> Checkpoint retry.");
         }
 
         private void Update()

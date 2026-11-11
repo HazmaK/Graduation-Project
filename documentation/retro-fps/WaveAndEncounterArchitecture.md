@@ -103,6 +103,87 @@ Bir AI veya geliştirici yeni bir arena tasarlarken:
 
 ---
 
+## 4. DİREKTÖR DÜZELTMELERİ VE WAVESET PRESET (2026-11-11)
+
+### WaveSet (ScriptableObject preset)
+- `Scripts/Combat/WaveSet.cs` — `Create > RetroFPS > Combat > Wave Set`. Dalga listesini sahneden ayırır; aynı preset birden çok arenada paylaşılır (Easy/Hard varyantı = ayrı asset), sahne merge conflict'i azalır.
+- `WaveSpawnDirector.waveSet` atanırsa satır-içi `waves` listesi yok sayılır (Awake'te `waves = waveSet.Waves`). Preset modunda editör "prefab onarımı" çalışmaz (paylaşılan asset'e yazılmaz).
+- Yalnızca kalıcı prefab referansı tutar. ContextMenu: "Özeti Konsola Yaz".
+
+### Düzeltilen hatalar
+- **Kill sayacı dalga bazlı:** Her aktif düşman doğduğu dalga indeksiyle (`_activeEnemyWave`, `_activeEnemies` ile paralel) izlenir. Önceki dalgadan taşan düşmanın ölümü yeni dalganın yüzde/kill-all sayacını şişirmez.
+- **Cap mantığı:** `MaxConcurrentEnemies` yalnızca MEVCUT dalgadan canlı + telgrafta bekleyen (`_pendingSpawns`) düşmanları sayar; taşanlar yeni dalgayı kilitlemez. `absoluteMaxAlive` (varsayılan 0 = sınırsız) isteğe bağlı performans tavanıdır.
+- **Spawn point fallback:** Eski kod uygun nokta yoksa her seferinde ilk noktayı (engelli/cooldown'lu) döndürüyordu. Ayrıca `EncounterSpawnPoint.IsPhysicallyClear` küresi yarıçap (0.9) > ofset (0.5) yüzünden zemine değip nokta HER ZAMAN dolu sayıyordu (`ClearanceCenter` = yarıçap+0.1 yukarıda). Artık kademeli gevşetme: bölge → tüm bölgeler → mesafe gevşer → cooldown gevşer; fiziksel engel her kademede korunur. Hâlâ nokta yoksa `spawnBlockedTimeout` sonra tip-uyumlu herhangi bir nokta kullanılır (uyarı loglanır); hiç uyumlu nokta yoksa istek düşürülür (hata loglanır) ve dalga kilitlenmez.
+- **Görüş dışı tercih:** `preferOutOfViewSpawns` ile oyuncunun kamera ileri yönüne göre yan/arka noktalar tercih edilir (flank baskısı). Ağırlıklı sürümü için bölüm 6'ya bakın (`outOfViewBias` kaldırıldı).
+- **Erken geçişte kuyruk:** Süre/yüzde ile geçilen dalgada doğmamış kalan kuyruk toplamdan düşülür (HUD "kalan düşman" doğru kalır).
+- **Sıfır GC telgraf:** Lambda yerine `OccultSpawnTelegraph.SetPayload + Activate(Action<OccultSpawnTelegraph>)` ve önbellekli delege. `ResetEncounter` telgrafları `Cancel()` eder, nesil sayacıyla eski callback'leri eler, spawn point cooldown'larını sıfırlar.
+- **Tempo sabitleri Inspector'da:** `waveCooldownDuration`, `stragglerAlertThreshold`, `stragglerAlertInterval`.
+- **Bilinen kural:** Son dalga, seçilen geçiş modundan bağımsız olarak her zaman "hepsini öldür" ile biter (tooltip'e yazıldı).
+
+---
+
+## 5. ODA İZOLASYONU VE VALIDATE PANELİ (2026-11-11)
+
+### Oda (Room) = bir GameObject: BoxCollider + `EncounterArea` + `WaveSpawnDirector` + `SpawnPoints` çocukları
+Eski kodda her bileşen eksik referansı **sahne genelinde** arıyordu (`FindAnyObjectByType` / `FindObjectsByType<EncounterSpawnPoint>`); birden çok odada bir direktör başka odanın alanını/doğuş noktalarını alabiliyordu. Artık:
+- `WaveSpawnDirector`: alan ve doğuş noktaları yalnızca **kendi hiyerarşisinden** çözülür (`GetRoomSpawnPoints`, yan etkisiz sürüm `PeekRoomSpawnPoints`). Awake sırası: önce alan, sonra noktalar.
+- `EncounterArea`: direktörü yalnızca aynı obje / ebeveyn / çocuk içinde arar. Muhafız taramasında herhangi bir direktörün havuzundan doğan düşmanlar atlanır (başka odanın dalgası muhafız sayılmaz).
+- `EncounterTriggerVolume`: yalnızca ebeveyn direktör (veya Inspector ataması); yoksa uyarı.
+- `ActiveDirector` (HUD odağı): başka bir odanın savaşı sürerken oyuncu yeni odaya girse bile odak kaymaz. Direktör yok edilince statik referans temizlenir.
+- `roomDisplayName` / `RoomName`: log ve araçlarda oda adı.
+- Doğrulandı: 3 oda aynı anda başlatıldı, her biri yalnızca kendi 8 noktasını kullandı.
+
+### Editor araçları (`Scripts/Editor`)
+- `WaveSetEditor`: özet kartları (dalga başına bileşim, zemin/hava, cap, geçiş, en erken doğuş süresi) + Validate.
+- `WaveSpawnDirectorEditor`: Validate + Oda Özeti + Dalga Özeti; "Doğuş Noktalarını Bu Odaya Bağla" (yalnızca odanın kendi hiyerarşisinden toplar), "Alanı/Noktaları Seç".
+- `EncounterValidator` (Combat, saf mantık, yan etkisiz): boş dalga/grup, null veya sahne-objesi prefab, `IEncounterEnemy` eksik, TimeLimit=0, eşik >= toplam, hava/zemin uyumlu nokta yok, zone tag eşleşmiyor, nokta < 3, min>max mesafe, bariyer yok, başka odayla ortak nokta (hata) ve alan çakışması (uyarı), başka odanın direktörüne bağlı alan.
+- `absoluteMaxAlive` varsayılanı 0 (sınırsız); mevcut odaların yüksek cap'lerini bozmaz.
+- Not: Dalga listesi boş odada editörde varsayılan dalgalar otomatik üretilir, **build'de üretilmez**; Validate bunu hata olarak gösterir.
+
+---
+
+## 6. TEMPO VE TASARIM ARAÇLARI (2026-11-11)
+
+### Dosya düzeni
+- `Combat/WaveData.cs`: `EncounterState`, `WaveTransitionMode`, `SpawnPattern`, `EnemySpawnEntry`, `WaveDefinition`, `WaveEventBinding` (eskiden direktör dosyasının içindeydi).
+- `Combat/EncounterDifficultyModel.cs`: `DynamicDifficultySettings` + saf C# `EncounterDifficultyModel` (POCO).
+- `Core/Interfaces/IThreatCost.cs`: düşman tehdit puanı. `BasicEnemyAI.threatCost = 1`, `FlyingEyeAI.threatCost = 2`.
+
+### Grup akışları (Spawn Streams) — `EnemySpawnEntry`
+- `delayFromWaveStart`: grubun dalga başından en erken başlama anı.
+- `batchSize`: bir doğuş anında aynı anda çıkan adet (0/1 = tek tek).
+- `spawnPattern`: `Random` (flank ağırlıklı), `SequentialRoundRobin` (noktaları sırayla dolaşır), `FarthestFromPlayer`.
+- `runInParallel`: kapalıysa grup bir öncekinin TAMAMI doğduktan sonra başlar (eski sıralı davranış = varsayılan); açıksa kendi gecikmesiyle paralel akar.
+- `threatCostOverride`: 0 = prefab'daki `IThreatCost`, o da yoksa 1.
+- Dalga toplamı artık gerçekten kuyruğa giren düşmanlardır (prefabı boş grup sayılmaz → kill-all kilitlenmez).
+
+### Tehdit bütçesi — `WaveDefinition.threatBudget`
+- 0 = kapalı (eski adet sınırı `maxConcurrentEnemies`). > 0 ise sınır adet yerine "mevcut dalganın canlı + telgrafta bekleyen tehdit toplamı"dır. Saha boşken bütçeden büyük tek düşmana izin verilir (kilitlenmez).
+- Doğrulandı: bütçe 4, Ghoul(1)+Eye(2) karışık dalgada sahadaki tehdit hiç 4'ü aşmadı.
+
+### Flank (kör nokta) baskısı
+- `Random` desenli gruplarda nokta ağırlığı: önde `frontSpawnWeight` (1), yanda `sideSpawnWeight` (2.5), arkada `rearSpawnWeight` (4). Eşikler: `outOfViewDotThreshold` (0.5) ve `rearDotThreshold` (-0.25), yatay düzlemde kamera ileri yönüne göre.
+- Adalet için çağırma sesi artık telgraf noktasında **3D** çalar (`OccultSpawnTelegraph.PlayCue`); telgraf ses bitene kadar havuza dönmez.
+
+### Dalga olayları (UnityEvent)
+- Direktörde `onEncounterStarted`, `onEncounterCompleted`, `onEncounterRetried` ve `waveEvents[]` (`waveNumber` 1'den başlar, 0 = her dalga; `onWaveStart` / `onWaveEnd`). Paylaşılan WaveSet sahne referansı taşımasın diye olaylar direktör üzerindedir. C# olayı: `OnEncounterRetried`.
+
+### Dalga sonu ödülü
+- `WaveDefinition.rewardHealthOrbs` / `rewardAmmoPickups` (varsayılan 1/1). Oyuncu etrafına `rewardScatterRadius` (2.5m) halkada, duvara çarpmadan ve zemine oturtularak düşer. Cephane türü envanterde oranı en düşük olandır. Miktarlar direktörde (`rewardOrbHealAmount`, `rewardShellAmount`, `rewardBoltAmount`).
+- Not: Pickup'ların çekim yarıçapı 5.5–6m olduğu için 2.5m'deki ödüller hemen oyuncuya uçar. Yerde görünmesi istenirse yarıçapı 6m+ yapın.
+
+### Dinamik zorluk
+- Düşük can (< %35): doğuş aralığı ×1.5. Bu karşılaşmada ölüm olduysa ek ×1.2 (merhamet).
+- Rahat dalga (dalga sonu can ≥ %80 ve dalgada alınan hasar ≤ maks. canın %25'i): sonraki dalgalara +1 ek düşman (en kalabalık gruba), en fazla +3. Düşük canda sıfırlanır, arada 1 azalır. Yeni karşılaşmada sıfırlanır; retry'da ek düşmanlar sıfırlanır, ölüm sayısı korunur.
+
+### Checkpoint / Retry
+- Oda savaştayken `PlayerHealth.RetryInterceptor` bu odaya bağlanır; oyuncu ölüp R/Space/Enter'a basınca sahne yeniden YÜKLENMEZ: oda sıfırlanır (düşmanlar, telgraflar, cooldown'lar), oyuncu `retryCheckpoint`'te (yoksa karşılaşmanın başladığı konumda) tam canla dirilir, dalgalar `retryWarmupDuration` sonra baştan başlar. Savaş dışında ölümde eski davranış (sahne yeniden yükleme) sürer.
+- Yeni oyuncu API'leri: `PlayerHealth.Revive`, `PlayerHealth.OnRevived`, `PlayerMovement.TeleportTo`, `PlayerLook.ResetView`.
+- Doğrulandı: savaşta öldürülen oyuncu sahne yüklenmeden 100 HP ile dirildi, kontroller ve imleç kilidi geri geldi, oda dalga 1'den yeniden başladı.
+- Bilinen sınır: muhafızlar (manuel yerleştirilmiş düşmanlar) retry'da geri gelmez; retry dalga savaşının başından başlar.
+
+---
+
 ## İlişkiler (Sinaptik Ağ Bağlantıları)
 - [[CodebaseDependencyGraph]] ➔ `orchestrates_combat_flow`
 - [[CombatAndDamageInterfaces]] ➔ `consumes_IEncounterEnemy`

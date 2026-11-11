@@ -27,9 +27,15 @@ namespace RetroFPS.Combat
                 col.isTrigger = true;
             }
 
+            // Oda izolasyonu: sahne genelinde arama yok; yalnızca ebeveyn hiyerarşisi (veya Inspector ataması)
             if (waveDirector == null)
             {
-                waveDirector = Object.FindAnyObjectByType<WaveSpawnDirector>();
+                waveDirector = GetComponentInParent<WaveSpawnDirector>();
+            }
+
+            if (waveDirector == null)
+            {
+                Debug.LogWarning($"<color=yellow>[EncounterTriggerVolume]</color> '{name}' bir WaveSpawnDirector'a bağlı değil. Odanın altına taşıyın veya Inspector'dan atayın.", this);
             }
         }
 

@@ -42,6 +42,7 @@ namespace RetroFPS.Combat
         public float ClearanceRadius => clearanceRadius;
         public Vector3 Position => transform.position;
         public Quaternion Rotation => transform.rotation;
+        public Vector3 ClearanceCenter => transform.position + Vector3.up * (clearanceRadius + 0.1f);
         public bool IsOnCooldown => (Time.time - _lastSpawnTimestamp) < cooldownDuration;
 
         /// <summary>
@@ -60,7 +61,9 @@ namespace RetroFPS.Combat
         /// </summary>
         public bool IsPhysicallyClear(LayerMask obstacleMask)
         {
-            int hitCount = Physics.OverlapSphereNonAlloc(transform.position + Vector3.up * 0.5f, clearanceRadius, OverlapBuffer, obstacleMask, QueryTriggerInteraction.Ignore);
+            // Küre, zemine değmeyecek şekilde yarıçap kadar yukarıdan örneklenir. Eski 0.5m ofset, yarıçap 0.9m iken
+            // zemin collider'ına her zaman değiyor ve nokta "dolu" sayılıp her doğuşta fallback'e düşülüyordu.
+            int hitCount = Physics.OverlapSphereNonAlloc(ClearanceCenter, clearanceRadius, OverlapBuffer, obstacleMask, QueryTriggerInteraction.Ignore);
             return hitCount == 0;
         }
 
@@ -86,7 +89,7 @@ namespace RetroFPS.Combat
             Color displayColor = IsOnCooldown ? cooldownGizmoColor : (allowAirEnemies && !allowGroundEnemies ? airGizmoColor : groundGizmoColor);
 
             Gizmos.color = displayColor;
-            Gizmos.DrawWireSphere(transform.position + Vector3.up * 0.5f, clearanceRadius);
+            Gizmos.DrawWireSphere(ClearanceCenter, clearanceRadius);
 
             Vector3 forwardLine = transform.position + Vector3.up * 0.5f + transform.forward * 1.2f;
             Gizmos.DrawLine(transform.position + Vector3.up * 0.5f, forwardLine);

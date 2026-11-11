@@ -76,6 +76,14 @@ namespace RetroFPS.Combat
         public event System.Action OnPlayerEnteredArea;
 
         public WaveSpawnDirector WaveDirector => waveDirector;
+        public Bounds WorldBounds
+        {
+            get
+            {
+                BoxCollider col = _areaCollider != null ? _areaCollider : GetComponent<BoxCollider>();
+                return col != null ? col.bounds : new Bounds(transform.position, Vector3.zero);
+            }
+        }
         public int InitialGuardCount => _initialGuardCount;
         public int RemainingGuardCount => _trackedGuards.Count;
         public int KilledGuardsCount => _killedGuardsCount;
@@ -119,7 +127,8 @@ namespace RetroFPS.Combat
             {
                 waveDirector = GetComponent<WaveSpawnDirector>();
                 if (waveDirector == null) waveDirector = GetComponentInParent<WaveSpawnDirector>();
-                if (waveDirector == null) waveDirector = Object.FindAnyObjectByType<WaveSpawnDirector>();
+                if (waveDirector == null) waveDirector = GetComponentInChildren<WaveSpawnDirector>(true);
+                // Oda izolasyonu: sahne genelinde direktör ARANMAZ. Bulunamazsa Inspector'dan atanmalı (Validate panelinde uyarılır).
             }
 
             if (waveDirector != null)
@@ -188,6 +197,9 @@ namespace RetroFPS.Combat
                     {
                         // Nesne havuzu içinde pasif bekleyen düşmanları atla
                         if (!enemy.EnemyGameObject.activeInHierarchy) continue;
+
+                        // Bir direktörün havuzundan doğan (dalga) düşmanlar muhafız DEĞİLDİR; başka odanın dalgası bu alana sızmasın
+                        if (enemy.EnemyTransform.GetComponentInParent<WaveSpawnDirector>() != null) continue;
 
                         Vector3 pos = enemy.EnemyTransform.position;
                         if (bounds.Contains(pos) && !_trackedGuards.Contains(enemy))
@@ -314,9 +326,16 @@ namespace RetroFPS.Combat
                 OnPlayerEnteredArea?.Invoke();
 
                 // Bu odayı global aktif karşılaşma alanı olarak duyur
+                // Başka bir odanın savaşı sürerken HUD/odak bu odaya kaymasın; savaşı biten/boştaki oda devralır
                 if (waveDirector != null)
                 {
-                    WaveSpawnDirector.SetActiveDirector(waveDirector);
+                    WaveSpawnDirector current = WaveSpawnDirector.ActiveDirector;
+                    bool currentBusy = current != null && current != waveDirector
+                        && current.State != EncounterState.Inactive && current.State != EncounterState.EncounterCleared;
+                    if (!currentBusy)
+                    {
+                        WaveSpawnDirector.SetActiveDirector(waveDirector);
+                    }
                 }
 
                 // 1. Alandaki tüm muhafızları hemen alarma geçirip oyuncuya yönlendir

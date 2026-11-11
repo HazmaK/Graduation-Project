@@ -1,0 +1,104 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6505808ee0b3b984ba7b9489e29a96cd, type: 3}
+  m_Name: WaveSet_Room02_Test3Phase
+  m_EditorClassIdentifier: RetroFPS.Gameplay::RetroFPS.Combat.WaveSet
+  designNotes: "Encounter_Room_02 (kuzey koridoru, 34x13 m) test seti. Faz 1: uzaktan
+    ikili s\u0131k\u0131\u015Ft\u0131rma. Faz 2: hava + paralel zemin. Faz 3: final,
+    b\xFCt\xE7e 10, hepsini \xF6ld\xFCr."
+  waves:
+  - waveName: 'Faz 1: Koridor Pususu'
+    preWaveDelay: 1
+    maxConcurrentEnemies: 6
+    threatBudget: 6
+    transitionMode: 4
+    remainingThreshold: 2
+    percentageThreshold: 0.75
+    timeLimit: 35
+    carryOverRemainingEnemies: 1
+    rewardHealthOrbs: 1
+    rewardAmmoPickups: 1
+    spawnEntries:
+    - enemyPrefab: {fileID: 5349570471886633040, guid: 9ac052f5657dabe478d13eea780617b6, type: 3}
+      count: 6
+      spawnInterval: 0.9
+      isAirEnemy: 0
+      targetZoneTag: 
+      delayFromWaveStart: 0
+      batchSize: 2
+      spawnPattern: 2
+      runInParallel: 0
+      threatCostOverride: 0
+  - waveName: "Faz 2: Yukar\u0131dan G\xF6zler"
+    preWaveDelay: 2
+    maxConcurrentEnemies: 6
+    threatBudget: 8
+    transitionMode: 1
+    remainingThreshold: 2
+    percentageThreshold: 0.75
+    timeLimit: 40
+    carryOverRemainingEnemies: 1
+    rewardHealthOrbs: 1
+    rewardAmmoPickups: 1
+    spawnEntries:
+    - enemyPrefab: {fileID: 3659605130630274911, guid: 02177a9e23183124fbe40a546e414de1, type: 3}
+      count: 4
+      spawnInterval: 1.5
+      isAirEnemy: 1
+      targetZoneTag: 
+      delayFromWaveStart: 0
+      batchSize: 1
+      spawnPattern: 0
+      runInParallel: 0
+      threatCostOverride: 0
+    - enemyPrefab: {fileID: 5349570471886633040, guid: 9ac052f5657dabe478d13eea780617b6, type: 3}
+      count: 5
+      spawnInterval: 1.1
+      isAirEnemy: 0
+      targetZoneTag: 
+      delayFromWaveStart: 2
+      batchSize: 1
+      spawnPattern: 1
+      runInParallel: 1
+      threatCostOverride: 0
+  - waveName: "Faz 3: Son Direni\u015F (Final)"
+    preWaveDelay: 2.5
+    maxConcurrentEnemies: 10
+    threatBudget: 10
+    transitionMode: 0
+    remainingThreshold: 0
+    percentageThreshold: 0.75
+    timeLimit: 0
+    carryOverRemainingEnemies: 1
+    rewardHealthOrbs: 2
+    rewardAmmoPickups: 2
+    spawnEntries:
+    - enemyPrefab: {fileID: 5349570471886633040, guid: 9ac052f5657dabe478d13eea780617b6, type: 3}
+      count: 8
+      spawnInterval: 1
+      isAirEnemy: 0
+      targetZoneTag: 
+      delayFromWaveStart: 0
+      batchSize: 2
+      spawnPattern: 0
+      runInParallel: 0
+      threatCostOverride: 0
+    - enemyPrefab: {fileID: 3659605130630274911, guid: 02177a9e23183124fbe40a546e414de1, type: 3}
+      count: 4
+      spawnInterval: 1.6
+      isAirEnemy: 1
+      targetZoneTag: 
+      delayFromWaveStart: 3
+      batchSize: 2
+      spawnPattern: 2
+      runInParallel: 1
+      threatCostOverride: 0

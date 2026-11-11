@@ -266,58 +266,6 @@ MonoBehaviour:
   m_ShadowLayerMask: 1
   m_RenderingLayers: 1
   m_ShadowRenderingLayers: 1
---- !u!1 &9217869
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 9217870}
-  - component: {fileID: 9217871}
-  m_Layer: 0
-  m_Name: SpawnPoint_Air_02
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &9217870
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 9217869}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: 0.3826834, z: -0, w: 0.92387956}
-  m_LocalPosition: {x: -3.8183758, y: 3, z: -3.818377}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 703975721}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &9217871
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 9217869}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6ab96ace7e91aba4e9a1ba8761caad39, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::RetroFPS.Combat.EncounterSpawnPoint
-  allowGroundEnemies: 0
-  allowAirEnemies: 1
-  zoneTag: Encounter_Room_03
-  cooldownDuration: 2.5
-  clearanceRadius: 0.9
-  groundGizmoColor: {r: 0.95, g: 0.25, b: 0.25, a: 0.85}
-  airGizmoColor: {r: 0.65, g: 0.2, b: 0.95, a: 0.85}
-  cooldownGizmoColor: {r: 0.4, g: 0.4, b: 0.4, a: 0.4}
 --- !u!1 &19225699
 GameObject:
   m_ObjectHideFlags: 0
@@ -408,45 +356,6 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 19225699}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
---- !u!1 &25408302
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 25408303}
-  m_Layer: 0
-  m_Name: SpawnPoints
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &25408303
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 25408302}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children:
-  - {fileID: 1326647515}
-  - {fileID: 1537313405}
-  - {fileID: 1274937906}
-  - {fileID: 54111467}
-  - {fileID: 2115848062}
-  - {fileID: 1362636541}
-  - {fileID: 1455671710}
-  - {fileID: 1257698794}
-  m_Father: {fileID: 796918115}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &29128118
 GameObject:
   m_ObjectHideFlags: 0
@@ -612,58 +521,6 @@ Material:
     - _SpecColor: {r: 0.19999996, g: 0.19999996, b: 0.19999996, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1
---- !u!1 &54111466
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 54111467}
-  - component: {fileID: 54111468}
-  m_Layer: 0
-  m_Name: SpawnPoint_Ground_04
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &54111467
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 54111466}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: 0.70710665, z: -0, w: 0.7071069}
-  m_LocalPosition: {x: -8.64, y: 2.4449878, z: -0.00000166893}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 25408303}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &54111468
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 54111466}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6ab96ace7e91aba4e9a1ba8761caad39, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::RetroFPS.Combat.EncounterSpawnPoint
-  allowGroundEnemies: 1
-  allowAirEnemies: 0
-  zoneTag: Encounter_Room_02
-  cooldownDuration: 2
-  clearanceRadius: 0.9
-  groundGizmoColor: {r: 0.95, g: 0.25, b: 0.25, a: 0.85}
-  airGizmoColor: {r: 0.65, g: 0.2, b: 0.95, a: 0.85}
-  cooldownGizmoColor: {r: 0.4, g: 0.4, b: 0.4, a: 0.4}
 --- !u!1 &56996847
 GameObject:
   m_ObjectHideFlags: 0
@@ -1070,58 +927,6 @@ MonoBehaviour:
   m_ShadowLayerMask: 1
   m_RenderingLayers: 1
   m_ShadowRenderingLayers: 1
---- !u!1 &67133039
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 67133040}
-  - component: {fileID: 67133041}
-  m_Layer: 0
-  m_Name: SpawnPoint_Ground_03
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &67133040
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 67133039}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: 0.9659258, z: -0, w: 0.25881907}
-  m_LocalPosition: {x: -4.3200006, y: 0.05, z: 7.4824595}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 703975721}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &67133041
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 67133039}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6ab96ace7e91aba4e9a1ba8761caad39, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::RetroFPS.Combat.EncounterSpawnPoint
-  allowGroundEnemies: 1
-  allowAirEnemies: 0
-  zoneTag: Encounter_Room_03
-  cooldownDuration: 2
-  clearanceRadius: 0.9
-  groundGizmoColor: {r: 0.95, g: 0.25, b: 0.25, a: 0.85}
-  airGizmoColor: {r: 0.65, g: 0.2, b: 0.95, a: 0.85}
-  cooldownGizmoColor: {r: 0.4, g: 0.4, b: 0.4, a: 0.4}
 --- !u!1 &89706084
 GameObject:
   m_ObjectHideFlags: 0
@@ -2051,6 +1856,118 @@ Material:
     - _SpecColor: {r: 0.19999996, g: 0.19999996, b: 0.19999996, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1
+--- !u!1 &186955995
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 186955996}
+  - component: {fileID: 186955999}
+  - component: {fileID: 186955998}
+  - component: {fileID: 186955997}
+  m_Layer: 0
+  m_Name: Wall_Doorway_Right
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &186955996
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 186955995}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 9.5, y: 1.75, z: 17}
+  m_LocalScale: {x: 15, y: 3.5, z: 0.6}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 838080705}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!23 &186955997
+MeshRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 186955995}
+  m_Enabled: 1
+  m_CastShadows: 1
+  m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 1735539345}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 1
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 0
+  m_MaskInteraction: 0
+  m_AdditionalVertexStreams: {fileID: 0}
+--- !u!65 &186955998
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 186955995}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 1, y: 1, z: 1}
+  m_Center: {x: 0, y: 0, z: 0}
+--- !u!33 &186955999
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 186955995}
+  m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
 --- !u!21 &189831892
 Material:
   serializedVersion: 8
@@ -3257,58 +3174,6 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 312876289}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
---- !u!1 &317165666
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 317165667}
-  - component: {fileID: 317165668}
-  m_Layer: 0
-  m_Name: SpawnPoint_Ground_05
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &317165667
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 317165666}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: 0.258819, z: -0, w: 0.9659259}
-  m_LocalPosition: {x: -4.319999, y: 0.05, z: -7.48246}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 703975721}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &317165668
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 317165666}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6ab96ace7e91aba4e9a1ba8761caad39, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::RetroFPS.Combat.EncounterSpawnPoint
-  allowGroundEnemies: 1
-  allowAirEnemies: 0
-  zoneTag: Encounter_Room_03
-  cooldownDuration: 2
-  clearanceRadius: 0.9
-  groundGizmoColor: {r: 0.95, g: 0.25, b: 0.25, a: 0.85}
-  airGizmoColor: {r: 0.65, g: 0.2, b: 0.95, a: 0.85}
-  cooldownGizmoColor: {r: 0.4, g: 0.4, b: 0.4, a: 0.4}
 --- !u!1 &318801027
 GameObject:
   m_ObjectHideFlags: 0
@@ -3416,8 +3281,10 @@ Material:
   m_EnableInstancingVariants: 0
   m_DoubleSidedGI: 0
   m_CustomRenderQueue: -1
-  stringTagMap: {}
-  disabledShaderPasses: []
+  stringTagMap:
+    RenderType: Opaque
+  disabledShaderPasses:
+  - MOTIONVECTORS
   m_LockedProperties: 
   m_SavedProperties:
     serializedVersion: 3
@@ -3514,7 +3381,7 @@ Material:
     - _ZWrite: 1
     m_Colors:
     - _BaseColor: {r: 0.08, g: 0.08, b: 0.09, a: 1}
-    - _Color: {r: 1, g: 1, b: 1, a: 1}
+    - _Color: {r: 0.079999976, g: 0.079999976, b: 0.089999996, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
     - _SpecColor: {r: 0.19999996, g: 0.19999996, b: 0.19999996, a: 1}
   m_BuildTextureStacks: []
@@ -3734,6 +3601,58 @@ Transform:
   - {fileID: 89706085}
   m_Father: {fileID: 29128119}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &382310011
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 382310012}
+  - component: {fileID: 382310013}
+  m_Layer: 0
+  m_Name: SpawnPoint_Ground_06
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &382310012
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 382310011}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0.49028942, z: -0, w: 0.87155974}
+  m_LocalPosition: {x: 5.849999, y: 0.05, z: -3.2541695}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 2041161120}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &382310013
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 382310011}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6ab96ace7e91aba4e9a1ba8761caad39, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: RetroFPS.Gameplay::RetroFPS.Combat.EncounterSpawnPoint
+  allowGroundEnemies: 1
+  allowAirEnemies: 0
+  zoneTag: Encounter_Room_02
+  cooldownDuration: 2
+  clearanceRadius: 0.9
+  groundGizmoColor: {r: 0.95, g: 0.25, b: 0.25, a: 0.85}
+  airGizmoColor: {r: 0.65, g: 0.2, b: 0.95, a: 0.85}
+  cooldownGizmoColor: {r: 0.4, g: 0.4, b: 0.4, a: 0.4}
 --- !u!21 &390813750
 Material:
   serializedVersion: 8
@@ -3751,8 +3670,10 @@ Material:
   m_EnableInstancingVariants: 0
   m_DoubleSidedGI: 0
   m_CustomRenderQueue: -1
-  stringTagMap: {}
-  disabledShaderPasses: []
+  stringTagMap:
+    RenderType: Opaque
+  disabledShaderPasses:
+  - MOTIONVECTORS
   m_LockedProperties: 
   m_SavedProperties:
     serializedVersion: 3
@@ -3849,7 +3770,7 @@ Material:
     - _ZWrite: 1
     m_Colors:
     - _BaseColor: {r: 0.08, g: 0.08, b: 0.09, a: 1}
-    - _Color: {r: 1, g: 1, b: 1, a: 1}
+    - _Color: {r: 0.079999976, g: 0.079999976, b: 0.089999996, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
     - _SpecColor: {r: 0.19999996, g: 0.19999996, b: 0.19999996, a: 1}
   m_BuildTextureStacks: []
@@ -3993,8 +3914,10 @@ Material:
   m_EnableInstancingVariants: 0
   m_DoubleSidedGI: 0
   m_CustomRenderQueue: -1
-  stringTagMap: {}
-  disabledShaderPasses: []
+  stringTagMap:
+    RenderType: Opaque
+  disabledShaderPasses:
+  - MOTIONVECTORS
   m_LockedProperties: 
   m_SavedProperties:
     serializedVersion: 3
@@ -4091,11 +4014,63 @@ Material:
     - _ZWrite: 1
     m_Colors:
     - _BaseColor: {r: 0.08, g: 0.08, b: 0.09, a: 1}
-    - _Color: {r: 1, g: 1, b: 1, a: 1}
+    - _Color: {r: 0.079999976, g: 0.079999976, b: 0.089999996, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
     - _SpecColor: {r: 0.19999996, g: 0.19999996, b: 0.19999996, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1
+--- !u!1 &406944172
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 406944173}
+  - component: {fileID: 406944174}
+  m_Layer: 0
+  m_Name: SpawnPoint_Ground_03
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &406944173
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 406944172}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: 0.8715597, z: -0, w: 0.49028945}
+  m_LocalPosition: {x: -5.850001, y: 0.05, z: 3.854168}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 2041161120}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &406944174
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 406944172}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6ab96ace7e91aba4e9a1ba8761caad39, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: RetroFPS.Gameplay::RetroFPS.Combat.EncounterSpawnPoint
+  allowGroundEnemies: 1
+  allowAirEnemies: 0
+  zoneTag: Encounter_Room_02
+  cooldownDuration: 2
+  clearanceRadius: 0.9
+  groundGizmoColor: {r: 0.95, g: 0.25, b: 0.25, a: 0.85}
+  airGizmoColor: {r: 0.65, g: 0.2, b: 0.95, a: 0.85}
+  cooldownGizmoColor: {r: 0.4, g: 0.4, b: 0.4, a: 0.4}
 --- !u!1 &410087039
 GameObject:
   m_ObjectHideFlags: 0
@@ -4518,96 +4493,6 @@ MonoBehaviour:
   moonlightColor: {r: 0.55, g: 0.62, b: 0.78, a: 1}
   moonlightIntensity: 0.4
   ambientCryptLight: {r: 0.12, g: 0.13, b: 0.16, a: 1}
---- !u!1 &452951160
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 452951161}
-  - component: {fileID: 452951163}
-  - component: {fileID: 452951162}
-  m_Layer: 0
-  m_Name: Body_Sclera (1)
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &452951161
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 452951160}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 44.74}
-  m_LocalScale: {x: 1.1, y: 1.1, z: 1.1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 1941930567}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!23 &452951162
-MeshRenderer:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 452951160}
-  m_Enabled: 1
-  m_CastShadows: 1
-  m_ReceiveShadows: 1
-  m_DynamicOccludee: 1
-  m_StaticShadowCaster: 0
-  m_MotionVectors: 1
-  m_LightProbeUsage: 1
-  m_ReflectionProbeUsage: 1
-  m_RayTracingMode: 2
-  m_RayTraceProcedural: 0
-  m_RayTracingAccelStructBuildFlagsOverride: 0
-  m_RayTracingAccelStructBuildFlags: 1
-  m_SmallMeshCulling: 1
-  m_ForceMeshLod: -1
-  m_MeshLodSelectionBias: 0
-  m_RenderingLayerMask: 1
-  m_RendererPriority: 0
-  m_Materials:
-  - {fileID: 2100000, guid: 500803cdef59bb1419e34a437a8f8687, type: 2}
-  m_StaticBatchInfo:
-    firstSubMesh: 0
-    subMeshCount: 0
-  m_StaticBatchRoot: {fileID: 0}
-  m_ProbeAnchor: {fileID: 0}
-  m_LightProbeVolumeOverride: {fileID: 0}
-  m_ScaleInLightmap: 1
-  m_ReceiveGI: 1
-  m_PreserveUVs: 1
-  m_IgnoreNormalsForChartDetection: 0
-  m_ImportantGI: 0
-  m_StitchLightmapSeams: 1
-  m_SelectedEditorRenderState: 3
-  m_MinimumChartSize: 4
-  m_AutoUVMaxDistance: 0.5
-  m_AutoUVMaxAngle: 89
-  m_LightmapParameters: {fileID: 0}
-  m_GlobalIlluminationMeshLod: 0
-  m_SortingLayerID: 0
-  m_SortingLayer: 0
-  m_SortingOrder: 0
-  m_MaskInteraction: 0
-  m_AdditionalVertexStreams: {fileID: 0}
---- !u!33 &452951163
-MeshFilter:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 452951160}
-  m_Mesh: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
 --- !u!21 &456755364
 Material:
   serializedVersion: 8
@@ -4730,6 +4615,58 @@ Material:
     - _SpecColor: {r: 0.19999996, g: 0.19999996, b: 0.19999996, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1
+--- !u!1 &461546903
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 461546904}
+  - component: {fileID: 461546905}
+  m_Layer: 0
+  m_Name: SpawnPoint_Ground_04
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &461546904
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 461546903}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: 0.7071068, z: -0, w: 0.7071068}
+  m_LocalPosition: {x: -11.700001, y: 0.05, z: 0.29999924}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 2041161120}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &461546905
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 461546903}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6ab96ace7e91aba4e9a1ba8761caad39, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: RetroFPS.Gameplay::RetroFPS.Combat.EncounterSpawnPoint
+  allowGroundEnemies: 1
+  allowAirEnemies: 0
+  zoneTag: Encounter_Room_02
+  cooldownDuration: 2
+  clearanceRadius: 0.9
+  groundGizmoColor: {r: 0.95, g: 0.25, b: 0.25, a: 0.85}
+  airGizmoColor: {r: 0.65, g: 0.2, b: 0.95, a: 0.85}
+  cooldownGizmoColor: {r: 0.4, g: 0.4, b: 0.4, a: 0.4}
 --- !u!1 &463077229
 GameObject:
   m_ObjectHideFlags: 0
@@ -4912,6 +4849,118 @@ MonoBehaviour:
   m_ShadowLayerMask: 1
   m_RenderingLayers: 1
   m_ShadowRenderingLayers: 1
+--- !u!1 &488248095
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 488248096}
+  - component: {fileID: 488248099}
+  - component: {fileID: 488248098}
+  - component: {fileID: 488248097}
+  m_Layer: 0
+  m_Name: Wall_Room02_East
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &488248096
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 488248095}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 17, y: 1.75, z: 23.5}
+  m_LocalScale: {x: 0.6, y: 3.5, z: 13}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 838080705}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!23 &488248097
+MeshRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 488248095}
+  m_Enabled: 1
+  m_CastShadows: 1
+  m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 1735539345}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 1
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 0
+  m_MaskInteraction: 0
+  m_AdditionalVertexStreams: {fileID: 0}
+--- !u!65 &488248098
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 488248095}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 1, y: 1, z: 1}
+  m_Center: {x: 0, y: 0, z: 0}
+--- !u!33 &488248099
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 488248095}
+  m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
 --- !u!21 &500914626
 Material:
   serializedVersion: 8
@@ -5134,6 +5183,156 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 02177a9e23183124fbe40a546e414de1, type: 3}
+--- !u!1 &515339107
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 515339111}
+  - component: {fileID: 515339110}
+  - component: {fileID: 515339109}
+  - component: {fileID: 515339108}
+  m_Layer: 0
+  m_Name: Encounter_Room_02
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &515339108
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 515339107}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ed2232a9c193c9845882adb67b30d006, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: RetroFPS.Gameplay::RetroFPS.Combat.EncounterArea
+  waveDirector: {fileID: 0}
+  autoDetectEnemiesInBounds: 1
+  specificManualEnemies: []
+  guardDeathRatioToTriggerWaves: 0.25
+  requirePlayerInsideToStartWaves: 1
+  alertGuardsWhenPlayerEnters: 1
+  delayBeforeWaveStart: 1
+  autoGenerateSpawnPointsIfEmpty: 1
+  groundSpawnPointCount: 6
+  airSpawnPointCount: 2
+  groundLayerMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  guardsClearedSound: {fileID: 0}
+--- !u!114 &515339109
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 515339107}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2f52eed609be5e44d9db09013eb1af27, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: RetroFPS.Gameplay::RetroFPS.Combat.WaveSpawnDirector
+  autoStartOnPlay: 0
+  encounterArea: {fileID: 0}
+  warmupDuration: 1.5
+  waveSet: {fileID: 11400000, guid: b14c2e25f1c4a2045a2b17a15028530f, type: 2}
+  waves: []
+  waveCooldownDuration: 2
+  absoluteMaxAlive: 0
+  stragglerAlertThreshold: 2
+  stragglerAlertInterval: 3.5
+  preferOutOfViewSpawns: 1
+  outOfViewDotThreshold: 0.5
+  rearDotThreshold: -0.25
+  frontSpawnWeight: 1
+  sideSpawnWeight: 2.5
+  rearSpawnWeight: 4
+  spawnBlockedTimeout: 2
+  roomDisplayName: 'Oda 02: Kuzey Koridoru'
+  spawnPoints: []
+  minSpawnDistance: 5
+  maxSpawnDistance: 35
+  obstacleLayerMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  summonTelegraphDuration: 0.65
+  arenaBarriers: []
+  rewardOrbHealAmount: 15
+  rewardShellAmount: 6
+  rewardBoltAmount: 20
+  rewardScatterRadius: 2.5
+  dynamicDifficulty:
+    enabled: 1
+    lowHealthThreshold: 0.35
+    lowHealthIntervalMultiplier: 1.5
+    postDeathIntervalMultiplier: 1.2
+    cruiseHealthThreshold: 0.8
+    cruiseMaxDamageRatio: 0.25
+    bonusEnemiesPerCruisingWave: 1
+    maxBonusEnemies: 3
+  enableCheckpointRetry: 1
+  retryCheckpoint: {fileID: 0}
+  retryWarmupDuration: 2.5
+  onEncounterStarted:
+    m_PersistentCalls:
+      m_Calls: []
+  onEncounterCompleted:
+    m_PersistentCalls:
+      m_Calls: []
+  onEncounterRetried:
+    m_PersistentCalls:
+      m_Calls: []
+  waveEvents: []
+  encounterStartSound: {fileID: 0}
+  waveStartSound: {fileID: 0}
+  waveClearedSound: {fileID: 0}
+  victorySound: {fileID: 0}
+  summonTelegraphSound: {fileID: 0}
+--- !u!65 &515339110
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 515339107}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 1
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 32.5, y: 5, z: 11.4}
+  m_Center: {x: 0, y: 2.5, z: 0.3}
+--- !u!4 &515339111
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 515339107}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 23.5}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 2041161120}
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!21 &526543061
 Material:
   serializedVersion: 8
@@ -5811,67 +6010,6 @@ MonoBehaviour:
   m_ShadowLayerMask: 1
   m_RenderingLayers: 1
   m_ShadowRenderingLayers: 1
---- !u!1001 &548009334
-PrefabInstance:
-  m_ObjectHideFlags: 0
-  serializedVersion: 2
-  m_Modification:
-    serializedVersion: 3
-    m_TransformParent: {fileID: 0}
-    m_Modifications:
-    - target: {fileID: 4833318221340059759, guid: 9ac052f5657dabe478d13eea780617b6, type: 3}
-      propertyPath: autoRespawn
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 5349570471886633040, guid: 9ac052f5657dabe478d13eea780617b6, type: 3}
-      propertyPath: m_Name
-      value: Enemy_Ghoul_Stalker (2)
-      objectReference: {fileID: 0}
-    - target: {fileID: 6464050544522188104, guid: 9ac052f5657dabe478d13eea780617b6, type: 3}
-      propertyPath: m_LocalPosition.x
-      value: 1.7488812
-      objectReference: {fileID: 0}
-    - target: {fileID: 6464050544522188104, guid: 9ac052f5657dabe478d13eea780617b6, type: 3}
-      propertyPath: m_LocalPosition.y
-      value: -0.00000084578323
-      objectReference: {fileID: 0}
-    - target: {fileID: 6464050544522188104, guid: 9ac052f5657dabe478d13eea780617b6, type: 3}
-      propertyPath: m_LocalPosition.z
-      value: 89.53
-      objectReference: {fileID: 0}
-    - target: {fileID: 6464050544522188104, guid: 9ac052f5657dabe478d13eea780617b6, type: 3}
-      propertyPath: m_LocalRotation.w
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 6464050544522188104, guid: 9ac052f5657dabe478d13eea780617b6, type: 3}
-      propertyPath: m_LocalRotation.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6464050544522188104, guid: 9ac052f5657dabe478d13eea780617b6, type: 3}
-      propertyPath: m_LocalRotation.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6464050544522188104, guid: 9ac052f5657dabe478d13eea780617b6, type: 3}
-      propertyPath: m_LocalRotation.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6464050544522188104, guid: 9ac052f5657dabe478d13eea780617b6, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6464050544522188104, guid: 9ac052f5657dabe478d13eea780617b6, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6464050544522188104, guid: 9ac052f5657dabe478d13eea780617b6, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: 0
-      objectReference: {fileID: 0}
-    m_RemovedComponents: []
-    m_RemovedGameObjects: []
-    m_AddedGameObjects: []
-    m_AddedComponents: []
-  m_SourcePrefab: {fileID: 100100000, guid: 9ac052f5657dabe478d13eea780617b6, type: 3}
 --- !u!1 &548325940
 GameObject:
   m_ObjectHideFlags: 0
@@ -6014,8 +6152,10 @@ Material:
   m_EnableInstancingVariants: 0
   m_DoubleSidedGI: 0
   m_CustomRenderQueue: -1
-  stringTagMap: {}
-  disabledShaderPasses: []
+  stringTagMap:
+    RenderType: Opaque
+  disabledShaderPasses:
+  - MOTIONVECTORS
   m_LockedProperties: 
   m_SavedProperties:
     serializedVersion: 3
@@ -6112,7 +6252,7 @@ Material:
     - _ZWrite: 1
     m_Colors:
     - _BaseColor: {r: 0.08, g: 0.08, b: 0.09, a: 1}
-    - _Color: {r: 1, g: 1, b: 1, a: 1}
+    - _Color: {r: 0.079999976, g: 0.079999976, b: 0.089999996, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
     - _SpecColor: {r: 0.19999996, g: 0.19999996, b: 0.19999996, a: 1}
   m_BuildTextureStacks: []
@@ -6308,8 +6448,10 @@ Material:
   m_EnableInstancingVariants: 0
   m_DoubleSidedGI: 0
   m_CustomRenderQueue: -1
-  stringTagMap: {}
-  disabledShaderPasses: []
+  stringTagMap:
+    RenderType: Opaque
+  disabledShaderPasses:
+  - MOTIONVECTORS
   m_LockedProperties: 
   m_SavedProperties:
     serializedVersion: 3
@@ -6342,9 +6484,121 @@ Material:
     - _ZWrite: 1
     m_Colors:
     - _BaseColor: {r: 1, g: 0.55, b: 0.12, a: 1}
-    - _Color: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+    - _Color: {r: 1, g: 0.54999995, b: 0.11999995, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1
+--- !u!1 &585851150
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 585851151}
+  - component: {fileID: 585851154}
+  - component: {fileID: 585851153}
+  - component: {fileID: 585851152}
+  m_Layer: 0
+  m_Name: Gate_Room01_To_Room02
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &585851151
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 585851150}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 1.5, z: 17}
+  m_LocalScale: {x: 3.95, y: 2.95, z: 0.4}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1790328608}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!23 &585851152
+MeshRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 585851150}
+  m_Enabled: 1
+  m_CastShadows: 1
+  m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: dc02cc328b7c1e84cb9d992662f282d1, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 1
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 0
+  m_MaskInteraction: 0
+  m_AdditionalVertexStreams: {fileID: 0}
+--- !u!65 &585851153
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 585851150}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 1, y: 1, z: 1}
+  m_Center: {x: 0, y: 0, z: 0}
+--- !u!33 &585851154
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 585851150}
+  m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
 --- !u!1 &592734319
 GameObject:
   m_ObjectHideFlags: 0
@@ -7375,7 +7629,7 @@ Material:
     - _SpecColor: {r: 0.19999996, g: 0.19999996, b: 0.19999996, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1
---- !u!1 &703975720
+--- !u!1 &699123838
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -7383,37 +7637,110 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 703975721}
+  - component: {fileID: 699123839}
+  - component: {fileID: 699123842}
+  - component: {fileID: 699123841}
+  - component: {fileID: 699123840}
   m_Layer: 0
-  m_Name: SpawnPoints
+  m_Name: Wall_Room02_West
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &703975721
+--- !u!4 &699123839
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 703975720}
+  m_GameObject: {fileID: 699123838}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalPosition: {x: -17, y: 1.75, z: 23.5}
+  m_LocalScale: {x: 0.6, y: 3.5, z: 13}
   m_ConstrainProportionsScale: 0
-  m_Children:
-  - {fileID: 2035072167}
-  - {fileID: 1468420789}
-  - {fileID: 67133040}
-  - {fileID: 2008349629}
-  - {fileID: 317165667}
-  - {fileID: 1033754899}
-  - {fileID: 2120328394}
-  - {fileID: 9217870}
-  m_Father: {fileID: 1427069788}
+  m_Children: []
+  m_Father: {fileID: 838080705}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!23 &699123840
+MeshRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 699123838}
+  m_Enabled: 1
+  m_CastShadows: 1
+  m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 1735539345}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 1
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 0
+  m_MaskInteraction: 0
+  m_AdditionalVertexStreams: {fileID: 0}
+--- !u!65 &699123841
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 699123838}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 1, y: 1, z: 1}
+  m_Center: {x: 0, y: 0, z: 0}
+--- !u!33 &699123842
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 699123838}
+  m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
 --- !u!1 &706856017
 GameObject:
   m_ObjectHideFlags: 0
@@ -8235,155 +8562,6 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 781682769}
   m_Mesh: {fileID: 10206, guid: 0000000000000000e000000000000000, type: 0}
---- !u!1 &796918111
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 796918115}
-  - component: {fileID: 796918114}
-  - component: {fileID: 796918113}
-  - component: {fileID: 796918112}
-  m_Layer: 0
-  m_Name: Encounter_Room_02
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &796918112
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 796918111}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: ed2232a9c193c9845882adb67b30d006, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::RetroFPS.Combat.EncounterArea
-  waveDirector: {fileID: 0}
-  autoDetectEnemiesInBounds: 1
-  specificManualEnemies: []
-  guardDeathRatioToTriggerWaves: 0.25
-  requirePlayerInsideToStartWaves: 1
-  alertGuardsWhenPlayerEnters: 1
-  delayBeforeWaveStart: 1
-  autoGenerateSpawnPointsIfEmpty: 1
-  groundSpawnPointCount: 6
-  airSpawnPointCount: 2
-  groundLayerMask:
-    serializedVersion: 2
-    m_Bits: 4294967295
-  guardsClearedSound: {fileID: 0}
---- !u!114 &796918113
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 796918111}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 2f52eed609be5e44d9db09013eb1af27, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::RetroFPS.Combat.WaveSpawnDirector
-  autoStartOnPlay: 0
-  encounterArea: {fileID: 0}
-  warmupDuration: 1.5
-  waves:
-  - waveName: wave2
-    preWaveDelay: 0
-    maxConcurrentEnemies: 40
-    transitionMode: 0
-    remainingThreshold: 2
-    percentageThreshold: 0.20049648
-    timeLimit: 0
-    carryOverRemainingEnemies: 1
-    spawnEntries:
-    - enemyPrefab: {fileID: 5349570471886633040, guid: 9ac052f5657dabe478d13eea780617b6, type: 3}
-      count: 5
-      spawnInterval: 0.2
-      isAirEnemy: 0
-      targetZoneTag: 
-    - enemyPrefab: {fileID: 3659605130630274911, guid: 02177a9e23183124fbe40a546e414de1, type: 3}
-      count: 2
-      spawnInterval: 0.2
-      isAirEnemy: 0
-      targetZoneTag: 
-  - waveName: wave3
-    preWaveDelay: 0
-    maxConcurrentEnemies: 40
-    transitionMode: 0
-    remainingThreshold: 2
-    percentageThreshold: 0.20049648
-    timeLimit: 0
-    carryOverRemainingEnemies: 1
-    spawnEntries:
-    - enemyPrefab: {fileID: 5349570471886633040, guid: 9ac052f5657dabe478d13eea780617b6, type: 3}
-      count: 15
-      spawnInterval: 0.2
-      isAirEnemy: 0
-      targetZoneTag: 
-    - enemyPrefab: {fileID: 3659605130630274911, guid: 02177a9e23183124fbe40a546e414de1, type: 3}
-      count: 7
-      spawnInterval: 0.2
-      isAirEnemy: 1
-      targetZoneTag: 
-  spawnPoints: []
-  minSpawnDistance: 6
-  maxSpawnDistance: 35
-  obstacleLayerMask:
-    serializedVersion: 2
-    m_Bits: 4294967295
-  summonTelegraphDuration: 0.65
-  arenaBarriers: []
-  encounterStartSound: {fileID: 0}
-  waveStartSound: {fileID: 0}
-  waveClearedSound: {fileID: 0}
-  victorySound: {fileID: 0}
-  summonTelegraphSound: {fileID: 0}
---- !u!65 &796918114
-BoxCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 796918111}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 1
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 3
-  m_Size: {x: 24, y: 5, z: 24}
-  m_Center: {x: 0, y: 2.5, z: 0}
---- !u!4 &796918115
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 796918111}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 46.95}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children:
-  - {fileID: 25408303}
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &811344914
 GameObject:
   m_ObjectHideFlags: 0
@@ -8952,6 +9130,42 @@ Transform:
   - {fileID: 730660599}
   m_Father: {fileID: 29128119}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &838080704
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 838080705}
+  m_Layer: 0
+  m_Name: Geometry
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &838080705
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 838080704}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 1181470796}
+  - {fileID: 186955996}
+  - {fileID: 1925072020}
+  - {fileID: 699123839}
+  - {fileID: 488248096}
+  m_Father: {fileID: 1790328608}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &851118197
 GameObject:
   m_ObjectHideFlags: 0
@@ -9077,6 +9291,58 @@ Transform:
   - {fileID: 1808266430}
   m_Father: {fileID: 1001753671}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &859886506
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 859886507}
+  - component: {fileID: 859886508}
+  m_Layer: 0
+  m_Name: SpawnPoint_Ground_05
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &859886507
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 859886506}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: 0.49028942, z: -0, w: 0.87155974}
+  m_LocalPosition: {x: -5.849999, y: 0.05, z: -3.2541695}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 2041161120}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &859886508
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 859886506}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6ab96ace7e91aba4e9a1ba8761caad39, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: RetroFPS.Gameplay::RetroFPS.Combat.EncounterSpawnPoint
+  allowGroundEnemies: 1
+  allowAirEnemies: 0
+  zoneTag: Encounter_Room_02
+  cooldownDuration: 2
+  clearanceRadius: 0.9
+  groundGizmoColor: {r: 0.95, g: 0.25, b: 0.25, a: 0.85}
+  airGizmoColor: {r: 0.65, g: 0.2, b: 0.95, a: 0.85}
+  cooldownGizmoColor: {r: 0.4, g: 0.4, b: 0.4, a: 0.4}
 --- !u!21 &863048568
 Material:
   serializedVersion: 8
@@ -9094,8 +9360,10 @@ Material:
   m_EnableInstancingVariants: 0
   m_DoubleSidedGI: 0
   m_CustomRenderQueue: -1
-  stringTagMap: {}
-  disabledShaderPasses: []
+  stringTagMap:
+    RenderType: Opaque
+  disabledShaderPasses:
+  - MOTIONVECTORS
   m_LockedProperties: 
   m_SavedProperties:
     serializedVersion: 3
@@ -9192,7 +9460,7 @@ Material:
     - _ZWrite: 1
     m_Colors:
     - _BaseColor: {r: 0.08, g: 0.08, b: 0.09, a: 1}
-    - _Color: {r: 1, g: 1, b: 1, a: 1}
+    - _Color: {r: 0.079999976, g: 0.079999976, b: 0.089999996, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
     - _SpecColor: {r: 0.19999996, g: 0.19999996, b: 0.19999996, a: 1}
   m_BuildTextureStacks: []
@@ -9834,8 +10102,10 @@ Material:
   m_EnableInstancingVariants: 0
   m_DoubleSidedGI: 0
   m_CustomRenderQueue: -1
-  stringTagMap: {}
-  disabledShaderPasses: []
+  stringTagMap:
+    RenderType: Opaque
+  disabledShaderPasses:
+  - MOTIONVECTORS
   m_LockedProperties: 
   m_SavedProperties:
     serializedVersion: 3
@@ -9932,7 +10202,7 @@ Material:
     - _ZWrite: 1
     m_Colors:
     - _BaseColor: {r: 0.08, g: 0.08, b: 0.09, a: 1}
-    - _Color: {r: 1, g: 1, b: 1, a: 1}
+    - _Color: {r: 0.079999976, g: 0.079999976, b: 0.089999996, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
     - _SpecColor: {r: 0.19999996, g: 0.19999996, b: 0.19999996, a: 1}
   m_BuildTextureStacks: []
@@ -10687,8 +10957,10 @@ Material:
   m_EnableInstancingVariants: 0
   m_DoubleSidedGI: 0
   m_CustomRenderQueue: -1
-  stringTagMap: {}
-  disabledShaderPasses: []
+  stringTagMap:
+    RenderType: Opaque
+  disabledShaderPasses:
+  - MOTIONVECTORS
   m_LockedProperties: 
   m_SavedProperties:
     serializedVersion: 3
@@ -10721,7 +10993,7 @@ Material:
     - _ZWrite: 1
     m_Colors:
     - _BaseColor: {r: 1, g: 0.55, b: 0.12, a: 1}
-    - _Color: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+    - _Color: {r: 1, g: 0.54999995, b: 0.11999995, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1
 --- !u!1 &980470085
@@ -10836,7 +11108,20 @@ MonoBehaviour:
   autoStartOnPlay: 0
   encounterArea: {fileID: 0}
   warmupDuration: 1.5
+  waveSet: {fileID: 11400000, guid: dff9e673800341a40944a3152b86808f, type: 2}
   waves: []
+  waveCooldownDuration: 2
+  absoluteMaxAlive: 16
+  stragglerAlertThreshold: 2
+  stragglerAlertInterval: 3.5
+  preferOutOfViewSpawns: 1
+  outOfViewDotThreshold: 0.5
+  rearDotThreshold: -0.25
+  frontSpawnWeight: 1
+  sideSpawnWeight: 2.5
+  rearSpawnWeight: 4
+  spawnBlockedTimeout: 2
+  roomDisplayName: 
   spawnPoints: []
   minSpawnDistance: 6
   maxSpawnDistance: 35
@@ -10845,6 +11130,44 @@ MonoBehaviour:
     m_Bits: 4294967295
   summonTelegraphDuration: 0.65
   arenaBarriers: []
+  rewardOrbHealAmount: 15
+  rewardShellAmount: 6
+  rewardBoltAmount: 20
+  rewardScatterRadius: 2.5
+  dynamicDifficulty:
+    enabled: 1
+    lowHealthThreshold: 0.35
+    lowHealthIntervalMultiplier: 1.5
+    postDeathIntervalMultiplier: 1.2
+    cruiseHealthThreshold: 0.8
+    cruiseMaxDamageRatio: 0.25
+    bonusEnemiesPerCruisingWave: 1
+    maxBonusEnemies: 3
+  enableCheckpointRetry: 1
+  retryCheckpoint: {fileID: 0}
+  retryWarmupDuration: 2.5
+  onEncounterStarted:
+    m_PersistentCalls:
+      m_Calls: []
+  onEncounterCompleted:
+    m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 585851150}
+        m_TargetAssemblyTypeName: UnityEngine.GameObject, UnityEngine
+        m_MethodName: SetActive
+        m_Mode: 6
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: 
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+  onEncounterRetried:
+    m_PersistentCalls:
+      m_Calls: []
+  waveEvents: []
   encounterStartSound: {fileID: 0}
   waveStartSound: {fileID: 0}
   waveClearedSound: {fileID: 0}
@@ -11271,8 +11594,10 @@ Material:
   m_EnableInstancingVariants: 0
   m_DoubleSidedGI: 0
   m_CustomRenderQueue: -1
-  stringTagMap: {}
-  disabledShaderPasses: []
+  stringTagMap:
+    RenderType: Opaque
+  disabledShaderPasses:
+  - MOTIONVECTORS
   m_LockedProperties: 
   m_SavedProperties:
     serializedVersion: 3
@@ -11305,7 +11630,7 @@ Material:
     - _ZWrite: 1
     m_Colors:
     - _BaseColor: {r: 1, g: 0.55, b: 0.12, a: 1}
-    - _Color: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+    - _Color: {r: 1, g: 0.54999995, b: 0.11999995, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1
 --- !u!1 &1014513043
@@ -11512,58 +11837,6 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1026451649}
   m_Mesh: {fileID: 10206, guid: 0000000000000000e000000000000000, type: 0}
---- !u!1 &1033754898
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1033754899}
-  - component: {fileID: 1033754900}
-  m_Layer: 0
-  m_Name: SpawnPoint_Ground_06
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &1033754899
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1033754898}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0.258819, z: -0, w: 0.9659259}
-  m_LocalPosition: {x: 4.319999, y: 0.05, z: -7.48246}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 703975721}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1033754900
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1033754898}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6ab96ace7e91aba4e9a1ba8761caad39, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::RetroFPS.Combat.EncounterSpawnPoint
-  allowGroundEnemies: 1
-  allowAirEnemies: 0
-  zoneTag: Encounter_Room_03
-  cooldownDuration: 2
-  clearanceRadius: 0.9
-  groundGizmoColor: {r: 0.95, g: 0.25, b: 0.25, a: 0.85}
-  airGizmoColor: {r: 0.65, g: 0.2, b: 0.95, a: 0.85}
-  cooldownGizmoColor: {r: 0.4, g: 0.4, b: 0.4, a: 0.4}
 --- !u!1 &1039033950
 GameObject:
   m_ObjectHideFlags: 0
@@ -11884,8 +12157,10 @@ Material:
   m_EnableInstancingVariants: 0
   m_DoubleSidedGI: 0
   m_CustomRenderQueue: -1
-  stringTagMap: {}
-  disabledShaderPasses: []
+  stringTagMap:
+    RenderType: Opaque
+  disabledShaderPasses:
+  - MOTIONVECTORS
   m_LockedProperties: 
   m_SavedProperties:
     serializedVersion: 3
@@ -11982,7 +12257,7 @@ Material:
     - _ZWrite: 1
     m_Colors:
     - _BaseColor: {r: 0.08, g: 0.08, b: 0.09, a: 1}
-    - _Color: {r: 1, g: 1, b: 1, a: 1}
+    - _Color: {r: 0.079999976, g: 0.079999976, b: 0.089999996, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
     - _SpecColor: {r: 0.19999996, g: 0.19999996, b: 0.19999996, a: 1}
   m_BuildTextureStacks: []
@@ -12279,6 +12554,58 @@ Material:
     - _Color: {r: 1, g: 0.54999995, b: 0.11999995, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1
+--- !u!1 &1113677457
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1113677458}
+  - component: {fileID: 1113677459}
+  m_Layer: 0
+  m_Name: SpawnPoint_Ground_02
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1113677458
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1113677457}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: 0.8715597, z: -0, w: -0.49028942}
+  m_LocalPosition: {x: 5.85, y: 0.05, z: 3.854168}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 2041161120}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1113677459
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1113677457}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6ab96ace7e91aba4e9a1ba8761caad39, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: RetroFPS.Gameplay::RetroFPS.Combat.EncounterSpawnPoint
+  allowGroundEnemies: 1
+  allowAirEnemies: 0
+  zoneTag: Encounter_Room_02
+  cooldownDuration: 2
+  clearanceRadius: 0.9
+  groundGizmoColor: {r: 0.95, g: 0.25, b: 0.25, a: 0.85}
+  airGizmoColor: {r: 0.65, g: 0.2, b: 0.95, a: 0.85}
+  cooldownGizmoColor: {r: 0.4, g: 0.4, b: 0.4, a: 0.4}
 --- !u!1 &1124383893
 GameObject:
   m_ObjectHideFlags: 0
@@ -12728,86 +13055,84 @@ MonoBehaviour:
   autoStartOnPlay: 0
   encounterArea: {fileID: 0}
   warmupDuration: 1.5
+  waveSet: {fileID: 0}
   waves:
   - waveName: Wave 1
     preWaveDelay: 2
-    maxConcurrentEnemies: 6
-    transitionMode: 4
-    remainingThreshold: 2
-    percentageThreshold: 0.75
-    timeLimit: 40
-    carryOverRemainingEnemies: 1
-    spawnEntries: []
-  - waveName: Wave 1
-    preWaveDelay: 1.5
-    maxConcurrentEnemies: 5
-    transitionMode: 4
-    remainingThreshold: 2
-    percentageThreshold: 0.75
-    timeLimit: 40
-    carryOverRemainingEnemies: 1
-    spawnEntries:
-    - enemyPrefab: {fileID: 5349570471886633040, guid: 9ac052f5657dabe478d13eea780617b6, type: 3}
-      count: 5
-      spawnInterval: 1
-      isAirEnemy: 0
-      targetZoneTag: 
-  - waveName: Wave 2
-    preWaveDelay: 2
-    maxConcurrentEnemies: 6
-    transitionMode: 4
-    remainingThreshold: 2
-    percentageThreshold: 0.75
-    timeLimit: 40
-    carryOverRemainingEnemies: 1
-    spawnEntries: []
-  - waveName: Wave 1
-    preWaveDelay: 2
     maxConcurrentEnemies: 7
+    threatBudget: 0
     transitionMode: 4
     remainingThreshold: 2
     percentageThreshold: 0.75
     timeLimit: 40
     carryOverRemainingEnemies: 1
+    rewardHealthOrbs: 1
+    rewardAmmoPickups: 1
     spawnEntries:
     - enemyPrefab: {fileID: 5349570471886633040, guid: 9ac052f5657dabe478d13eea780617b6, type: 3}
       count: 5
       spawnInterval: 0.9
       isAirEnemy: 0
       targetZoneTag: 
+      delayFromWaveStart: 0
+      batchSize: 0
+      spawnPattern: 0
+      runInParallel: 0
+      threatCostOverride: 0
     - enemyPrefab: {fileID: 3659605130630274911, guid: 02177a9e23183124fbe40a546e414de1, type: 3}
       count: 3
       spawnInterval: 1.4
       isAirEnemy: 1
       targetZoneTag: 
-  - waveName: Wave 3
-    preWaveDelay: 2
-    maxConcurrentEnemies: 6
-    transitionMode: 4
-    remainingThreshold: 2
-    percentageThreshold: 0.75
-    timeLimit: 40
-    carryOverRemainingEnemies: 1
-    spawnEntries: []
+      delayFromWaveStart: 0
+      batchSize: 0
+      spawnPattern: 0
+      runInParallel: 0
+      threatCostOverride: 0
   - waveName: Wave 1
     preWaveDelay: 2.5
     maxConcurrentEnemies: 8
+    threatBudget: 0
     transitionMode: 4
     remainingThreshold: 2
     percentageThreshold: 0.75
     timeLimit: 40
     carryOverRemainingEnemies: 1
+    rewardHealthOrbs: 1
+    rewardAmmoPickups: 1
     spawnEntries:
     - enemyPrefab: {fileID: 5349570471886633040, guid: 9ac052f5657dabe478d13eea780617b6, type: 3}
       count: 8
       spawnInterval: 0.75
       isAirEnemy: 0
       targetZoneTag: 
+      delayFromWaveStart: 0
+      batchSize: 0
+      spawnPattern: 0
+      runInParallel: 0
+      threatCostOverride: 0
     - enemyPrefab: {fileID: 3659605130630274911, guid: 02177a9e23183124fbe40a546e414de1, type: 3}
       count: 5
       spawnInterval: 1.1
       isAirEnemy: 1
       targetZoneTag: 
+      delayFromWaveStart: 0
+      batchSize: 0
+      spawnPattern: 0
+      runInParallel: 0
+      threatCostOverride: 0
+  waveCooldownDuration: 2
+  absoluteMaxAlive: 16
+  stragglerAlertThreshold: 2
+  stragglerAlertInterval: 3.5
+  preferOutOfViewSpawns: 1
+  outOfViewDotThreshold: 0.5
+  rearDotThreshold: -0.25
+  frontSpawnWeight: 1
+  sideSpawnWeight: 2.5
+  rearSpawnWeight: 4
+  spawnBlockedTimeout: 2
+  roomDisplayName: 
   spawnPoints: []
   minSpawnDistance: 6
   maxSpawnDistance: 35
@@ -12816,6 +13141,32 @@ MonoBehaviour:
     m_Bits: 4294967295
   summonTelegraphDuration: 0.65
   arenaBarriers: []
+  rewardOrbHealAmount: 15
+  rewardShellAmount: 6
+  rewardBoltAmount: 20
+  rewardScatterRadius: 2.5
+  dynamicDifficulty:
+    enabled: 1
+    lowHealthThreshold: 0.35
+    lowHealthIntervalMultiplier: 1.5
+    postDeathIntervalMultiplier: 1.2
+    cruiseHealthThreshold: 0.8
+    cruiseMaxDamageRatio: 0.25
+    bonusEnemiesPerCruisingWave: 1
+    maxBonusEnemies: 3
+  enableCheckpointRetry: 1
+  retryCheckpoint: {fileID: 0}
+  retryWarmupDuration: 2.5
+  onEncounterStarted:
+    m_PersistentCalls:
+      m_Calls: []
+  onEncounterCompleted:
+    m_PersistentCalls:
+      m_Calls: []
+  onEncounterRetried:
+    m_PersistentCalls:
+      m_Calls: []
+  waveEvents: []
   encounterStartSound: {fileID: 0}
   waveStartSound: {fileID: 0}
   waveClearedSound: {fileID: 0}
@@ -13074,6 +13425,118 @@ Material:
     - _Color: {r: 1, g: 0.54999995, b: 0.11999995, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1
+--- !u!1 &1181470795
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1181470796}
+  - component: {fileID: 1181470799}
+  - component: {fileID: 1181470798}
+  - component: {fileID: 1181470797}
+  m_Layer: 0
+  m_Name: Wall_Doorway_Left
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1181470796
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1181470795}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -9.5, y: 1.75, z: 17}
+  m_LocalScale: {x: 15, y: 3.5, z: 0.6}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 838080705}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!23 &1181470797
+MeshRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1181470795}
+  m_Enabled: 1
+  m_CastShadows: 1
+  m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 1735539345}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 1
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 0
+  m_MaskInteraction: 0
+  m_AdditionalVertexStreams: {fileID: 0}
+--- !u!65 &1181470798
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1181470795}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 1, y: 1, z: 1}
+  m_Center: {x: 0, y: 0, z: 0}
+--- !u!33 &1181470799
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1181470795}
+  m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
 --- !u!1 &1184165491
 GameObject:
   m_ObjectHideFlags: 0
@@ -13181,8 +13644,10 @@ Material:
   m_EnableInstancingVariants: 0
   m_DoubleSidedGI: 0
   m_CustomRenderQueue: -1
-  stringTagMap: {}
-  disabledShaderPasses: []
+  stringTagMap:
+    RenderType: Opaque
+  disabledShaderPasses:
+  - MOTIONVECTORS
   m_LockedProperties: 
   m_SavedProperties:
     serializedVersion: 3
@@ -13215,7 +13680,7 @@ Material:
     - _ZWrite: 1
     m_Colors:
     - _BaseColor: {r: 1, g: 0.55, b: 0.12, a: 1}
-    - _Color: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+    - _Color: {r: 1, g: 0.54999995, b: 0.11999995, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1
 --- !u!1 &1193312938
@@ -13961,58 +14426,6 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1256643457}
   m_Mesh: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
---- !u!1 &1257698793
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1257698794}
-  - component: {fileID: 1257698795}
-  m_Layer: 0
-  m_Name: SpawnPoint_Air_02
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &1257698794
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1257698793}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: 0.3826834, z: -0, w: 0.92387956}
-  m_LocalPosition: {x: -3.8183758, y: 3, z: -3.818377}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 25408303}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1257698795
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1257698793}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6ab96ace7e91aba4e9a1ba8761caad39, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::RetroFPS.Combat.EncounterSpawnPoint
-  allowGroundEnemies: 0
-  allowAirEnemies: 1
-  zoneTag: Encounter_Room_02
-  cooldownDuration: 2.5
-  clearanceRadius: 0.9
-  groundGizmoColor: {r: 0.95, g: 0.25, b: 0.25, a: 0.85}
-  airGizmoColor: {r: 0.65, g: 0.2, b: 0.95, a: 0.85}
-  cooldownGizmoColor: {r: 0.4, g: 0.4, b: 0.4, a: 0.4}
 --- !u!1 &1263974308
 GameObject:
   m_ObjectHideFlags: 0
@@ -14193,58 +14606,6 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1271281305}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
---- !u!1 &1274937905
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1274937906}
-  - component: {fileID: 1274937907}
-  m_Layer: 0
-  m_Name: SpawnPoint_Ground_03
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &1274937906
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1274937905}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: 0.9659258, z: -0, w: 0.25881907}
-  m_LocalPosition: {x: -4.3200006, y: 0.05, z: 7.4824595}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 25408303}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1274937907
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1274937905}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6ab96ace7e91aba4e9a1ba8761caad39, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::RetroFPS.Combat.EncounterSpawnPoint
-  allowGroundEnemies: 1
-  allowAirEnemies: 0
-  zoneTag: Encounter_Room_02
-  cooldownDuration: 2
-  clearanceRadius: 0.9
-  groundGizmoColor: {r: 0.95, g: 0.25, b: 0.25, a: 0.85}
-  airGizmoColor: {r: 0.65, g: 0.2, b: 0.95, a: 0.85}
-  cooldownGizmoColor: {r: 0.4, g: 0.4, b: 0.4, a: 0.4}
 --- !u!1 &1288683287
 GameObject:
   m_ObjectHideFlags: 0
@@ -14559,58 +14920,6 @@ Material:
     - _Color: {r: 1, g: 0.54999995, b: 0.11999995, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1
---- !u!1 &1326647514
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1326647515}
-  - component: {fileID: 1326647516}
-  m_Layer: 0
-  m_Name: SpawnPoint_Ground_01
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &1326647515
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1326647514}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0.7071068, z: -0, w: 0.7071068}
-  m_LocalPosition: {x: 8.64, y: 1.3999999, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 25408303}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1326647516
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1326647514}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6ab96ace7e91aba4e9a1ba8761caad39, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::RetroFPS.Combat.EncounterSpawnPoint
-  allowGroundEnemies: 1
-  allowAirEnemies: 0
-  zoneTag: Encounter_Room_02
-  cooldownDuration: 2
-  clearanceRadius: 0.9
-  groundGizmoColor: {r: 0.95, g: 0.25, b: 0.25, a: 0.85}
-  airGizmoColor: {r: 0.65, g: 0.2, b: 0.95, a: 0.85}
-  cooldownGizmoColor: {r: 0.4, g: 0.4, b: 0.4, a: 0.4}
 --- !u!1 &1335854458
 GameObject:
   m_ObjectHideFlags: 0
@@ -14659,12 +14968,12 @@ GameObject:
   - component: {fileID: 1337631879}
   - component: {fileID: 1337631878}
   m_Layer: 0
-  m_Name: Wall
+  m_Name: "Wall_North_Inner (Room02 kap\u0131s\u0131 i\xE7in kapat\u0131ld\u0131)"
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &1337631877
 Transform:
   m_ObjectHideFlags: 0
@@ -14862,58 +15171,6 @@ Material:
     - _Color: {r: 1, g: 0.54999995, b: 0.11999995, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1
---- !u!1 &1362636540
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1362636541}
-  - component: {fileID: 1362636542}
-  m_Layer: 0
-  m_Name: SpawnPoint_Ground_06
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &1362636541
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1362636540}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0.258819, z: -0, w: 0.9659259}
-  m_LocalPosition: {x: 4.319999, y: 0.05, z: -7.48246}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 25408303}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1362636542
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1362636540}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6ab96ace7e91aba4e9a1ba8761caad39, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::RetroFPS.Combat.EncounterSpawnPoint
-  allowGroundEnemies: 1
-  allowAirEnemies: 0
-  zoneTag: Encounter_Room_02
-  cooldownDuration: 2
-  clearanceRadius: 0.9
-  groundGizmoColor: {r: 0.95, g: 0.25, b: 0.25, a: 0.85}
-  airGizmoColor: {r: 0.65, g: 0.2, b: 0.95, a: 0.85}
-  cooldownGizmoColor: {r: 0.4, g: 0.4, b: 0.4, a: 0.4}
 --- !u!1 &1371994025
 GameObject:
   m_ObjectHideFlags: 0
@@ -16029,117 +16286,6 @@ MonoBehaviour:
   m_ShadowLayerMask: 1
   m_RenderingLayers: 1
   m_ShadowRenderingLayers: 1
---- !u!1 &1427069784
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1427069788}
-  - component: {fileID: 1427069787}
-  - component: {fileID: 1427069786}
-  - component: {fileID: 1427069785}
-  m_Layer: 0
-  m_Name: Encounter_Room_03
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &1427069785
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1427069784}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: ed2232a9c193c9845882adb67b30d006, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::RetroFPS.Combat.EncounterArea
-  waveDirector: {fileID: 0}
-  autoDetectEnemiesInBounds: 1
-  specificManualEnemies: []
-  guardDeathRatioToTriggerWaves: 0.25
-  requirePlayerInsideToStartWaves: 1
-  alertGuardsWhenPlayerEnters: 1
-  delayBeforeWaveStart: 1
-  autoGenerateSpawnPointsIfEmpty: 1
-  groundSpawnPointCount: 6
-  airSpawnPointCount: 2
-  groundLayerMask:
-    serializedVersion: 2
-    m_Bits: 4294967295
-  guardsClearedSound: {fileID: 0}
---- !u!114 &1427069786
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1427069784}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 2f52eed609be5e44d9db09013eb1af27, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::RetroFPS.Combat.WaveSpawnDirector
-  autoStartOnPlay: 0
-  encounterArea: {fileID: 0}
-  warmupDuration: 1.5
-  waves: []
-  spawnPoints: []
-  minSpawnDistance: 6
-  maxSpawnDistance: 35
-  obstacleLayerMask:
-    serializedVersion: 2
-    m_Bits: 4294967295
-  summonTelegraphDuration: 0.65
-  arenaBarriers: []
-  encounterStartSound: {fileID: 0}
-  waveStartSound: {fileID: 0}
-  waveClearedSound: {fileID: 0}
-  victorySound: {fileID: 0}
-  summonTelegraphSound: {fileID: 0}
---- !u!65 &1427069787
-BoxCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1427069784}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 1
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 3
-  m_Size: {x: 24, y: 5, z: 24}
-  m_Center: {x: 0, y: 2.5, z: 0}
---- !u!4 &1427069788
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1427069784}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 94.12}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children:
-  - {fileID: 703975721}
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1428843055
 GameObject:
   m_ObjectHideFlags: 0
@@ -16410,58 +16556,6 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1449164975}
   m_Mesh: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
---- !u!1 &1455671709
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1455671710}
-  - component: {fileID: 1455671711}
-  m_Layer: 0
-  m_Name: SpawnPoint_Air_01
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &1455671710
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1455671709}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: 0.92387956, z: -0, w: -0.38268346}
-  m_LocalPosition: {x: 3.8183765, y: 3, z: 3.8183765}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 25408303}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1455671711
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1455671709}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6ab96ace7e91aba4e9a1ba8761caad39, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::RetroFPS.Combat.EncounterSpawnPoint
-  allowGroundEnemies: 0
-  allowAirEnemies: 1
-  zoneTag: Encounter_Room_02
-  cooldownDuration: 2.5
-  clearanceRadius: 0.9
-  groundGizmoColor: {r: 0.95, g: 0.25, b: 0.25, a: 0.85}
-  airGizmoColor: {r: 0.65, g: 0.2, b: 0.95, a: 0.85}
-  cooldownGizmoColor: {r: 0.4, g: 0.4, b: 0.4, a: 0.4}
 --- !u!1 &1466614018
 GameObject:
   m_ObjectHideFlags: 0
@@ -16609,58 +16703,6 @@ MonoBehaviour:
   m_ShadowLayerMask: 1
   m_RenderingLayers: 1
   m_ShadowRenderingLayers: 1
---- !u!1 &1468420788
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1468420789}
-  - component: {fileID: 1468420790}
-  m_Layer: 0
-  m_Name: SpawnPoint_Ground_02
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &1468420789
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1468420788}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: 0.9659259, z: -0, w: -0.25881904}
-  m_LocalPosition: {x: 4.3199997, y: 0.05, z: 7.48246}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 703975721}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1468420790
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1468420788}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6ab96ace7e91aba4e9a1ba8761caad39, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::RetroFPS.Combat.EncounterSpawnPoint
-  allowGroundEnemies: 1
-  allowAirEnemies: 0
-  zoneTag: Encounter_Room_03
-  cooldownDuration: 2
-  clearanceRadius: 0.9
-  groundGizmoColor: {r: 0.95, g: 0.25, b: 0.25, a: 0.85}
-  airGizmoColor: {r: 0.65, g: 0.2, b: 0.95, a: 0.85}
-  cooldownGizmoColor: {r: 0.4, g: 0.4, b: 0.4, a: 0.4}
 --- !u!1 &1488332010
 GameObject:
   m_ObjectHideFlags: 0
@@ -17029,8 +17071,10 @@ Material:
   m_EnableInstancingVariants: 0
   m_DoubleSidedGI: 0
   m_CustomRenderQueue: -1
-  stringTagMap: {}
-  disabledShaderPasses: []
+  stringTagMap:
+    RenderType: Opaque
+  disabledShaderPasses:
+  - MOTIONVECTORS
   m_LockedProperties: 
   m_SavedProperties:
     serializedVersion: 3
@@ -17063,7 +17107,7 @@ Material:
     - _ZWrite: 1
     m_Colors:
     - _BaseColor: {r: 1, g: 0.55, b: 0.12, a: 1}
-    - _Color: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+    - _Color: {r: 1, g: 0.54999995, b: 0.11999995, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1
 --- !u!21 &1521999447
@@ -17302,58 +17346,6 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1536604805}
   m_Mesh: {fileID: 10206, guid: 0000000000000000e000000000000000, type: 0}
---- !u!1 &1537313404
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1537313405}
-  - component: {fileID: 1537313406}
-  m_Layer: 0
-  m_Name: SpawnPoint_Ground_02
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &1537313405
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1537313404}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: 0.9659259, z: -0, w: -0.25881904}
-  m_LocalPosition: {x: 4.3199997, y: 0.05, z: 7.48246}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 25408303}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1537313406
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1537313404}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6ab96ace7e91aba4e9a1ba8761caad39, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::RetroFPS.Combat.EncounterSpawnPoint
-  allowGroundEnemies: 1
-  allowAirEnemies: 0
-  zoneTag: Encounter_Room_02
-  cooldownDuration: 2
-  clearanceRadius: 0.9
-  groundGizmoColor: {r: 0.95, g: 0.25, b: 0.25, a: 0.85}
-  airGizmoColor: {r: 0.65, g: 0.2, b: 0.95, a: 0.85}
-  cooldownGizmoColor: {r: 0.4, g: 0.4, b: 0.4, a: 0.4}
 --- !u!21 &1551205640
 Material:
   serializedVersion: 8
@@ -19091,67 +19083,6 @@ MonoBehaviour:
   wobbleRecoverySpeed: 10
   flashColor: {r: 1, g: 0.2, b: 0.2, a: 1}
   critFlashColor: {r: 1, g: 0.85, b: 0.1, a: 1}
---- !u!1001 &1674158590
-PrefabInstance:
-  m_ObjectHideFlags: 0
-  serializedVersion: 2
-  m_Modification:
-    serializedVersion: 3
-    m_TransformParent: {fileID: 0}
-    m_Modifications:
-    - target: {fileID: 4833318221340059759, guid: 9ac052f5657dabe478d13eea780617b6, type: 3}
-      propertyPath: autoRespawn
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 5349570471886633040, guid: 9ac052f5657dabe478d13eea780617b6, type: 3}
-      propertyPath: m_Name
-      value: Enemy_Ghoul_Stalker (1)
-      objectReference: {fileID: 0}
-    - target: {fileID: 6464050544522188104, guid: 9ac052f5657dabe478d13eea780617b6, type: 3}
-      propertyPath: m_LocalPosition.x
-      value: 1.7488812
-      objectReference: {fileID: 0}
-    - target: {fileID: 6464050544522188104, guid: 9ac052f5657dabe478d13eea780617b6, type: 3}
-      propertyPath: m_LocalPosition.y
-      value: -0.00000084578323
-      objectReference: {fileID: 0}
-    - target: {fileID: 6464050544522188104, guid: 9ac052f5657dabe478d13eea780617b6, type: 3}
-      propertyPath: m_LocalPosition.z
-      value: 43.98
-      objectReference: {fileID: 0}
-    - target: {fileID: 6464050544522188104, guid: 9ac052f5657dabe478d13eea780617b6, type: 3}
-      propertyPath: m_LocalRotation.w
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 6464050544522188104, guid: 9ac052f5657dabe478d13eea780617b6, type: 3}
-      propertyPath: m_LocalRotation.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6464050544522188104, guid: 9ac052f5657dabe478d13eea780617b6, type: 3}
-      propertyPath: m_LocalRotation.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6464050544522188104, guid: 9ac052f5657dabe478d13eea780617b6, type: 3}
-      propertyPath: m_LocalRotation.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6464050544522188104, guid: 9ac052f5657dabe478d13eea780617b6, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6464050544522188104, guid: 9ac052f5657dabe478d13eea780617b6, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6464050544522188104, guid: 9ac052f5657dabe478d13eea780617b6, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: 0
-      objectReference: {fileID: 0}
-    m_RemovedComponents: []
-    m_RemovedGameObjects: []
-    m_AddedGameObjects: []
-    m_AddedComponents: []
-  m_SourcePrefab: {fileID: 100100000, guid: 9ac052f5657dabe478d13eea780617b6, type: 3}
 --- !u!1 &1679805430
 GameObject:
   m_ObjectHideFlags: 0
@@ -20218,6 +20149,39 @@ Material:
     - _SpecColor: {r: 0.19999996, g: 0.19999996, b: 0.19999996, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1
+--- !u!1 &1790328607
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1790328608}
+  m_Layer: 0
+  m_Name: Room02_Wing
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1790328608
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1790328607}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 838080705}
+  - {fileID: 585851151}
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1797401270
 GameObject:
   m_ObjectHideFlags: 0
@@ -20652,8 +20616,10 @@ Material:
   m_EnableInstancingVariants: 0
   m_DoubleSidedGI: 0
   m_CustomRenderQueue: -1
-  stringTagMap: {}
-  disabledShaderPasses: []
+  stringTagMap:
+    RenderType: Opaque
+  disabledShaderPasses:
+  - MOTIONVECTORS
   m_LockedProperties: 
   m_SavedProperties:
     serializedVersion: 3
@@ -20686,7 +20652,7 @@ Material:
     - _ZWrite: 1
     m_Colors:
     - _BaseColor: {r: 1, g: 0.55, b: 0.12, a: 1}
-    - _Color: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+    - _Color: {r: 1, g: 0.54999995, b: 0.11999995, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1
 --- !u!1 &1826106864
@@ -21129,6 +21095,58 @@ Material:
     - _SpecColor: {r: 0.19999996, g: 0.19999996, b: 0.19999996, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1
+--- !u!1 &1878585951
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1878585952}
+  - component: {fileID: 1878585953}
+  m_Layer: 0
+  m_Name: SpawnPoint_Air_02
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1878585952
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1878585951}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: 0.57836103, z: -0, w: 0.81578094}
+  m_LocalPosition: {x: -5.1707172, y: 3, z: -1.5137291}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 2041161120}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1878585953
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1878585951}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6ab96ace7e91aba4e9a1ba8761caad39, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: RetroFPS.Gameplay::RetroFPS.Combat.EncounterSpawnPoint
+  allowGroundEnemies: 0
+  allowAirEnemies: 1
+  zoneTag: Encounter_Room_02
+  cooldownDuration: 2.5
+  clearanceRadius: 0.9
+  groundGizmoColor: {r: 0.95, g: 0.25, b: 0.25, a: 0.85}
+  airGizmoColor: {r: 0.65, g: 0.2, b: 0.95, a: 0.85}
+  cooldownGizmoColor: {r: 0.4, g: 0.4, b: 0.4, a: 0.4}
 --- !u!1 &1885951981
 GameObject:
   m_ObjectHideFlags: 0
@@ -21241,66 +21259,6 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1885951981}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
---- !u!1001 &1898614462
-PrefabInstance:
-  m_ObjectHideFlags: 0
-  serializedVersion: 2
-  m_Modification:
-    serializedVersion: 3
-    m_TransformParent: {fileID: 0}
-    m_Modifications:
-    - target: {fileID: 3659605130630274911, guid: 02177a9e23183124fbe40a546e414de1, type: 3}
-      propertyPath: m_Name
-      value: Enemy_FlyingEye_Watcher (1)
-      objectReference: {fileID: 0}
-    - target: {fileID: 6936372329282221822, guid: 02177a9e23183124fbe40a546e414de1, type: 3}
-      propertyPath: m_LocalPosition.x
-      value: 1.3850944
-      objectReference: {fileID: 0}
-    - target: {fileID: 6936372329282221822, guid: 02177a9e23183124fbe40a546e414de1, type: 3}
-      propertyPath: m_LocalPosition.y
-      value: 3.05
-      objectReference: {fileID: 0}
-    - target: {fileID: 6936372329282221822, guid: 02177a9e23183124fbe40a546e414de1, type: 3}
-      propertyPath: m_LocalPosition.z
-      value: 46.01
-      objectReference: {fileID: 0}
-    - target: {fileID: 6936372329282221822, guid: 02177a9e23183124fbe40a546e414de1, type: 3}
-      propertyPath: m_LocalRotation.w
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 6936372329282221822, guid: 02177a9e23183124fbe40a546e414de1, type: 3}
-      propertyPath: m_LocalRotation.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6936372329282221822, guid: 02177a9e23183124fbe40a546e414de1, type: 3}
-      propertyPath: m_LocalRotation.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6936372329282221822, guid: 02177a9e23183124fbe40a546e414de1, type: 3}
-      propertyPath: m_LocalRotation.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6936372329282221822, guid: 02177a9e23183124fbe40a546e414de1, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6936372329282221822, guid: 02177a9e23183124fbe40a546e414de1, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6936372329282221822, guid: 02177a9e23183124fbe40a546e414de1, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: 0
-      objectReference: {fileID: 0}
-    m_RemovedComponents: []
-    m_RemovedGameObjects: []
-    m_AddedGameObjects:
-    - targetCorrespondingSourceObject: {fileID: 6936372329282221822, guid: 02177a9e23183124fbe40a546e414de1, type: 3}
-      insertIndex: 1
-      addedObject: {fileID: 452951161}
-    m_AddedComponents: []
-  m_SourcePrefab: {fileID: 100100000, guid: 02177a9e23183124fbe40a546e414de1, type: 3}
 --- !u!21 &1912216382
 Material:
   serializedVersion: 8
@@ -21839,6 +21797,170 @@ MonoBehaviour:
   m_ShadowLayerMask: 1
   m_RenderingLayers: 1
   m_ShadowRenderingLayers: 1
+--- !u!1 &1925070804
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1925070805}
+  - component: {fileID: 1925070806}
+  m_Layer: 0
+  m_Name: SpawnPoint_Air_01
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1925070805
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1925070804}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0.81578094, z: -0, w: 0.578361}
+  m_LocalPosition: {x: 5.170718, y: 3, z: 2.1137295}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 2041161120}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1925070806
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1925070804}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6ab96ace7e91aba4e9a1ba8761caad39, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: RetroFPS.Gameplay::RetroFPS.Combat.EncounterSpawnPoint
+  allowGroundEnemies: 0
+  allowAirEnemies: 1
+  zoneTag: Encounter_Room_02
+  cooldownDuration: 2.5
+  clearanceRadius: 0.9
+  groundGizmoColor: {r: 0.95, g: 0.25, b: 0.25, a: 0.85}
+  airGizmoColor: {r: 0.65, g: 0.2, b: 0.95, a: 0.85}
+  cooldownGizmoColor: {r: 0.4, g: 0.4, b: 0.4, a: 0.4}
+--- !u!1 &1925072019
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1925072020}
+  - component: {fileID: 1925072023}
+  - component: {fileID: 1925072022}
+  - component: {fileID: 1925072021}
+  m_Layer: 0
+  m_Name: Wall_Doorway_Lintel
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1925072020
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1925072019}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 3.25, z: 17}
+  m_LocalScale: {x: 4, y: 0.5, z: 0.6}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 838080705}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!23 &1925072021
+MeshRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1925072019}
+  m_Enabled: 1
+  m_CastShadows: 1
+  m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 1735539345}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 1
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 0
+  m_MaskInteraction: 0
+  m_AdditionalVertexStreams: {fileID: 0}
+--- !u!65 &1925072022
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1925072019}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 1, y: 1, z: 1}
+  m_Center: {x: 0, y: 0, z: 0}
+--- !u!33 &1925072023
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1925072019}
+  m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
 --- !u!1 &1932754302
 GameObject:
   m_ObjectHideFlags: 0
@@ -22098,11 +22220,6 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1938440922}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
---- !u!4 &1941930567 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 6936372329282221822, guid: 02177a9e23183124fbe40a546e414de1, type: 3}
-  m_PrefabInstance: {fileID: 1898614462}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1951589268
 GameObject:
   m_ObjectHideFlags: 0
@@ -22528,6 +22645,58 @@ Transform:
   - {fileID: 1157726526}
   m_Father: {fileID: 29128119}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1997084916
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1997084917}
+  - component: {fileID: 1997084918}
+  m_Layer: 0
+  m_Name: SpawnPoint_Ground_01
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1997084917
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1997084916}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0.7071068, z: -0, w: 0.7071068}
+  m_LocalPosition: {x: 11.700001, y: 0.05, z: 0.29999924}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 2041161120}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1997084918
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1997084916}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6ab96ace7e91aba4e9a1ba8761caad39, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: RetroFPS.Gameplay::RetroFPS.Combat.EncounterSpawnPoint
+  allowGroundEnemies: 1
+  allowAirEnemies: 0
+  zoneTag: Encounter_Room_02
+  cooldownDuration: 2
+  clearanceRadius: 0.9
+  groundGizmoColor: {r: 0.95, g: 0.25, b: 0.25, a: 0.85}
+  airGizmoColor: {r: 0.65, g: 0.2, b: 0.95, a: 0.85}
+  cooldownGizmoColor: {r: 0.4, g: 0.4, b: 0.4, a: 0.4}
 --- !u!1 &2005636412
 GameObject:
   m_ObjectHideFlags: 0
@@ -22575,58 +22744,6 @@ MonoBehaviour:
   allowGroundEnemies: 1
   allowAirEnemies: 0
   zoneTag: Encounter_Room_01
-  cooldownDuration: 2
-  clearanceRadius: 0.9
-  groundGizmoColor: {r: 0.95, g: 0.25, b: 0.25, a: 0.85}
-  airGizmoColor: {r: 0.65, g: 0.2, b: 0.95, a: 0.85}
-  cooldownGizmoColor: {r: 0.4, g: 0.4, b: 0.4, a: 0.4}
---- !u!1 &2008349628
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 2008349629}
-  - component: {fileID: 2008349630}
-  m_Layer: 0
-  m_Name: SpawnPoint_Ground_04
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &2008349629
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2008349628}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: 0.70710665, z: -0, w: 0.7071069}
-  m_LocalPosition: {x: -8.64, y: 2.4449878, z: -0.00000166893}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 703975721}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &2008349630
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2008349628}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6ab96ace7e91aba4e9a1ba8761caad39, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::RetroFPS.Combat.EncounterSpawnPoint
-  allowGroundEnemies: 1
-  allowAirEnemies: 0
-  zoneTag: Encounter_Room_03
   cooldownDuration: 2
   clearanceRadius: 0.9
   groundGizmoColor: {r: 0.95, g: 0.25, b: 0.25, a: 0.85}
@@ -22739,8 +22856,10 @@ Material:
   m_EnableInstancingVariants: 0
   m_DoubleSidedGI: 0
   m_CustomRenderQueue: -1
-  stringTagMap: {}
-  disabledShaderPasses: []
+  stringTagMap:
+    RenderType: Opaque
+  disabledShaderPasses:
+  - MOTIONVECTORS
   m_LockedProperties: 
   m_SavedProperties:
     serializedVersion: 3
@@ -22837,7 +22956,7 @@ Material:
     - _ZWrite: 1
     m_Colors:
     - _BaseColor: {r: 0.08, g: 0.08, b: 0.09, a: 1}
-    - _Color: {r: 1, g: 1, b: 1, a: 1}
+    - _Color: {r: 0.079999976, g: 0.079999976, b: 0.089999996, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
     - _SpecColor: {r: 0.19999996, g: 0.19999996, b: 0.19999996, a: 1}
   m_BuildTextureStacks: []
@@ -22859,8 +22978,10 @@ Material:
   m_EnableInstancingVariants: 0
   m_DoubleSidedGI: 0
   m_CustomRenderQueue: -1
-  stringTagMap: {}
-  disabledShaderPasses: []
+  stringTagMap:
+    RenderType: Opaque
+  disabledShaderPasses:
+  - MOTIONVECTORS
   m_LockedProperties: 
   m_SavedProperties:
     serializedVersion: 3
@@ -22893,7 +23014,7 @@ Material:
     - _ZWrite: 1
     m_Colors:
     - _BaseColor: {r: 1, g: 0.55, b: 0.12, a: 1}
-    - _Color: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+    - _Color: {r: 1, g: 0.54999995, b: 0.11999995, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1
 --- !u!21 &2030430804
@@ -23018,7 +23139,7 @@ Material:
     - _SpecColor: {r: 0.19999996, g: 0.19999996, b: 0.19999996, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1
---- !u!1 &2035072166
+--- !u!1 &2041161119
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -23026,50 +23147,37 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 2035072167}
-  - component: {fileID: 2035072168}
+  - component: {fileID: 2041161120}
   m_Layer: 0
-  m_Name: SpawnPoint_Ground_01
+  m_Name: SpawnPoints
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &2035072167
+--- !u!4 &2041161120
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2035072166}
+  m_GameObject: {fileID: 2041161119}
   serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0.7071068, z: -0, w: 0.7071068}
-  m_LocalPosition: {x: 8.64, y: 1.3999999, z: 0}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 703975721}
+  m_Children:
+  - {fileID: 1997084917}
+  - {fileID: 1113677458}
+  - {fileID: 406944173}
+  - {fileID: 461546904}
+  - {fileID: 859886507}
+  - {fileID: 382310012}
+  - {fileID: 1925070805}
+  - {fileID: 1878585952}
+  m_Father: {fileID: 515339111}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &2035072168
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2035072166}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6ab96ace7e91aba4e9a1ba8761caad39, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::RetroFPS.Combat.EncounterSpawnPoint
-  allowGroundEnemies: 1
-  allowAirEnemies: 0
-  zoneTag: Encounter_Room_03
-  cooldownDuration: 2
-  clearanceRadius: 0.9
-  groundGizmoColor: {r: 0.95, g: 0.25, b: 0.25, a: 0.85}
-  airGizmoColor: {r: 0.65, g: 0.2, b: 0.95, a: 0.85}
-  cooldownGizmoColor: {r: 0.4, g: 0.4, b: 0.4, a: 0.4}
 --- !u!1 &2046136352
 GameObject:
   m_ObjectHideFlags: 0
@@ -23969,110 +24077,6 @@ Transform:
   - {fileID: 1924403159}
   m_Father: {fileID: 29128119}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &2115848061
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 2115848062}
-  - component: {fileID: 2115848063}
-  m_Layer: 0
-  m_Name: SpawnPoint_Ground_05
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &2115848062
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2115848061}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: 0.258819, z: -0, w: 0.9659259}
-  m_LocalPosition: {x: -4.319999, y: 0.05, z: -7.48246}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 25408303}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &2115848063
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2115848061}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6ab96ace7e91aba4e9a1ba8761caad39, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::RetroFPS.Combat.EncounterSpawnPoint
-  allowGroundEnemies: 1
-  allowAirEnemies: 0
-  zoneTag: Encounter_Room_02
-  cooldownDuration: 2
-  clearanceRadius: 0.9
-  groundGizmoColor: {r: 0.95, g: 0.25, b: 0.25, a: 0.85}
-  airGizmoColor: {r: 0.65, g: 0.2, b: 0.95, a: 0.85}
-  cooldownGizmoColor: {r: 0.4, g: 0.4, b: 0.4, a: 0.4}
---- !u!1 &2120328393
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 2120328394}
-  - component: {fileID: 2120328395}
-  m_Layer: 0
-  m_Name: SpawnPoint_Air_01
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &2120328394
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2120328393}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: 0.92387956, z: -0, w: -0.38268346}
-  m_LocalPosition: {x: 3.8183765, y: 3, z: 3.8183765}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 703975721}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &2120328395
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2120328393}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6ab96ace7e91aba4e9a1ba8761caad39, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::RetroFPS.Combat.EncounterSpawnPoint
-  allowGroundEnemies: 0
-  allowAirEnemies: 1
-  zoneTag: Encounter_Room_03
-  cooldownDuration: 2.5
-  clearanceRadius: 0.9
-  groundGizmoColor: {r: 0.95, g: 0.25, b: 0.25, a: 0.85}
-  airGizmoColor: {r: 0.65, g: 0.2, b: 0.95, a: 0.85}
-  cooldownGizmoColor: {r: 0.4, g: 0.4, b: 0.4, a: 0.4}
 --- !u!1 &2121756519
 GameObject:
   m_ObjectHideFlags: 0
@@ -24434,8 +24438,10 @@ Material:
   m_EnableInstancingVariants: 0
   m_DoubleSidedGI: 0
   m_CustomRenderQueue: -1
-  stringTagMap: {}
-  disabledShaderPasses: []
+  stringTagMap:
+    RenderType: Opaque
+  disabledShaderPasses:
+  - MOTIONVECTORS
   m_LockedProperties: 
   m_SavedProperties:
     serializedVersion: 3
@@ -24468,7 +24474,7 @@ Material:
     - _ZWrite: 1
     m_Colors:
     - _BaseColor: {r: 1, g: 0.55, b: 0.12, a: 1}
-    - _Color: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+    - _Color: {r: 1, g: 0.54999995, b: 0.11999995, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1
 --- !u!1001 &1154312287990008986
@@ -24662,10 +24668,7 @@ SceneRoots:
   - {fileID: 1214983384}
   - {fileID: 1153780964}
   - {fileID: 1225123544}
-  - {fileID: 1674158590}
-  - {fileID: 548009334}
   - {fileID: 508896845}
-  - {fileID: 1898614462}
   - {fileID: 987223721}
-  - {fileID: 796918115}
-  - {fileID: 1427069788}
+  - {fileID: 1790328608}
+  - {fileID: 515339111}

@@ -162,6 +162,45 @@ namespace RetroFPS
             }
         }
 
+        /// <summary>
+        /// Oyuncuyu güvenle ışınlar ve tüm hareket durumlarını (dash, slide, kanca, lunge, slam) sıfırlar. Checkpoint retry için.
+        /// </summary>
+        public void TeleportTo(Vector3 position, Quaternion rotation)
+        {
+            _isGrappling = false;
+            _grappleTargetTransform = null;
+            _isLunging = false;
+            _onLungeFinished = null;
+            _isMeteorSlamming = false;
+            _onMeteorLanded = null;
+            _isDashing = false;
+            _isInvincible = false;
+            _isSliding = false;
+            _isCrouching = false;
+            _velocity = Vector3.zero;
+            _speedBoostMultiplier = 1f;
+            _speedBoostTimer = 0f;
+            _currentDashCharges = maxDashCharges;
+            _jumpBufferTimer = 0f;
+            _coyoteTimer = 0f;
+
+            if (_controller != null)
+            {
+                bool wasEnabled = _controller.enabled;
+                _controller.enabled = false; // CharacterController aktifken transform ataması ezilir
+                _controller.height = normalHeight;
+                _controller.center = new Vector3(0f, normalHeight * 0.5f, 0f);
+                transform.SetPositionAndRotation(position, rotation);
+                _controller.enabled = wasEnabled;
+            }
+            else
+            {
+                transform.SetPositionAndRotation(position, rotation);
+            }
+
+            ApplyCameraHeight(normalCameraY);
+        }
+
         private void ApplyCameraHeight(float heightY)
         {
             if (cameraHolder != null && cameraHolder != transform)

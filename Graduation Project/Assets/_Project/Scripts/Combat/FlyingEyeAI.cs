@@ -22,14 +22,18 @@ namespace RetroFPS
     /// - Gözbebeği Kritik Vuruş Noktasıdır (2x Headshot / Crit).
     /// </summary>
     [RequireComponent(typeof(CharacterController))]
-    public class FlyingEyeAI : MonoBehaviour, IDamageable, IAlertableEnemy, IStunnable, IEncounterEnemy
+    public class FlyingEyeAI : MonoBehaviour, IDamageable, IAlertableEnemy, IStunnable, IEncounterEnemy, IThreatCost
     {
         [Header("Sağlık ve Ödül")]
         [SerializeField] private float maxHealth = 90f; // Havada olduğu için biraz daha kırılgan
         [SerializeField] private float respawnTime = 4.0f;
         [SerializeField] private bool autoRespawn = true;
 
+        [Tooltip("Dalga tehdit bütçesindeki ağırlık (Ghoul = 1 referans)")]
+        [SerializeField] private float threatCost = 2f;
+
         public bool AutoRespawn { get => autoRespawn; set => autoRespawn = value; }
+        public float ThreatCost => threatCost;
 
         [Header("Uçuş ve Hareket")]
         [SerializeField] private float flySpeed = 3.8f;
