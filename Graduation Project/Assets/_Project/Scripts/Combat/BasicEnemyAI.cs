@@ -708,6 +708,10 @@ namespace RetroFPS
             {
                 Vector3 hitPoint = _playerTransform.position + Vector3.up * 1.0f;
                 _playerHealth.TakeDamage(attackDamage, hitPoint, (transform.position - _playerTransform.position).normalized, gameObject);
+
+                // Bu vuruş oyuncuyu öldürdüyse ölüm akışı (RunDirector → Araf) karşılaşmayı aynı karede sıfırlayıp
+                // bu düşmanı havuza geri göndermiş olabilir; devre dışı controller'ı hareket ettirmeye çalışma.
+                if (!isActiveAndEnabled || !_controller.enabled) return;
             }
 
             Vector3 lunge = transform.forward * 3.5f;

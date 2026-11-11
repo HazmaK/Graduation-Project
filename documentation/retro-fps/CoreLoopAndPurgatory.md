@@ -52,11 +52,12 @@ flowchart TD
 - **Boss Arındırma Savaşları:** Her bölümün sonunda kuleye hapsedilmiş ve canavara dönüşmüş gotik bir aile ferdiyle arındırma düellosu gerçekleşir.
 
 ### 2. Araf (Purgatory / İkinci Şans) Mekaniği
+- **Hak Sınırı:** Araf hakkı **run başına bir kez**dir. Araf kullanıldıktan sonra kulede ikinci ölüm de doğrudan Gerçek Ölüm'dür (True Permadeath).
 - **Tetiklenme:** Kuledeyken `PlayerHealth` sıfıra ulaştığında oyun anında "Game Over" ekranı vermez; karakter karanlık bir girdapla kemik duvarlı Araf labirentine çekilir.
 - **Risk & Ödül:**
   * Düşmanlar kuledekilere göre %40 daha agresiftir ve yüksek hasar verir.
   * Labirentte bulunan eşyalar çift taraflıdır (örn. "+%50 Saldırı Hızı ancak -%30 Maksimum Can").
-- **Kuleye Dönüş:** Labirentin merkezindeki kan portalına ulaşabilen oyuncu, kulede öldüğü kata kazandığı lanetli ganimetlerle canlı olarak geri döner.
+- **Kuleye Dönüş:** Portaldan kaçan oyuncu **öldüğü odanın başına (encounter checkpoint)** döner ve o karşılaşma 1. dalgadan yeniden başlar. Karşılaşma dışında öldüyse `RunDirector.towerFallbackRespawn` noktasına (yoksa öldüğü yere) döner.
 
 ### 3. Gerçek Kalıcı Ölüm (True Permadeath)
 - **Koşul:** Oyuncu Araf labirentinde de canını sıfırlarsa ikinci bir şans verilmez.
@@ -65,8 +66,63 @@ flowchart TD
 
 ---
 
-## 3. BAŞKA BİR AI İÇİN MİMARİ ENTEGRASYON SÖZLEŞMESİ
-1. `PlayerHealth.cs` sınıfında ölüm gerçekleştiğinde doğrudan sahne yüklemesi (`SceneManager.LoadScene`) yapmayın; `OnDied` olayını tetikleyerek oyun yöneticisinin Araf durumunu kontrol etmesine izin verin.
+## 3. UYGULAMA MİMARİSİ (Faz 1 — 2026-11-11)
+
+### Sahne Stratejisi (Additive Preload)
+- **Sıfır Yükleme Süresi (Ölümde Sahne Yüklenmez):** `Araf` sahnesi run başında `SceneManager.LoadSceneAsync("Araf", LoadSceneMode.Additive)` ile önceden yüklenir; sahne içerik kökü (`ArafLevel.contentRoot`) kapalı tutulur.
+- **Geçiş Döngüsü:** Geçiş = fade + `PlayerHealth.Revive(entryPoint)` + `SceneManager.SetActiveScene(araf)` (sis ve ambient ışıklandırma otomatik değişir).
+- **Tek Sahne Yüklemesi:** Gerçek Ölüm durumunda `SceneManager.LoadScene(tower, LoadSceneMode.Single)` ile tek sahne yüklemesi yapılır.
+- **Uzamsal İzolasyon:** Araf içeriği kule geometrisinden uzakta ve **yukarıda** kurulur (`ArafLevel` kökü Y = +1000). **Negatif Y kullanılmaz:** `PlayerMovement` Y < 0 olduğunda oyuncuyu Y = 0.05'e geri çeker, `FlyingEyeAI` ölüm animasyonu da zemini ~Y = 0 varsayar.
+
+### Temel Dosyalar ve Bileşenler
+| Dosya | Rolü / Sorumluluğu |
+| :--- | :--- |
+| `Run/RunState.cs` | POCO durum nesnesi: `Seed`, `FloorIndex`, `ArafChargeUsed`, `Phase`. |
+| `Run/RunEvents.cs` | Statik eventler + `ActiveEncounter` kaydı. |
+| `Run/RunDirector.cs` | Durum makinesi, kule/araf yaşam döngüsü ve ölüm sahibi. |
+| `Run/ArafTransition.cs` | uGUI fade / durum mesajları / slow-mo efekti (`Awaitable` + unscaled time). |
+| `Run/ArafLevel.cs` | Araf sahnesi giriş noktası (`entryPoint`) + içerik kökü (`contentRoot`). |
+| `Run/ArafEscapePortal.cs` | Trigger teması ile `RunEvents.RaiseEscapePortalReached` tetikleyen kaçış portalı. |
+| `Core/Interfaces/IRetryableEncounter.cs` | `CanResumeAfterDeath`, `SuspendForPurgatory`, `ResumeAfterPurgatory` arayüzü (`WaveSpawnDirector` uygular). |
+
+### Yaşam Döngüsü Durum Makinesi
+```mermaid
+stateDiagram-v2
+    [*] --> Tower
+    Tower --> FallingToAraf: İlk ölüm (Hak var)
+    Tower --> TrueDeath: Hak yok / Araf sahnesi yok
+    FallingToAraf --> InAraf: ArafLevel'e geçiş & Revive
+    InAraf --> EscapingAraf: Kaçış portalı
+    InAraf --> TrueDeath: Arafta ölüm
+    EscapingAraf --> Tower: Checkpoint'e dönüş & 1. dalgadan yeniden başlama
+    TrueDeath --> [*]: R / Space / Enter (Sahne yeniden yüklenir)
+```
+
+### Ölüm Sahipliği ve Entegrasyon
+- `RunDirector` Awake'te `PlayerHealth.ExternalDeathControl = true` yapar.
+- Bu durumda `PlayerHealth`'in R/Space/Enter yeniden başlatması ve `RestartGame()` devre dışıdır.
+- `RunDirector` olmayan sahnelerde eski `RetryInterceptor` checkpoint retry davranışı aynen çalışır. (`TestLevel_Gauntlet` artık bir `RunDirector` içerir; orada ölüm Araf akışına girer.)
+
+### Kurulum Kontrol Listesi (Inspector / Scene Setup)
+1. **Build Settings:** `Araf` sahnesi Build Settings sahne listesine eklenmelidir.
+2. **Araf Sahnesi:** Sahnede `ArafLevel` (`entryPoint` Transform + `contentRoot` GameObject) ve trigger collider'lı `ArafEscapePortal` bileşeni bulunmalıdır. Araf elit düşmanları için Araf sahnesinde normal `WaveSpawnDirector` + `EncounterTriggerVolume` kullanılabilir.
+3. **Kule Sahnesi:** Kule sahnesinde bir `RunDirector` prefab'ı (player referansı, opsiyonel `towerFallbackRespawn` Transform) yer almalıdır.
+
+### Otomatik Kurulum: `ArafSceneBuilder` (Editor)
+- Menü: **RetroFPS ▸ Build Araf Scene + RunDirector** (`Scripts/Editor/ArafSceneBuilder.cs`, `BuildAll()`; idempotent, tekrar çalıştırılabilir).
+- Üretir: `Assets/_Project/Prefabs/Systems/RunDirector.prefab` (RunDirector + ArafTransition), `Assets/_Project/Data/Materials/Araf/` (Bone, Floor, emisif Portal), `Assets/Scenes/Araf.unity` (40×40 kemik duvarlı mini labirent, giriş (-16,-16) → kan portalı (+16,+16), kızıl nokta ışıklar, kızıl sis/ambient, 3 Ghoul + 1 Flying Eye bağımsız yerleştirilmiş), Build Settings kaydı ve `TestLevel_Gauntlet`'e RunDirector örneği.
+- Düşmanlar Araf'ta `WaveSpawnDirector` olmadan, kendi idle/patrol durumlarıyla çalışır.
+- **Doğrulama (2026-11-11, Play Mode):** İlk ölüm → `InAraf` (Y≈1000, aktif sahne Araf, kızıl sis) → portal → `Tower`; ikinci ölüm → `TrueDeath`. Karşılaşma ortasında ölüm → kaçışta oyuncu odanın `retryCheckpoint`'inde dirilir, karşılaşma 1. dalgadan yeniden başlar ve `RunEvents.ActiveEncounter` olarak yeniden kaydolur.
+
+### Sonraki Fazlar
+- **Faz 2:** Seed'li `RunRandom` + `WaveSetPool`.
+- **Faz 3:** Lanet/lütuf kartları (`CurseBlessingDefinition`) ve sunak etkileşimi.
+- **Midterm Sonrası:** Prosedürel kemik labirenti jeneratörü.
+
+---
+
+## 4. BAŞKA BİR AI İÇİN MİMARİ ENTEGRASYON SÖZLEŞMESİ
+1. Ölüm akışını `RunDirector` yönetir; yeni sistemler `RunEvents` olaylarına abone olmalı, `PlayerHealth`'e doğrudan sahne yükleme eklenmemelidir.
 2. Araf labirenti mekaniği eklenirken `IEncounterEnemy` arayüzünü uygulayan elit düşmanlar kullanılmalıdır.
 
 ---

@@ -68,6 +68,7 @@ stateDiagram-v2
 - **Havada Süzülme ve Mesafe Koruma (Kiting):**
   * Yerçekiminden etkilenmez, oyuncunun 3-6 metre üzerinde süzülür.
   * Oyuncu çok yaklaştığında geriye doğru çekilir (Kite mantığı).
+  * **İrtifa zemine görelidir:** `ApplyHoverAltitude` aşağı raycast (`GameLayers.GroundMask`) ile zemini bulur; `hoverHeight`, `minFlyHeight` ve `maxFlyHeight` bu zemin Y'sine eklenir (mutlak dünya Y'si değil). Zemin bulunamazsa son bilinen zemin (`_lastGroundY`) kullanılır; ölüm düşüşü de `_lastGroundY + 0.4` ile biter. *(2026-11-11 düzeltmesi: önceden mutlak Y'ye kilitliydi, Y = +1000'deki Araf'ta gözler yere iniyordu.)*
 - **Menzilli Okült Plazma Mermisi:**
   * Şarj olma süresi sonrası oyuncunun mevcut konumuna doğru `EnemyProjectile` ateşler.
   * Mermi `PlayerParryController` tarafından geri yansıtılabilir. Geri yansıyan mermi Flying Eye'a çarparsa tek darbede imha edebilir.

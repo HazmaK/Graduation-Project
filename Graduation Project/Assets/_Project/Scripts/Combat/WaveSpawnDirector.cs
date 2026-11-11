@@ -15,7 +15,7 @@ namespace RetroFPS.Combat
     /// - Dalga sonu ödülü (can/cephane), UnityEvent kancaları, dinamik zorluk ve checkpoint/retry
     /// </summary>
     [DisallowMultipleComponent]
-    public class WaveSpawnDirector : MonoBehaviour
+    public class WaveSpawnDirector : MonoBehaviour, IRetryableEncounter
     {
         /// <summary>
         /// Bir düşman grubunun çalışma zamanı akışı (struct: sıfır GC).
@@ -230,6 +230,7 @@ namespace RetroFPS.Combat
         private Vector3 _checkpointPosition;
         private Quaternion _checkpointRotation = Quaternion.identity;
         private bool _hasCheckpoint = false;
+        private bool _suspendedForPurgatory = false;
 
         // Önbelleğe Alınmış Referanslar
         private Transform _playerTransform;
@@ -760,6 +761,7 @@ namespace RetroFPS.Combat
             if (enableCheckpointRetry && _playerHealth != null)
             {
                 _playerHealth.RetryInterceptor = _retryHandler;
+                RetroFPS.Run.RunEvents.RegisterActiveEncounter(this);
             }
 
             SetBarriersActive(true);
@@ -1244,6 +1246,38 @@ namespace RetroFPS.Combat
             }
         }
 
+        /// <inheritdoc />
+        public bool CanResumeAfterDeath =>
+            enableCheckpointRetry &&
+            _playerHealth != null &&
+            _hasCheckpoint &&
+            _state != EncounterState.Inactive &&
+            _state != EncounterState.EncounterCleared;
+
+        /// <inheritdoc />
+        public void SuspendForPurgatory()
+        {
+            if (!CanResumeAfterDeath) return;
+
+            _difficultyModel.RegisterPlayerDeath();
+            ResetEncounter();
+            _suspendedForPurgatory = true;
+        }
+
+        /// <inheritdoc />
+        public void ResumeAfterPurgatory()
+        {
+            if (!_suspendedForPurgatory) return;
+
+            _suspendedForPurgatory = false;
+            _playerHealth.Revive(_checkpointPosition, _checkpointRotation);
+
+            OnEncounterRetried?.Invoke();
+            onEncounterRetried?.Invoke();
+
+            StartEncounterInternal(retryWarmupDuration, true);
+        }
+
         /// <summary>
         /// Oyuncu öldükten sonra yeniden başlatma istediğinde PlayerHealth tarafından çağrılır.
         /// Bu oda savaştaysa karşılaşmayı sıfırlar, oyuncuyu checkpoint'te diriltir ve dalgaları baştan başlatır.
@@ -1251,18 +1285,10 @@ namespace RetroFPS.Combat
         /// <returns>Yeniden deneme bu oda tarafından üstlenildiyse true (sahne yeniden yüklenmez).</returns>
         private bool HandleRetryRequest()
         {
-            if (!enableCheckpointRetry || _playerHealth == null || !_hasCheckpoint) return false;
-            if (_state == EncounterState.Inactive || _state == EncounterState.EncounterCleared) return false;
+            if (!CanResumeAfterDeath) return false;
 
-            _difficultyModel.RegisterPlayerDeath();
-            ResetEncounter();
-
-            _playerHealth.Revive(_checkpointPosition, _checkpointRotation);
-
-            OnEncounterRetried?.Invoke();
-            onEncounterRetried?.Invoke();
-
-            StartEncounterInternal(retryWarmupDuration, true);
+            SuspendForPurgatory();
+            ResumeAfterPurgatory();
             return true;
         }
 
@@ -1272,6 +1298,7 @@ namespace RetroFPS.Combat
             {
                 _playerHealth.RetryInterceptor = null;
             }
+            RetroFPS.Run.RunEvents.UnregisterActiveEncounter(this);
         }
 
         // ───────────────────────────── Doğuş Noktası Seçimi ─────────────────────────────

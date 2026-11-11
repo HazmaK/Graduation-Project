@@ -44,6 +44,12 @@ namespace RetroFPS
         /// </summary>
         public System.Func<bool> RetryInterceptor { get; set; }
 
+        /// <summary>
+        /// true olduğunda ölüm ve yeniden başlatma akışı dış bir sistem (RunDirector) tarafından yönetilir;
+        /// yerel yeniden başlatma tuşları ve <see cref="RestartGame"/> çağrıları yok sayılır.
+        /// </summary>
+        public bool ExternalDeathControl { get; set; }
+
         private void Awake()
         {
             _currentHealth = maxHealth;
@@ -177,6 +183,11 @@ namespace RetroFPS
             Time.timeScale = 1.0f; // Mikro dondurma varsa zamanı normale çek
             Time.fixedDeltaTime = 0.02f;
 
+            if (ExternalDeathControl)
+            {
+                return;
+            }
+
             // Savaştaki oda checkpoint retry'ı üstlenirse sahneyi yeniden yükleme
             if (_isDead && RetryInterceptor != null && RetryInterceptor())
             {
@@ -221,6 +232,11 @@ namespace RetroFPS
         {
             if (_isDead)
             {
+                if (ExternalDeathControl)
+                {
+                    return;
+                }
+
                 // Klavye Kısayolu: 'R', 'Space' veya 'Enter' tuşuyla da hemen yeniden başlatılabilir
                 if (Keyboard.current != null && (Keyboard.current.rKey.wasPressedThisFrame || 
                                                 Keyboard.current.spaceKey.wasPressedThisFrame || 

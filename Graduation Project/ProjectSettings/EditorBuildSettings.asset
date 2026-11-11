@@ -11,5 +11,8 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/TestLevel_Gauntlet.unity
     guid: 95ec170971a5d7d43beb9bfda409a645
+  - enabled: 1
+    path: Assets/Scenes/Araf.unity
+    guid: f3f5a5dfee763ff47a0efe36bab782f9
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}

@@ -88,6 +88,7 @@ namespace RetroFPS
         private FlyingEyeState _currentState = FlyingEyeState.Idle;
         private float _currentHealth;
         private Vector3 _spawnPosition;
+        private float _lastGroundY; // Son bilinen zemin yüksekliği (uçuş sınırları buna GÖRELİ uygulanır)
         private Quaternion _spawnRotation;
         private Vector3 _initialScale;
         private Vector3 _velocity;
@@ -160,6 +161,7 @@ namespace RetroFPS
             _controller = GetComponent<CharacterController>();
             _spawnPosition = transform.position;
             _spawnRotation = transform.rotation;
+            _lastGroundY = _spawnPosition.y - hoverHeight;
             _initialScale = transform.localScale;
             _currentHealth = maxHealth;
             _patrolTarget = _spawnPosition;
@@ -261,7 +263,7 @@ namespace RetroFPS
                     transform.Rotate(_deathSpinSpeed * Time.deltaTime);
 
                     // 0.55 saniye sonra veya zemine çarptığında okült patlama ile parçalan
-                    if (_deathAnimTimer >= 0.55f || transform.position.y <= 0.4f)
+                    if (_deathAnimTimer >= 0.55f || transform.position.y <= _lastGroundY + 0.4f)
                     {
                         _isGibbed = true;
                         if (CombatVFXManager.Instance != null)
@@ -587,7 +589,8 @@ namespace RetroFPS
 
         private void ApplyHoverAltitude()
         {
-            float groundY = 0f;
+            // Zemin bulunamazsa son bilinen zemini kullan (dünya Y=0 varsayılmaz; Araf gibi yüksekteki alanlarda da çalışır)
+            float groundY = _lastGroundY;
             // Gözün kendi collider'ına çarpmaması için gözün altından (Y - 0.65m) aşağıya tara
             Vector3 rayOrigin = transform.position - Vector3.up * 0.65f;
             int hitCount = Physics.RaycastNonAlloc(rayOrigin, Vector3.down, _groundHits, 25f, GameLayers.GroundMask, QueryTriggerInteraction.Ignore);
@@ -599,17 +602,17 @@ namespace RetroFPS
                     continue;
 
                 groundY = _groundHits[i].point.y;
+                _lastGroundY = groundY;
                 break;
             }
 
-            // Hedef Y yüksekliği: Zemin + hoverHeight + dalgalanma (Kesinlikle maxFlyHeight ve minFlyHeight ile sınırlandırılmış)
+            // Hedef Y yüksekliği: Zemin + hoverHeight + dalgalanma. min/maxFlyHeight ZEMİNE GÖRELİDİR (mutlak dünya Y'si değil).
             float bob = Mathf.Sin(Time.time * bobFrequency) * bobAmplitude;
-            float rawTargetY = groundY + hoverHeight + bob;
-            float targetY = Mathf.Clamp(rawTargetY, minFlyHeight, maxFlyHeight);
+            float targetY = groundY + Mathf.Clamp(hoverHeight + bob, minFlyHeight, maxFlyHeight);
 
             float currentY = transform.position.y;
             float newY = Mathf.MoveTowards(currentY, targetY, flySpeed * Time.deltaTime * 2.0f);
-            newY = Mathf.Clamp(newY, minFlyHeight, maxFlyHeight);
+            newY = Mathf.Clamp(newY, groundY + minFlyHeight, groundY + maxFlyHeight);
 
             float deltaY = newY - currentY;
             _controller.Move(new Vector3(0f, deltaY, 0f));
@@ -836,6 +839,7 @@ namespace RetroFPS
             autoRespawn = false;
             _spawnPosition = spawnPosition;
             _spawnRotation = spawnRotation;
+            _lastGroundY = spawnPosition.y - hoverHeight;
 
             if (_controller != null) _controller.enabled = false;
             transform.position = spawnPosition;
