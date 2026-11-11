@@ -268,7 +268,9 @@ namespace RetroFPS.Weapons
                         bool isCrit = isFinisher || (hitbox != null && hitbox.IsCriticalZone);
                         float finalDamage = isCrit ? damage * 1.35f : damage;
 
-                        rootTarget.TakeDamage(finalDamage, targetPos, -dirToTarget, isCrit);
+                        MeleeDamageScope.Begin();
+                        try { rootTarget.TakeDamage(finalDamage, targetPos, -dirToTarget, isCrit); }
+                        finally { MeleeDamageScope.End(); }
                         NotifyHit(isCrit);
 
                         // Combat Juice: Kan, hasar sayısı, tok kesme sesi
@@ -370,7 +372,9 @@ namespace RetroFPS.Weapons
                     _hitEntitiesBuffer.Add(target);
 
                     float finalDamage = lungeDamage;
-                    target.TakeDamage(finalDamage, hit.point, hit.normal, true);
+                    MeleeDamageScope.Begin();
+                    try { target.TakeDamage(finalDamage, hit.point, hit.normal, true); }
+                    finally { MeleeDamageScope.End(); }
                     NotifyHit(true);
 
                     if (DamageNumberSystem.Instance != null)
@@ -479,7 +483,9 @@ namespace RetroFPS.Weapons
                         stunnable.Stun(slamStunDuration, knockDir * 4.5f);
                     }
 
-                    target.TakeDamage(slamDamage, hitPos, -knockDir, true);
+                    MeleeDamageScope.Begin();
+                    try { target.TakeDamage(slamDamage, hitPos, -knockDir, true); }
+                    finally { MeleeDamageScope.End(); }
                     NotifyHit(true);
 
                     if (DamageNumberSystem.Instance != null)

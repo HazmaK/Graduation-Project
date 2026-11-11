@@ -57,22 +57,50 @@ flowchart TD
 
 ---
 
-## 2. DİNAMİK ADAPTİF DÜŞÜŞ MANTIĞI (ADAPTIVE PITY DIRECTOR)
+## 2. KAYNAK EKONOMİSİ: KITLIK DENGESİ (2026-11-11 REVİZYONU)
 
-Boomer shooter türünün kalbinde "Risk & Reward" yatar. Statik RNG yerine modern retro FPS sektör standardı direktör algoritması devrededir:
+> [!important] Tasarım İlkesi — "Yaşamak için savaş"
+> Silahla öldürmek kaynakları **net olarak eritir**; can ve cephane asıl olarak **infaz (Executioner Blade)** ile kazanılır. Bu, Doom Eternal'ın Glory Kill (can) / Chainsaw (cephane) döngüsünün karşılığıdır. Klasik Doom'daki gibi rastgele düşüşler bir can simidi değil, nadir bir bonustur.
 
-1. **Oyuncu Canı Orantılı Şans (Dynamic Life-Line):**
-   - **Kritik Can (< %35 HP):** Düşüş olasılığı `baseDropChance (0.50)` + `%45` eklenerek neredeyse **garantili (%95)** can küresi sağlar. Oyuncu ölümün kıyısındayken agresifleşerek hayatta kalır (DOOM Push-Forward Combat).
-   - **Dengeli Can (%35 - %80 HP):** Standart `%50` düşme olasılığı devrededir.
-   - **Yüksek Can (> %80 HP):** Olasılık `%25`'e çekilir; arenanın gereksiz küre çöplüğüne dönmesi önlenir ve gerilim korunur.
-2. **Beceri & Risk Çarpanları (Skill Multipliers):**
-   - **Kritik Vuruş (Headshot):** +%25 olasılık bonusu veya fazladan 1 küçük küre parçası sıçratır.
-   - **İnfaz Kılıcı (Melee Execution):** +%35 olasılık bonusu; yakın mesafe riskine giren oyuncuyu anında ödüllendirir.
-3. **Kötü Şans Koruması (Pity Counter):**
-   - Arka arkaya 2 düşmandan küre düşmezse sonraki her düşmanda şans kademeli olarak artar; şanssızlık serileri kırılır.
-4. **Düşman Kademeleri (Enemy Tiers):**
-   - *Tier 1 (Ghoul Stalker):* 15 HP standart can küresi.
-   - *Tier 2 (Flying Eye Watcher / Ağır):* 30 HP büyük can küresi (Kritik/Melee öldürülürse 2 küre).
+### 2.1 Düzeltilen Hatalar (bolluğun asıl nedeni)
+1. **Çift zar:** Düşman `Die()` içinde dropper'ı doğrudan çağırıyor, dropper ayrıca `OnEnemyDeath`'e abone olup bir kez daha düşürüyordu. Artık dropper'lar event'e abone **olmaz**, tek çağrı yolu düşman sınıfının `Die()` metodudur.
+2. **Sahte melee:** "İnfaz" bilgisi `killingDamage >= 40/35` ile tahmin ediliyordu. Pompalı tek atışta ~324 hasar verdiği için her pompalı öldürmesi infaz sayılıyor ve garantili, bonuslu düşüş üretiyordu. Artık kaynak `MeleeDamageScope` (Core, sıfır GC statik bağlam) ile belirleniyor: `ExecutionerBladeWeapon` tüm `TakeDamage` çağrılarını `Begin/End` arasına alır, düşman `MeleeDamageScope.IsActive` okur.
+
+### 2.2 Can Küresi Direktörü (`HealthOrbManager`, CombatSystems.prefab)
+| Parametre | Eski | Yeni |
+|---|---|---|
+| baseDropChance | 0.50 | **0.12** |
+| lowHealthThreshold / Bonus | 0.35 / +0.45 | **0.30 / +0.18** |
+| highHealthThreshold / Ceza | 0.80 / −0.25 | 0.80 / **−0.12** (→ %0) |
+| critKillBonusChance | +0.25 | **+0.08** |
+| meleeKillBonusChance | +0.35 | **+0.55** |
+| Pity | 2 boş ölüm, +0.20/adım | **4 boş ölüm, +0.08/adım** |
+| Clamp | 0.10 – 0.98 | **0.00 – 0.90** |
+| standard / heavy heal | 15 / 30 | **10 / 20** |
+| Ekstra küre | kritik veya melee | **yalnızca melee** (T1 %50, T2 her zaman 2) |
+| Küre ömrü / uyarı | 16 s / 4 s | **10 s / 3 s** |
+
+**Beklenen can/öldürme (Ghoul, orta HP):** silah ≈ **1.2 HP**, headshot ≈ 2 HP, infaz ≈ **~10 HP**. Kritik HP'de silah ≈ 3 HP.
+Eski sistemde (çift zar ve sahte melee ile) pompalı öldürmesi başına ≈ 25+ HP düşüyordu. Bir düşman mermisi 18 hasar verir, yani artık yalnızca ateş ederek can toplamak mümkün değil.
+
+### 2.3 Cephane (`EnemyAmmoDropper`, düşman prefabları)
+| Parametre | Eski | Yeni |
+|---|---|---|
+| dropChance (silahla) | 0.65, kritik/“melee” garantili | **0.35**, yalnızca gerçek infaz garantili |
+| Silahla miktar (Shells / Bolts) | 4 / 15 (bonus 6 / 25) | **2 / 6** |
+| İnfazla miktar (Shells / Bolts) | — | **6 / 20** |
+| Pickup ömrü | 25 s | **15 s** |
+
+**Kaynak Geri Dönüş Oranı (RRR = beklenen kazanç / öldürme maliyeti):**
+- Pompalı öldürme (2 fişek): 0.35 × 2 = 0.7 fişek → **%35**
+- Arbalet öldürme (Ghoul ~7 ok): 0.35 × 6 = 2.1 ok → **%30**
+- İnfaz: 6 fişek = 3 pompalı öldürmesi, 20 ok = ~3 Ghoul. Döngüyü bu besler.
+- Hedef: Yalnızca silahla oynayan oyuncu başlangıç cephanesiyle (60 ok / 16 fişek) yaklaşık 20-25 öldürmede kurur. Her 3-4 öldürmede bir infaz yapan oyuncu ise cephanesini sürdürebilir.
+
+### 2.4 Ayar Kolları (öncelik sırası)
+1. Oyun çok sert gelirse önce `meleeKillBonusChance` ile `meleeKill*` miktarlarını artır. Silah düşüşlerine dokunma, yoksa kıtlık kaybolur.
+2. Yeni oyuncu için ayar gerekiyorsa `lowHealthBonusChance` tek kaldıraçtır.
+3. Seviyeye elle yerleştirilen can ve cephane paketleri (klasik Doom tarzı) ayrı bir ekonomi katmanıdır, [[WaveAndEncounterArchitecture]] ile birlikte planlanmalı.
 
 ---
 
@@ -86,8 +114,8 @@ Boomer shooter türünün kalbinde "Risk & Reward" yatar. Statik RNG yerine mode
    - Oyuncu 6.0m yaklaştığında küre katlanarak artan bir ivmeyle oyuncunun göğsüne doğru uçar.
    - Oyuncu **Dash** atarken algılama yarıçapı 1.6x genişler (9.6m).
 4. **Görsel Ömür ve Yanıp Sönme (Telegraphing):**
-   - Küreler sahnede 16 saniye kalır.
-   - Son 4 saniyede yanıp sönme frekansı artarak oyuncuyu uyarır.
+   - Küreler sahnede 10 saniye kalır; savaş ortasında alınmazsa kaybolur.
+   - Son 3 saniyede yanıp sönme frekansı artarak oyuncuyu uyarır.
 
 ---
 
@@ -105,7 +133,15 @@ Boomer shooter türünün kalbinde "Risk & Reward" yatar. Statik RNG yerine mode
 
 ### `EnemyHealthDropper.cs`
 - **Konum:** `Assets/_Project/Scripts/Combat/EnemyHealthDropper.cs`
-- **Sorumluluk:** Düşman prefablarına eklenen modüler tetikleyici; `IEncounterEnemy.OnEnemyDeath` dinler.
+- **Sorumluluk:** Düşman prefablarına eklenen modüler tetikleyici. Düşman `Die()` içinde `TriggerDrop(isCritical, MeleeDamageScope.IsActive)` ile **tek kez** çağırır; `OnEnemyDeath`'e abone olmaz.
+
+### `EnemyAmmoDropper.cs`
+- **Konum:** `Assets/_Project/Scripts/Combat/EnemyAmmoDropper.cs`
+- **Sorumluluk:** Cephane düşüşü. Silahla öldürmede şansa bağlıdır, infazda garantili ve bol düşer. En düşük orandaki cephane türünü seçer.
+
+### `MeleeDamageScope.cs`
+- **Konum:** `Assets/_Project/Scripts/Core/MeleeDamageScope.cs`
+- **Sorumluluk:** `IDamageable` imzasını değiştirmeden hasarın yakın dövüşten gelip gelmediğini bildiren sıfır GC statik bağlam. Yeni yakın dövüş silahları da `TakeDamage` çağrısını `Begin/End` (try/finally) arasına almalıdır.
 
 ---
 

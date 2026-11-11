@@ -140,10 +140,17 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::RetroFPS.Combat.HealthOrbManager
   healthOrbPrefab: {fileID: 0}
   poolCapacity: 24
-  baseDropChance: 0.5
-  lowHealthBonusChance: 0.45
-  highHealthPenaltyChance: 0.25
-  critKillBonusChance: 0.25
-  meleeKillBonusChance: 0.35
-  standardOrbHeal: 15
-  heavyOrbHeal: 30
+  baseDropChance: 0.12
+  lowHealthThreshold: 0.3
+  lowHealthBonusChance: 0.18
+  highHealthThreshold: 0.8
+  highHealthPenaltyChance: 0.12
+  critKillBonusChance: 0.08
+  meleeKillBonusChance: 0.55
+  pityThreshold: 4
+  pityStepChance: 0.08
+  minDropChance: 0
+  maxDropChance: 0.9
+  standardOrbHeal: 10
+  heavyOrbHeal: 20
+  meleeExtraOrbChance: 0.5

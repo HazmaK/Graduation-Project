@@ -64,10 +64,10 @@ namespace RetroFPS.Combat
         [SerializeField] private float rotationSpeed = 120f;
 
         [Tooltip("Toplam sahnede kalma süresi (saniye)")]
-        [SerializeField] private float lifetime = 16.0f;
+        [SerializeField] private float lifetime = 10.0f;
 
         [Tooltip("Kaybolmadan kaç saniye önce yanıp sönme uyarısı başlasın?")]
-        [SerializeField] private float blinkWarningDuration = 4.0f;
+        [SerializeField] private float blinkWarningDuration = 3.0f;
 
         [Header("Görsel Renk Paleti (Occult Emerald)")]
         [SerializeField] private Color orbCoreColor = new Color(0.08f, 1.0f, 0.45f, 1f);

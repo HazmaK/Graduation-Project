@@ -4,8 +4,8 @@ namespace RetroFPS.Combat
 {
     /// <summary>
     /// Düşmanlara eklenen ve öldüklerinde akıllı can küresi düşüşünü yöneten modüler bileşen.
-    /// - Herhangi bir düşman sınıfına (BasicEnemyAI, FlyingEyeAI, CombatDummy vb.) bağımsız olarak eklenebilir.
-    /// - IEncounterEnemy olaylarını ve IDamageable arayüzünü dinleyerek sıfır bağımlılık (Decoupled) ile çalışır.
+    /// - Düşman sınıfı (BasicEnemyAI, FlyingEyeAI vb.) ölüm anında TriggerDrop'u kritik/infaz bilgisiyle TEK kez çağırır.
+    /// - Not: IEncounterEnemy.OnEnemyDeath'e ayrıca abone OLMAZ; aksi halde her ölümde zar iki kez atılır.
     /// </summary>
     [DisallowMultipleComponent]
     public class EnemyHealthDropper : MonoBehaviour
@@ -21,32 +21,10 @@ namespace RetroFPS.Combat
         [Tooltip("Doğuş yüksekliği ofseti")]
         [SerializeField] private float dropHeightOffset = 0.8f;
 
-        private IEncounterEnemy _encounterEnemy;
         private bool _lastDamageWasCritical = false;
 
         public int EnemyTier { get => enemyTier; set => enemyTier = value; }
         public bool GuaranteedDrop { get => guaranteedDrop; set => guaranteedDrop = value; }
-
-        private void Awake()
-        {
-            _encounterEnemy = GetComponent<IEncounterEnemy>();
-        }
-
-        private void OnEnable()
-        {
-            if (_encounterEnemy != null)
-            {
-                _encounterEnemy.OnEnemyDeath += HandleEnemyDeath;
-            }
-        }
-
-        private void OnDisable()
-        {
-            if (_encounterEnemy != null)
-            {
-                _encounterEnemy.OnEnemyDeath -= HandleEnemyDeath;
-            }
-        }
 
         /// <summary>
         /// Son darbenin kritik olup olmadığını kaydetmek için harici olarak çağrılabilir.
@@ -56,34 +34,30 @@ namespace RetroFPS.Combat
             _lastDamageWasCritical = isCritical;
         }
 
-        private void HandleEnemyDeath(IEncounterEnemy enemy)
-        {
-            TriggerDrop();
-        }
-
         /// <summary>
         /// Düşüşü doğrudan tetikler.
         /// </summary>
         public void TriggerDrop(bool isCriticalKill = false, bool isMeleeKill = false)
         {
-            if (HealthOrbManager.Instance == null) return;
+            HealthOrbManager manager = HealthOrbManager.Instance;
+            if (manager == null) return;
 
             bool isCrit = isCriticalKill || _lastDamageWasCritical;
             Vector3 dropPosition = transform.position + Vector3.up * dropHeightOffset;
 
             if (guaranteedDrop)
             {
-                // Kesin düşüş: En az 1 veya 2 küre garantili doğur
-                float heal = (enemyTier >= 2) ? 30f : 15f;
-                HealthOrbManager.Instance.SpawnOrb(dropPosition, heal);
-                if (isCrit || isMeleeKill)
+                // Kesin düşüş (elit/mini-boss): 1 küre garantili, infaz ile öldürülürse +1 küçük küre
+                float heal = (enemyTier >= 2) ? manager.HeavyOrbHeal : manager.StandardOrbHeal;
+                manager.SpawnOrb(dropPosition, heal);
+                if (isMeleeKill)
                 {
-                    HealthOrbManager.Instance.SpawnOrb(dropPosition + Vector3.up * 0.2f, 15f);
+                    manager.SpawnOrb(dropPosition + Vector3.up * 0.2f, manager.StandardOrbHeal);
                 }
             }
             else
             {
-                HealthOrbManager.Instance.TryDropOrbs(dropPosition, enemyTier, isCrit, isMeleeKill);
+                manager.TryDropOrbs(dropPosition, enemyTier, isCrit, isMeleeKill);
             }
 
             _lastDamageWasCritical = false;

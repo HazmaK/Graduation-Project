@@ -4,17 +4,19 @@ using RetroFPS.Weapons;
 namespace RetroFPS.Combat
 {
     /// <summary>
-    /// Düşmanlara eklenen ve öldüklerinde akıllı cephane düşüşünü yöneten modüler bileşen.
-    /// - DOOM Eternal kaynak döngüsü: Yakın dövüş (Melee) veya kritik vuruşla öldürülen düşmanlar daha bol cephane saçar.
-    /// - IEncounterEnemy olaylarını dinleyerek sıfır bağımlılıkla çalışır.
+    /// Düşmanlara eklenen ve öldüklerinde cephane düşüşünü yöneten modüler bileşen.
+    /// - DOOM Eternal kaynak döngüsü: Silahla öldürmek cephaneyi NET olarak eritir (geri dönüş ~%30-45);
+    ///   yakın dövüş infazı (chainsaw eşdeğeri) ise garantili ve bol cephane saçar.
+    /// - Kritik vuruş cephane şansını artırmaz; cephane ekonomisini yalnızca infaz besler.
+    /// - Düşman sınıfı ölüm anında TriggerDrop'u TEK kez çağırır; OnEnemyDeath'e ayrıca abone olunmaz.
     /// </summary>
     [DisallowMultipleComponent]
     public class EnemyAmmoDropper : MonoBehaviour
     {
         [Header("Düşüş Ayarları")]
-        [Tooltip("Düşmanın kesin olarak cephane düşürme olasılığı (0.0 - 1.0)")]
+        [Tooltip("Silahla öldürmede cephane düşürme olasılığı (0.0 - 1.0). İnfaz öldürmeleri her zaman düşürür.")]
         [Range(0f, 1f)]
-        [SerializeField] private float dropChance = 0.65f;
+        [SerializeField] private float dropChance = 0.35f;
 
         [Tooltip("Düşüş yüksekliği ofseti")]
         [SerializeField] private float dropHeightOffset = 0.6f;
@@ -22,48 +24,24 @@ namespace RetroFPS.Combat
         [Tooltip("Her zaman cephane bıraksın mı? (Elit düşmanlar için)")]
         [SerializeField] private bool guaranteedDrop = false;
 
-        private IEncounterEnemy _encounterEnemy;
-        private bool _lastDamageWasCritical = false;
+        [Header("Miktarlar (Silahla Öldürme)")]
+        [Tooltip("Pompalı atışı 2 fişek harcar → 2 fişek = 1 atış")]
+        [SerializeField] private int gunKillShells = 2;
+        [Tooltip("Ghoul ~7, Göz ~5 ok ile ölür")]
+        [SerializeField] private int gunKillBolts = 6;
 
-        private void Awake()
-        {
-            _encounterEnemy = GetComponent<IEncounterEnemy>();
-        }
+        [Header("Miktarlar (İnfaz / Yakın Dövüş Öldürme)")]
+        [SerializeField] private int meleeKillShells = 6;
+        [SerializeField] private int meleeKillBolts = 20;
 
-        private void OnEnable()
-        {
-            if (_encounterEnemy != null)
-            {
-                _encounterEnemy.OnEnemyDeath += HandleEnemyDeath;
-            }
-        }
-
-        private void OnDisable()
-        {
-            if (_encounterEnemy != null)
-            {
-                _encounterEnemy.OnEnemyDeath -= HandleEnemyDeath;
-            }
-        }
-
-        public void NotifyDamageTaken(bool isCritical)
-        {
-            _lastDamageWasCritical = isCritical;
-        }
-
-        private void HandleEnemyDeath(IEncounterEnemy enemy)
-        {
-            TriggerDrop();
-        }
+        private PlayerAmmoInventory _inventory;
 
         /// <summary>
         /// Cephane düşüşünü hesaplar ve sahnede oluşturur.
         /// </summary>
         public void TriggerDrop(bool isCriticalKill = false, bool isMeleeKill = false)
         {
-            bool isCrit = isCriticalKill || _lastDamageWasCritical;
-
-            if (!guaranteedDrop && !isCrit && !isMeleeKill)
+            if (!guaranteedDrop && !isMeleeKill)
             {
                 if (Random.value > dropChance) return;
             }
@@ -71,15 +49,14 @@ namespace RetroFPS.Combat
             Vector3 spawnPos = transform.position + Vector3.up * dropHeightOffset;
 
             // Oyuncunun envanterini tara: Hangi cephanesi daha azsa ona öncelik ver
-            PlayerAmmoInventory inventory = FindAnyObjectByType<PlayerAmmoInventory>();
+            if (_inventory == null) _inventory = FindAnyObjectByType<PlayerAmmoInventory>();
             AmmoType chosenType = AmmoType.Shells;
 
-            if (inventory != null)
+            if (_inventory != null)
             {
-                float shellRatio = inventory.GetAmmoRatio(AmmoType.Shells);
-                float boltRatio = inventory.GetAmmoRatio(AmmoType.Bolts);
+                float shellRatio = _inventory.GetAmmoRatio(AmmoType.Shells);
+                float boltRatio = _inventory.GetAmmoRatio(AmmoType.Bolts);
 
-                // Hangi cephane daha azsa onu düşür, eşitse rastgele seç
                 if (shellRatio < boltRatio)
                 {
                     chosenType = AmmoType.Shells;
@@ -94,14 +71,17 @@ namespace RetroFPS.Combat
                 }
             }
 
-            int amount = (chosenType == AmmoType.Shells) ? 4 : 15;
-            if (isCrit || isMeleeKill)
+            int amount;
+            if (isMeleeKill)
             {
-                amount = (chosenType == AmmoType.Shells) ? 6 : 25; // Bonus cephane
+                amount = (chosenType == AmmoType.Shells) ? meleeKillShells : meleeKillBolts;
+            }
+            else
+            {
+                amount = (chosenType == AmmoType.Shells) ? gunKillShells : gunKillBolts;
             }
 
             AmmoPickup.CreatePickupGameObject(spawnPos, chosenType, amount);
-            _lastDamageWasCritical = false;
         }
     }
 }

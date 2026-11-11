@@ -28,7 +28,7 @@ namespace RetroFPS.Combat
         [SerializeField] private float bobAmplitude = 0.10f;
         [SerializeField] private float bobFrequency = 3.0f;
         [SerializeField] private float rotationSpeed = 90f;
-        [SerializeField] private float lifetime = 25f;
+        [SerializeField] private float lifetime = 15f;
 
         private Transform _playerTransform;
         private PlayerAmmoInventory _playerInventory;

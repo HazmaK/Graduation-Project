@@ -39,32 +39,61 @@ namespace RetroFPS.Combat
         [SerializeField] private int poolCapacity = 24;
 
         [Header("Dinamik Düşüş Olasılıkları (Adaptive Director)")]
-        [Tooltip("Temel düşme olasılığı (0.50 = %50)")]
+        [Tooltip("Silahla öldürmede temel düşme olasılığı. Can, savaşarak (özellikle infazla) kazanılır.")]
         [Range(0f, 1f)]
-        [SerializeField] private float baseDropChance = 0.50f;
+        [SerializeField] private float baseDropChance = 0.12f;
 
-        [Tooltip("Kritik can durumunda (<%35 HP) eklenen acil yaşam hattı bonusu")]
+        [Tooltip("Bu can oranının altında acil yaşam hattı bonusu eklenir")]
+        [Range(0f, 1f)]
+        [SerializeField] private float lowHealthThreshold = 0.30f;
+
+        [Tooltip("Kritik can durumunda eklenen acil yaşam hattı bonusu (kurtarmaz, sadece nefes aldırır)")]
         [Range(0f, 0.6f)]
-        [SerializeField] private float lowHealthBonusChance = 0.45f;
+        [SerializeField] private float lowHealthBonusChance = 0.18f;
 
-        [Tooltip("Yüksek can durumunda (>%80 HP) düşüş azaltma cezası")]
+        [Tooltip("Bu can oranının üstünde düşüş cezası uygulanır")]
+        [Range(0f, 1f)]
+        [SerializeField] private float highHealthThreshold = 0.80f;
+
+        [Tooltip("Yüksek can durumunda düşüş azaltma cezası")]
         [Range(0f, 0.4f)]
-        [SerializeField] private float highHealthPenaltyChance = 0.25f;
+        [SerializeField] private float highHealthPenaltyChance = 0.12f;
 
         [Tooltip("Kritik vuruşla (Headshot) öldürme ek bonus şansı")]
         [Range(0f, 0.4f)]
-        [SerializeField] private float critKillBonusChance = 0.25f;
+        [SerializeField] private float critKillBonusChance = 0.08f;
 
-        [Tooltip("Yakın dövüş / İnfaz kılıcıyla öldürme ek bonus şansı")]
-        [Range(0f, 0.5f)]
-        [SerializeField] private float meleeKillBonusChance = 0.35f;
+        [Tooltip("Yakın dövüş / İnfaz kılıcıyla öldürme ek bonus şansı (Glory Kill eşdeğeri; ana can kaynağı)")]
+        [Range(0f, 0.8f)]
+        [SerializeField] private float meleeKillBonusChance = 0.55f;
+
+        [Header("Kötü Şans Koruması (Pity)")]
+        [Tooltip("Kaç ardışık boş ölümden sonra şans artmaya başlar")]
+        [SerializeField] private int pityThreshold = 4;
+
+        [Tooltip("Eşik aşıldıktan sonra her boş ölümde eklenen şans")]
+        [Range(0f, 0.3f)]
+        [SerializeField] private float pityStepChance = 0.08f;
+
+        [Tooltip("Nihai olasılık sınırları")]
+        [Range(0f, 1f)]
+        [SerializeField] private float minDropChance = 0.0f;
+        [Range(0f, 1f)]
+        [SerializeField] private float maxDropChance = 0.90f;
 
         [Header("İyileşme Miktarları")]
         [Tooltip("Standart küçük can küresi iyileşme miktarı")]
-        [SerializeField] private float standardOrbHeal = 15f;
+        [SerializeField] private float standardOrbHeal = 10f;
 
-        [Tooltip("Ağır düşman veya infazdan düşen büyük can küresi miktarı")]
-        [SerializeField] private float heavyOrbHeal = 30f;
+        [Tooltip("Ağır düşmandan düşen büyük can küresi miktarı")]
+        [SerializeField] private float heavyOrbHeal = 20f;
+
+        [Tooltip("Tier 1 düşmanı infaz edince ikinci küre çıkma olasılığı")]
+        [Range(0f, 1f)]
+        [SerializeField] private float meleeExtraOrbChance = 0.50f;
+
+        public float StandardOrbHeal => standardOrbHeal;
+        public float HeavyOrbHeal => heavyOrbHeal;
 
         // Nesne havuzu
         private readonly Queue<HealthOrb> _pool = new Queue<HealthOrb>();
@@ -147,29 +176,29 @@ namespace RetroFPS.Combat
             {
                 float healthRatio = _playerHealth.HealthPercent;
 
-                // Kritik can durumunda (< %35): DOOM Pacing Garantisi
-                if (healthRatio <= 0.35f)
+                // Kritik can durumunda: küçük bir yaşam hattı (garanti değil; asıl çıkış infaz)
+                if (healthRatio <= lowHealthThreshold)
                 {
                     finalChance += lowHealthBonusChance;
                 }
-                // Yüksek can durumunda (> %80): İsraf önleyici düşüş kısması
-                else if (healthRatio >= 0.80f)
+                // Yüksek can durumunda: İsraf önleyici düşüş kısması
+                else if (healthRatio >= highHealthThreshold)
                 {
                     finalChance -= highHealthPenaltyChance;
                 }
             }
 
-            // Beceri ve risk ödülü: Headshot ve Melee infazı her zaman ödüllendirilir!
+            // Beceri ve risk ödülü: İnfaz ana can kaynağıdır, headshot küçük bonus verir
             if (isCritical) finalChance += critKillBonusChance;
             if (isMelee) finalChance += meleeKillBonusChance;
 
-            // Kötü şans koruması: Üst üste 2 düşmandan küre düşmediyse şansı artır
-            if (_consecutiveNonDrops >= 2)
+            // Kötü şans koruması: Uzun kuraklık serilerini kırar ama kıtlığı bozmaz
+            if (_consecutiveNonDrops >= pityThreshold)
             {
-                finalChance += 0.20f * (_consecutiveNonDrops - 1);
+                finalChance += pityStepChance * (_consecutiveNonDrops - pityThreshold + 1);
             }
 
-            finalChance = Mathf.Clamp(finalChance, 0.10f, 0.98f);
+            finalChance = Mathf.Clamp(finalChance, minDropChance, maxDropChance);
 
             // 2. Şans Zarını At
             bool shouldDrop = Random.value <= finalChance;
@@ -186,19 +215,18 @@ namespace RetroFPS.Combat
             int orbCount = 1;
             float healPerOrb = standardOrbHeal;
 
-            // Ağır düşman veya kafa kopması/kritik infaz bonusu
+            // Ekstra küre yalnızca infazla kazanılır (Glory Kill eşdeğeri)
             if (enemyTier >= 2)
             {
                 healPerOrb = heavyOrbHeal;
-                if (isCritical || isMelee)
+                if (isMelee)
                 {
-                    orbCount = 2; // Ağır düşmanı kritik infaz edene 2 büyük küre!
+                    orbCount = 2; // Ağır düşmanı infaz edene 2 büyük küre
                 }
             }
-            else if (isCritical || isMelee)
+            else if (isMelee)
             {
-                // Standart düşmanda kritik vuruş fazladan 1 küçük küre sıçratır
-                orbCount = Random.value < 0.60f ? 2 : 1;
+                orbCount = Random.value < meleeExtraOrbChance ? 2 : 1;
             }
 
             for (int i = 0; i < orbCount; i++)

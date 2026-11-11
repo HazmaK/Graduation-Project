@@ -793,22 +793,25 @@ namespace RetroFPS
             ClearFlash();
 
 
+            // İnfaz öldürmesi = yakın dövüş silahından gelen son darbe (hasar miktarı değil, kaynak belirler)
+            bool isMeleeKill = MeleeDamageScope.IsActive;
+
             // Can Küresi Düşüşü (Adaptif Dengeleme & Ödül)
             EnemyHealthDropper dropper = _healthDropper;
             if (dropper != null)
             {
-                dropper.TriggerDrop(isCritical, killingDamage >= 40f);
+                dropper.TriggerDrop(isCritical, isMeleeKill);
             }
             else if (HealthOrbManager.Instance != null)
             {
-                HealthOrbManager.Instance.TryDropOrbs(transform.position + Vector3.up * 0.8f, 1, isCritical, killingDamage >= 40f);
+                HealthOrbManager.Instance.TryDropOrbs(transform.position + Vector3.up * 0.8f, 1, isCritical, isMeleeKill);
             }
 
             // Cephane Düşüşü (DOOM Kaynak Döngüsü)
             EnemyAmmoDropper ammoDropper = _ammoDropper;
             if (ammoDropper != null)
             {
-                ammoDropper.TriggerDrop(isCritical, killingDamage >= 40f);
+                ammoDropper.TriggerDrop(isCritical, isMeleeKill);
             }
 
             // 1. Çarpışma kutularını devre dışı bırak (Yerde takılma ve hayalet mermi bloklama yok)

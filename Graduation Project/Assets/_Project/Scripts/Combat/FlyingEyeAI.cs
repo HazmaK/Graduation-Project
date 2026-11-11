@@ -735,22 +735,25 @@ namespace RetroFPS
             ClearFlash();
 
 
+            // İnfaz öldürmesi = yakın dövüş silahından gelen son darbe (hasar miktarı değil, kaynak belirler)
+            bool isMeleeKill = MeleeDamageScope.IsActive;
+
             // Can Küresi Düşüşü (Uçan Düşman - Tier 2 Ödülü)
             EnemyHealthDropper dropper = _healthDropper;
             if (dropper != null)
             {
-                dropper.TriggerDrop(isCritical, killingDamage >= 35f);
+                dropper.TriggerDrop(isCritical, isMeleeKill);
             }
             else if (HealthOrbManager.Instance != null)
             {
-                HealthOrbManager.Instance.TryDropOrbs(transform.position, 2, isCritical, killingDamage >= 35f);
+                HealthOrbManager.Instance.TryDropOrbs(transform.position, 2, isCritical, isMeleeKill);
             }
 
             // Cephane Düşüşü (DOOM Kaynak Döngüsü)
             EnemyAmmoDropper ammoDropper = _ammoDropper;
             if (ammoDropper != null)
             {
-                ammoDropper.TriggerDrop(isCritical, killingDamage >= 35f);
+                ammoDropper.TriggerDrop(isCritical, isMeleeKill);
             }
 
             // 1. Çarpışma kutularını anında kapat
