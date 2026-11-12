@@ -65,7 +65,18 @@ MonoBehaviour:
   bobFrequency: 9
   bobHorizontalAmplitude: 0.015
   bobVerticalAmplitude: 0.022
-  recoilRecoverySpeed: 16
+  recoilFrequency: 9
+  recoilDamping: 0.5
+  verticalInertiaScale: 0.006
+  maxVerticalInertia: 0.05
+  maxInertiaPitch: 4
+  inertiaSmooth: 12
+  landingDip: 0.05
+  landingPitch: 5
+  jumpDip: 0.012
+  equipDropDistance: 0.28
+  equipDuration: 0.16
+  equipPitchDown: 35
 --- !u!114 &8132165653658819744
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -652,7 +663,18 @@ MonoBehaviour:
   bobFrequency: 9
   bobHorizontalAmplitude: 0.015
   bobVerticalAmplitude: 0.022
-  recoilRecoverySpeed: 16
+  recoilFrequency: 9
+  recoilDamping: 0.5
+  verticalInertiaScale: 0.006
+  maxVerticalInertia: 0.05
+  maxInertiaPitch: 4
+  inertiaSmooth: 12
+  landingDip: 0.05
+  landingPitch: 5
+  jumpDip: 0.012
+  equipDropDistance: 0.28
+  equipDuration: 0.16
+  equipPitchDown: 35
 --- !u!114 &6356946968758364231
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -678,6 +700,9 @@ MonoBehaviour:
   altCooldown: 0.65
   spawnVisualArrow: 1
   boltFlightSpeed: 110
+  maxBloomSpread: 2.2
+  bloomPerShot: 0.22
+  bloomRecovery: 4.5
 --- !u!1 &3930214404989340326
 GameObject:
   m_ObjectHideFlags: 0
@@ -822,7 +847,8 @@ GameObject:
   - component: {fileID: 5693821347948652228}
   - component: {fileID: 858450510537173061}
   - component: {fileID: 188974621851040827}
-  - component: {fileID: 1401668969766267051}
+  - component: {fileID: 3914494989844017472}
+  - component: {fileID: 6592472749984716966}
   m_Layer: 6
   m_Name: Player
   m_TagString: Untagged
@@ -844,6 +870,7 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 4508715376019674550}
+  - {fileID: 1652090276660545247}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!33 &107398435308259372
@@ -944,11 +971,14 @@ MonoBehaviour:
   crouchSpeed: 3.8
   groundAcceleration: 18
   groundFriction: 8.5
+  landingFrictionGrace: 0.08
   airAcceleration: 4
   airWishSpeed: 3.5
   maxAirSpeed: 11.5
   jumpForce: 7.2
   gravity: 25
+  airOverspeedDecay: 2.5
+  fallGravityMultiplier: 1.3
   slideBoost: 13
   slideFriction: 3.2
   minSlideSpeed: 6
@@ -957,6 +987,8 @@ MonoBehaviour:
   slideCameraY: 0.65
   normalCameraY: 1.55
   slideDurationMax: 0.85
+  slideJumpSpeedBonus: 1.5
+  cameraHeightLerpSpeed: 14
   dashSpeed: 30
   dashDuration: 0.25
   maxDashCharges: 3
@@ -977,13 +1009,14 @@ MonoBehaviour:
   cameraHolder: {fileID: 4508715376019674550}
   playerCamera: {fileID: 1195498673038873464}
   mouseSensitivity: 0.1
+  sensitivityMinScale: 0.25
+  sensitivityMaxScale: 4
   invertY: 0
   minPitch: -89
   maxPitch: 89
-  smoothLook: 1
-  smoothSpeed: 35
   tiltAngle: 2
   tiltSpeed: 10
+  slideTilt: 4
   baseFOV: 65
   maxFOV: 78
   fovLerpSpeed: 8
@@ -992,6 +1025,7 @@ MonoBehaviour:
   maxShakeAngle: 3.5
   shakeFrequency: 24
   traumaDecay: 3.5
+  maxShakeOffset: 0.045
 --- !u!114 &1562700847591976989
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1004,12 +1038,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 52871fff807a16440ab6f218323fe77f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RetroFPS.PlayerDebugHUD
-  showHUD: 1
+  showHUD: 0
   enableF2Toggle: 1
   showSpeedBar: 1
   showWaveTelemetry: 1
   showCustomTelemetry: 1
   waveDirector: {fileID: 0}
+  hudConfig: {fileID: 11400000, guid: e3edef02011ccef47b520f24c3b5105d, type: 2}
 --- !u!114 &3733377494733275157
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1040,6 +1075,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RetroFPS.PlayerHealth
   maxHealth: 100
+  enableAutoHeal: 0
   autoHealDelay: 4.5
   autoHealRate: 12
 --- !u!114 &5693821347948652228
@@ -1060,6 +1096,8 @@ MonoBehaviour:
   hitmarkerDuration: 0.15
   baseCrosshairSpread: 8
   bloomRecoverySpeed: 24
+  killMarkerColor: {r: 1, g: 0.08, b: 0.06, a: 1}
+  criticalKillMarkerColor: {r: 1, g: 0.96, b: 0.65, a: 1}
 --- !u!114 &858450510537173061
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1100,7 +1138,7 @@ MonoBehaviour:
   startingBolts: 60
   maxShells: 32
   startingShells: 16
---- !u!114 &1401668969766267051
+--- !u!114 &3914494989844017472
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -1109,14 +1147,49 @@ MonoBehaviour:
   m_GameObject: {fileID: 4647128150085499101}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6fc25d83f74a927d4e6f5390b866c4f6, type: 3}
+  m_Script: {fileID: 11500000, guid: 34ffc0e7cb5bfe34f8e06b119d67c53b, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::RetroFPS.UI.AmmoHUD
-  showHUD: 1
-  boltsColor: {r: 0, g: 0.9, b: 1, a: 0.95}
-  shellsColor: {r: 1, g: 0.7, b: 0.15, a: 0.95}
-  emptyWarningColor: {r: 1, g: 0.2, b: 0.2, a: 1}
-  barBackgroundColor: {r: 0.06, g: 0.06, b: 0.08, a: 0.75}
+  m_EditorClassIdentifier: RetroFPS.HUD::RetroFPS.UI.HUD.HudBindings
+  health: {fileID: 8207310616486761660}
+  movement: {fileID: 7984042580947362117}
+  parry: {fileID: 858450510537173061}
+  weapons: {fileID: 3733377494733275157}
+  ammo: {fileID: 188974621851040827}
+  config: {fileID: 11400000, guid: e3edef02011ccef47b520f24c3b5105d, type: 2}
+  hud: {fileID: 142070324740741594}
+  healthView: {fileID: 4823407799884337899}
+  abilityView: {fileID: 2101036459410296765}
+  weaponView: {fileID: 2640332368820965599}
+  encounterView: {fileID: 2589112013577362392}
+  bannerView: {fileID: 7911658764415417938}
+  deathView: {fileID: 5296283879113072414}
+--- !u!114 &6592472749984716966
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4647128150085499101}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 290790dd09440fd4b92b3661cbeed2fa, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: RetroFPS.Gameplay::RetroFPS.PlayerDamageFeedback
+  enableBloodVignette: 1
+  vignetteColor: {r: 0.75, g: 0.04, b: 0.06, a: 1}
+  healVignetteColor: {r: 0.1, g: 0.95, b: 0.42, a: 1}
+  vignetteDecaySpeed: 2.4
+  enableAmbientVignette: 1
+  ambientVignetteIntensity: 0.12
+  ambientVignetteColor: {r: 0.01, g: 0.01, b: 0.02, a: 1}
+  hudConfig: {fileID: 11400000, guid: e3edef02011ccef47b520f24c3b5105d, type: 2}
+  lowHealthPulseSpeed: 6.5
+  enableDirectionalIndicators: 1
+  indicatorRadius: 100
+  indicatorDuration: 0.7
+  indicatorColor: {r: 1, g: 0.15, b: 0.15, a: 0.95}
+  enableFlinch: 1
+  flinchIntensityMultiplier: 1
 --- !u!1 &4909038972837805670
 GameObject:
   m_ObjectHideFlags: 0
@@ -1175,7 +1248,18 @@ MonoBehaviour:
   bobFrequency: 9
   bobHorizontalAmplitude: 0.015
   bobVerticalAmplitude: 0.022
-  recoilRecoverySpeed: 16
+  recoilFrequency: 9
+  recoilDamping: 0.5
+  verticalInertiaScale: 0.006
+  maxVerticalInertia: 0.05
+  maxInertiaPitch: 4
+  inertiaSmooth: 12
+  landingDip: 0.05
+  landingPitch: 5
+  jumpDip: 0.012
+  equipDropDistance: 0.28
+  equipDuration: 0.16
+  equipPitchDown: 35
 --- !u!114 &3295291026914647836
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2322,3 +2406,136 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!1001 &637043733453282130
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 8129818506611666789}
+    m_Modifications:
+    - target: {fileID: 661897012057522824, guid: 3c5dfc9cab0bd9a498cc5cf150565861, type: 3}
+      propertyPath: m_Name
+      value: CombatHud
+      objectReference: {fileID: 0}
+    - target: {fileID: 2178155332376042893, guid: 3c5dfc9cab0bd9a498cc5cf150565861, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2178155332376042893, guid: 3c5dfc9cab0bd9a498cc5cf150565861, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2178155332376042893, guid: 3c5dfc9cab0bd9a498cc5cf150565861, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2178155332376042893, guid: 3c5dfc9cab0bd9a498cc5cf150565861, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2178155332376042893, guid: 3c5dfc9cab0bd9a498cc5cf150565861, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2178155332376042893, guid: 3c5dfc9cab0bd9a498cc5cf150565861, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2178155332376042893, guid: 3c5dfc9cab0bd9a498cc5cf150565861, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2178155332376042893, guid: 3c5dfc9cab0bd9a498cc5cf150565861, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2178155332376042893, guid: 3c5dfc9cab0bd9a498cc5cf150565861, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2178155332376042893, guid: 3c5dfc9cab0bd9a498cc5cf150565861, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 3c5dfc9cab0bd9a498cc5cf150565861, type: 3}
+--- !u!1 &142070324740741594 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 661897012057522824, guid: 3c5dfc9cab0bd9a498cc5cf150565861, type: 3}
+  m_PrefabInstance: {fileID: 637043733453282130}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &1652090276660545247 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 2178155332376042893, guid: 3c5dfc9cab0bd9a498cc5cf150565861, type: 3}
+  m_PrefabInstance: {fileID: 637043733453282130}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &2101036459410296765 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 1585084967884723439, guid: 3c5dfc9cab0bd9a498cc5cf150565861, type: 3}
+  m_PrefabInstance: {fileID: 637043733453282130}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: db4fe7f87e1152d4f9ca0b2b96b90f55, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: RetroFPS.HUD::RetroFPS.UI.HUD.AbilityHudView
+--- !u!114 &2589112013577362392 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 3114630907267809418, guid: 3c5dfc9cab0bd9a498cc5cf150565861, type: 3}
+  m_PrefabInstance: {fileID: 637043733453282130}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d7736eed6c59da241b33a3203d47dd1a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: RetroFPS.HUD::RetroFPS.UI.HUD.EncounterRunHudView
+--- !u!114 &2640332368820965599 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 3203013344375409549, guid: 3c5dfc9cab0bd9a498cc5cf150565861, type: 3}
+  m_PrefabInstance: {fileID: 637043733453282130}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 841586f1243e155489defe11d54c4fa3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: RetroFPS.HUD::RetroFPS.UI.HUD.WeaponAmmoHudView
+--- !u!114 &4823407799884337899 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 5343261682916084153, guid: 3c5dfc9cab0bd9a498cc5cf150565861, type: 3}
+  m_PrefabInstance: {fileID: 637043733453282130}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 97054c11c0894b74797b5f5e72e7211a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: RetroFPS.HUD::RetroFPS.UI.HUD.HealthHudView
+--- !u!114 &5296283879113072414 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 4708255879663092812, guid: 3c5dfc9cab0bd9a498cc5cf150565861, type: 3}
+  m_PrefabInstance: {fileID: 637043733453282130}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3308021988a39794096028f70ddb304c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: RetroFPS.HUD::RetroFPS.UI.HUD.TrueDeathView
+--- !u!114 &7911658764415417938 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 7285944982983746816, guid: 3c5dfc9cab0bd9a498cc5cf150565861, type: 3}
+  m_PrefabInstance: {fileID: 637043733453282130}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3a9609b900322da4ab5713caf572d840, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: RetroFPS.HUD::RetroFPS.UI.HUD.HudBannerView

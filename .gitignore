@@ -74,3 +74,14 @@ ehthumbs.db
 Thumbs.db
 *.bak
 ~$*
+
+# Claude Code Game Studios (local / runtime state)
+.claude/settings.local.json
+CLAUDE.local.md
+project.local.yaml
+production/session-logs/
+production/session-state/
+.scratch/
+.claude/agent-memory/
+.claude/worktrees/
+docs/consistency-failures.md

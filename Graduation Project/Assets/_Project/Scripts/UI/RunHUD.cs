@@ -16,6 +16,7 @@ namespace RetroFPS.UI
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("RetroFPS/Run HUD")]
+    [System.Obsolete("Replaced by RetroFPS.UI.HUD combat HUD")]
     public class RunHUD : MonoBehaviour
     {
         [Header("Görsel Ayarlar")]

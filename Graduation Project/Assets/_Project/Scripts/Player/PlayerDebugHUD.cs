@@ -5,6 +5,8 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 using RetroFPS.Weapons;
 using RetroFPS.Combat;
+using RetroFPS.Presentation;
+using RetroFPS.Run;
 
 namespace RetroFPS
 {
@@ -52,7 +54,7 @@ namespace RetroFPS
 
         [Header("Görünüm ve Tuş Ayarları")]
         [Tooltip("HUD başlangıçta açık mı olsun?")]
-        [SerializeField] private bool showHUD = true;
+        [SerializeField] private bool showHUD = false;
         [Tooltip("F2 tuşu ile açma/kapama yapılsın mı?")]
         [SerializeField] private bool enableF2Toggle = true;
         [Tooltip("Görsel hız gösterge barı gösterilsin mi?")]
@@ -65,6 +67,7 @@ namespace RetroFPS
         [Header("Karşılaşma Direktörü Bağlantısı")]
         [Tooltip("Bağlanılacak WaveSpawnDirector. Boş ise sahnede otomatik aranır.")]
         [SerializeField] private WaveSpawnDirector waveDirector;
+        [SerializeField] private HudConfig hudConfig;
 
         public bool IsVisible => showHUD;
 
@@ -75,6 +78,14 @@ namespace RetroFPS
         private PlayerHealth _health;
         private PlayerParryController _parry;
         private WaveSpawnDirector _waveDirector;
+        private RunState _run;
+        private int _lastRunFloor = -1;
+        private int _lastRunSecond = -1;
+        private Vector2 _debugScroll;
+        private readonly char[] _runNumberBuffer = new char[11];
+        private readonly GUIContent[] _runNumberParts = new GUIContent[33];
+        private readonly int[] _runNumberLengths = new int[3];
+        private readonly GUIContent _runSeconds = new GUIContent();
 
         // Performans ve FPS Ölçüm Sayaçları
         private float _fpsUpdateTimer = 0f;
@@ -82,13 +93,6 @@ namespace RetroFPS
         private float _currentFps = 60f;
         private float _currentFrameMs = 16.6f;
 
-        // Banner Zamanlayıcıları
-        private float _parryBannerTimer = 0f;
-        private bool _parryBannerIsProj = false;
-        private float _waveBannerTimer = 0f;
-        private string _waveBannerTitle = string.Empty;
-        private string _waveBannerSub = string.Empty;
-        private Color _waveBannerColor = Color.white;
         private float _hpFlashTimer = 0f;
 
         // Panel Yükseklik Takibi (Sıfır Titreme ve Sıfır GC)
@@ -103,15 +107,6 @@ namespace RetroFPS
         private Texture2D _dividerTex;
         private Texture2D _barBgTex;
         private Texture2D _barFillTex;
-        private Texture2D _parryBannerBgTex;
-        private Texture2D _waveBannerBgTex;
-
-        // Ölüm Ekranı Dokuları
-        private Texture2D _deathOverlayTex;
-        private Texture2D _deathCardTex;
-        private Texture2D _deathBorderTex;
-        private Texture2D _deathBtnTex;
-        private Texture2D _deathBtnHoverTex;
 
         // GUI Stilleri
         private GUIStyle _mainHeaderStyle;
@@ -125,14 +120,6 @@ namespace RetroFPS
         private GUIStyle _controlsStyle;
         private GUIStyle _watermarkStyle;
         private GUIStyle _watermarkBgStyle;
-        private GUIStyle _parryTitleStyle;
-        private GUIStyle _parrySubStyle;
-        private GUIStyle _waveBannerTitleStyle;
-        private GUIStyle _waveBannerSubStyle;
-        private GUIStyle _deathTitleStyle;
-        private GUIStyle _deathSubStyle;
-        private GUIStyle _deathBtnStyle;
-        private GUIStyle _deathHintStyle;
 
         // Sabit Metin ve Dizi Önbellekleri (Sıfır GC Tahsisi)
         private static readonly string[] DashDisplayCache = new string[]
@@ -250,19 +237,26 @@ namespace RetroFPS
         private void Awake()
         {
             Instance = this;
+            for (int i = 0; i < _runNumberParts.Length; i++) _runNumberParts[i] = new GUIContent();
             if (GetComponent<Camera>() != null)
             {
                 Destroy(this);
                 return;
             }
             ResolveReferences();
+            InitStyles();
+            HudNumberCache.Prewarm();
         }
 
         private void OnEnable()
         {
             Instance = this;
             ResolveReferences();
+            InitStyles();
+            HudNumberCache.Prewarm();
             SubscribeEvents();
+            RunEvents.OnRunChanged += HandleRunChanged;
+            HandleRunChanged(RunEvents.CurrentRun);
             WaveSpawnDirector.OnActiveDirectorChanged -= HandleActiveDirectorChanged;
             WaveSpawnDirector.OnActiveDirectorChanged += HandleActiveDirectorChanged;
         }
@@ -270,16 +264,15 @@ namespace RetroFPS
         private void OnDisable()
         {
             UnsubscribeEvents();
+            RunEvents.OnRunChanged -= HandleRunChanged;
             WaveSpawnDirector.OnActiveDirectorChanged -= HandleActiveDirectorChanged;
             if (Instance == this) Instance = null;
         }
 
         private void HandleActiveDirectorChanged(WaveSpawnDirector newDirector)
         {
-            if (_waveDirector == newDirector || newDirector == null) return;
-            UnsubscribeWaveDirectorEvents();
+            if (_waveDirector == newDirector) return;
             _waveDirector = newDirector;
-            SubscribeWaveDirectorEvents();
         }
 
         private void Update()
@@ -310,10 +303,9 @@ namespace RetroFPS
                 _fpsUpdateTimer = 0f;
             }
 
-            // Geri sayım bannerları
-            if (_parryBannerTimer > 0f) _parryBannerTimer -= Time.deltaTime;
+            UpdateRunNumbers();
+            // Damage flash
             if (_hpFlashTimer > 0f) _hpFlashTimer -= Time.deltaTime;
-            if (_waveBannerTimer > 0f) _waveBannerTimer -= Time.deltaTime;
         }
 
         private void ResolveReferences()
@@ -362,90 +354,100 @@ namespace RetroFPS
                 _health.OnDamageTaken += HandleDamageTaken;
             }
 
-            if (_parry != null)
-            {
-                _parry.OnParrySuccess -= HandleParrySuccess;
-                _parry.OnParrySuccess += HandleParrySuccess;
-            }
 
-            SubscribeWaveDirectorEvents();
         }
 
-        private void SubscribeWaveDirectorEvents()
-        {
-            if (_waveDirector != null)
-            {
-                _waveDirector.OnEncounterStarted -= HandleEncounterStarted;
-                _waveDirector.OnEncounterStarted += HandleEncounterStarted;
-                _waveDirector.OnWaveStarted -= HandleWaveStarted;
-                _waveDirector.OnWaveStarted += HandleWaveStarted;
-                _waveDirector.OnWaveCompleted -= HandleWaveCompleted;
-                _waveDirector.OnWaveCompleted += HandleWaveCompleted;
-                _waveDirector.OnEncounterCompleted -= HandleEncounterCompleted;
-                _waveDirector.OnEncounterCompleted += HandleEncounterCompleted;
-            }
-        }
 
         private void UnsubscribeEvents()
         {
             if (_health != null) _health.OnDamageTaken -= HandleDamageTaken;
-            if (_parry != null) _parry.OnParrySuccess -= HandleParrySuccess;
-            UnsubscribeWaveDirectorEvents();
         }
 
-        private void UnsubscribeWaveDirectorEvents()
-        {
-            if (_waveDirector != null)
-            {
-                _waveDirector.OnEncounterStarted -= HandleEncounterStarted;
-                _waveDirector.OnWaveStarted -= HandleWaveStarted;
-                _waveDirector.OnWaveCompleted -= HandleWaveCompleted;
-                _waveDirector.OnEncounterCompleted -= HandleEncounterCompleted;
-            }
-        }
 
-        private void HandleParrySuccess(bool isProjectile)
-        {
-            _parryBannerTimer = 0.75f;
-            _parryBannerIsProj = isProjectile;
-        }
 
         private void HandleDamageTaken(float damage)
         {
             _hpFlashTimer = 0.22f;
         }
 
-        private void HandleEncounterStarted()
+        private bool IsLowHealth() => _health != null && hudConfig != null && _health.MaxHealth > 0f &&
+            HudLowStateRules.IsLowHealth(_health.HealthPercent, hudConfig.LowHealthPercent);
+
+        private void HandleRunChanged(RunState run)
         {
-            ShowWaveBanner("ARENA SEALED", "PURGE ALL HOSTILES!", 2.5f, new Color(0.95f, 0.20f, 0.15f, 1f));
+            _run = run;
+            _lastRunFloor = -1;
+            _lastRunSecond = -1;
+            if (run != null) CacheRunNumber(0, run.Seed);
+            UpdateRunNumbers();
         }
 
-        private void HandleWaveStarted(int waveIndex, int totalWaves, string waveName)
+        private void UpdateRunNumbers()
         {
-            _sb.Clear();
-            _sb.Append("WAVE ").Append(waveIndex).Append(" / ").Append(totalWaves);
-            ShowWaveBanner(_sb.ToString(), waveName, 2.2f, new Color(1.0f, 0.88f, 0.35f, 1f));
+            if (_run == null) return;
+            if (_lastRunFloor != _run.FloorIndex)
+            {
+                _lastRunFloor = _run.FloorIndex;
+                CacheRunNumber(1, _lastRunFloor);
+            }
+            int second = Mathf.FloorToInt(_run.ElapsedSeconds);
+            if (second == _lastRunSecond) return;
+            _lastRunSecond = second;
+            CacheRunNumber(2, second / 60);
+            _runSeconds.text = HudNumberCache.GetTwoDigits(second % 60);
         }
 
-        private void HandleWaveCompleted(int completedWaveIndex)
+        private void CacheRunNumber(int slot, int value)
         {
-            _sb.Clear();
-            _sb.Append("WAVE ").Append(completedWaveIndex).Append(" CLEARED!");
-            ShowWaveBanner(_sb.ToString(), "PREPARE FOR THE NEXT WAVE...", 2.0f, new Color(0.35f, 1.0f, 0.45f, 1f));
+            if (slot == 2 && value >= 0 && value < 60)
+            {
+                _runNumberLengths[slot] = 1;
+                _runNumberParts[slot * 11].text = HudNumberCache.GetTwoDigits(value);
+                return;
+            }
+            int count = HudNumberCache.WriteInteger(value, _runNumberBuffer);
+            _runNumberLengths[slot] = count;
+            for (int i = 0; i < count; i++)
+            {
+                char character = _runNumberBuffer[i];
+                _runNumberParts[slot * 11 + i].text = character == '-' ? "-" : HudNumberCache.GetDigit(character - '0');
+            }
         }
 
-        private void HandleEncounterCompleted()
+        private void DrawRunNumbers(float width)
         {
-            ShowWaveBanner("ARENA CLEARED!", "BARRIERS LIFTED - VICTORY!", 3.5f, new Color(1.0f, 0.88f, 0.35f, 1f));
+            if (_run == null) return;
+            Rect row = GUILayoutUtility.GetRect(width, 20f);
+            float x = row.x;
+            GUI.Label(new Rect(x, row.y, 42f, row.height), "SEED:", _labelStyle);
+            x += 42f;
+            DrawRunNumber(0, ref x, row);
+            GUI.Label(new Rect(x, row.y, 42f, row.height), " KAT:", _labelStyle);
+            x += 42f;
+            DrawRunNumber(1, ref x, row);
+            row = GUILayoutUtility.GetRect(width, 20f);
+            GUI.Label(new Rect(row.x, row.y, 42f, row.height), "TIME:", _labelStyle);
+            x = row.x + 42f;
+            DrawRunNumber(2, ref x, row);
+            GUI.Label(new Rect(x, row.y, 8f, row.height), ":", _labelStyle);
+            GUI.Label(new Rect(x + 8f, row.y, 24f, row.height), _runSeconds, _labelStyle);
         }
 
-        private void ShowWaveBanner(string title, string sub, float duration, Color color)
+        private void DrawRunNumber(int slot, ref float x, Rect row)
         {
-            _waveBannerTitle = title;
-            _waveBannerSub = sub;
-            _waveBannerTimer = duration;
-            _waveBannerColor = color;
+            for (int i = 0; i < _runNumberLengths[slot]; i++)
+            {
+                GUIContent part = _runNumberParts[slot * 11 + i];
+                float width = _labelStyle.CalcSize(part).x;
+                GUI.Label(new Rect(x, row.y, width, row.height), part, _labelStyle);
+                x += width;
+            }
         }
+
+
+
+
+
 
         private void InitStyles()
         {
@@ -459,8 +461,6 @@ namespace RetroFPS
             _dividerTex = MakeSolidTexture(1, 1, new Color(0.85f, 0.65f, 0.20f, 0.25f));
             _barBgTex = MakeSolidTexture(1, 1, new Color(0.12f, 0.13f, 0.16f, 0.95f));
             _barFillTex = MakeSolidTexture(1, 1, Color.white);
-            _parryBannerBgTex = MakeSolidTexture(1, 1, new Color(0.04f, 0.04f, 0.06f, 0.92f));
-            _waveBannerBgTex = MakeSolidTexture(1, 1, new Color(0.04f, 0.04f, 0.06f, 0.94f));
 
             // Başlıklar
             _mainHeaderStyle = new GUIStyle
@@ -527,81 +527,6 @@ namespace RetroFPS
                 padding = new RectOffset(8, 8, 4, 4)
             };
 
-            // Bannerlar
-            _parryTitleStyle = new GUIStyle
-            {
-                fontSize = 28,
-                fontStyle = FontStyle.Bold,
-                alignment = TextAnchor.MiddleCenter
-            };
-            _parryTitleStyle.normal.textColor = new Color(1f, 0.88f, 0.25f, 1f);
-
-            _parrySubStyle = new GUIStyle
-            {
-                fontSize = 13,
-                fontStyle = FontStyle.Bold,
-                alignment = TextAnchor.MiddleCenter
-            };
-            _parrySubStyle.normal.textColor = new Color(0.2f, 0.9f, 1f, 1f);
-
-            _waveBannerTitleStyle = new GUIStyle
-            {
-                fontSize = 32,
-                fontStyle = FontStyle.Bold,
-                alignment = TextAnchor.MiddleCenter
-            };
-
-            _waveBannerSubStyle = new GUIStyle
-            {
-                fontSize = 17,
-                fontStyle = FontStyle.Bold,
-                alignment = TextAnchor.MiddleCenter
-            };
-            _waveBannerSubStyle.normal.textColor = new Color(0.92f, 0.92f, 0.95f, 1f);
-
-            // Ölüm Ekranı
-            _deathOverlayTex = MakeSolidTexture(1, 1, new Color(0.08f, 0.01f, 0.02f, 0.88f));
-            _deathCardTex = MakeSolidTexture(1, 1, new Color(0.04f, 0.04f, 0.06f, 0.98f));
-            _deathBorderTex = MakeSolidTexture(1, 1, new Color(0.85f, 0.15f, 0.15f, 0.95f));
-            _deathBtnTex = MakeSolidTexture(1, 1, new Color(0.50f, 0.08f, 0.10f, 1f));
-            _deathBtnHoverTex = MakeSolidTexture(1, 1, new Color(0.80f, 0.16f, 0.16f, 1f));
-
-            _deathTitleStyle = new GUIStyle
-            {
-                fontSize = 30,
-                fontStyle = FontStyle.Bold,
-                alignment = TextAnchor.MiddleCenter
-            };
-            _deathTitleStyle.normal.textColor = new Color(1f, 0.20f, 0.20f, 1f);
-
-            _deathSubStyle = new GUIStyle
-            {
-                fontSize = 13,
-                alignment = TextAnchor.MiddleCenter
-            };
-            _deathSubStyle.normal.textColor = new Color(0.80f, 0.82f, 0.85f, 1f);
-
-            _deathBtnStyle = new GUIStyle
-            {
-                fontSize = 15,
-                fontStyle = FontStyle.Bold,
-                alignment = TextAnchor.MiddleCenter,
-                border = new RectOffset(0, 0, 0, 0),
-                padding = new RectOffset(10, 10, 8, 8)
-            };
-            _deathBtnStyle.normal.textColor = Color.white;
-            _deathBtnStyle.hover.textColor = new Color(1f, 0.95f, 0.45f, 1f);
-            _deathBtnStyle.normal.background = _deathBtnTex;
-            _deathBtnStyle.hover.background = _deathBtnHoverTex;
-            _deathBtnStyle.active.background = _deathBtnHoverTex;
-
-            _deathHintStyle = new GUIStyle
-            {
-                fontSize = 11,
-                alignment = TextAnchor.MiddleCenter
-            };
-            _deathHintStyle.normal.textColor = new Color(0.65f, 0.68f, 0.72f, 1f);
-
             _stylesInitialized = true;
         }
 
@@ -618,8 +543,7 @@ namespace RetroFPS
 
         private void OnGUI()
         {
-            if (_movement == null || _health == null || _waveDirector == null) ResolveReferences();
-            InitStyles();
+            if (!showHUD || !_stylesInitialized) return;
 
             float screenH = Screen.height;
             float screenW = Screen.width;
@@ -634,28 +558,13 @@ namespace RetroFPS
             float virtualW = screenW / guiScale;
             float virtualH = screenH / guiScale;
 
-            // 1. ÖLÜM EKRANI (HUD kapalı olsa bile gösterilir)
-            if (_health != null && _health.IsDead)
-            {
-                DrawDeathScreen(virtualW, virtualH);
-                GUI.matrix = oldMatrix;
-                return;
-            }
-
-            // 2. HUD KAPALIYSA: Sadece küçük F2 Hatırlatma Bildirimi Çiz
-            if (!showHUD)
-            {
-                DrawWatermarkBadge(20f, 20f);
-                DrawCombatBanners(virtualW, virtualH);
-                GUI.matrix = oldMatrix;
-                return;
-            }
-
             // 3. HUD AÇIKSA: Tek Çatı Altında Birleşik Developer Debug Paneli
-            DrawUnifiedDebugHUD(20f, 20f, 380f);
+            float maxPanelHeight = Mathf.Max(100f, virtualH * 0.70f - 40f);
+            _debugScroll = GUI.BeginScrollView(new Rect(20f, 20f, 390f, maxPanelHeight), _debugScroll,
+                new Rect(0f, 0f, 380f, _lastPanelHeight + 30f));
+            DrawUnifiedDebugHUD(2f, 2f, 376f);
+            GUI.EndScrollView();
 
-            // 4. SAVAŞ & DALGA MERKEZ BANNERLARI
-            DrawCombatBanners(virtualW, virtualH);
 
             GUI.matrix = oldMatrix;
         }
@@ -716,6 +625,8 @@ namespace RetroFPS
             GUILayout.Label("▼ PLAYER & COMBAT TELEMETRY", _sectionHeaderStyle);
             GUILayout.Space(2f);
 
+            DrawRunNumbers(contentW);
+
             // Can (Health) & Bar
             if (_health != null)
             {
@@ -723,7 +634,7 @@ namespace RetroFPS
                 float maxHp = _health.MaxHealth;
                 float hpRatio = Mathf.Clamp01(hp / maxHp);
                 bool isFlashing = _hpFlashTimer > 0f;
-                string hpColor = isFlashing ? "#FFFFFF" : (hp > 50f ? "#55FF55" : (hp > 25f ? "#FFAA00" : "#FF3333"));
+                string hpColor = isFlashing ? "#FFFFFF" : (IsLowHealth() ? "#FF3333" : "#55FF55");
 
                 _sb.Clear();
                 _sb.Append("HEALTH: <color=").Append(hpColor).Append("><b>").Append((int)hp).Append(" / ").Append((int)maxHp).Append(" HP</b></color>");
@@ -731,7 +642,7 @@ namespace RetroFPS
 
                 Rect hpBarRect = GUILayoutUtility.GetRect(contentW, 6f);
                 GUI.DrawTexture(hpBarRect, _barBgTex);
-                Color hpBarColor = isFlashing ? Color.white : (hp > 50f ? new Color(0.2f, 0.95f, 0.35f) : (hp > 25f ? new Color(1f, 0.7f, 0.15f) : new Color(0.95f, 0.2f, 0.2f)));
+                Color hpBarColor = isFlashing ? Color.white : (IsLowHealth() ? new Color(0.95f, 0.2f, 0.2f) : new Color(0.2f, 0.95f, 0.35f));
                 GUI.color = hpBarColor;
                 GUI.DrawTexture(new Rect(hpBarRect.x, hpBarRect.y, hpBarRect.width * hpRatio, hpBarRect.height), _barFillTex);
                 GUI.color = Color.white;
@@ -851,7 +762,7 @@ namespace RetroFPS
                     GUILayout.Label(_sb.ToString(), _labelStyle);
 
                     // Karşılaşmayı Başlatma Butonu
-                    if (GUILayout.Button("⚔️  START ENCOUNTER [B]", _deathBtnStyle, GUILayout.Height(28f)))
+                    if (GUILayout.Button("⚔️  START ENCOUNTER [B]", _boldLabelStyle, GUILayout.Height(28f)))
                     {
                         _waveDirector.StartEncounter();
                     }
@@ -1110,100 +1021,6 @@ namespace RetroFPS
             GUILayout.Space(4f);
         }
 
-        /// <summary>
-        /// Parry ve Dalga bildirim bannerları (Ekran ortası gotik juice).
-        /// </summary>
-        private void DrawCombatBanners(float virtualW, float virtualH)
-        {
-            // 1. PARRY BAŞARI BANNERI
-            if (_parryBannerTimer > 0f)
-            {
-                float bannerW = 440f;
-                float bannerH = 72f;
-                float bannerX = (virtualW - bannerW) * 0.5f;
-                float bannerY = virtualH * 0.24f;
-                Rect bannerRect = new Rect(bannerX, bannerY, bannerW, bannerH);
-
-                GUI.DrawTexture(new Rect(bannerRect.x - 2f, bannerRect.y - 2f, bannerRect.width + 4f, bannerRect.height + 4f), _borderGoldTex);
-                GUI.DrawTexture(bannerRect, _parryBannerBgTex);
-
-                GUILayout.BeginArea(new Rect(bannerRect.x, bannerRect.y + 8f, bannerRect.width, bannerRect.height - 16f));
-                GUILayout.Label("⚡ PARRY! ⚡", _parryTitleStyle);
-                string subText = _parryBannerIsProj ? "[PROJECTILE DEFLECTED!]" : "[ENEMY STAGGERED — STRIKE NOW!]";
-                GUILayout.Label(subText, _parrySubStyle);
-                GUILayout.EndArea();
-            }
-
-            // 2. DALGA / KARŞILAŞMA BİLDİRİM BANNERI
-            if (_waveBannerTimer > 0f)
-            {
-                float bannerW = 620f;
-                float bannerH = 84f;
-                float bannerX = (virtualW - bannerW) * 0.5f;
-                float bannerY = virtualH * 0.22f;
-                Rect bannerRect = new Rect(bannerX, bannerY, bannerW, bannerH);
-
-                GUI.DrawTexture(new Rect(bannerRect.x - 2f, bannerRect.y - 2f, bannerRect.width + 4f, bannerRect.height + 4f), _borderRedTex);
-                GUI.DrawTexture(bannerRect, _waveBannerBgTex);
-
-                _waveBannerTitleStyle.normal.textColor = _waveBannerColor;
-
-                GUILayout.BeginArea(new Rect(bannerRect.x + 12f, bannerRect.y + 8f, bannerRect.width - 24f, bannerRect.height - 16f));
-                GUILayout.Label(_waveBannerTitle, _waveBannerTitleStyle);
-                GUILayout.Label(_waveBannerSub, _waveBannerSubStyle);
-                GUILayout.EndArea();
-            }
-        }
-
-        /// <summary>
-        /// Karakter öldüğünde tam ekran gotik kart ve Yeniden Başlat butonu.
-        /// </summary>
-        private void DrawDeathScreen(float virtualW, float virtualH)
-        {
-            if (Cursor.lockState != CursorLockMode.None)
-            {
-                Cursor.lockState = CursorLockMode.None;
-                Cursor.visible = true;
-            }
-
-            // Ekranı kaplayan yarı saydam karanlık/kan perdesi
-            GUI.DrawTexture(new Rect(0f, 0f, virtualW, virtualH), _deathOverlayTex);
-
-            float cardW = 540f;
-            float cardH = 280f;
-            float cardX = (virtualW - cardW) * 0.5f;
-            float cardY = (virtualH - cardH) * 0.5f;
-            Rect cardRect = new Rect(cardX, cardY, cardW, cardH);
-
-            GUI.DrawTexture(new Rect(cardRect.x - 3f, cardRect.y - 3f, cardRect.width + 6f, cardRect.height + 6f), _deathBorderTex);
-            GUI.DrawTexture(cardRect, _deathCardTex);
-
-            GUILayout.BeginArea(new Rect(cardRect.x + 20f, cardRect.y + 24f, cardRect.width - 40f, cardRect.height - 48f));
-
-            GUILayout.Label("YOU DIED", _deathTitleStyle);
-            GUILayout.Space(8f);
-
-            GUILayout.Label("The abyss has claimed your flesh.\nYour soul drifts through the ancient crypt.", _deathSubStyle);
-            GUILayout.Space(24f);
-
-            GUILayout.BeginHorizontal();
-            GUILayout.FlexibleSpace();
-            if (GUILayout.Button("⚔️  RESTART ENCOUNTER", _deathBtnStyle, GUILayout.Width(340f), GUILayout.Height(52f)))
-            {
-                if (_health != null)
-                {
-                    _health.RestartGame();
-                }
-            }
-            GUILayout.FlexibleSpace();
-            GUILayout.EndHorizontal();
-
-            GUILayout.Space(12f);
-            GUILayout.Label("Shortcut: Press [R] or [SPACE] to restart immediately", _deathHintStyle);
-
-            GUILayout.EndArea();
-        }
-
         private void OnDestroy()
         {
             if (_panelBgTex != null) Destroy(_panelBgTex);
@@ -1213,13 +1030,6 @@ namespace RetroFPS
             if (_dividerTex != null) Destroy(_dividerTex);
             if (_barBgTex != null) Destroy(_barBgTex);
             if (_barFillTex != null) Destroy(_barFillTex);
-            if (_parryBannerBgTex != null) Destroy(_parryBannerBgTex);
-            if (_waveBannerBgTex != null) Destroy(_waveBannerBgTex);
-            if (_deathOverlayTex != null) Destroy(_deathOverlayTex);
-            if (_deathCardTex != null) Destroy(_deathCardTex);
-            if (_deathBorderTex != null) Destroy(_deathBorderTex);
-            if (_deathBtnTex != null) Destroy(_deathBtnTex);
-            if (_deathBtnHoverTex != null) Destroy(_deathBtnHoverTex);
         }
     }
 

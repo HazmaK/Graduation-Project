@@ -3,7 +3,8 @@
     "rootNamespace": "RetroFPS",
     "references": [
         "RetroFPS.Core",
-        "Unity.InputSystem"
+        "Unity.InputSystem",
+        "UnityEngine.UI"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

@@ -17,11 +17,23 @@ namespace RetroFPS.Run
         /// <summary>Sahnedeki etkin koşu; yönetici bulunmadığında null döndürür.</summary>
         public static RunState CurrentRun => _currentRun;
 
+        /// <summary>Raised when the current run is assigned or cleared.</summary>
+        public static event Action<RunState> OnRunChanged;
+
+        /// <summary>Forwards charge changes and the charge snapshot of a newly assigned run.</summary>
+        public static event Action<bool> OnArafChargeChanged;
+
         /// <summary>Etkin koşuyu kaydeder veya null ile temizler.</summary>
         public static void SetCurrentRun(RunState state)
         {
+            if (_currentRun != null) _currentRun.OnArafChargeChanged -= ForwardArafChargeChanged;
             _currentRun = state;
+            if (_currentRun != null) _currentRun.OnArafChargeChanged += ForwardArafChargeChanged;
+            OnRunChanged?.Invoke(state);
+            OnArafChargeChanged?.Invoke(state != null && state.ArafChargeUsed);
         }
+
+        private static void ForwardArafChargeChanged(bool used) => OnArafChargeChanged?.Invoke(used);
 
         /// <summary>Etkin koşunun akışını veya koşu yoksa süreç boyunca paylaşılan yedek akışı döndürür.</summary>
         public static RunRandom GetStream(RunStream stream)
@@ -126,6 +138,9 @@ namespace RetroFPS.Run
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStatics()
         {
+            if (_currentRun != null) _currentRun.OnArafChargeChanged -= ForwardArafChargeChanged;
+            OnRunChanged = null;
+            OnArafChargeChanged = null;
             OnPhaseChanged = null;
             OnEnteredAraf = null;
             OnEscapedAraf = null;

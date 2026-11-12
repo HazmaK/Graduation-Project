@@ -72,6 +72,8 @@ namespace RetroFPS
         public event Action<bool> OnParrySuccess; // true: Mermi, false: Yakın dövüş
 
         public bool IsParrying => _isParrying;
+        /// <summary>Whether the optional shield mechanic is enabled.</summary>
+        public bool ShieldEnabled => enableShield;
         public bool IsOnCooldown => _cooldownTimer > 0f;
         public float CooldownRemaining => Mathf.Max(0f, _cooldownTimer);
         public float CooldownNormalized => Mathf.Clamp01(_cooldownTimer / parryCooldown);

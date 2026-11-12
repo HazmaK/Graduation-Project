@@ -49,6 +49,8 @@ namespace RetroFPS.Weapons
         public override int AltAmmoCost => 0;
         public override bool CanFirePrimary => _primaryCooldownTimer <= 0f;
         public override bool CanFireAlt => _altCooldownTimer <= 0f;
+        /// <summary>Remaining hook cooldown fraction; zero is ready.</summary>
+        public float HookCooldownNormalized => hookCooldown <= 0f ? 0f : Mathf.Clamp01(_altCooldownTimer / hookCooldown);
 
         private void Awake()
         {

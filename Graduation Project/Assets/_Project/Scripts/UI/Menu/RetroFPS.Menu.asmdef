@@ -1,0 +1,5 @@
+{
+    "name": "RetroFPS.Menu",
+    "rootNamespace": "RetroFPS.UI.Menu",
+    "references": ["RetroFPS.Core", "Unity.InputSystem", "UnityEngine.UI", "Unity.TextMeshPro"]
+}

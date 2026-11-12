@@ -160,9 +160,12 @@ namespace RetroFPS.Editor
             GameObject director = new GameObject("RunDirector");
             try
             {
-                director.AddComponent<RunDirector>();
+                RunDirector runDirector = director.AddComponent<RunDirector>();
                 director.AddComponent<ArafTransition>();
-                if (director.GetComponent<RunHUD>() == null) director.AddComponent<RunHUD>();
+                RunRestartHandler restartHandler = director.AddComponent<RunRestartHandler>();
+                SerializedObject restartSettings = new SerializedObject(restartHandler);
+                restartSettings.FindProperty("director").objectReferenceValue = runDirector;
+                restartSettings.ApplyModifiedPropertiesWithoutUndo();
                 PrefabUtility.SaveAsPrefabAsset(director, DirectorPath, out bool success);
                 if (!success) throw new InvalidOperationException("RunDirector prefab kaydedilemedi.");
             }

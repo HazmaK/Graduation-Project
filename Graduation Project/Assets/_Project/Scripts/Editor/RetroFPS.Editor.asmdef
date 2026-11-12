@@ -4,7 +4,11 @@
     "references": [
         "RetroFPS.Core",
         "RetroFPS.Gameplay",
-        "Unity.InputSystem"
+        "Unity.InputSystem",
+        "RetroFPS.Menu",
+        "RetroFPS.HUD",
+        "UnityEngine.UI",
+        "Unity.TextMeshPro"
     ],
     "includePlatforms": [
         "Editor"

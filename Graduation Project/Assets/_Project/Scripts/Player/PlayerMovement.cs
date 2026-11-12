@@ -126,6 +126,13 @@ namespace RetroFPS
         public bool IsMeteorSlamming => _isMeteorSlamming;
         public bool IsInvincible => _isInvincible;
         public int CurrentDashCharges => _currentDashCharges;
+        /// <summary>Maximum number of available dash charges.</summary>
+        public int MaxDashCharges => maxDashCharges;
+        /// <summary>Recovered fraction of the next charge; one when full or recharge is instantaneous.</summary>
+        public float DashRechargeNormalized => _currentDashCharges >= maxDashCharges || dashRechargeTime <= 0f
+            ? 1f : Mathf.Clamp01(_dashRechargeTimer / dashRechargeTime);
+        /// <summary>Reports current and maximum dash charges after spending, recovering or resetting.</summary>
+        public event System.Action<int, int> OnDashChargesChanged;
         public Vector3 GrappleTargetPoint => (_grappleTargetTransform != null) ? (_grappleTargetTransform.position + _grappleTargetOffset) : _grappleTargetPoint;
 
         private void Awake()
@@ -204,6 +211,8 @@ namespace RetroFPS
             _speedBoostTimer = 0f;
             _currentDashCharges = maxDashCharges;
             _jumpBufferTimer = 0f;
+            _dashRechargeTimer = 0f;
+            OnDashChargesChanged?.Invoke(_currentDashCharges, maxDashCharges);
             _coyoteTimer = 0f;
             _isGrounded = false;
             _airborneMinVelocityY = 0f;
@@ -599,6 +608,7 @@ namespace RetroFPS
             if (_currentDashCharges <= 0 || _isDashing) return;
 
             _currentDashCharges--;
+            OnDashChargesChanged?.Invoke(_currentDashCharges, maxDashCharges);
             _isDashing = true;
             _isInvincible = true; // Hasar almama penceresi (I-Frame)
             _dashTimer = dashDuration;
@@ -645,6 +655,7 @@ namespace RetroFPS
                 {
                     _dashRechargeTimer = 0f;
                     _currentDashCharges++;
+                    OnDashChargesChanged?.Invoke(_currentDashCharges, maxDashCharges);
                 }
             }
             else

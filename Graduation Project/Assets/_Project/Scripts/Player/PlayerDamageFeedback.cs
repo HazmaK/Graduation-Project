@@ -1,4 +1,6 @@
 using UnityEngine;
+using RetroFPS.Presentation;
+using RetroFPS.Settings;
 
 namespace RetroFPS
 {
@@ -27,7 +29,7 @@ namespace RetroFPS
         [SerializeField] private Color ambientVignetteColor = new Color(0.01f, 0.01f, 0.02f, 1f);
 
         [Header("Kritik Can Nabız Uyarısı (Low Health)")]
-        [SerializeField] private float lowHealthThreshold = 30f;
+        [SerializeField] private HudConfig hudConfig;
         [SerializeField] private float lowHealthPulseSpeed = 6.5f;
 
         [Header("Yönlü Darbe Göstergeleri (Directional Indicators)")]
@@ -50,6 +52,7 @@ namespace RetroFPS
         private Texture2D _indicatorTexture;
         private float _currentPainAlpha = 0f;
         private float _currentHealAlpha = 0f;
+        private bool _reduceMotion;
 
         // Yönlü Darbe Havuzu (Maksimum 4 eşzamanlı yönlü darbe)
         private struct DirectionalHit
@@ -78,12 +81,18 @@ namespace RetroFPS
 
         private void OnEnable()
         {
+            GameSettings.Changed += CacheMotionSettings;
+            CacheMotionSettings(GameSettings.Current);
             _currentPainAlpha = 0f;
             for (int i = 0; i < MaxHits; i++)
             {
                 _hits[i].Active = false;
             }
         }
+
+        private void OnDisable() => GameSettings.Changed -= CacheMotionSettings;
+
+        private void CacheMotionSettings(GameSettingsData data) => _reduceMotion = data.ReduceMotion;
 
         private void Start()
         {
@@ -179,7 +188,7 @@ namespace RetroFPS
             }
 
             // 3. Yönlü Kamera ve Silah Flinch Sarsıntısı
-            if (enableFlinch)
+            if (enableFlinch && !_reduceMotion)
             {
                 float intensity = (0.7f + impactRatio * 0.6f) * flinchIntensityMultiplier;
 
@@ -198,7 +207,8 @@ namespace RetroFPS
             // 4. Beden Darbesi ve Acı Sesleri (Combat Audio)
             if (Combat.CombatAudio.Instance != null)
             {
-                bool isLowHealth = _health != null && _health.CurrentHealth <= lowHealthThreshold;
+                bool isLowHealth = _health != null &&
+                    HudLowStateRules.IsLowHealth(_health.CurrentHealth, _health.MaxHealth, hudConfig);
                 Combat.CombatAudio.Instance.PlayPlayerHurt(amount, isLowHealth);
             }
         }
@@ -280,9 +290,11 @@ namespace RetroFPS
                 float finalAlpha = _currentPainAlpha;
 
                 // Kritik Can Durumunda Ritmik Kalp Atışı Pulsasyonu
-                if (_health != null && _health.CurrentHealth <= lowHealthThreshold)
+                if (_health != null &&
+                    HudLowStateRules.IsLowHealth(_health.CurrentHealth, _health.MaxHealth, hudConfig))
                 {
-                    float pulse = (Mathf.Sin(Time.time * lowHealthPulseSpeed) * 0.5f + 0.5f);
+                    // Reduced motion keeps a fixed 0.39 alpha; pain uses only the existing single fade.
+                    float pulse = _reduceMotion ? 0.5f : (Mathf.Sin(Time.time * lowHealthPulseSpeed) * 0.5f + 0.5f);
                     float lowHpAlpha = Mathf.Lerp(0.20f, 0.58f, pulse);
                     finalAlpha = Mathf.Max(finalAlpha, lowHpAlpha);
                 }

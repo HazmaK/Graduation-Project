@@ -2,7 +2,12 @@
     "name": "RetroFPS.Tests.EditMode",
     "references": [
         "RetroFPS.Core",
+        "RetroFPS.Menu",
         "RetroFPS.Gameplay",
+        "RetroFPS.HUD",
+        "UnityEngine.UI",
+        "Unity.TextMeshPro",
+        "Unity.InputSystem",
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner"
     ],

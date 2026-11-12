@@ -23,6 +23,13 @@ namespace RetroFPS.Run
         private int _floorIndex;
         private bool _arafChargeUsed;
         private RunPhase _phase;
+        private float _elapsedSeconds;
+
+        /// <summary>Raised once when the run's Araf charge is consumed.</summary>
+        public event System.Action<bool> OnArafChargeChanged;
+
+        /// <summary>Unscaled run duration, frozen at true death.</summary>
+        public float ElapsedSeconds => _elapsedSeconds;
 
         /// <summary>
         /// Koşunun rastgelelik tohumu (Seed).
@@ -66,7 +73,16 @@ namespace RetroFPS.Run
         /// </summary>
         public void ConsumeArafCharge()
         {
+            if (_arafChargeUsed) return;
             _arafChargeUsed = true;
+            OnArafChargeChanged?.Invoke(true);
+        }
+
+        /// <summary>Accumulates positive unscaled time in every phase except true death.</summary>
+        public void AdvanceElapsedTime(float unscaledDeltaSeconds)
+        {
+            if (_phase != RunPhase.TrueDeath && unscaledDeltaSeconds > 0f &&
+                !float.IsInfinity(unscaledDeltaSeconds)) _elapsedSeconds += unscaledDeltaSeconds;
         }
 
         /// <summary>Akışın koşu tohumundan türetilen, önbelleğe alınmış üretecini döndürür.</summary>

@@ -1,0 +1,12 @@
+{
+    "name": "RetroFPS.HUD",
+    "rootNamespace": "RetroFPS.UI.HUD",
+    "references": [
+        "RetroFPS.Core",
+        "RetroFPS.Gameplay",
+        "RetroFPS.Menu",
+        "UnityEngine.UI",
+        "Unity.TextMeshPro",
+        "Unity.InputSystem"
+    ]
+}

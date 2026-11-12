@@ -237,9 +237,6 @@ namespace RetroFPS.Editor
             PlayerAmmoInventory ammoInv = player.GetComponent<PlayerAmmoInventory>();
             if (ammoInv == null) ammoInv = player.AddComponent<PlayerAmmoInventory>();
 
-            AmmoHUD ammoHUD = player.GetComponent<AmmoHUD>();
-            if (ammoHUD == null) ammoHUD = player.AddComponent<AmmoHUD>();
-
             // Player üzerine WeaponController ekle ve bağla
             WeaponController wc = player.GetComponent<WeaponController>();
             if (wc == null) wc = player.AddComponent<WeaponController>();
@@ -258,6 +255,8 @@ namespace RetroFPS.Editor
             // 11. Sol El Taktiksel Savunma Aracı (Spiked Buckler / Parry Kalkanı)
             PlayerParryController parry = player.GetComponent<PlayerParryController>();
             if (parry == null) parry = player.AddComponent<PlayerParryController>();
+
+            CombatHudBuilder.EnsurePlayerHud(player);
 
             // 12. Combat Juice Sistemleri (CombatAudio, CombatVFXManager, DamageNumberSystem, HitstopManager)
             GameObject combatSystems = GameObject.Find("CombatSystems");
