@@ -1,4 +1,5 @@
 using UnityEngine;
+using RetroFPS.Weapons;
 
 namespace RetroFPS.Combat
 {
@@ -12,6 +13,8 @@ namespace RetroFPS.Combat
     [DisallowMultipleComponent]
     public class DamageNumberSystem : MonoBehaviour
     {
+        [SerializeField] private Color boltsColor = new Color(0.1f, 0.85f, 1f);
+        [SerializeField] private Color shellsColor = new Color(1f, 0.7f, 0.15f);
         private static DamageNumberSystem _instance;
         private static bool _isQuitting;
 
@@ -81,6 +84,7 @@ namespace RetroFPS.Combat
             internal bool IsCrit { get; set; }
             internal bool IsReflected { get; set; }
             internal bool IsHeal { get; set; }
+            internal DamagePopupKind Kind { get; set; }
             internal string Label { get; set; }
             internal int PartCount { get; set; }
         }
@@ -88,7 +92,7 @@ namespace RetroFPS.Combat
         private const int MaxPopups = 32;
         private const int CachedAmounts = 4096;
         private const int MaxLabelParts = 12;
-        private readonly string[][] _labels = new string[4][];
+        private readonly string[][] _labels = new string[6][];
         private readonly GUIContent[] _contents = new GUIContent[MaxPopups];
         private readonly GUIContent[] _largeLabelParts = new GUIContent[MaxPopups * MaxLabelParts];
         private readonly string[] _digits = new string[10];
@@ -126,6 +130,8 @@ namespace RetroFPS.Combat
                 _labels[1][amount] = "CRIT! " + number;
                 _labels[2][amount] = "PARRY " + number;
                 _labels[3][amount] = "+" + number + " HP";
+                _labels[4][amount] = "+" + number + " OK";
+                _labels[5][amount] = "+" + number + " SAÇMA";
                 if (amount < 10) _digits[amount] = number;
             }
             for (int i = 0; i < _contents.Length; i++) _contents[i] = new GUIContent();
@@ -146,7 +152,7 @@ namespace RetroFPS.Combat
             // Preserve arbitrary integer totals without allocating strings on a hit.
             int offset = index * MaxLabelParts;
             int count = 0;
-            string prefix = kind == 1 ? "CRIT! " : kind == 2 ? "PARRY " : kind == 3 ? "+" : "";
+            string prefix = kind == 1 ? "CRIT! " : kind == 2 ? "PARRY " : kind >= 3 ? "+" : "";
             _pool[index].Label = prefix;
             if (prefix.Length > 0) _largeLabelParts[offset + count++].text = prefix;
             int divisor = 1;
@@ -157,6 +163,8 @@ namespace RetroFPS.Combat
                 divisor /= 10;
             }
             if (kind == 3) _largeLabelParts[offset + count++].text = " HP";
+            else if (kind == 4) _largeLabelParts[offset + count++].text = " OK";
+            else if (kind == 5) _largeLabelParts[offset + count++].text = " SAÇMA";
             _pool[index].PartCount = count;
         }
 
@@ -225,15 +233,18 @@ namespace RetroFPS.Combat
             int index = _nextIndex;
             _nextIndex = (_nextIndex + 1) % MaxPopups;
 
+            _pool[index] = default;
+            DamagePopupKind kind = DamagePopupLabelPolicy.Resolve(isCrit, isReflected);
+            _pool[index].Kind = kind;
             _pool[index].Active = true;
             _pool[index].WorldPos = worldPos + Random.insideUnitSphere * 0.15f;
             _pool[index].Velocity = Vector3.up * upwardForce + new Vector3(Random.Range(-0.6f, 0.6f), 0f, Random.Range(-0.6f, 0.6f));
             _pool[index].Timer = popupLifetime;
             _pool[index].Amount = Mathf.RoundToInt(amount);
-            _pool[index].IsCrit = isCrit;
-            _pool[index].IsReflected = isReflected;
+            _pool[index].IsCrit = kind == DamagePopupKind.Critical;
+            _pool[index].IsReflected = kind == DamagePopupKind.Reflected;
             _pool[index].IsHeal = false;
-            SetLabel(index, isCrit ? 1 : isReflected ? 2 : 0);
+            SetLabel(index, (int)kind);
         }
 
         /// <summary>
@@ -246,6 +257,8 @@ namespace RetroFPS.Combat
             int index = _nextIndex;
             _nextIndex = (_nextIndex + 1) % MaxPopups;
 
+            _pool[index] = default;
+            _pool[index].Kind = DamagePopupKind.Heal;
             _pool[index].Active = true;
             _pool[index].WorldPos = worldPos + Vector3.up * 0.4f + Random.insideUnitSphere * 0.1f;
             _pool[index].Velocity = Vector3.up * (upwardForce * 1.15f) + new Vector3(Random.Range(-0.35f, 0.35f), 0f, Random.Range(-0.35f, 0.35f));
@@ -255,6 +268,22 @@ namespace RetroFPS.Combat
             _pool[index].IsReflected = false;
             _pool[index].IsHeal = true;
             SetLabel(index, 3);
+        }
+
+        /// <summary>Shows the actual collected ammunition as +n OK or +n SAÇMA, without damage or heal flags.</summary>
+        public void SpawnAmmoNumber(Vector3 worldPos, int amount, AmmoType type)
+        {
+            if (!showDamageNumbers || amount <= 0 || (type != AmmoType.Bolts && type != AmmoType.Shells)) return;
+            int index = _nextIndex;
+            _nextIndex = (_nextIndex + 1) % MaxPopups;
+            _pool[index] = default;
+            _pool[index].Active = true;
+            _pool[index].WorldPos = worldPos + Random.insideUnitSphere * 0.1f;
+            _pool[index].Velocity = Vector3.up * upwardForce;
+            _pool[index].Timer = popupLifetime;
+            _pool[index].Amount = amount;
+            _pool[index].Kind = DamagePopupLabelPolicy.ResolveAmmo(type);
+            SetLabel(index, (int)_pool[index].Kind);
         }
 
         private void Update()
@@ -303,23 +332,23 @@ namespace RetroFPS.Combat
                 float progress = 1f - (_pool[i].Timer / popupLifetime);
 
                 // Boyut ve solma (Scale pop & fade)
-                float scale = _pool[i].IsCrit ? Mathf.Lerp(1.4f, 1.0f, progress) : 1.0f;
+                float scale = _pool[i].Kind == DamagePopupKind.Critical ? Mathf.Lerp(1.4f, 1.0f, progress) : 1.0f;
                 float alpha = Mathf.Clamp01(_pool[i].Timer / (popupLifetime * 0.35f));
 
                 GUIStyle baseStyle;
                 Color fontColor;
 
-                if (_pool[i].IsHeal)
+                if (_pool[i].Kind == DamagePopupKind.Heal)
                 {
                     baseStyle = _styleHeal;
                     fontColor = healColor;
                 }
-                else if (_pool[i].IsCrit)
+                else if (_pool[i].Kind == DamagePopupKind.Critical)
                 {
                     baseStyle = _styleCrit;
                     fontColor = critDamageColor;
                 }
-                else if (_pool[i].IsReflected)
+                else if (_pool[i].Kind == DamagePopupKind.Reflected)
                 {
                     baseStyle = _styleReflected;
                     fontColor = reflectedDamageColor;
@@ -327,7 +356,8 @@ namespace RetroFPS.Combat
                 else
                 {
                     baseStyle = _styleNormal;
-                    fontColor = normalDamageColor;
+                    fontColor = _pool[i].Kind == DamagePopupKind.Bolts ? boltsColor :
+                        _pool[i].Kind == DamagePopupKind.Shells ? shellsColor : normalDamageColor;
                 }
 
                 fontColor.a = alpha;

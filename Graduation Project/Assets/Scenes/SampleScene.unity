@@ -3775,6 +3775,63 @@ Material:
     - _SpecColor: {r: 0.19999996, g: 0.19999996, b: 0.19999996, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1
+--- !u!1001 &395914560
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 3422512607918798275, guid: 4b9250ad2f81459469feb46d753db3ac, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3422512607918798275, guid: 4b9250ad2f81459469feb46d753db3ac, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3422512607918798275, guid: 4b9250ad2f81459469feb46d753db3ac, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3422512607918798275, guid: 4b9250ad2f81459469feb46d753db3ac, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3422512607918798275, guid: 4b9250ad2f81459469feb46d753db3ac, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3422512607918798275, guid: 4b9250ad2f81459469feb46d753db3ac, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3422512607918798275, guid: 4b9250ad2f81459469feb46d753db3ac, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3422512607918798275, guid: 4b9250ad2f81459469feb46d753db3ac, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3422512607918798275, guid: 4b9250ad2f81459469feb46d753db3ac, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3422512607918798275, guid: 4b9250ad2f81459469feb46d753db3ac, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5411190053915765346, guid: 4b9250ad2f81459469feb46d753db3ac, type: 3}
+      propertyPath: m_Name
+      value: RunDirector
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 4b9250ad2f81459469feb46d753db3ac, type: 3}
 --- !u!21 &396613714
 Material:
   serializedVersion: 8
@@ -5243,6 +5300,7 @@ MonoBehaviour:
   autoStartOnPlay: 0
   encounterArea: {fileID: 0}
   warmupDuration: 1.5
+  waveSetPool: {fileID: 0}
   waveSet: {fileID: 11400000, guid: b14c2e25f1c4a2045a2b17a15028530f, type: 2}
   waves: []
   waveCooldownDuration: 2
@@ -5256,6 +5314,10 @@ MonoBehaviour:
   sideSpawnWeight: 2.5
   rearSpawnWeight: 4
   spawnBlockedTimeout: 2
+  spawnReservationPadding: 0.75
+  fallRescueDepth: 8
+  outOfRoomRescueDelay: 6
+  outOfRoomMargin: 3
   roomDisplayName: 'Oda 02: Kuzey Koridoru'
   spawnPoints: []
   minSpawnDistance: 5
@@ -11108,6 +11170,7 @@ MonoBehaviour:
   autoStartOnPlay: 0
   encounterArea: {fileID: 0}
   warmupDuration: 1.5
+  waveSetPool: {fileID: 0}
   waveSet: {fileID: 11400000, guid: dff9e673800341a40944a3152b86808f, type: 2}
   waves: []
   waveCooldownDuration: 2
@@ -11121,6 +11184,10 @@ MonoBehaviour:
   sideSpawnWeight: 2.5
   rearSpawnWeight: 4
   spawnBlockedTimeout: 2
+  spawnReservationPadding: 0.75
+  fallRescueDepth: 8
+  outOfRoomRescueDelay: 6
+  outOfRoomMargin: 3
   roomDisplayName: 
   spawnPoints: []
   minSpawnDistance: 6
@@ -13055,6 +13122,7 @@ MonoBehaviour:
   autoStartOnPlay: 0
   encounterArea: {fileID: 0}
   warmupDuration: 1.5
+  waveSetPool: {fileID: 0}
   waveSet: {fileID: 0}
   waves:
   - waveName: Wave 1
@@ -13132,6 +13200,10 @@ MonoBehaviour:
   sideSpawnWeight: 2.5
   rearSpawnWeight: 4
   spawnBlockedTimeout: 2
+  spawnReservationPadding: 0.75
+  fallRescueDepth: 8
+  outOfRoomRescueDelay: 6
+  outOfRoomMargin: 3
   roomDisplayName: 
   spawnPoints: []
   minSpawnDistance: 6
@@ -19081,8 +19153,8 @@ MonoBehaviour:
   autoHealDelay: 2.5
   wobbleForce: 12
   wobbleRecoverySpeed: 10
-  flashColor: {r: 1, g: 0.2, b: 0.2, a: 1}
-  critFlashColor: {r: 1, g: 0.85, b: 0.1, a: 1}
+  hitFlashColor: {r: 2.2, g: 2.2, b: 2.2, a: 1}
+  criticalHitFlashColor: {r: 3.2, g: 2.8, b: 0.35, a: 1}
 --- !u!1 &1679805430
 GameObject:
   m_ObjectHideFlags: 0
@@ -24127,8 +24199,8 @@ MonoBehaviour:
   autoHealDelay: 2.5
   wobbleForce: 12
   wobbleRecoverySpeed: 10
-  flashColor: {r: 1, g: 0.2, b: 0.2, a: 1}
-  critFlashColor: {r: 1, g: 0.85, b: 0.1, a: 1}
+  hitFlashColor: {r: 2.2, g: 2.2, b: 2.2, a: 1}
+  criticalHitFlashColor: {r: 3.2, g: 2.8, b: 0.35, a: 1}
 --- !u!1 &2131694030
 GameObject:
   m_ObjectHideFlags: 0
@@ -24672,3 +24744,4 @@ SceneRoots:
   - {fileID: 987223721}
   - {fileID: 1790328608}
   - {fileID: 515339111}
+  - {fileID: 395914560}

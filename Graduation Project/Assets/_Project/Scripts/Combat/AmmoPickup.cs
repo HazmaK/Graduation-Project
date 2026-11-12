@@ -162,10 +162,10 @@ namespace RetroFPS.Combat
                     // Hasar sayıları sistemi üzerinden "+X SHELLS" veya "+X BOLTS" göster
                     if (DamageNumberSystem.Instance != null)
                     {
-                        DamageNumberSystem.Instance.SpawnDamageNumber(
+                        DamageNumberSystem.Instance.SpawnAmmoNumber(
                             transform.position + Vector3.up * 0.4f,
                             added,
-                            true
+                            ammoType
                         );
                     }
                 }

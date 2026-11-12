@@ -1,0 +1,79 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 60136b8879966b241b4cd8f3030048e1, type: 3}
+  m_Name: StringTable_MainMenu_tr
+  m_EditorClassIdentifier: RetroFPS.Menu::RetroFPS.UI.Menu.StringTable
+  entries:
+  - key: menu.title
+    value: PURGATOR
+  - key: menu.start
+    value: "BA\u015ELA"
+  - key: menu.settings
+    value: AYARLAR
+  - key: menu.quit
+    value: "\xC7IKI\u015E"
+  - key: menu.version_format
+    value: v{0}
+  - key: menu.load_error
+    value: "Seviye y\xFCklenemedi"
+  - key: settings.title
+    value: AYARLAR
+  - key: settings.master_volume
+    value: Ana Ses
+  - key: settings.music_volume
+    value: "M\xFCzik"
+  - key: settings.sfx_volume
+    value: Ses Efektleri
+  - key: settings.ui_volume
+    value: "Aray\xFCz Sesi"
+  - key: settings.group.audio
+    value: SES
+  - key: settings.group.controls
+    value: KONTROL
+  - key: settings.group.display
+    value: "G\xD6R\xDCNT\xDC"
+  - key: settings.mouse_sensitivity
+    value: Fare Hassasiyeti
+  - key: settings.window_mode
+    value: Pencere Modu
+  - key: settings.window_mode.fullscreen
+    value: Tam Ekran
+  - key: settings.window_mode.borderless
+    value: "\xC7er\xE7evesiz"
+  - key: settings.window_mode.windowed
+    value: Pencere
+  - key: settings.resolution
+    value: "\xC7\xF6z\xFCn\xFCrl\xFCk"
+  - key: settings.reduce_motion
+    value: Hareketi Azalt
+  - key: settings.on
+    value: "A\xC7IK"
+  - key: settings.off
+    value: KAPALI
+  - key: settings.back
+    value: "GER\u0130"
+  - key: settings.percent_format
+    value: '%{0}'
+  - key: display.revert_title
+    value: "G\xF6r\xFCnt\xFC ayarlar\u0131 korunsun mu?"
+  - key: display.revert_countdown_format
+    value: "{0} saniye i\xE7inde geri al\u0131nacak"
+  - key: display.keep
+    value: Onayla
+  - key: display.revert
+    value: Geri al
+  - key: quit.prompt
+    value: "Oyundan \xE7\u0131k\u0131ls\u0131n m\u0131?"
+  - key: quit.yes
+    value: EVET
+  - key: quit.no
+    value: HAYIR

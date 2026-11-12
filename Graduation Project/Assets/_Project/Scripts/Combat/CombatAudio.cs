@@ -409,7 +409,7 @@ namespace RetroFPS.Combat
             source.transform.position = pos;
             source.clip = clip;
             source.pitch = pitch;
-            source.volume = Mathf.Clamp01(volume * masterCombatVolume);
+            source.volume = Mathf.Clamp01(volume * masterCombatVolume * RetroFPS.Settings.GameSettings.Current.SfxVolume);
             source.Play();
         }
 
@@ -421,7 +421,7 @@ namespace RetroFPS.Combat
             source.Stop();
             source.clip = clip;
             source.pitch = pitch;
-            source.volume = Mathf.Clamp01(volume * masterCombatVolume);
+            source.volume = Mathf.Clamp01(volume * masterCombatVolume * RetroFPS.Settings.GameSettings.Current.SfxVolume);
             source.Play();
         }
 

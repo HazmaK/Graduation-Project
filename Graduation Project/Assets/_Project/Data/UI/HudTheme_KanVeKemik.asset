@@ -1,0 +1,81 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0864de1f2155c3e41a9776795681e39b, type: 3}
+  m_Name: HudTheme_KanVeKemik
+  m_EditorClassIdentifier: RetroFPS.HUD::RetroFPS.UI.HUD.HudTheme
+  menuTheme: {fileID: 11400000, guid: 655781f0fca9881498a189018cfef21e, type: 2}
+  plateAlpha: 0.9
+  border: {r: 0.47843137, g: 0.43137255, b: 0.36862746, a: 1}
+  track: {r: 0.16470589, g: 0.1254902, b: 0.1254902, a: 1}
+  typeBolts: {r: 0, g: 0.9019608, b: 1, a: 1}
+  typeShells: {r: 1, g: 0.7019608, b: 0.14901961, a: 1}
+  deathOverlay: {r: 0, g: 0, b: 0, a: 0.88}
+  plate: {fileID: 21300000, guid: 5a7f7565dcf64bf4686475c403ec7eea, type: 3}
+  chip: {fileID: 21300000, guid: 86f57af14f99e17408d771c0b8640b0a, type: 3}
+  barTrack: {fileID: 21300000, guid: dc2c8a02c4a05f340bc15c9f83311733, type: 3}
+  barFill: {fileID: 21300000, guid: 27290b1d8594a504d9302c68d589d965, type: 3}
+  cross: {fileID: 21300000, guid: 7c3b1dd526065db46ac00092134e4301, type: 3}
+  diamond: {fileID: 21300000, guid: 685b4c8c0823e5646b43018d59663df1, type: 3}
+  shield: {fileID: 21300000, guid: b2e4544930a99ab4fba6a019ad9e6691, type: 3}
+  hook: {fileID: 21300000, guid: 18fd1d06c1253944abd647d0086e42de, type: 3}
+  weaponBolt: {fileID: 21300000, guid: 8b31620ede8b6884ba78642a8956e826, type: 3}
+  weaponShell: {fileID: 21300000, guid: e3de0737a74ba5b4e9e17dfb95e7e259, type: 3}
+  weaponBlade: {fileID: 21300000, guid: 66fbfd6e36878a34dbb004d4807d7569, type: 3}
+  sigilAraf: {fileID: 21300000, guid: 4caa33e9afe7ed447b13c06642ab8d63, type: 3}
+  arrow: {fileID: 21300000, guid: e8a5acc901272834b96d3b7a31253033, type: 3}
+  hatch: {fileID: 21300000, guid: 597c66a98ac2ba248a28aadb1081e917, type: 3}
+  deathSeal: {fileID: 21300000, guid: 6609ed483985cbc46a6bce6e0816544a, type: 3}
+  deathSealPressed: {fileID: 21300000, guid: c6daf21614f8e824299429a7b53fcfe6, type: 3}
+  healthPlateSize: {x: 400, y: 150}
+  ammoPlateSize: {x: 320, y: 120}
+  encounterZoneSize: {x: 400, y: 190}
+  encounterPlateWidth: 340
+  explorationPlateHeight: 40
+  combatPlateHeight: 120
+  arafPlateHeight: 150
+  bannerSize: {x: 600, y: 60}
+  mergedBannerSize: {x: 600, y: 96}
+  deathButtonSize: {x: 360, y: 72}
+  healthBarSize: {x: 376, y: 12}
+  ammoBarSize: {x: 296, y: 12}
+  abilityGlyphSize: {x: 27, y: 27}
+  weaponGlyphSize: {x: 36, y: 27}
+  arafGlyphSize: {x: 15, y: 21}
+  deathSealSize: {x: 27, y: 33}
+  healthNumberSize: 44
+  healthMaximumSize: 20
+  overhealNumberSize: 28
+  labelSize: 20
+  ammoNumberSize: 48
+  ammoMaximumSize: 24
+  waveNumberSize: 28
+  remainingNumberSize: 24
+  roomNumberSize: 24
+  bannerTextSize: 40
+  mergedBannerTextSize: 28
+  deathTitleSize: 64
+  deathButtonTextSize: 32
+  minimumTextSize: 20
+  labelTracking: 8
+  deathTitleTracking: 2
+  artPixelSize: 3
+  platePadding: 12
+  pipGap: 8
+  warningChipSize: 36
+  warningTextSize: 28
+  lowHealthBorderWidth: 9
+  deathButtonBorderWidth: 6
+  remainingBarHeight: 6
+  bannerRuleHeight: 3
+  arenaClearedRuleHeight: 6
+  deathTitleRuleWidth: 120
+  deathSealGap: 16

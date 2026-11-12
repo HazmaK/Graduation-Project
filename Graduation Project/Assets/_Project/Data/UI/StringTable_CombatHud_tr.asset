@@ -1,0 +1,93 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 60136b8879966b241b4cd8f3030048e1, type: 3}
+  m_Name: StringTable_CombatHud_tr
+  m_EditorClassIdentifier: RetroFPS.Menu::RetroFPS.UI.Menu.StringTable
+  entries:
+  - key: hud.health.label
+    value: CAN
+  - key: hud.dash.label
+    value: ATILMA
+  - key: hud.parry.label
+    value: "SAVU\u015ETUR"
+  - key: hud.parry.ready
+    value: HAZIR
+  - key: hud.parry.active
+    value: "AKT\u0130F"
+  - key: hud.parry.cooldown
+    value: BEKLE
+  - key: hud.parry.success
+    value: "SAVU\u015ETURULDU"
+  - key: hud.hook.label
+    value: KANCA
+  - key: hud.hook.ready
+    value: HAZIR
+  - key: hud.hook.cooldown
+    value: BEKLE
+  - key: hud.ammo.empty
+    value: "BO\u015E"
+  - key: hud.weapon.melee
+    value: YAKIN
+  - key: hud.ammo.bolts
+    value: OK
+  - key: hud.ammo.shells
+    value: "SA\xC7MA"
+  - key: hud.wave.counter
+    value: DALGA {0}/{1}
+  - key: hud.wave.remaining
+    value: KALAN {0}
+  - key: hud.wave.label
+    value: DALGA
+  - key: hud.wave.remainingLabel
+    value: KALAN
+  - key: hud.araf.roomsLabel
+    value: ODALAR
+  - key: hud.araf.ready
+    value: 'ARAF: HAZIR'
+  - key: hud.araf.used
+    value: 'ARAF: KULLANILDI'
+  - key: hud.araf.warning
+    value: "ARAF'TASIN \u2014 \xC7IKI\u015E ODASINI BUL"
+  - key: hud.araf.rooms
+    value: ODALAR {0}/{1}
+  - key: hud.araf.exitFound
+    value: "\xC7IKI\u015E BULUNDU"
+  - key: hud.banner.arenaSealed
+    value: "ARENA M\xDCH\xDCRLEND\u0130"
+  - key: hud.banner.wave
+    value: DALGA {0}
+  - key: hud.banner.waveCleared
+    value: "DALGA {0} TEM\u0130ZLEND\u0130"
+  - key: hud.banner.arenaCleared
+    value: "ARENA TEM\u0130ZLEND\u0130"
+  - key: hud.truedeath.title
+    value: "GER\xC7EK \xD6L\xDCM"
+  - key: hud.truedeath.restart
+    value: TEKRAR DENE
+  - key: hud.weapon.RepeaterArbalest
+    value: ARBALET
+  - key: hud.weapon.ExecutionerBlade
+    value: CELLAT KILICI
+  - key: hud.weapon.GothicShotgun
+    value: "GOT\u0130K POMPALI"
+  - key: hud.symbol.slash
+    value: /
+  - key: hud.symbol.plus
+    value: +
+  - key: hud.symbol.warning
+    value: '!'
+  - key: hud.symbol.slotOpen
+    value: '['
+  - key: hud.symbol.slotClose
+    value: ']'
+  - key: hud.dash.counter
+    value: ATILMA {0}/{1}

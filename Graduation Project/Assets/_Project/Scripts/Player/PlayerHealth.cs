@@ -30,6 +30,7 @@ namespace RetroFPS
         private PlayerLook _look;
         private PlayerParryController _parry;
         private PlayerDamageFeedback _damageFeedback;
+        private WeaponController _weapons;
 
         public float CurrentHealth => _currentHealth;
         public float MaxHealth => maxHealth;
@@ -38,6 +39,8 @@ namespace RetroFPS
 
         public event System.Action<float> OnDamageTaken;
         public event System.Action<float> OnHealed;
+        /// <summary>Reports current and maximum health after every actual health mutation.</summary>
+        public event System.Action<float, float> OnHealthChanged;
         public event System.Action OnDied;
         public event System.Action OnRevived;
 
@@ -60,6 +63,7 @@ namespace RetroFPS
             _movement = GetComponent<PlayerMovement>();
             _look = GetComponent<PlayerLook>();
             _parry = GetComponent<PlayerParryController>();
+            _weapons = GetComponent<WeaponController>();
             _damageFeedback = GetComponent<PlayerDamageFeedback>();
             if (_damageFeedback == null) _damageFeedback = gameObject.AddComponent<PlayerDamageFeedback>();
         }
@@ -81,7 +85,6 @@ namespace RetroFPS
             }
 
             // 2. Kalkan Savuşturma (Parry) kontrolü (Kalkan aktif ise)
-            if (_parry == null) _parry = GetComponent<PlayerParryController>();
             if (_parry != null && _parry.enabled && _parry.TryParryMelee(hitPoint, hitNormal, amount, attacker))
             {
                 _timeSinceLastDamage = 0f;
@@ -92,7 +95,6 @@ namespace RetroFPS
             _timeSinceLastDamage = 0f;
 
             // 3. Darbe Geri Bildirimi & Game Feel (Vignette, Hit Indicator, Flinch, Hurt Audio)
-            if (_damageFeedback == null) _damageFeedback = GetComponent<PlayerDamageFeedback>();
             if (_damageFeedback != null)
             {
                 _damageFeedback.OnPlayerDamaged(amount, hitPoint, hitNormal, attacker);
@@ -102,8 +104,8 @@ namespace RetroFPS
                 _look.AddTrauma(0.35f);
             }
 
+            OnHealthChanged?.Invoke(_currentHealth, maxHealth);
             OnDamageTaken?.Invoke(amount);
-            Debug.Log($"<color=red><b>[PLAYER DAMAGED]</b></color> -{amount:F0} HP | Remaining Health: <b>{_currentHealth:F0}/{maxHealth}</b>");
 
             if (_currentHealth <= 0f && !_isDead)
             {
@@ -130,15 +132,15 @@ namespace RetroFPS
             _currentHealth = Mathf.Min(cap, _currentHealth + amount);
             float actualHealed = _currentHealth - previousHealth;
 
-            if (actualHealed <= 0.001f) return false;
+            if (actualHealed <= 0f) return false;
 
             if (_damageFeedback != null)
             {
                 _damageFeedback.TriggerHealFlash(0.35f);
             }
 
+            OnHealthChanged?.Invoke(_currentHealth, maxHealth);
             OnHealed?.Invoke(actualHealed);
-            Debug.Log($"<color=green><b>[PLAYER HEALED]</b></color> +{actualHealed:F0} HP | Remaining Health: <b>{_currentHealth:F0}/{maxHealth}</b>");
             return true;
         }
 
@@ -156,8 +158,7 @@ namespace RetroFPS
                 _look.enabled = false;
             }
 
-            WeaponController weapons = GetComponent<WeaponController>();
-            if (weapons != null) weapons.enabled = false;
+            if (_weapons != null) _weapons.enabled = false;
 
             if (_parry != null) _parry.enabled = false;
 
@@ -222,11 +223,11 @@ namespace RetroFPS
                 _look.ResetView(rotation.eulerAngles.y);
             }
 
-            WeaponController weapons = GetComponent<WeaponController>();
-            if (weapons != null) weapons.enabled = true;
+            if (_weapons != null) _weapons.enabled = true;
 
             if (_parry != null) _parry.enabled = true;
 
+            OnHealthChanged?.Invoke(_currentHealth, maxHealth);
             OnRevived?.Invoke();
             Debug.Log("<color=green><b>[PLAYER REVIVED]</b></color> Checkpoint retry.");
         }
@@ -251,6 +252,7 @@ namespace RetroFPS
             }
 
             // Fazla can (Overheal) sönümlenmesi (Retro Quake / DOOM standardı: max üstü yavaşça 100'e iner)
+            float previousHealth = _currentHealth;
             if (_currentHealth > maxHealth)
             {
                 _currentHealth = Mathf.MoveTowards(_currentHealth, maxHealth, 3.5f * Time.deltaTime);
@@ -264,6 +266,7 @@ namespace RetroFPS
                     _currentHealth = Mathf.MoveTowards(_currentHealth, maxHealth, autoHealRate * Time.deltaTime);
                 }
             }
+            if (_currentHealth != previousHealth) OnHealthChanged?.Invoke(_currentHealth, maxHealth);
         }
     }
 }

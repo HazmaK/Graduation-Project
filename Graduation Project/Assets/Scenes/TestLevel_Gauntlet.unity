@@ -29134,6 +29134,10 @@ MonoBehaviour:
   sideSpawnWeight: 2.5
   rearSpawnWeight: 4
   spawnBlockedTimeout: 2
+  spawnReservationPadding: 0.75
+  fallRescueDepth: 8
+  outOfRoomRescueDelay: 6
+  outOfRoomMargin: 3
   roomDisplayName: 'Oda 2: Kemik Salonu'
   spawnPoints:
   - {fileID: 2015417342}
@@ -41145,9 +41149,61 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 499901333768685934, guid: 8a7854e3713bc4343b5a793ccb58fac2, type: 3}
+      propertyPath: m_TextStyleHashCode
+      value: -1183493901
+      objectReference: {fileID: 0}
+    - target: {fileID: 611513936503477391, guid: 8a7854e3713bc4343b5a793ccb58fac2, type: 3}
+      propertyPath: m_TextStyleHashCode
+      value: -1183493901
+      objectReference: {fileID: 0}
+    - target: {fileID: 742053846038450608, guid: 8a7854e3713bc4343b5a793ccb58fac2, type: 3}
+      propertyPath: m_TextStyleHashCode
+      value: -1183493901
+      objectReference: {fileID: 0}
+    - target: {fileID: 1764932646431541253, guid: 8a7854e3713bc4343b5a793ccb58fac2, type: 3}
+      propertyPath: m_AnchorMax.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1764932646431541253, guid: 8a7854e3713bc4343b5a793ccb58fac2, type: 3}
+      propertyPath: m_AnchorMax.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1975160849192411124, guid: 8a7854e3713bc4343b5a793ccb58fac2, type: 3}
+      propertyPath: m_TextStyleHashCode
+      value: -1183493901
+      objectReference: {fileID: 0}
+    - target: {fileID: 2648786591860596198, guid: 8a7854e3713bc4343b5a793ccb58fac2, type: 3}
+      propertyPath: m_TextStyleHashCode
+      value: -1183493901
+      objectReference: {fileID: 0}
+    - target: {fileID: 3270562350304155762, guid: 8a7854e3713bc4343b5a793ccb58fac2, type: 3}
+      propertyPath: m_TextStyleHashCode
+      value: -1183493901
+      objectReference: {fileID: 0}
+    - target: {fileID: 4567420773147467473, guid: 8a7854e3713bc4343b5a793ccb58fac2, type: 3}
+      propertyPath: m_TextStyleHashCode
+      value: -1183493901
+      objectReference: {fileID: 0}
     - target: {fileID: 4647128150085499101, guid: 8a7854e3713bc4343b5a793ccb58fac2, type: 3}
       propertyPath: m_Name
       value: Player
+      objectReference: {fileID: 0}
+    - target: {fileID: 4876201729262475272, guid: 8a7854e3713bc4343b5a793ccb58fac2, type: 3}
+      propertyPath: m_TextStyleHashCode
+      value: -1183493901
+      objectReference: {fileID: 0}
+    - target: {fileID: 7084835266742772874, guid: 8a7854e3713bc4343b5a793ccb58fac2, type: 3}
+      propertyPath: m_TextStyleHashCode
+      value: -1183493901
+      objectReference: {fileID: 0}
+    - target: {fileID: 7323661638981668074, guid: 8a7854e3713bc4343b5a793ccb58fac2, type: 3}
+      propertyPath: m_TextStyleHashCode
+      value: -1183493901
+      objectReference: {fileID: 0}
+    - target: {fileID: 7485911246336653565, guid: 8a7854e3713bc4343b5a793ccb58fac2, type: 3}
+      propertyPath: m_TextStyleHashCode
+      value: -1183493901
       objectReference: {fileID: 0}
     - target: {fileID: 8129818506611666789, guid: 8a7854e3713bc4343b5a793ccb58fac2, type: 3}
       propertyPath: m_LocalPosition.x
@@ -41188,6 +41244,10 @@ PrefabInstance:
     - target: {fileID: 8129818506611666789, guid: 8a7854e3713bc4343b5a793ccb58fac2, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8646890111115415107, guid: 8a7854e3713bc4343b5a793ccb58fac2, type: 3}
+      propertyPath: m_TextStyleHashCode
+      value: -1183493901
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -45819,6 +45879,10 @@ MonoBehaviour:
   sideSpawnWeight: 2.5
   rearSpawnWeight: 4
   spawnBlockedTimeout: 2
+  spawnReservationPadding: 0.75
+  fallRescueDepth: 8
+  outOfRoomRescueDelay: 6
+  outOfRoomMargin: 3
   roomDisplayName: 'Oda 3: Kemikhane'
   spawnPoints:
   - {fileID: 1819081017}
@@ -52513,6 +52577,10 @@ MonoBehaviour:
   sideSpawnWeight: 2.5
   rearSpawnWeight: 4
   spawnBlockedTimeout: 2
+  spawnReservationPadding: 0.75
+  fallRescueDepth: 8
+  outOfRoomRescueDelay: 6
+  outOfRoomMargin: 3
   roomDisplayName: "Oda 1: Mezar \xC7ukuru"
   spawnPoints:
   - {fileID: 664361403}

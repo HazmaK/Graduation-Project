@@ -21,6 +21,9 @@ namespace RetroFPS
         [Header("Bakış Ayarları")]
         [Tooltip("Fare hassasiyeti (Standart New Input System için 0.08 - 0.15 arası idealdir)")]
         [SerializeField] private float mouseSensitivity = 0.10f;
+        [SerializeField] private float sensitivityMinScale = 0.25f;
+        [SerializeField] private float sensitivityMaxScale = 4f;
+        private float _sensitivityScale = 1f;
         [SerializeField] private bool invertY = false;
         [SerializeField] private float minPitch = -89f;
         [SerializeField] private float maxPitch = 89f;
@@ -56,6 +59,17 @@ namespace RetroFPS
 
         public Camera PlayerCam => playerCamera;
         public Transform CameraHolder => cameraHolder;
+
+        private void OnEnable()
+        {
+            Settings.GameSettings.Changed += CacheSensitivity;
+            CacheSensitivity(Settings.GameSettings.Current);
+        }
+
+        private void OnDisable() => Settings.GameSettings.Changed -= CacheSensitivity;
+
+        private void CacheSensitivity(Settings.GameSettingsData data) => _sensitivityScale =
+            Settings.SensitivityMapping.ToScale(data.MouseSensitivity, sensitivityMinScale, sensitivityMaxScale);
 
         private void Awake()
         {
@@ -199,7 +213,7 @@ namespace RetroFPS
             if (Cursor.lockState != CursorLockMode.Locked) return;
             if (Mouse.current == null) return;
 
-            Vector2 mouseDelta = Mouse.current.delta.ReadValue() * mouseSensitivity;
+            Vector2 mouseDelta = Mouse.current.delta.ReadValue() * (mouseSensitivity * _sensitivityScale);
 
             _yaw += mouseDelta.x;
             float pitchDelta = invertY ? mouseDelta.y : -mouseDelta.y;

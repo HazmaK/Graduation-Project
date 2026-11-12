@@ -1,7 +1,6 @@
 using System;
 using System.Threading;
 using UnityEngine;
-using UnityEngine.InputSystem;
 using UnityEngine.SceneManagement;
 using RetroFPS.Combat;
 
@@ -47,6 +46,7 @@ namespace RetroFPS.Run
         private Vector3 _deathPosition;
         private Quaternion _deathRotation = Quaternion.identity;
         private bool _isTransitioning;
+        private bool _restartRequested;
 
         /// <summary>
         /// Mevcut koşunun saf durum verisi.
@@ -134,20 +134,18 @@ namespace RetroFPS.Run
 
         private void Update()
         {
-            if (_state == null || _state.Phase != RunPhase.TrueDeath || _isTransitioning)
-            {
-                return;
-            }
+            _state?.AdvanceElapsedTime(Time.unscaledDeltaTime);
+        }
 
-            if (Keyboard.current != null &&
-                (Keyboard.current.rKey.wasPressedThisFrame ||
-                 Keyboard.current.spaceKey.wasPressedThisFrame ||
-                 Keyboard.current.enterKey.wasPressedThisFrame))
-            {
-                Time.timeScale = 1f;
-                Time.fixedDeltaTime = 0.02f;
-                SceneManager.LoadScene(towerSceneName, LoadSceneMode.Single);
-            }
+        /// <summary>Starts one fresh run in the saved tower scene after true death.</summary>
+        public void RestartRun()
+        {
+            if (_state == null || _state.Phase != RunPhase.TrueDeath || _isTransitioning || _restartRequested ||
+                string.IsNullOrEmpty(towerSceneName)) return;
+            _restartRequested = true;
+            Time.timeScale = 1f;
+            Time.fixedDeltaTime = 0.02f;
+            SceneManager.LoadScene(towerSceneName, LoadSceneMode.Single);
         }
 
         private async Awaitable PreloadArafSceneAsync(CancellationToken ct)
@@ -348,7 +346,7 @@ namespace RetroFPS.Run
 
             if (transition != null)
             {
-                transition.ShowPersistentMessage(Color.black, transition.TrueDeathMessage);
+                transition.Hide();
             }
 
             RunEvents.RaiseTrueDeath();

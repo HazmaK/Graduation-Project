@@ -42,6 +42,8 @@ tags:
 - **Vuruş Tokluğu ve Ses:** [[HitstopAndAudioFeedback]]
 - **Oyun Hissi (Kamera, Spring, Kill Confirm):** [[GameFeelArchitecture]]
 - **Çevre, Aydınlatma ve Atmosfer:** [[EnvironmentAndAudioAtmosphere]]
+- **Ana Menü ve Ayarlar:** [[MainMenuAndSettings]]
+- **Savaş HUD'u:** [[CombatHudArchitecture]]
 
 ## İlişkiler (Sinaptik Ağ Bağlantıları)
 - [[START_HERE_AI_CONSTITUTION]] ➔ `governs_architecture`
@@ -63,4 +65,6 @@ tags:
 - [[HitstopAndAudioFeedback]] ➔ `utilizes_feedback`
 - [[GameFeelArchitecture]] ➔ `utilizes_game_feel`
 - [[EnvironmentAndAudioAtmosphere]] ➔ `utilizes_atmosphere`
+- [[MainMenuAndSettings]] ➔ `features_ui`
+- [[CombatHudArchitecture]] ➔ `features_ui`
 - ⬅️ [[MultiAgentSharedMemory]] ➔ `manages_project` *(gelen)*

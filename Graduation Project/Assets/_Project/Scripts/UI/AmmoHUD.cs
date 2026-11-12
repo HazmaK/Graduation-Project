@@ -13,6 +13,7 @@ namespace RetroFPS.UI
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("RetroFPS/Ammo HUD")]
+    [System.Obsolete("Replaced by RetroFPS.UI.HUD combat HUD")]
     public class AmmoHUD : MonoBehaviour
     {
         [Header("Görsel Ayarlar")]

@@ -1,0 +1,76 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fb3823ce527f7d841a30321bd774fcbc, type: 3}
+  m_Name: MenuTheme_KanVeKemik
+  m_EditorClassIdentifier: RetroFPS.Menu::RetroFPS.UI.Menu.MenuTheme
+  emberMaxParticles: 64
+  smokeMaxParticles: 8
+  smokeRateMin: 2
+  smokeRateMax: 3
+  torchColor: {r: 1, g: 0.54901963, b: 0.16470589, a: 1}
+  emberEndColor: {r: 0.84705883, g: 0.27058825, b: 0.05882353, a: 0}
+  background: {r: 0.047058824, g: 0.039215688, b: 0.039215688, a: 1}
+  panel: {r: 0.078431375, g: 0.05882353, b: 0.0627451, a: 1}
+  text: {r: 0.9098039, g: 0.8627451, b: 0.7529412, a: 1}
+  textDim: {r: 0.627451, g: 0.5882353, b: 0.5176471, a: 1}
+  focus: {r: 1, g: 0.95686275, b: 0.8627451, a: 1}
+  accent: {r: 0.85882354, g: 0.078431375, b: 0.23921569, a: 1}
+  disabled: {r: 0.36078432, g: 0.32156864, b: 0.28235295, a: 1}
+  danger: {r: 1, g: 0.3019608, b: 0.36862746, a: 1}
+  worstBackground: {r: 0.1254902, g: 0.09411765, b: 0.09411765, a: 1}
+  rowBand: {r: 0.11764706, g: 0.09019608, b: 0.09411765, a: 1}
+  sliderTrack: {r: 0.16470589, g: 0.1254902, b: 0.1254902, a: 1}
+  titleSize: 132
+  menuItemSize: 44
+  settingsTitleSize: 56
+  settingsLabelSize: 28
+  groupLabelSize: 24
+  dialogPromptSize: 32
+  dialogButtonSize: 32
+  versionSize: 24
+  minimumFontSize: 24
+  titleMinimumFontSize: 56
+  titleTracking: 2
+  groupTracking: 12
+  firstLoadSeconds: 0.6
+  panelSeconds: 0.2
+  dialogSeconds: 0.2
+  pressSeconds: 0.08
+  reducedFadeSeconds: 0.1
+  startFadeSeconds: 0.6
+  focusSeconds: 0.08
+  revertSeconds: 10
+  focusScale: 1.06
+  panelAlpha: 0.94
+  dimAlpha: 0.65
+  pressedOffset: 3
+  audioThrottleSeconds: 0.05
+  emberRateMin: 6
+  emberRateMax: 10
+  emberSpeedMin: 20
+  emberSpeedMax: 40
+  emberLifetimeMin: 4
+  emberLifetimeMax: 7
+  emberSizeMin: 3
+  emberSizeMax: 6
+  smokeSpeedMin: 6
+  smokeSpeedMax: 10
+  smokeAlphaMin: 0.1
+  smokeAlphaMax: 0.18
+  fogScrollSpeed: 0.004
+  torchAlphaMin: 0.85
+  torchAlphaMax: 1
+  torchFrequency: 1.5
+  reducedTorchAlpha: 0.92
+  titleFont: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
+  uiFont: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
+  fallbackFont: {fileID: 11400000, guid: cb29cc6af354a3742bd6eb326077e473, type: 2}
