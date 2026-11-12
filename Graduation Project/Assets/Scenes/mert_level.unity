@@ -50114,6 +50114,8 @@ MonoBehaviour:
   hitmarkerDuration: 0.15
   baseCrosshairSpread: 8
   bloomRecoverySpeed: 24
+  killMarkerColor: {r: 1, g: 0.08, b: 0.06, a: 1}
+  criticalKillMarkerColor: {r: 1, g: 0.96, b: 0.65, a: 1}
 --- !u!114 &792099696
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -50127,6 +50129,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RetroFPS.PlayerHealth
   maxHealth: 100
+  enableAutoHeal: 0
   autoHealDelay: 4.5
   autoHealRate: 12
 --- !u!114 &792099697
@@ -50182,10 +50185,9 @@ MonoBehaviour:
   invertY: 0
   minPitch: -89
   maxPitch: 89
-  smoothLook: 1
-  smoothSpeed: 35
   tiltAngle: 2
   tiltSpeed: 10
+  slideTilt: 4
   baseFOV: 65
   maxFOV: 78
   fovLerpSpeed: 8
@@ -50194,6 +50196,7 @@ MonoBehaviour:
   maxShakeAngle: 3.5
   shakeFrequency: 24
   traumaDecay: 3.5
+  maxShakeOffset: 0.045
 --- !u!114 &792099700
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -50210,11 +50213,14 @@ MonoBehaviour:
   crouchSpeed: 3.8
   groundAcceleration: 18
   groundFriction: 8.5
+  landingFrictionGrace: 0.08
   airAcceleration: 4
   airWishSpeed: 3.5
   maxAirSpeed: 11.5
   jumpForce: 7.2
   gravity: 25
+  airOverspeedDecay: 2.5
+  fallGravityMultiplier: 1.3
   slideBoost: 13
   slideFriction: 3.2
   minSlideSpeed: 6
@@ -50223,6 +50229,8 @@ MonoBehaviour:
   slideCameraY: 0.65
   normalCameraY: 1.55
   slideDurationMax: 0.85
+  slideJumpSpeedBonus: 1.5
+  cameraHeightLerpSpeed: 14
   dashSpeed: 30
   dashDuration: 0.25
   maxDashCharges: 3
@@ -50319,7 +50327,7 @@ Transform:
   m_GameObject: {fileID: 792099691}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 18.4, y: 1.5, z: 13.5}
+  m_LocalPosition: {x: -40.64, y: 20.5, z: 18.58}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -52309,7 +52317,18 @@ MonoBehaviour:
   bobFrequency: 9
   bobHorizontalAmplitude: 0.015
   bobVerticalAmplitude: 0.022
-  recoilRecoverySpeed: 16
+  recoilFrequency: 9
+  recoilDamping: 0.5
+  verticalInertiaScale: 0.006
+  maxVerticalInertia: 0.05
+  maxInertiaPitch: 4
+  inertiaSmooth: 12
+  landingDip: 0.05
+  landingPitch: 5
+  jumpDip: 0.012
+  equipDropDistance: 0.28
+  equipDuration: 0.16
+  equipPitchDown: 35
 --- !u!1 &825290495
 GameObject:
   m_ObjectHideFlags: 0
@@ -60180,6 +60199,9 @@ MonoBehaviour:
   altCooldown: 0.65
   spawnVisualArrow: 1
   boltFlightSpeed: 110
+  maxBloomSpread: 2.2
+  bloomPerShot: 0.22
+  bloomRecovery: 4.5
 --- !u!114 &974904255
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -60201,7 +60223,18 @@ MonoBehaviour:
   bobFrequency: 9
   bobHorizontalAmplitude: 0.015
   bobVerticalAmplitude: 0.022
-  recoilRecoverySpeed: 16
+  recoilFrequency: 9
+  recoilDamping: 0.5
+  verticalInertiaScale: 0.006
+  maxVerticalInertia: 0.05
+  maxInertiaPitch: 4
+  inertiaSmooth: 12
+  landingDip: 0.05
+  landingPitch: 5
+  jumpDip: 0.012
+  equipDropDistance: 0.28
+  equipDuration: 0.16
+  equipPitchDown: 35
 --- !u!43 &991032309
 Mesh:
   m_ObjectHideFlags: 0
@@ -65625,6 +65658,123 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1051108865}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!1001 &1072515735
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: -8679921383154817045, guid: f070e3506246c6d4eaedbf688cd91068, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 100
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: f070e3506246c6d4eaedbf688cd91068, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 100
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: f070e3506246c6d4eaedbf688cd91068, type: 3}
+      propertyPath: m_LocalScale.z
+      value: 100
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: f070e3506246c6d4eaedbf688cd91068, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -44.377
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: f070e3506246c6d4eaedbf688cd91068, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 17.672
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: f070e3506246c6d4eaedbf688cd91068, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 27.984
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: f070e3506246c6d4eaedbf688cd91068, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: f070e3506246c6d4eaedbf688cd91068, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: f070e3506246c6d4eaedbf688cd91068, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: f070e3506246c6d4eaedbf688cd91068, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: f070e3506246c6d4eaedbf688cd91068, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: f070e3506246c6d4eaedbf688cd91068, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: f070e3506246c6d4eaedbf688cd91068, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -7579199861872609360, guid: f070e3506246c6d4eaedbf688cd91068, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 94f1c5d849be8e64391c62b288861e81, type: 2}
+    - target: {fileID: -4473407562076806557, guid: f070e3506246c6d4eaedbf688cd91068, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 838ce7785f982e84b81b434f9aaf1124, type: 2}
+    - target: {fileID: -3316209038747775882, guid: f070e3506246c6d4eaedbf688cd91068, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 8f1746745b64f17469f625c7d2ab3aa6, type: 2}
+    - target: {fileID: -2629589546813886484, guid: f070e3506246c6d4eaedbf688cd91068, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 4d9c1c97db0845d4c8c561007c692011, type: 2}
+    - target: {fileID: -425565630206218756, guid: f070e3506246c6d4eaedbf688cd91068, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 94f1c5d849be8e64391c62b288861e81, type: 2}
+    - target: {fileID: 919132149155446097, guid: f070e3506246c6d4eaedbf688cd91068, type: 3}
+      propertyPath: m_Name
+      value: Level_Blackout
+      objectReference: {fileID: 0}
+    - target: {fileID: 1170970068873931921, guid: f070e3506246c6d4eaedbf688cd91068, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 94f1c5d849be8e64391c62b288861e81, type: 2}
+    - target: {fileID: 2509802017764886665, guid: f070e3506246c6d4eaedbf688cd91068, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 8f1746745b64f17469f625c7d2ab3aa6, type: 2}
+    - target: {fileID: 2929640277652407947, guid: f070e3506246c6d4eaedbf688cd91068, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 4d9c1c97db0845d4c8c561007c692011, type: 2}
+    - target: {fileID: 3566390031902043909, guid: f070e3506246c6d4eaedbf688cd91068, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 4add6e164a3a63843a5bc74c329225be, type: 2}
+    - target: {fileID: 5901893356585517859, guid: f070e3506246c6d4eaedbf688cd91068, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 4d9c1c97db0845d4c8c561007c692011, type: 2}
+    - target: {fileID: 7235923135559296855, guid: f070e3506246c6d4eaedbf688cd91068, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 94f1c5d849be8e64391c62b288861e81, type: 2}
+    - target: {fileID: 8885329061251328210, guid: f070e3506246c6d4eaedbf688cd91068, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 4d9c1c97db0845d4c8c561007c692011, type: 2}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: f070e3506246c6d4eaedbf688cd91068, type: 3}
 --- !u!43 &1079308168
 Mesh:
   m_ObjectHideFlags: 0
@@ -89739,7 +89889,18 @@ MonoBehaviour:
   bobFrequency: 9
   bobHorizontalAmplitude: 0.015
   bobVerticalAmplitude: 0.022
-  recoilRecoverySpeed: 16
+  recoilFrequency: 9
+  recoilDamping: 0.5
+  verticalInertiaScale: 0.006
+  maxVerticalInertia: 0.05
+  maxInertiaPitch: 4
+  inertiaSmooth: 12
+  landingDip: 0.05
+  landingPitch: 5
+  jumpDip: 0.012
+  equipDropDistance: 0.28
+  equipDuration: 0.16
+  equipPitchDown: 35
 --- !u!1 &2099084149
 GameObject:
   m_ObjectHideFlags: 0
@@ -90447,3 +90608,4 @@ SceneRoots:
   - {fileID: 793737527}
   - {fileID: 1470620732}
   - {fileID: 894472485}
+  - {fileID: 1072515735}
