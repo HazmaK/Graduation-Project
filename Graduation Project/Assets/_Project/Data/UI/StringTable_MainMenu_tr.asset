@@ -15,65 +15,109 @@ MonoBehaviour:
   entries:
   - key: menu.title
     value: PURGATOR
+    en: PURGATOR
   - key: menu.start
     value: "BA\u015ELA"
+    en: START
   - key: menu.settings
     value: AYARLAR
+    en: SETTINGS
   - key: menu.quit
     value: "\xC7IKI\u015E"
+    en: QUIT
   - key: menu.version_format
     value: v{0}
+    en: v{0}
   - key: menu.load_error
     value: "Seviye y\xFCklenemedi"
+    en: Level could not be loaded
   - key: settings.title
     value: AYARLAR
+    en: SETTINGS
   - key: settings.master_volume
     value: Ana Ses
+    en: Master Volume
   - key: settings.music_volume
     value: "M\xFCzik"
+    en: Music
   - key: settings.sfx_volume
     value: Ses Efektleri
+    en: Sound Effects
   - key: settings.ui_volume
     value: "Aray\xFCz Sesi"
+    en: UI Volume
   - key: settings.group.audio
     value: SES
+    en: AUDIO
   - key: settings.group.controls
     value: KONTROL
+    en: CONTROLS
   - key: settings.group.display
     value: "G\xD6R\xDCNT\xDC"
+    en: DISPLAY
   - key: settings.mouse_sensitivity
     value: Fare Hassasiyeti
+    en: Mouse Sensitivity
   - key: settings.window_mode
     value: Pencere Modu
+    en: Window Mode
   - key: settings.window_mode.fullscreen
     value: Tam Ekran
+    en: Fullscreen
   - key: settings.window_mode.borderless
     value: "\xC7er\xE7evesiz"
+    en: Borderless
   - key: settings.window_mode.windowed
     value: Pencere
+    en: Windowed
   - key: settings.resolution
     value: "\xC7\xF6z\xFCn\xFCrl\xFCk"
+    en: Resolution
   - key: settings.reduce_motion
     value: Hareketi Azalt
+    en: Reduce Motion
   - key: settings.on
     value: "A\xC7IK"
+    en: ON
   - key: settings.off
     value: KAPALI
+    en: OFF
   - key: settings.back
     value: "GER\u0130"
+    en: BACK
   - key: settings.percent_format
     value: '%{0}'
+    en: '{0}%'
   - key: display.revert_title
     value: "G\xF6r\xFCnt\xFC ayarlar\u0131 korunsun mu?"
+    en: Keep these display settings?
   - key: display.revert_countdown_format
     value: "{0} saniye i\xE7inde geri al\u0131nacak"
+    en: Reverting in {0} seconds
   - key: display.keep
     value: Onayla
+    en: Keep
   - key: display.revert
     value: Geri al
+    en: Revert
   - key: quit.prompt
     value: "Oyundan \xE7\u0131k\u0131ls\u0131n m\u0131?"
+    en: Quit the game?
   - key: quit.yes
     value: EVET
+    en: YES
   - key: quit.no
     value: HAYIR
+    en: NO
+  - key: settings.group.general
+    value: GENEL
+    en: GENERAL
+  - key: settings.language
+    value: Dil
+    en: Language
+  - key: language.tr
+    value: "T\xFCrk\xE7e"
+    en: "T\xFCrk\xE7e"
+  - key: language.en
+    value: English
+    en: English

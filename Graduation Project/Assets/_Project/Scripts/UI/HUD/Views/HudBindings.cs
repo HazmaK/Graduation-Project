@@ -30,6 +30,8 @@ namespace RetroFPS.UI.HUD
         [SerializeField] private TrueDeathView deathView;
         private WaveSpawnDirector director;
         private bool started, subscribed, araf, suppressBanners;
+        private LanguageSetting lastLanguage;
+        private bool languageKnown, motionKnown, lastReduceMotion;
         private Action encounterStarted, encounterCompleted, encounterRetried;
         private Action<int, int, string> waveStarted;
         private Action<int, int> remainingChanged;
@@ -56,10 +58,13 @@ namespace RetroFPS.UI.HUD
                 for (int i = nodes.Length - 1; i >= 0; i--) nodes[i].gameObject.SetActive(activeStates[i]);
             }
             PrepareViews();
+            lastLanguage = GameSettings.Current.Language;
+            languageKnown = true;
         }
         private void OnEnable()
         {
             Subscribe();
+            SettingsChanged(GameSettings.Current);
             if (started) Snapshot();
         }
         private void Start()
@@ -198,6 +203,15 @@ namespace RetroFPS.UI.HUD
         private void SceneChanged(Scene previous, Scene next) => bannerView?.Clear();
         private void SettingsChanged(GameSettingsData data)
         {
+            if (!languageKnown || lastLanguage != data.Language)
+            {
+                languageKnown = true; lastLanguage = data.Language;
+                abilityView?.RefreshLanguage(data.Language); encounterView?.RefreshLanguage(data.Language);
+                weaponView?.RefreshLanguage(data.Language); bannerView?.RefreshLanguage(data.Language);
+            }
+            // A language/audio event must not clear pickup, dash or room feedback or finish fades.
+            if (motionKnown && lastReduceMotion == data.ReduceMotion) return;
+            motionKnown = true; lastReduceMotion = data.ReduceMotion;
             healthView?.SetReduceMotion(data.ReduceMotion); abilityView?.SetReduceMotion(data.ReduceMotion);
             weaponView?.SetReduceMotion(data.ReduceMotion); encounterView?.SetReduceMotion(data.ReduceMotion);
             bannerView?.SetReduceMotion(data.ReduceMotion); deathView?.SetReduceMotion(data.ReduceMotion);

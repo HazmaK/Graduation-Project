@@ -27,6 +27,7 @@ namespace RetroFPS.Settings
         [SerializeField] private int resolutionWidth;
         [SerializeField] private int resolutionHeight;
         [SerializeField] private bool reduceMotion;
+        [SerializeField] private LanguageSetting language;
 
         /// <summary>Global audio gain.</summary>
         public float MasterVolume => masterVolume;
@@ -46,11 +47,20 @@ namespace RetroFPS.Settings
         public int ResolutionHeight => resolutionHeight;
         /// <summary>Whether optional motion should be suppressed.</summary>
         public bool ReduceMotion => reduceMotion;
+        /// <summary>Current language authority.</summary>
+        public LanguageSetting Language => language;
 
         /// <summary>Creates a settings snapshot; use Clamp before applying untrusted data.</summary>
         public GameSettingsData(float masterVolume, float musicVolume, float sfxVolume,
             float uiVolume, float mouseSensitivity, WindowModeSetting windowMode,
             int resolutionWidth, int resolutionHeight, bool reduceMotion)
+            : this(masterVolume, musicVolume, sfxVolume, uiVolume, mouseSensitivity,
+                windowMode, resolutionWidth, resolutionHeight, reduceMotion, LanguageSetting.English) { }
+
+        /// <summary>Creates a settings snapshot including its language.</summary>
+        public GameSettingsData(float masterVolume, float musicVolume, float sfxVolume,
+            float uiVolume, float mouseSensitivity, WindowModeSetting windowMode,
+            int resolutionWidth, int resolutionHeight, bool reduceMotion, LanguageSetting language)
         {
             this.masterVolume = masterVolume;
             this.musicVolume = musicVolume;
@@ -61,14 +71,20 @@ namespace RetroFPS.Settings
             this.resolutionWidth = resolutionWidth;
             this.resolutionHeight = resolutionHeight;
             this.reduceMotion = reduceMotion;
+            this.language = language;
         }
 
         /// <summary>Creates first-boot defaults using the supplied desktop size.</summary>
         public static GameSettingsData Defaults(int desktopWidth = 1920, int desktopHeight = 1080)
+            => Defaults(desktopWidth, desktopHeight, LanguageSetting.English);
+
+        /// <summary>Creates first-boot defaults with the platform-derived language.</summary>
+        public static GameSettingsData Defaults(int desktopWidth, int desktopHeight, LanguageSetting language)
         {
             return new GameSettingsData(1f, 0.7f, 1f, 0.8f, 0.5f,
                 WindowModeSetting.Borderless, desktopWidth > 0 ? desktopWidth : 1920,
-                desktopHeight > 0 ? desktopHeight : 1080, false);
+                desktopHeight > 0 ? desktopHeight : 1080, false,
+                LanguageDefaults.IsValid(language) ? language : LanguageSetting.English);
         }
 
         /// <summary>Returns valid values, replacing non-finite or invalid data with defaults.</summary>
@@ -80,7 +96,7 @@ namespace RetroFPS.Settings
                 ValidMode(windowMode) ? windowMode : defaults.WindowMode,
                 resolutionWidth > 0 && resolutionHeight > 0 ? resolutionWidth : defaults.ResolutionWidth,
                 resolutionWidth > 0 && resolutionHeight > 0 ? resolutionHeight : defaults.ResolutionHeight,
-                reduceMotion);
+                reduceMotion, LanguageDefaults.IsValid(language) ? language : defaults.Language);
         }
 
         internal static float Unit(float value, float fallback)
@@ -97,7 +113,7 @@ namespace RetroFPS.Settings
         internal GameSettingsData WithDisplay(WindowModeSetting mode, int width, int height)
         {
             return new GameSettingsData(masterVolume, musicVolume, sfxVolume, uiVolume,
-                mouseSensitivity, mode, width, height, reduceMotion);
+                mouseSensitivity, mode, width, height, reduceMotion, language);
         }
     }
 }

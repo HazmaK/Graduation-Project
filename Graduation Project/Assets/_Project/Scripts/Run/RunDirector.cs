@@ -243,7 +243,7 @@ namespace RetroFPS.Run
                 if (transition != null)
                 {
                     transition.BeginSlowMo();
-                    await transition.FadeOut(transition.ArafTint, transition.ArafEnterMessage, ct);
+                    await transition.FadeOut(transition.ArafTint, ArafTransition.MessageKind.Enter, ct);
                 }
 
                 _arafLevel.SetContentActive(true);
@@ -293,7 +293,7 @@ namespace RetroFPS.Run
 
                 if (transition != null)
                 {
-                    await transition.FadeOut(Color.black, transition.EscapeMessage, ct);
+                    await transition.FadeOut(Color.black, ArafTransition.MessageKind.Escape, ct);
                 }
 
                 if (_towerScene.IsValid() && _towerScene.isLoaded)

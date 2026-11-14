@@ -1,6 +1,7 @@
 using System.Globalization;
 using RetroFPS.Presentation;
 using RetroFPS.UI.Menu;
+using RetroFPS.Settings;
 using TMPro;
 using UnityEngine;
 
@@ -24,6 +25,7 @@ namespace RetroFPS.UI.HUD
         private double displayEnd;
         private double queueTimeScale = 1d;
         private bool reduceMotion;
+        private bool textDirty;
 
         /// <summary>Prebuilds bounded wave variants and separate line buffers before combat.</summary>
         public void Initialize()
@@ -34,16 +36,26 @@ namespace RetroFPS.UI.HUD
             queueTimeScale = 500d / Mathf.Max(1, config.BannerMergeWindowMs);
             queue = new HudBannerQueue(config.ArenaClearedHoldMs * 0.001d * queueTimeScale, config.BannerHoldMs * 0.001d * queueTimeScale,
                 config.BannerFadeInMs * 0.001d * queueTimeScale, config.BannerFadeOutMs * 0.001d * queueTimeScale);
-            sealedText = strings.Get("hud.banner.arenaSealed"); clearedText = strings.Get("hud.banner.arenaCleared");
-            waveTemplate = strings.Get("hud.banner.wave"); clearedTemplate = strings.Get("hud.banner.waveCleared");
             waves = new string[1000]; clearedWaves = new string[1000];
-            for (int i = 0; i < waves.Length; i++)
-            {
-                waves[i] = string.Format(CultureInfo.InvariantCulture, waveTemplate, HudNumberCache.GetInteger(i));
-                clearedWaves[i] = string.Format(CultureInfo.InvariantCulture, clearedTemplate, HudNumberCache.GetInteger(i));
-            }
+            RefreshLanguage(GameSettings.Current.Language);
             HudText.Prewarm(firstLine, clearedTemplate); HudText.Prewarm(secondLine, clearedTemplate);
             Clear();
+        }
+
+        /// <summary>Rebuilds bounded text once, preserving the semantic queue, clock, holds and fades.</summary>
+        public void RefreshLanguage(LanguageSetting language)
+        {
+            if (queue == null || strings == null) return;
+            sealedText = strings.Get("hud.banner.arenaSealed", language); clearedText = strings.Get("hud.banner.arenaCleared", language);
+            waveTemplate = strings.Get("hud.banner.wave", language); clearedTemplate = strings.Get("hud.banner.waveCleared", language);
+            CultureInfo culture = CultureInfo.GetCultureInfo(language == LanguageSetting.Turkish ? "tr-TR" : "en-US");
+            for (int i = 0; i < waves.Length; i++)
+            {
+                waves[i] = string.Format(culture, waveTemplate, HudNumberCache.GetInteger(i));
+                clearedWaves[i] = string.Format(culture, clearedTemplate, HudNumberCache.GetInteger(i));
+            }
+            textDirty = true;
+            Render();
         }
 
         /// <summary>Enqueues an event without constructing a string or collection.</summary>
@@ -70,9 +82,10 @@ namespace RetroFPS.UI.HUD
             if (queue == null || group == null) return;
             if (!queue.HasCurrent) { group.alpha = 0f; displayed = default; displayEnd = 0d; return; }
             HudBanner banner = queue.Current;
-            if (banner.Kind != displayed.Kind || banner.Wave != displayed.Wave || banner.SecondKind != displayed.SecondKind ||
+            if (textDirty || banner.Kind != displayed.Kind || banner.Wave != displayed.Wave || banner.SecondKind != displayed.SecondKind ||
                 banner.SecondWave != displayed.SecondWave || displayEnd != queue.ExpiresAt)
             {
+                textDirty = false;
                 displayed = banner; displayEnd = queue.ExpiresAt;
                 Line(firstLine, banner.Kind, banner.Wave, firstBuffer);
                 secondLine.gameObject.SetActive(banner.IsMerged);

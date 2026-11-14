@@ -2,6 +2,7 @@ using RetroFPS.Combat;
 using RetroFPS.Presentation;
 using RetroFPS.UI.Menu;
 using RetroFPS.Weapons;
+using RetroFPS.Settings;
 using TMPro;
 using UnityEngine;
 
@@ -22,6 +23,7 @@ namespace RetroFPS.UI.HUD
         private PlayerAmmoInventory inventory;
         private AmmoType ammoType;
         private int previousCurrent = -1, previousMaximum = -1;
+        private int equippedSlot = -1;
         private bool low, reduceMotion, textDirty;
         private float pickupUntil;
 
@@ -30,12 +32,24 @@ namespace RetroFPS.UI.HUD
         {
             inventory = source;
             if (names != null || strings == null) return;
-            names = new[] { strings.Get("hud.weapon.RepeaterArbalest"), strings.Get("hud.weapon.ExecutionerBlade"), strings.Get("hud.weapon.GothicShotgun") };
-            empty = strings.Get("hud.ammo.empty");
-            warning = strings.Get("hud.symbol.warning");
+            names = new string[3];
+            RefreshLanguage(GameSettings.Current.Language);
             HudText.Prewarm(weaponName, names[0]); HudText.Prewarm(slotText);
             HudText.Prewarm(currentText); HudText.Prewarm(warningText, empty);
             textDirty = true;
+        }
+
+        /// <summary>Refreshes identity and ammo copy without equipping again or clearing a pickup flash.</summary>
+        public void RefreshLanguage(LanguageSetting language)
+        {
+            if (names == null || strings == null) return;
+            names[0] = strings.Get("hud.weapon.RepeaterArbalest", language);
+            names[1] = strings.Get("hud.weapon.ExecutionerBlade", language);
+            names[2] = strings.Get("hud.weapon.GothicShotgun", language);
+            empty = strings.Get("hud.ammo.empty", language); warning = strings.Get("hud.symbol.warning", language);
+            if ((uint)equippedSlot < names.Length && weaponName != null) weaponName.text = names[equippedSlot];
+            textDirty = true;
+            if (previousCurrent >= 0) AmmoChanged(ammoType, previousCurrent, previousMaximum);
         }
 
         /// <summary>Updates name, silhouette and type colour, then snapshots the correct inventory pool.</summary>
@@ -45,6 +59,7 @@ namespace RetroFPS.UI.HUD
             gameObject.SetActive(weapon != null);
             if (weapon == null) return;
             int slot = (int)weapon.Slot;
+            equippedSlot = slot;
             pickupUntil = 0f;
             weaponName.text = slot >= 0 && slot < names.Length ? names[slot] : string.Empty;
             HudText.Template(slotText, "[{0}]", slot + 1, 0, digits);

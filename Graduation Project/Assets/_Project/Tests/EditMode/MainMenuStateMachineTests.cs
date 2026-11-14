@@ -59,7 +59,7 @@ namespace RetroFPS.Tests
             var machine = Ready();
             Assert.That(machine.OpenSettings(), Is.True);
             machine.Tick(0.08f);
-            Assert.That(machine.FocusTarget, Is.EqualTo(MenuFocusTarget.MasterVolume));
+            Assert.That(machine.FocusTarget, Is.EqualTo(MenuFocusTarget.Language));
             Assert.That(machine.Start(), Is.False);
             Assert.That(machine.OpenQuitConfirm(), Is.False);
             Assert.That(machine.Back(), Is.True);

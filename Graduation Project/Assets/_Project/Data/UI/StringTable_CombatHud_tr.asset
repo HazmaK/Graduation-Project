@@ -15,79 +15,139 @@ MonoBehaviour:
   entries:
   - key: hud.health.label
     value: CAN
+    en: HEALTH
   - key: hud.dash.label
     value: ATILMA
+    en: DASH
   - key: hud.parry.label
-    value: "SAVU\u015ETUR"
+    value: PARRY
+    en: PARRY
   - key: hud.parry.ready
     value: HAZIR
+    en: READY
   - key: hud.parry.active
     value: "AKT\u0130F"
+    en: ACTIVE
   - key: hud.parry.cooldown
     value: BEKLE
+    en: WAIT
   - key: hud.parry.success
-    value: "SAVU\u015ETURULDU"
+    value: PARRY!
+    en: PARRIED
   - key: hud.hook.label
     value: KANCA
+    en: HOOK
   - key: hud.hook.ready
     value: HAZIR
+    en: READY
   - key: hud.hook.cooldown
     value: BEKLE
+    en: WAIT
   - key: hud.ammo.empty
     value: "BO\u015E"
+    en: EMPTY
   - key: hud.weapon.melee
     value: YAKIN
+    en: MELEE
   - key: hud.ammo.bolts
     value: OK
+    en: BOLTS
   - key: hud.ammo.shells
     value: "SA\xC7MA"
+    en: SHELLS
   - key: hud.wave.counter
     value: DALGA {0}/{1}
+    en: WAVE {0}/{1}
   - key: hud.wave.remaining
     value: KALAN {0}
+    en: LEFT {0}
   - key: hud.wave.label
     value: DALGA
+    en: WAVE
   - key: hud.wave.remainingLabel
     value: KALAN
+    en: LEFT
   - key: hud.araf.roomsLabel
     value: ODALAR
+    en: ROOMS
   - key: hud.araf.ready
     value: 'ARAF: HAZIR'
+    en: 'ARAF: READY'
   - key: hud.araf.used
     value: 'ARAF: KULLANILDI'
+    en: 'ARAF: USED'
   - key: hud.araf.warning
     value: "ARAF'TASIN \u2014 \xC7IKI\u015E ODASINI BUL"
+    en: "IN ARAF \u2014 FIND THE EXIT ROOM"
   - key: hud.araf.rooms
     value: ODALAR {0}/{1}
+    en: ROOMS {0}/{1}
   - key: hud.araf.exitFound
     value: "\xC7IKI\u015E BULUNDU"
+    en: EXIT FOUND
   - key: hud.banner.arenaSealed
     value: "ARENA M\xDCH\xDCRLEND\u0130"
+    en: ARENA SEALED
   - key: hud.banner.wave
     value: DALGA {0}
+    en: WAVE {0}
   - key: hud.banner.waveCleared
     value: "DALGA {0} TEM\u0130ZLEND\u0130"
+    en: WAVE {0} CLEARED
   - key: hud.banner.arenaCleared
     value: "ARENA TEM\u0130ZLEND\u0130"
+    en: ARENA CLEARED
   - key: hud.truedeath.title
     value: "GER\xC7EK \xD6L\xDCM"
+    en: TRUE DEATH
   - key: hud.truedeath.restart
     value: TEKRAR DENE
+    en: TRY AGAIN
   - key: hud.weapon.RepeaterArbalest
     value: ARBALET
+    en: ARBALEST
   - key: hud.weapon.ExecutionerBlade
     value: CELLAT KILICI
+    en: EXECUTIONER
   - key: hud.weapon.GothicShotgun
     value: "GOT\u0130K POMPALI"
+    en: GOTHIC SHOTGUN
   - key: hud.symbol.slash
     value: /
+    en: /
   - key: hud.symbol.plus
     value: +
+    en: +
   - key: hud.symbol.warning
     value: '!'
+    en: '!'
   - key: hud.symbol.slotOpen
     value: '['
+    en: '['
   - key: hud.symbol.slotClose
     value: ']'
+    en: ']'
   - key: hud.dash.counter
     value: ATILMA {0}/{1}
+    en: DASH {0}/{1}
+  - key: popup.critical
+    value: CRIT!
+    en: CRIT!
+  - key: popup.reflected
+    value: PARRY
+    en: PARRY
+  - key: popup.health
+    value: HP
+    en: HP
+  - key: popup.bolts
+    value: OK
+    en: BOLTS
+  - key: popup.shells
+    value: "SA\xC7MA"
+    en: SHELLS
+  - key: transition.araf.enter
+    value: ARAF
+    en: ARAF
+  - key: transition.araf.escape
+    value: "KA\xC7I\u015E"
+    en: ESCAPE

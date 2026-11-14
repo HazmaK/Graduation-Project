@@ -171,7 +171,8 @@ namespace RetroFPS.Combat
                 }
             }
 
-            Destroy(gameObject);
+            if (Application.isPlaying) Destroy(gameObject);
+            else DestroyImmediate(gameObject);
         }
 
         /// <summary>

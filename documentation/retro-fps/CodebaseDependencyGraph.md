@@ -87,6 +87,12 @@ flowchart TD
         AmmoHUD["AmmoHUD (Retro Cephane Paneli)"]
     end
 
+    subgraph LOC["🌐 Yerelleştirme Sözleşmesi (Core)"]
+        ILoc["ILocalizedStringProvider (Core)"]
+        MenuStrings["StringTable (Menu, implements)"]
+        ArafT["ArafTransition (Run)"]
+    end
+
     %% Bağlantılar
     InputAction --> PM & PL & PP & WC
     
@@ -154,6 +160,9 @@ flowchart TD
     
     WC -.->|OnWeaponHit| HUD
     AmmoInv -.->|OnAmmoChanged| AmmoHUD
+    MenuStrings -.->|implements| ILoc
+    DamageNum -.->|Get key, language| ILoc
+    ArafT -.->|Get key, language| ILoc
 ```
 
 ---

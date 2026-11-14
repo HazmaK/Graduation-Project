@@ -1,4 +1,5 @@
 using System.Globalization;
+using RetroFPS.Settings;
 using TMPro;
 using UnityEngine;
 
@@ -15,6 +16,11 @@ namespace RetroFPS.UI.Menu
         [SerializeField] private MenuTheme theme;
         private string[] countdownStrings;
         private int shownSeconds = -1;
+        private RevertCountdown activeCountdown;
+        private LanguageSetting cachedLanguage;
+        private bool hasLanguage;
+        private static readonly CultureInfo TurkishCulture = CultureInfo.GetCultureInfo("tr-TR");
+        private static readonly CultureInfo EnglishCulture = CultureInfo.GetCultureInfo("en-US");
 
         /// <summary>Dialog opacity and input boundary.</summary>
         public CanvasGroup Group => group;
@@ -26,14 +32,34 @@ namespace RetroFPS.UI.Menu
         private void Awake()
         {
             countdownStrings = new string[11];
-            string format = strings.Get("display.revert_countdown_format");
+            RefreshLanguage(GameSettings.Current);
+        }
+
+        private void OnEnable()
+        {
+            GameSettings.Changed += RefreshLanguage;
+            RefreshLanguage(GameSettings.Current);
+            if (activeCountdown != null) ShowCountdown(activeCountdown);
+        }
+        private void OnDisable() => GameSettings.Changed -= RefreshLanguage;
+
+        private void RefreshLanguage(GameSettingsData data)
+        {
+            if (hasLanguage && cachedLanguage == data.Language) return;
+            cachedLanguage = data.Language;
+            hasLanguage = true;
+            CultureInfo culture = data.Language == LanguageSetting.Turkish ? TurkishCulture : EnglishCulture;
+            string format = strings.Get("display.revert_countdown_format", data.Language);
             for (int i = 0; i < countdownStrings.Length; i++)
-                countdownStrings[i] = string.Format(CultureInfo.GetCultureInfo("tr-TR"), format, i);
+                countdownStrings[i] = string.Format(culture, format, i);
+            shownSeconds = -1;
+            if (activeCountdown != null) ShowCountdown(activeCountdown);
         }
 
         /// <summary>Uses a prebuilt string and numeric urgency for the display deadline.</summary>
         public void ShowCountdown(RevertCountdown countdown)
         {
+            activeCountdown = countdown;
             if (countdownLabel == null) return;
             int seconds = Mathf.Clamp(countdown.WholeSecondsRemaining, 0, 10);
             if (shownSeconds != seconds)

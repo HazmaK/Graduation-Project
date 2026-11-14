@@ -59,7 +59,7 @@ namespace RetroFPS.Settings
                 default: throw new ArgumentException("Unknown volume key.", nameof(key));
             }
             current = new GameSettingsData(master, music, sfx, ui, current.MouseSensitivity,
-                current.WindowMode, current.ResolutionWidth, current.ResolutionHeight, current.ReduceMotion);
+                current.WindowMode, current.ResolutionWidth, current.ResolutionHeight, current.ReduceMotion, current.Language);
             audio.Apply(current);
             PersistNonDisplay();
         }
@@ -69,7 +69,7 @@ namespace RetroFPS.Settings
         {
             current = new GameSettingsData(current.MasterVolume, current.MusicVolume,
                 current.SfxVolume, current.UiVolume, GameSettingsData.Unit(value, defaults.MouseSensitivity),
-                current.WindowMode, current.ResolutionWidth, current.ResolutionHeight, current.ReduceMotion);
+                current.WindowMode, current.ResolutionWidth, current.ResolutionHeight, current.ReduceMotion, current.Language);
             PersistNonDisplay();
         }
 
@@ -78,7 +78,19 @@ namespace RetroFPS.Settings
         {
             current = new GameSettingsData(current.MasterVolume, current.MusicVolume,
                 current.SfxVolume, current.UiVolume, current.MouseSensitivity,
-                current.WindowMode, current.ResolutionWidth, current.ResolutionHeight, value);
+                current.WindowMode, current.ResolutionWidth, current.ResolutionHeight, value, current.Language);
+            PersistNonDisplay();
+        }
+
+        /// <inheritdoc/>
+        public void SetLanguage(LanguageSetting language)
+        {
+            if (!LanguageDefaults.IsValid(language)) throw new ArgumentOutOfRangeException(nameof(language));
+            if (current.Language == language) return;
+            current = new GameSettingsData(current.MasterVolume, current.MusicVolume,
+                current.SfxVolume, current.UiVolume, current.MouseSensitivity,
+                current.WindowMode, current.ResolutionWidth, current.ResolutionHeight,
+                current.ReduceMotion, language);
             PersistNonDisplay();
         }
 

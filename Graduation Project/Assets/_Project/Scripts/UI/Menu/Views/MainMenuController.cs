@@ -31,6 +31,8 @@ namespace RetroFPS.UI.Menu
         private float[] alphaFrom;
         private float[] alphaTo;
         private bool hasStarted;
+        private LanguageSetting cachedLanguage;
+        private bool hasLanguage;
 
         /// <summary>All activation, pointer and navigation input must respect this gate.</summary>
         public bool InputLocked => machine == null || machine.InputLocked || fader.IsFading;
@@ -49,9 +51,10 @@ namespace RetroFPS.UI.Menu
                     case MenuFocusTarget.Start: return rootItems[0];
                     case MenuFocusTarget.Settings: return rootItems[1];
                     case MenuFocusTarget.Quit: return rootItems[2];
-                    case MenuFocusTarget.MasterVolume: return settingsItems[0];
-                    case MenuFocusTarget.WindowMode: return settingsItems[5];
-                    case MenuFocusTarget.Resolution: return settingsItems[6];
+                    case MenuFocusTarget.Language: return settingsItems[0];
+                    case MenuFocusTarget.MasterVolume: return settingsItems[1];
+                    case MenuFocusTarget.WindowMode: return settingsItems[6];
+                    case MenuFocusTarget.Resolution: return settingsItems[7];
                     case MenuFocusTarget.No: return quitDialog.Negative;
                     case MenuFocusTarget.Revert: return revertDialog.Negative;
                     default: return null;
@@ -75,27 +78,28 @@ namespace RetroFPS.UI.Menu
             rootItems[0].GetComponent<UnityEngine.UI.Button>().onClick.AddListener(StartRun);
             rootItems[1].GetComponent<UnityEngine.UI.Button>().onClick.AddListener(OpenSettings);
             rootItems[2].GetComponent<UnityEngine.UI.Button>().onClick.AddListener(OpenQuit);
-            settingsItems[8].GetComponent<UnityEngine.UI.Button>().onClick.AddListener(Back);
+            settingsItems[9].GetComponent<UnityEngine.UI.Button>().onClick.AddListener(Back);
             quitDialog.Affirmative.onClick.AddListener(ConfirmQuit);
             quitDialog.Negative.onClick.AddListener(Back);
             revertDialog.Affirmative.onClick.AddListener(KeepDisplay);
             revertDialog.Negative.onClick.AddListener(RevertDisplay);
             machine.DisplayResolved += settingsPanel.ResolveDisplay;
-            loadError.text = strings.Get("menu.load_error");
             loadError.color = theme.Danger;
-            versionLabel.text = string.IsNullOrEmpty(Application.version) ? string.Empty
-                : string.Format(CultureInfo.InvariantCulture, strings.Get("menu.version_format"), Application.version);
+            RefreshLanguage(GameSettings.Current);
         }
 
         private void OnEnable()
         {
             MenuEvents.PanelChanged += OnPanelChanged;
             MenuEvents.LoadFailed += OnLoadFailed;
+            GameSettings.Changed += RefreshLanguage;
+            RefreshLanguage(GameSettings.Current);
         }
         private void OnDisable()
         {
             MenuEvents.PanelChanged -= OnPanelChanged;
             MenuEvents.LoadFailed -= OnLoadFailed;
+            GameSettings.Changed -= RefreshLanguage;
             if (hasStarted && GameSettings.Service.HasPendingDisplay) GameSettings.Service.RevertDisplay();
         }
         private void Start()
@@ -103,6 +107,15 @@ namespace RetroFPS.UI.Menu
             hasStarted = true;
             fader.Fade(false, theme.FirstLoadSeconds);
             RenderState();
+        }
+        private void RefreshLanguage(GameSettingsData data)
+        {
+            if (hasLanguage && cachedLanguage == data.Language) return;
+            cachedLanguage = data.Language;
+            hasLanguage = true;
+            loadError.text = strings.Get("menu.load_error", data.Language);
+            versionLabel.text = string.IsNullOrEmpty(Application.version) ? string.Empty
+                : string.Format(CultureInfo.InvariantCulture, strings.Get("menu.version_format", data.Language), Application.version);
         }
         private void Update()
         {

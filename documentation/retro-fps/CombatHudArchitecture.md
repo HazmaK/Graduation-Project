@@ -17,7 +17,7 @@ tags:
 > Savaş HUD'u UGUI ve `RetroFPS.HUD` assembly'sinde kuruludur. HUD yalnızca gösterir ve istek gönderir. Oyun durumunu (can, dalga, Araf, run) oyun sistemleri sahiplenir.
 > - **Spec:** `design/ux/hud.md`
 > - **Erişilebilirlik:** Standart seviye
-> - **Son Güncelleme:** 2026-11-12
+> - **Son Güncelleme:** 2026-11-14
 
 ---
 
@@ -75,6 +75,12 @@ flowchart LR
 | HUD/Views | `TrueDeathView.cs` | Gerçek Ölüm kartı. Onay sonrası `NewRunRequested` gönderir. |
 | HUD/Views | `HudEventSystemGuard.cs` | Sahnede tek etkin EventSystem olmasını sağlar. |
 | Gameplay | `RunRestartHandler` | `HudRequests.NewRunRequested` olayını dinler ve `RunDirector.RestartRun()` çağırır. |
+
+## 3.1 DİL DEĞİŞİMİ VE SUNUM BAĞIMLILIKLARI (2026-11-14)
+- **HUD önbellekleri:** Görünümler dil değişiminde önbelleklerini `HudBindings` üzerinden yeniler. `HudBindings` mevcut `Changed` aboneliğini kullanır; dil gerçekten değiştiğinde her metin sahibi görünümün yenileme metodunu bir kez çağırır, ardından güncel veriyi yeniden çizer. Gizli alt öğeler de kapsanır.
+- **Yenileme sınırı:** Tahsis yalnızca dil değişiminde ve ayrık olaylarda yapılır; her karede önbellek yeniden kurulmaz. Zamanlayıcılar, bekleme süreleri, duyuru kuyruğu ve Gerçek Ölüm kartı sıfırlanmaz.
+- **Hasar sayıları:** `DamageNumberSystem` metinleri `DamagePopupTextCache` ile üretir ve Core `ILocalizedStringProvider` üzerinden okur. Yalnızca mühimmat kelimeleri değişir (OK ↔ BOLTS, SAÇMA ↔ SHELLS). `CRIT!`, `PARRY` ve `HP` iki dilde aynıdır. Aktif havuzdaki sayılar yeni dile göre yeniden etiketlenir; konum, hız ve zamanlayıcılar korunur.
+- **Araf geçişi:** `ArafTransition` ara yazılarını (`ARAF` / `KAÇIŞ`) `RunDirector`'ın gönderdiği anlamsal Enter/Escape kimlikleriyle çözer. Dil değişimi asenkron geçişleri, yavaş hareketi veya iptali yeniden başlatmaz.
 
 ## 4. KURALLAR
 - **HUD oyun durumunu sahiplenmez.** Yalnızca olay dinler ve istek gönderir. Run, can ve sahne durumunu değiştirmez.

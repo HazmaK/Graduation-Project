@@ -2,6 +2,7 @@ using System;
 using System.Text;
 using RetroFPS.Presentation;
 using RetroFPS.Run;
+using RetroFPS.Settings;
 using RetroFPS.UI.HUD;
 using RetroFPS.UI.Menu;
 using RetroFPS.Weapons;
@@ -81,6 +82,7 @@ namespace RetroFPS.Editor
             theme = Asset<HudTheme>(Data + "HudTheme_KanVeKemik.asset");
             strings = Asset<StringTable>(Data + "StringTable_CombatHud_tr.asset");
             PopulateStrings();
+            EnsureLocalizationCatalog();
             HudPlaceholderArt.Generate();
             Set(theme, "menuTheme", menu);
             string[] fields = { "plate", "chip", "barTrack", "barFill", "cross", "diamond", "shield", "hook", "weaponBolt", "weaponShell", "weaponBlade", "sigilAraf", "arrow", "hatch" };
@@ -114,50 +116,146 @@ namespace RetroFPS.Editor
 
         private static void PopulateStrings()
         {
-            string[,] defaults =
+            StringTable.Translation[] defaults =
             {
-                { "hud.health.label", "CAN" }, { "hud.dash.counter", "ATILMA {0}/{1}" }, { "hud.dash.label", "ATILMA" }, { "hud.parry.label", "SAVUŞTUR" },
-                { "hud.parry.ready", "HAZIR" }, { "hud.parry.active", "AKTİF" }, { "hud.parry.cooldown", "BEKLE" }, { "hud.parry.success", "SAVUŞTURULDU" },
-                { "hud.hook.label", "KANCA" }, { "hud.hook.ready", "HAZIR" }, { "hud.hook.cooldown", "BEKLE" },
-                { "hud.ammo.empty", "BOŞ" }, { "hud.weapon.melee", "YAKIN" }, { "hud.ammo.bolts", "OK" }, { "hud.ammo.shells", "SAÇMA" },
-                { "hud.wave.counter", "DALGA {0}/{1}" }, { "hud.wave.remaining", "KALAN {0}" },
-                { "hud.wave.label", "DALGA" }, { "hud.wave.remainingLabel", "KALAN" }, { "hud.araf.roomsLabel", "ODALAR" },
-                { "hud.araf.ready", "ARAF: HAZIR" }, { "hud.araf.used", "ARAF: KULLANILDI" },
-                { "hud.araf.warning", "ARAF'TASIN — ÇIKIŞ ODASINI BUL" }, { "hud.araf.rooms", "ODALAR {0}/{1}" }, { "hud.araf.exitFound", "ÇIKIŞ BULUNDU" },
-                { "hud.banner.arenaSealed", "ARENA MÜHÜRLENDİ" }, { "hud.banner.wave", "DALGA {0}" }, { "hud.banner.waveCleared", "DALGA {0} TEMİZLENDİ" },
-                { "hud.banner.arenaCleared", "ARENA TEMİZLENDİ" }, { "hud.truedeath.title", "GERÇEK ÖLÜM" }, { "hud.truedeath.restart", "TEKRAR DENE" },
-                { "hud.weapon.RepeaterArbalest", "ARBALET" }, { "hud.weapon.ExecutionerBlade", "CELLAT KILICI" }, { "hud.weapon.GothicShotgun", "GOTİK POMPALI" },
-                { "hud.symbol.slash", "/" }, { "hud.symbol.plus", "+" }, { "hud.symbol.warning", "!" },
-                { "hud.symbol.slotOpen", "[" }, { "hud.symbol.slotClose", "]" }
+                new StringTable.Translation("hud.health.label", "CAN", "HEALTH"),
+                new StringTable.Translation("hud.dash.label", "ATILMA", "DASH"),
+                new StringTable.Translation("hud.parry.label", "PARRY", "PARRY"),
+                new StringTable.Translation("hud.parry.ready", "HAZIR", "READY"),
+                new StringTable.Translation("hud.parry.active", "AKTİF", "ACTIVE"),
+                new StringTable.Translation("hud.parry.cooldown", "BEKLE", "WAIT"),
+                new StringTable.Translation("hud.parry.success", "PARRY!", "PARRIED"),
+                new StringTable.Translation("hud.hook.label", "KANCA", "HOOK"),
+                new StringTable.Translation("hud.hook.ready", "HAZIR", "READY"),
+                new StringTable.Translation("hud.hook.cooldown", "BEKLE", "WAIT"),
+                new StringTable.Translation("hud.ammo.empty", "BOŞ", "EMPTY"),
+                new StringTable.Translation("hud.weapon.melee", "YAKIN", "MELEE"),
+                new StringTable.Translation("hud.ammo.bolts", "OK", "BOLTS"),
+                new StringTable.Translation("hud.ammo.shells", "SAÇMA", "SHELLS"),
+                new StringTable.Translation("hud.wave.counter", "DALGA {0}/{1}", "WAVE {0}/{1}"),
+                new StringTable.Translation("hud.wave.remaining", "KALAN {0}", "LEFT {0}"),
+                new StringTable.Translation("hud.wave.label", "DALGA", "WAVE"),
+                new StringTable.Translation("hud.wave.remainingLabel", "KALAN", "LEFT"),
+                new StringTable.Translation("hud.araf.roomsLabel", "ODALAR", "ROOMS"),
+                new StringTable.Translation("hud.araf.ready", "ARAF: HAZIR", "ARAF: READY"),
+                new StringTable.Translation("hud.araf.used", "ARAF: KULLANILDI", "ARAF: USED"),
+                new StringTable.Translation("hud.araf.warning", "ARAF'TASIN — ÇIKIŞ ODASINI BUL", "IN ARAF — FIND THE EXIT ROOM"),
+                new StringTable.Translation("hud.araf.rooms", "ODALAR {0}/{1}", "ROOMS {0}/{1}"),
+                new StringTable.Translation("hud.araf.exitFound", "ÇIKIŞ BULUNDU", "EXIT FOUND"),
+                new StringTable.Translation("hud.banner.arenaSealed", "ARENA MÜHÜRLENDİ", "ARENA SEALED"),
+                new StringTable.Translation("hud.banner.wave", "DALGA {0}", "WAVE {0}"),
+                new StringTable.Translation("hud.banner.waveCleared", "DALGA {0} TEMİZLENDİ", "WAVE {0} CLEARED"),
+                new StringTable.Translation("hud.banner.arenaCleared", "ARENA TEMİZLENDİ", "ARENA CLEARED"),
+                new StringTable.Translation("hud.truedeath.title", "GERÇEK ÖLÜM", "TRUE DEATH"),
+                new StringTable.Translation("hud.truedeath.restart", "TEKRAR DENE", "TRY AGAIN"),
+                new StringTable.Translation("hud.weapon.RepeaterArbalest", "ARBALET", "ARBALEST"),
+                new StringTable.Translation("hud.weapon.ExecutionerBlade", "CELLAT KILICI", "EXECUTIONER"),
+                new StringTable.Translation("hud.weapon.GothicShotgun", "GOTİK POMPALI", "GOTHIC SHOTGUN"),
+                new StringTable.Translation("hud.symbol.slash", "/", "/"),
+                new StringTable.Translation("hud.symbol.plus", "+", "+"),
+                new StringTable.Translation("hud.symbol.warning", "!", "!"),
+                new StringTable.Translation("hud.symbol.slotOpen", "[", "["),
+                new StringTable.Translation("hud.symbol.slotClose", "]", "]"),
+                new StringTable.Translation("hud.dash.counter", "ATILMA {0}/{1}", "DASH {0}/{1}"),
+                new StringTable.Translation("popup.critical", "CRIT!", "CRIT!"),
+                new StringTable.Translation("popup.reflected", "PARRY", "PARRY"),
+                new StringTable.Translation("popup.health", "HP", "HP"),
+                new StringTable.Translation("popup.bolts", "OK", "BOLTS"),
+                new StringTable.Translation("popup.shells", "SAÇMA", "SHELLS"),
+                new StringTable.Translation("transition.araf.enter", "ARAF", "ARAF"),
+                new StringTable.Translation("transition.araf.escape", "KAÇIŞ", "ESCAPE")
             };
-            strings.RebuildCache();
-            var so = new SerializedObject(strings); SerializedProperty entries = so.FindProperty("entries");
-            for (int i = 0; i < defaults.GetLength(0); i++)
+            if (strings.UpsertEntries(defaults)) EditorUtility.SetDirty(strings);
+            ApplyEnglishCopyV1();
+            ApplyTurkishCopyV2();
+            strings.ValidateEntries();
+            for (int i = 0; i < defaults.Length; i++)
             {
-                // Refill missing or empty entries from interrupted builds without overwriting authored wording.
-                int index = -1;
-                for (int j = 0; j < entries.arraySize; j++)
-                    if (entries.GetArrayElementAtIndex(j).FindPropertyRelative("key").stringValue == defaults[i, 0]) { index = j; break; }
-                bool added = index < 0;
-                if (added) { index = entries.arraySize; entries.arraySize++; }
-                SerializedProperty entry = entries.GetArrayElementAtIndex(index);
-                entry.FindPropertyRelative("key").stringValue = defaults[i, 0];
-                string existing = entry.FindPropertyRelative("value").stringValue;
-                bool legacyWeapon = (defaults[i, 0] == "hud.weapon.RepeaterArbalest" && existing == "REPEATER ARBALEST") ||
-                    (defaults[i, 0] == "hud.weapon.ExecutionerBlade" && existing == "EXECUTIONER BLADE") ||
-                    (defaults[i, 0] == "hud.weapon.GothicShotgun" && existing == "GOTHIC SUPER SHOTGUN");
-                if (added || string.IsNullOrEmpty(existing) || legacyWeapon) entry.FindPropertyRelative("value").stringValue = defaults[i, 1];
+                string key = defaults[i].Key;
+                string tr = strings.Get(key, LanguageSetting.Turkish), en = strings.Get(key, LanguageSetting.English);
+                if (tr.Length > 200 || en.Length > 200)
+                    throw new InvalidOperationException("HUD text exceeds fixed capacity: " + key);
+                // Formatting outside gameplay catches malformed or mismatched authored placeholders.
+                string.Format(System.Globalization.CultureInfo.InvariantCulture, tr, "999", "999");
+                string.Format(System.Globalization.CultureInfo.InvariantCulture, en, "999", "999");
+                if (PlaceholderSignature(tr) != PlaceholderSignature(en) ||
+                    PlaceholderSignature(tr) != PlaceholderSignature(defaults[i].Turkish))
+                    throw new InvalidOperationException("HUD placeholder mismatch: " + key);
             }
-            so.ApplyModifiedPropertiesWithoutUndo(); strings.RebuildCache();
-            for (int i = 0; i < defaults.GetLength(0); i++)
-                if (strings.Get(defaults[i, 0]).Length > 200) throw new InvalidOperationException("HUD text exceeds fixed capacity: " + defaults[i, 0]);
+        }
+
+        // P3 copy revision v1: migrate only the original oversized English weapon name.
+        // Other authored cells (including a custom replacement for this name) remain untouched.
+        private static void ApplyEnglishCopyV1()
+        {
+            var serialized = new SerializedObject(strings);
+            SerializedProperty entries = serialized.FindProperty("entries");
+            for (int i = 0; i < entries.arraySize; i++)
+            {
+                SerializedProperty entry = entries.GetArrayElementAtIndex(i);
+                if (entry.FindPropertyRelative("key").stringValue != "hud.weapon.ExecutionerBlade") continue;
+                SerializedProperty english = entry.FindPropertyRelative("en");
+                if (english.stringValue != "EXECUTIONER BLADE") return;
+                english.stringValue = "EXECUTIONER";
+                serialized.ApplyModifiedPropertiesWithoutUndo();
+                strings.RebuildCache();
+                EditorUtility.SetDirty(strings);
+                return;
+            }
+        }
+
+        // Copy revision v2 (user decision 2026-11-14): "SAVUŞTUR" did not fit the parry cell, so the
+        // Turkish label uses the game-jargon "PARRY" like the popups. Only the original value migrates.
+        private static void ApplyTurkishCopyV2()
+        {
+            var serialized = new SerializedObject(strings);
+            SerializedProperty entries = serialized.FindProperty("entries");
+            bool changed = false;
+            for (int i = 0; i < entries.arraySize; i++)
+            {
+                SerializedProperty entry = entries.GetArrayElementAtIndex(i);
+                string key = entry.FindPropertyRelative("key").stringValue;
+                SerializedProperty turkish = entry.FindPropertyRelative("value");
+                // "SAVUŞTURULDU" also overflowed the parry state cell; it follows the same jargon decision.
+                if (key == "hud.parry.label" && turkish.stringValue == "SAVUŞTUR") { turkish.stringValue = "PARRY"; changed = true; }
+                else if (key == "hud.parry.success" && turkish.stringValue == "SAVUŞTURULDU") { turkish.stringValue = "PARRY!"; changed = true; }
+            }
+            if (!changed) return;
+            serialized.ApplyModifiedPropertiesWithoutUndo();
+            strings.RebuildCache();
+            EditorUtility.SetDirty(strings);
+        }
+
+        private static string PlaceholderSignature(string text)
+        {
+            var tokens = new System.Collections.Generic.List<string>();
+            foreach (System.Text.RegularExpressions.Match token in System.Text.RegularExpressions.Regex.Matches(text, @"\{[^{}]+\}"))
+                tokens.Add(token.Value);
+            tokens.Sort(StringComparer.Ordinal);
+            return string.Join("|", tokens);
+        }
+
+        private static void EnsureLocalizationCatalog()
+        {
+            EnsureFolder("Assets/_Project/Resources/Localization");
+            var catalog = Asset<LocalizationCatalog>("Assets/_Project/Resources/Localization/LocalizationCatalog.asset");
+            var serialized = new SerializedObject(catalog);
+            SerializedProperty reference = serialized.FindProperty("combatTable");
+            if (reference.objectReferenceValue == strings) return;
+            reference.objectReferenceValue = strings;
+            serialized.ApplyModifiedPropertiesWithoutUndo();
+            EditorUtility.SetDirty(catalog);
         }
 
         private static void ValidateGlyphs(MenuTheme menu)
         {
-            var all = new StringBuilder("ÇçĞğİıÖöŞşÜü%/+!—'[]0123456789");
+            var all = new StringBuilder("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyzÇçĞğİıÖöŞşÜü%/+!—'[]0123456789");
             var so = new SerializedObject(strings); SerializedProperty entries = so.FindProperty("entries");
-            for (int i = 0; i < entries.arraySize; i++) all.Append(entries.GetArrayElementAtIndex(i).FindPropertyRelative("value").stringValue);
+            for (int i = 0; i < entries.arraySize; i++)
+            {
+                all.Append(entries.GetArrayElementAtIndex(i).FindPropertyRelative("value").stringValue);
+                all.Append(entries.GetArrayElementAtIndex(i).FindPropertyRelative("en").stringValue);
+            }
             string characters = all.ToString();
             if (menu.FallbackFont != null && menu.FallbackFont.atlasPopulationMode == AtlasPopulationMode.Dynamic)
             {
@@ -169,6 +267,11 @@ namespace RetroFPS.Editor
             foreach (TMP_FontAsset font in new[] { menu.UiFont, menu.TitleFont })
                 if (!font.HasCharacters(characters, out uint[] missing, true, true))
                     throw new InvalidOperationException("Shared HUD font lacks required characters; missing count: " + missing.Length);
+            Font legacyFont = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            legacyFont.RequestCharactersInTexture(characters, 52, FontStyle.Normal);
+            for (int i = 0; i < characters.Length; i++)
+                if (!char.IsWhiteSpace(characters[i]) && !legacyFont.HasCharacter(characters[i]))
+                    throw new InvalidOperationException("Transition/popup font lacks required character: " + characters[i]);
         }
 
         private static void BuildHud(GameObject root)
@@ -283,8 +386,13 @@ namespace RetroFPS.Editor
             current.overflowMode = TextOverflowModes.Overflow; // bounded digits; Ellipsis would blank the 48px line
             RetireLabels(ammo, "Slash", "Maximum");
             var fill = Bar("AmmoBar", ammo, 12, 53, theme.AmmoBarSize.x, theme.AmmoBarSize.y, theme.TypeBolts);
-            RectTransform warning = Chip("Warning", ammo, 236, 12, 72, 36, "hud.symbol.warning", 20);
-            var highlight = Image("Highlight", warning, theme.Chip, Palette.Text, 0, 0, 72, 36);
+            // 88px fits "EMPTY"/"BOŞ" at 20px; ends at 308 inside the 320px plate.
+            // WeaponAmmoHudView owns this text (BOŞ/EMPTY); a LocalizedText on it overwrote the word with "!"
+            // on every language change, so the chip gets no key and any previously generated one is removed.
+            RectTransform warning = Chip("Warning", ammo, 220, 12, 88, 36, null, 20);
+            LocalizedText staleLocalized = warning.Find("Text").GetComponent<LocalizedText>();
+            if (staleLocalized != null) Object.DestroyImmediate(staleLocalized, true);
+            var highlight = Image("Highlight", warning, theme.Chip, Palette.Text, 0, 0, 88, 36);
             Stretch(highlight.rectTransform); highlight.type = UnityEngine.UI.Image.Type.Sliced; highlight.fillCenter = false; highlight.pixelsPerUnitMultiplier = 1f / 3f;
             TMP_Text warningText = warning.Find("Text").GetComponent<TMP_Text>(); warningText.transform.SetAsLastSibling();
             TMP_Text melee = Label("Melee", plate, "hud.weapon.melee", 20, 12, 56, 296, 35);
@@ -552,13 +660,13 @@ namespace RetroFPS.Editor
             TMP_Text text = Label("Text", chip.transform, key, size, 3, 0, width - 6, height); text.color = Palette.Background; text.alignment = TextAlignmentOptions.Center;
             return chip.rectTransform;
         }
-        // Keep obsolete prefab leaves inactive so rebuilding preserves existing object identities.
+        // Obsolete text leaves have no live bindings; remove them from the generated prefab.
         private static void RetireLabels(Transform parent, params string[] names)
         {
             for (int i = 0; i < names.Length; i++)
             {
                 Transform child = parent.Find(names[i]);
-                if (child != null) child.gameObject.SetActive(false);
+                if (child != null) Object.DestroyImmediate(child.gameObject);
             }
         }
         private static TMP_Text Label(string name, Transform parent, string key, float size, float x, float y, float width, float height)

@@ -93,12 +93,12 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 32
+  m_fontSize: 36
   m_fontSizeBase: 32
   m_fontWeight: 400
   m_enableAutoSizing: 1
-  m_fontSizeMin: 24
-  m_fontSizeMax: 32
+  m_fontSizeMin: 36
+  m_fontSizeMax: 36
   m_fontStyle: 0
   m_HorizontalAlignment: 1
   m_VerticalAlignment: 4096
@@ -249,7 +249,7 @@ MonoBehaviour:
   m_fontSizeBase: 40
   m_fontWeight: 400
   m_enableAutoSizing: 1
-  m_fontSizeMin: 24
+  m_fontSizeMin: 36
   m_fontSizeMax: 40
   m_fontStyle: 0
   m_HorizontalAlignment: 2
@@ -451,11 +451,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1204554530197763869, guid: 5e65f30eb415a734193e319c116a96e6, type: 3}
       propertyPath: m_fontSize
-      value: 32
+      value: 36
       objectReference: {fileID: 0}
     - target: {fileID: 1204554530197763869, guid: 5e65f30eb415a734193e319c116a96e6, type: 3}
       propertyPath: m_fontSizeMax
-      value: 32
+      value: 36
       objectReference: {fileID: 0}
     - target: {fileID: 3369590579461148469, guid: 5e65f30eb415a734193e319c116a96e6, type: 3}
       propertyPath: m_Name
@@ -600,11 +600,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1204554530197763869, guid: 5e65f30eb415a734193e319c116a96e6, type: 3}
       propertyPath: m_fontSize
-      value: 32
+      value: 36
       objectReference: {fileID: 0}
     - target: {fileID: 1204554530197763869, guid: 5e65f30eb415a734193e319c116a96e6, type: 3}
       propertyPath: m_fontSizeMax
-      value: 32
+      value: 36
       objectReference: {fileID: 0}
     - target: {fileID: 3369590579461148469, guid: 5e65f30eb415a734193e319c116a96e6, type: 3}
       propertyPath: m_Name

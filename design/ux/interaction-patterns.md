@@ -2,7 +2,7 @@
 
 > **Status**: Draft
 > **Author**: user + ux-designer
-> **Last Updated**: 2026-11-12
+> **Last Updated**: 2026-11-14
 > **Template**: Interaction Pattern Library
 
 ---
@@ -93,6 +93,7 @@ Girdi: klavye/fare birincil, gamepad kısmi, dokunmatik yok. Gezinme UGUI `Event
 **Specification**:
 - ←/→ veya Enter seçenekler arasında döner; fare ile oklara tık. Mevcut değer her zaman metinle görünür (ikon tek başına yetmez).
 - Her çözünürlük ve her pencere modu değişiminde 10 sn "Onayla / Geri al" sayacı (P5 ile). Varsayılan: geri al.
+- Dil (Türkçe/English) satırı da P4'tür ama değeri anında uygulanır ve geri sayım (revert) açmaz; geri alma yalnızca çözünürlük ve pencere modu için geçerlidir.
 
 **When to Use**: 2-6 ayrık seçenek, açık/kapalı anahtarlar.
 **When NOT to Use**: Sürekli değerler (P3).

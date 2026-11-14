@@ -271,5 +271,72 @@ namespace RetroFPS.Tests
                 GameSettings.SetServiceForTests(null);
             }
         }
+        /// <summary>Language changes once, stages persistence, and leaves display/audio untouched.</summary>
+        [Test]
+        public void LanguageChangesOnceWithoutApplyingOtherSettings()
+        {
+            SettingsService service = Create();
+            int events = 0;
+            service.Changed += data => { events++; Assert.That(data.Language, Is.EqualTo(LanguageSetting.Turkish)); };
+            service.SetLanguage(LanguageSetting.Turkish);
+            service.SetLanguage(LanguageSetting.Turkish);
+            Assert.That(events, Is.EqualTo(1));
+            Assert.That(store.Writes, Is.EqualTo(1));
+            Assert.That(store.Saves, Is.Zero);
+            Assert.That(store.Stored.Value.Language, Is.EqualTo(LanguageSetting.Turkish));
+            Assert.That(Create().Current.Language, Is.EqualTo(LanguageSetting.Turkish));
+            Assert.That(display.Calls, Is.EqualTo(2));
+            Assert.That(audio.Calls, Is.EqualTo(2));
+            Assert.That(service.Current.MasterVolume, Is.EqualTo(defaults.MasterVolume));
+            Assert.Throws<ArgumentOutOfRangeException>(() => service.SetLanguage((LanguageSetting)99));
+            Assert.That(events, Is.EqualTo(1));
+        }
+
+        /// <summary>All setters, saves, reload and display outcomes preserve language and preview isolation.</summary>
+        [TestCase(false)]
+        [TestCase(true)]
+        public void LanguageSurvivesEverySettingAndDisplayTransaction(bool confirm)
+        {
+            SettingsService service = Create();
+            service.SetLanguage(LanguageSetting.Turkish);
+            service.RequestDisplay(WindowModeSetting.Windowed, 1280, 720);
+            service.SetLanguage(LanguageSetting.English);
+            service.SetLanguage(LanguageSetting.Turkish);
+            foreach (string key in new[] { "masterVolume", "musicVolume", "sfxVolume", "uiVolume" })
+            {
+                service.SetVolume(key, 0.3f);
+                Assert.That(service.Current.Language, Is.EqualTo(LanguageSetting.Turkish));
+            }
+            service.SetSensitivity(0.2f);
+            service.SetReduceMotion(true);
+            service.Save();
+            Assert.That(store.Stored.Value.Language, Is.EqualTo(LanguageSetting.Turkish));
+            Assert.That(store.Stored.Value.ResolutionWidth, Is.EqualTo(2560));
+            Assert.That(Create().Current.ResolutionWidth, Is.EqualTo(2560));
+            if (confirm) service.ConfirmDisplay(); else service.RevertDisplay();
+            Assert.That(service.Current.Language, Is.EqualTo(LanguageSetting.Turkish));
+            Assert.That(service.Current.ResolutionWidth, Is.EqualTo(confirm ? 1280 : 2560));
+            service.Save();
+            Assert.That(Create().Current.Language, Is.EqualTo(LanguageSetting.Turkish));
+        }
+
+        /// <summary>The facade forwards exactly one language event and exposes the new snapshot immediately.</summary>
+        [Test]
+        public void FacadeForwardsLanguageOnce()
+        {
+            var service = Create();
+            try
+            {
+                GameSettings.SetServiceForTests(service);
+                int events = 0;
+                GameSettings.Changed += _ => events++;
+                service.SetLanguage(LanguageSetting.Turkish);
+                service.SetLanguage(LanguageSetting.Turkish);
+                Assert.That(events, Is.EqualTo(1));
+                Assert.That(GameSettings.Current.Language, Is.EqualTo(LanguageSetting.Turkish));
+            }
+            finally { GameSettings.SetServiceForTests(null); }
+        }
+
     }
 }

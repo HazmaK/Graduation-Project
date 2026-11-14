@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using RetroFPS.UI.Menu;
+using RetroFPS.Settings;
 using TMPro;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -67,6 +68,7 @@ namespace RetroFPS.Editor
                 BuildLeaves();
                 BuildCanvas();
                 BuildArt(EnsureMenuArtLayer());
+                if (actions == null) actions = AssetDatabase.LoadAssetAtPath<InputActionAsset>(ActionsPath);
                 BuildEventSystem(actions);
                 BuildSystems();
                 AssetDatabase.SaveAssets();
@@ -107,14 +109,10 @@ namespace RetroFPS.Editor
         private static void BuildData(TMP_FontAsset font)
         {
             theme = Asset<MenuTheme>(Data + "MenuTheme_KanVeKemik.asset", out bool themeCreated);
-            strings = Asset<StringTable>(Data + "StringTable_MainMenu_tr.asset", out bool stringsCreated);
-            strings.RebuildCache();
-            // A previously failed run can leave an empty table asset behind; refill it.
-            if (stringsCreated || !strings.ContainsKey("menu.start"))
-            {
-                strings.PopulateTurkishDefaults();
-                strings.RebuildCache();
-            }
+            strings = Asset<StringTable>(Data + "StringTable_MainMenu_tr.asset", out _);
+            // Keyed upserts fill each missing cell without replacing authored copy or unknown keys.
+            if (strings.PopulateBilingualDefaults()) EditorUtility.SetDirty(strings);
+            strings.ValidateEntries();
             // NewScene(Single) unloads unreferenced assets, so the font loaded before it may be destroyed.
             if (font == null)
                 font = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(
@@ -134,8 +132,6 @@ namespace RetroFPS.Editor
                     AssetDatabase.AddObjectToAsset(fallback.material, fallback);
                     for (int i = 0; i < fallback.atlasTextures.Length; i++)
                         AssetDatabase.AddObjectToAsset(fallback.atlasTextures[i], fallback);
-                    fallback.TryAddCharacters("ÇçĞğİıÖöŞşÜü%<>…", out string missing);
-                    if (!string.IsNullOrEmpty(missing)) Debug.LogWarning("[MainMenuBuilder] Missing Turkish fallback glyphs: " + missing);
                     EditorUtility.SetDirty(fallback);
                 }
             }
@@ -144,8 +140,8 @@ namespace RetroFPS.Editor
             Set(theme, "fallbackFont", fallback);
             AddFallback(theme.TitleFont != null ? theme.TitleFont : font, fallback);
             AddFallback(theme.UiFont != null ? theme.UiFont : font, fallback);
-            EditorUtility.SetDirty(theme);
-            EditorUtility.SetDirty(strings);
+            ValidateTranslations();
+            if (themeCreated) EditorUtility.SetDirty(theme);
         }
         private static void AddFallback(TMP_FontAsset font, TMP_FontAsset fallback)
         {
@@ -156,8 +152,120 @@ namespace RetroFPS.Editor
             }
             if (font == fallback) return;
             if (font.fallbackFontAssetTable == null) font.fallbackFontAssetTable = new List<TMP_FontAsset>();
-            if (!font.fallbackFontAssetTable.Contains(fallback)) font.fallbackFontAssetTable.Add(fallback);
-            EditorUtility.SetDirty(font);
+            if (!font.fallbackFontAssetTable.Contains(fallback))
+            {
+                font.fallbackFontAssetTable.Add(fallback);
+                EditorUtility.SetDirty(font);
+            }
+        }
+
+        private static void ValidateTranslations()
+        {
+            int uiGlyphs = theme.UiFont.characterTable.Count;
+            int titleGlyphs = theme.TitleFont.characterTable.Count;
+            int fallbackGlyphs = theme.FallbackFont.characterTable.Count;
+            var data = new SerializedObject(strings);
+            SerializedProperty entries = data.FindProperty("entries");
+            var placeholders = new System.Text.RegularExpressions.Regex(@"(?<!\{)\{\d+(?:,[^}:]+)?(?::[^}]+)?\}(?!\})");
+            for (int i = 0; i < entries.arraySize; i++)
+            {
+                SerializedProperty entry = entries.GetArrayElementAtIndex(i);
+                string key = entry.FindPropertyRelative("key").stringValue;
+                string tr = entry.FindPropertyRelative("value").stringValue;
+                string en = entry.FindPropertyRelative("en").stringValue;
+                var trSlots = new List<string>();
+                var enSlots = new List<string>();
+                foreach (System.Text.RegularExpressions.Match match in placeholders.Matches(tr)) trSlots.Add(match.Value);
+                foreach (System.Text.RegularExpressions.Match match in placeholders.Matches(en)) enSlots.Add(match.Value);
+                trSlots.Sort(StringComparer.Ordinal); enSlots.Sort(StringComparer.Ordinal);
+                if (trSlots.Count != enSlots.Count) throw new InvalidOperationException("Placeholder mismatch: " + key);
+                for (int j = 0; j < trSlots.Count; j++)
+                    if (trSlots[j] != enSlots[j]) throw new InvalidOperationException("Placeholder mismatch: " + key);
+                int limit = CharacterLimit(key);
+                if (tr.Length > limit || en.Length > limit) throw new InvalidOperationException("String budget exceeded: " + key);
+                ValidateGlyphs(theme.UiFont, tr); ValidateGlyphs(theme.UiFont, en);
+            }
+            ValidateGlyphs(theme.UiFont, "ÇçĞğİıÖöŞşÜüABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789%<>…");
+            ValidateGlyphs(theme.TitleFont, strings.Get("menu.title", LanguageSetting.Turkish));
+            ValidateGlyphs(theme.TitleFont, strings.Get("menu.title", LanguageSetting.English));
+            if (uiGlyphs != theme.UiFont.characterTable.Count) EditorUtility.SetDirty(theme.UiFont);
+            if (titleGlyphs != theme.TitleFont.characterTable.Count) EditorUtility.SetDirty(theme.TitleFont);
+            if (fallbackGlyphs != theme.FallbackFont.characterTable.Count) EditorUtility.SetDirty(theme.FallbackFont);
+        }
+
+        private static int CharacterLimit(string key)
+        {
+            if (key == "menu.version_format" || key == "settings.percent_format") return int.MaxValue;
+            if (key == "menu.title") return 16;
+            if (key == "menu.load_error" || key == "display.revert_title"
+                || key == "display.revert_countdown_format" || key == "quit.prompt") return 40;
+            if (key == "display.keep" || key == "display.revert" || key == "quit.yes" || key == "quit.no") return 10;
+            if (key == "menu.start" || key == "menu.settings" || key == "menu.quit" || key == "settings.back") return 14;
+            if (key.StartsWith("settings.window_mode.", StringComparison.Ordinal)
+                || key.StartsWith("language.", StringComparison.Ordinal) || key == "settings.on" || key == "settings.off") return 18;
+            return key.StartsWith("settings.", StringComparison.Ordinal) ? 26 : int.MaxValue;
+        }
+
+        private static void ValidateGlyphs(TMP_FontAsset font, string text)
+        {
+            if (font == null) throw new InvalidOperationException("Menu font is missing.");
+            for (int i = 0; i < text.Length; i++)
+                if (!char.IsWhiteSpace(text[i]) && !font.HasCharacter(text[i], true, true))
+                    throw new InvalidOperationException("Missing menu glyph: " + text[i]);
+        }
+
+        private static void ValidateSettingsLayout(RectTransform panel)
+        {
+            foreach (TMP_Text label in panel.GetComponentsInChildren<TMP_Text>(true))
+            {
+                LocalizedText localized = label.GetComponent<LocalizedText>();
+                if (localized != null)
+                {
+                    string key = new SerializedObject(localized).FindProperty("key").stringValue;
+                    ValidateTextFit(label, strings.Get(key, LanguageSetting.Turkish));
+                    ValidateTextFit(label, strings.Get(key, LanguageSetting.English));
+                }
+                else if (label.name == "Value")
+                {
+                    string row = label.transform.parent.name;
+                    if (row == "Language")
+                    {
+                        ValidateTextFit(label, "Türkçe"); ValidateTextFit(label, "English");
+                    }
+                    else if (row.StartsWith("Slider", StringComparison.Ordinal))
+                    {
+                        ValidateTextFit(label, "%100"); ValidateTextFit(label, "100%");
+                    }
+                    else if (row == "Cycle0" || row == "Cycle2")
+                    {
+                        string[] keys = row == "Cycle0" ? new[] { "settings.window_mode.fullscreen",
+                            "settings.window_mode.borderless", "settings.window_mode.windowed" }
+                            : new[] { "settings.off", "settings.on" };
+                        for (int i = 0; i < keys.Length; i++)
+                        {
+                            ValidateTextFit(label, strings.Get(keys[i], LanguageSetting.Turkish));
+                            ValidateTextFit(label, strings.Get(keys[i], LanguageSetting.English));
+                        }
+                    }
+                    else ValidateTextFit(label, "16384x16384");
+                }
+            }
+        }
+
+        private static void ValidateTextFit(TMP_Text label, string text)
+        {
+            float previousSize = label.fontSize;
+            bool previousAutoSize = label.enableAutoSizing;
+            try
+            {
+                label.enableAutoSizing = false;
+                label.fontSize = label.fontSizeMin;
+                Vector2 preferred = label.GetPreferredValues(text, float.PositiveInfinity, float.PositiveInfinity);
+                Vector2 available = label.rectTransform.rect.size;
+                if (preferred.x > available.x || preferred.y > available.y)
+                    throw new InvalidOperationException("Menu text exceeds its 720p minimum-size box: " + text);
+            }
+            finally { label.enableAutoSizing = previousAutoSize; label.fontSize = previousSize; }
         }
 
         private static void BuildLeaves()
@@ -169,14 +277,14 @@ namespace RetroFPS.Editor
             Focus(buttonComponent, label, false, null);
             SavePrefab(button, "MenuButton");
 
-            GameObject sliderObject = Row("MenuSliderRow", 700, 56);
+            GameObject sliderObject = Row("MenuSliderRow", 980, 56);
             var slider = sliderObject.AddComponent<MenuSlider>();
             Style(slider);
             Set(slider, "navigate", ActionReference("Navigate"));
             slider.minValue = 0; slider.maxValue = 20; slider.wholeNumbers = true; slider.value = 20;
-            TMP_Text sliderLabel = Label(sliderObject.transform, "Label", "settings.master_volume", theme.SettingsLabelSize, 48, 0, 256, 54);
+            TMP_Text sliderLabel = Label(sliderObject.transform, "Label", "settings.master_volume", theme.SettingsLabelSize, 48, 0, 360, 54);
             sliderLabel.overflowMode = TextOverflowModes.Ellipsis;
-            var track = Image(sliderObject.transform, "Track", null, theme.SliderTrack, 325, 0, 235, 6);
+            var track = Image(sliderObject.transform, "Track", null, theme.SliderTrack, 460, 0, 330, 6);
             RectTransform fillArea = Rect("FillArea", track.transform); Stretch(fillArea);
             var fill = Image(fillArea, "Fill", null, theme.TextDim, 0, 0, 0, 6); Stretch(fill.rectTransform);
             RectTransform handleArea = Rect("HandleArea", track.transform); Stretch(handleArea);
@@ -185,20 +293,20 @@ namespace RetroFPS.Editor
             slider.fillRect = fill.rectTransform;
             slider.handleRect = handle.rectTransform;
             slider.direction = UnityEngine.UI.Slider.Direction.LeftToRight;
-            Label(sliderObject.transform, "Value", null, theme.SettingsLabelSize, 590, 0, 100, 54);
+            Label(sliderObject.transform, "Value", null, theme.SettingsLabelSize, 820, 0, 140, 54);
             Focus(slider, sliderLabel, true, fill);
             SavePrefab(sliderObject, "MenuSliderRow");
 
-            GameObject cycleObject = Row("MenuCycleRow", 700, 56);
+            GameObject cycleObject = Row("MenuCycleRow", 980, 56);
             var cycle = cycleObject.AddComponent<MenuCycleRow>();
             Style(cycle);
             Set(cycle, "theme", theme);
             // Reserve space for the focused label's 1.06 scale and the arrow's press nudge.
-            TMP_Text cycleLabel = Label(cycleObject.transform, "Label", "settings.window_mode", theme.SettingsLabelSize, 48, 0, 236, 54);
+            TMP_Text cycleLabel = Label(cycleObject.transform, "Label", "settings.window_mode", theme.SettingsLabelSize, 48, 0, 360, 54);
             cycleLabel.overflowMode = TextOverflowModes.Ellipsis;
-            var previous = Arrow(cycleObject.transform, "Previous", "<", 304);
-            var next = Arrow(cycleObject.transform, "Next", ">", 644);
-            TMP_Text value = Label(cycleObject.transform, "Value", null, theme.SettingsLabelSize, 362, 0, 276, 54);
+            var previous = Arrow(cycleObject.transform, "Previous", "<", 434);
+            var next = Arrow(cycleObject.transform, "Next", ">", 900);
+            TMP_Text value = Label(cycleObject.transform, "Value", null, theme.SettingsLabelSize, 492, 0, 396, 54);
             value.overflowMode = TextOverflowModes.Ellipsis;
             value.alignment = TextAlignmentOptions.Center;
             Set(cycle, "valueLabel", value); Set(cycle, "previous", previous); Set(cycle, "next", next);
@@ -252,7 +360,9 @@ namespace RetroFPS.Editor
 
             RectTransform panel = Rect("SettingsPanel", safe);
             panel.anchorMin = panel.anchorMax = Vector2.zero; panel.pivot = Vector2.zero;
-            panel.anchoredPosition = new Vector2(0, 65); Size(panel, 760, 820);
+            // At 720p the 1920x1080 canvas scales by 2/3: 36 units retain 24 screen pixels.
+            // Safe area is 1728x972 units; this panel ends at y=960, leaving room for Version.
+            panel.anchoredPosition = new Vector2(0, 60); Size(panel, 1040, 900);
             var panelGroup = panel.gameObject.AddComponent<CanvasGroup>();
             panelGroup.alpha = 0; panelGroup.interactable = panelGroup.blocksRaycasts = false;
             var frame = Image(panel, "Frame", MainMenuPlaceholderArt.Sprite("PanelFrame_A"), Color.white, 0, 0, 0, 0);
@@ -261,10 +371,18 @@ namespace RetroFPS.Editor
             jewel.rectTransform.anchorMin = jewel.rectTransform.anchorMax = new Vector2(0.5f, 1); jewel.rectTransform.anchoredPosition = Vector2.zero;
             RectTransform content = Rect("Content", panel); Stretch(content); content.offsetMin = new Vector2(30, 24); content.offsetMax = new Vector2(-30, -24);
             LabelTop(content, "Title", "settings.title", theme.SettingsTitleSize, 0, 54);
-            Group(content, "Audio", "settings.group.audio", 80);
+            Group(content, "General", "settings.group.general", 86);
+            GameObject languageObject = Instantiate("MenuCycleRow", content);
+            languageObject.name = "Language";
+            Top((RectTransform)languageObject.transform, 130);
+            Localize(languageObject.transform.Find("Label").GetComponent<TMP_Text>(), "settings.language");
+            var language = languageObject.GetComponent<MenuCycleRow>();
+            language.SetOptions(new[] { strings.Get("language.tr", LanguageSetting.Turkish),
+                strings.Get("language.en", LanguageSetting.English) });
+            Group(content, "Audio", "settings.group.audio", 180);
             string[] sliderKeys = { "settings.master_volume", "settings.music_volume", "settings.sfx_volume", "settings.ui_volume", "settings.mouse_sensitivity" };
             var sliders = new MenuSlider[5]; var values = new TMP_Text[5];
-            float[] sliderY = { 128, 184, 240, 296, 402 };
+            float[] sliderY = { 224, 280, 336, 392, 488 };
             for (int i = 0; i < sliders.Length; i++)
             {
                 GameObject row = Instantiate("MenuSliderRow", content);
@@ -275,29 +393,31 @@ namespace RetroFPS.Editor
                 values[i] = row.transform.Find("Value").GetComponent<TMP_Text>();
                 values[i].text = string.Empty;
             }
-            Group(content, "Controls", "settings.group.controls", 354);
-            Group(content, "Display", "settings.group.display", 460);
+            Group(content, "Controls", "settings.group.controls", 444);
+            Group(content, "Display", "settings.group.display", 540);
             string[] cycleKeys = { "settings.window_mode", "settings.resolution", "settings.reduce_motion" };
             var cycles = new MenuCycleRow[3];
             for (int i = 0; i < cycles.Length; i++)
             {
                 GameObject row = Instantiate("MenuCycleRow", content);
                 row.name = "Cycle" + i;
-                Top((RectTransform)row.transform, 508 + i * 56);
+                Top((RectTransform)row.transform, 584 + i * 56);
                 Localize(row.transform.Find("Label").GetComponent<TMP_Text>(), cycleKeys[i]);
                 cycles[i] = row.GetComponent<MenuCycleRow>();
                 TMP_Text value = row.transform.Find("Value").GetComponent<TMP_Text>();
                 value.text = string.Empty;
             }
-            var back = Button(content, "Back", "settings.back", 0, 0, 700, theme.SettingsLabelSize);
-            Top((RectTransform)back.transform, 700);
-            var order = new UnityEngine.UI.Selectable[] { sliders[0], sliders[1], sliders[2], sliders[3], sliders[4], cycles[0], cycles[1], cycles[2], back };
+            var back = Button(content, "Back", "settings.back", 0, 0, 980, theme.SettingsLabelSize);
+            Top((RectTransform)back.transform, 786);
+            var order = new UnityEngine.UI.Selectable[] { language, sliders[0], sliders[1], sliders[2], sliders[3], sliders[4], cycles[0], cycles[1], cycles[2], back };
             Wrap(order);
             var view = panel.gameObject.AddComponent<SettingsPanelView>();
             Set(view, "strings", strings); SetArray(view, "sliders", sliders); SetArray(view, "percentages", values);
+            Set(view, "language", language);
             Set(view, "windowMode", cycles[0]); Set(view, "resolution", cycles[1]); Set(view, "reduceMotion", cycles[2]);
+            ValidateSettingsLayout(panel);
 
-            TMP_Text version = Label(safe, "Version", null, theme.VersionSize, 0, 0, 650, 40);
+            TMP_Text version = Label(safe, "Version", null, theme.VersionSize, 0, 0, 650, 54);
             version.rectTransform.anchorMin = version.rectTransform.anchorMax = Vector2.zero;
             version.rectTransform.pivot = Vector2.zero; version.rectTransform.anchoredPosition = Vector2.zero;
             version.color = theme.TextDim;
@@ -461,10 +581,11 @@ namespace RetroFPS.Editor
             for (int i = 0; i < roots.Length; i++) roots[i] = ui.Find("SafeArea/Root/MenuList/" + names[i]).GetComponent<UnityEngine.UI.Button>();
             SetArray(controller, "rootItems", roots);
             Transform content = ui.Find("SafeArea/SettingsPanel/Content");
-            var rows = new UnityEngine.UI.Selectable[9];
-            for (int i = 0; i < 5; i++) rows[i] = content.Find("Slider" + i).GetComponent<MenuSlider>();
-            for (int i = 0; i < 3; i++) rows[5 + i] = content.Find("Cycle" + i).GetComponent<MenuCycleRow>();
-            rows[8] = content.Find("Back").GetComponent<UnityEngine.UI.Button>(); SetArray(controller, "settingsItems", rows);
+            var rows = new UnityEngine.UI.Selectable[10];
+            rows[0] = content.Find("Language").GetComponent<MenuCycleRow>();
+            for (int i = 0; i < 5; i++) rows[1 + i] = content.Find("Slider" + i).GetComponent<MenuSlider>();
+            for (int i = 0; i < 3; i++) rows[6 + i] = content.Find("Cycle" + i).GetComponent<MenuCycleRow>();
+            rows[9] = content.Find("Back").GetComponent<UnityEngine.UI.Button>(); SetArray(controller, "settingsItems", rows);
             Set(systems.GetComponent<MenuInputRouter>(), "eventSystem", eventSystem);
             eventSystem.firstSelectedGameObject = roots[0].gameObject;
             PrefabUtility.RecordPrefabInstancePropertyModifications(controller);
@@ -606,7 +727,9 @@ namespace RetroFPS.Editor
             rect.anchoredPosition = new Vector2(x, y); Size(rect, width, height);
             var label = rect.gameObject.AddComponent<TextMeshProUGUI>();
             label.font = theme.UiFont; label.fontSize = size; label.color = theme.Text;
-            label.enableAutoSizing = true; label.fontSizeMin = theme.MinimumFontSize; label.fontSizeMax = size;
+            float minimum = Mathf.Max(36f, theme.MinimumFontSize);
+            label.enableAutoSizing = true; label.fontSizeMin = minimum; label.fontSizeMax = Mathf.Max(minimum, size);
+            label.fontSize = label.fontSizeMax;
             label.textWrappingMode = TextWrappingModes.NoWrap; label.overflowMode = TextOverflowModes.Overflow;
             label.alignment = TextAlignmentOptions.MidlineLeft; label.raycastTarget = false;
             if (key != null) Localize(label, key); else label.text = string.Empty;
@@ -617,18 +740,19 @@ namespace RetroFPS.Editor
             LocalizedText localized = label.GetComponent<LocalizedText>();
             if (localized == null) localized = label.gameObject.AddComponent<LocalizedText>();
             Set(localized, "strings", strings); Set(localized, "key", key); Set(localized, "label", label);
-            label.text = strings.Get(key);
+            // Editor previews never initialize or override persistent runtime settings.
+            label.text = strings.Get(key, LanguageSetting.Turkish);
         }
         private static void LabelTop(Transform parent, string name, string key, float size, float y, float height)
         {
-            TMP_Text label = Label(parent, name, key, size, 0, 0, 700, height); Top(label.rectTransform, y + height / 2);
+            TMP_Text label = Label(parent, name, key, size, 0, 0, 980, height); Top(label.rectTransform, y + height / 2);
         }
         private static void Group(Transform parent, string name, string key, float y)
         {
-            TMP_Text label = Label(parent, name + "Group", key, theme.GroupLabelSize, 0, 0, 700, 28);
+            TMP_Text label = Label(parent, name + "Group", key, theme.GroupLabelSize, 0, 0, 980, 44);
             Top(label.rectTransform, y); label.color = theme.TextDim; label.fontStyle = FontStyles.Bold; label.characterSpacing = theme.GroupTracking;
             var divider = Image(parent, name + "Divider", null, new Color(theme.TextDim.r, theme.TextDim.g, theme.TextDim.b, 0.4f), 0, 0, 700, 3);
-            Top(divider.rectTransform, y + 20);
+            Top(divider.rectTransform, y + 25);
         }
         private static UnityEngine.UI.Button Button(Transform parent, string name, string key,
             float x, float y, float width, float size = 44)
@@ -638,7 +762,8 @@ namespace RetroFPS.Editor
             rect.anchorMin = rect.anchorMax = new Vector2(0, 0.5f); rect.pivot = new Vector2(0, 0.5f);
             rect.anchoredPosition = new Vector2(x, y); Size(rect, width, 68);
             TMP_Text label = root.transform.Find("Label").GetComponent<TMP_Text>();
-            Size(label.rectTransform, width - 70, 64); label.fontSizeMax = size; label.fontSize = size; Localize(label, key);
+            Size(label.rectTransform, width - 70, 64); label.fontSizeMax = Mathf.Max(label.fontSizeMin, size);
+            label.fontSize = label.fontSizeMax; Localize(label, key);
             return root.GetComponent<UnityEngine.UI.Button>();
         }
         private static UnityEngine.UI.Button Arrow(Transform parent, string name, string glyph, float x)

@@ -14,7 +14,7 @@ tags:
 
 > [!abstract] KAN VE KEMİK ANA MENÜ, KALICI AYARLAR
 > PURGATOR ana menüsü (BAŞLA, AYARLAR, ÇIKIŞ) UGUI + TextMeshPro ile kuruludur. Ayarlar POCO servisinde tutulur, UI yalnızca istek gönderir ve olay dinler.
-> - **Son Güncelleme:** 2026-11-12
+> - **Son Güncelleme:** 2026-11-14
 
 ---
 
@@ -41,6 +41,16 @@ flowchart LR
 
 - **Çekirdek ayarlar (`RetroFPS.Core`):** `BeforeSceneLoad` anında yüklenir. Oyun kodu (`PlayerLook`, `CombatAudio`) yalnızca Core'a bağımlıdır, menüye değil. Bu sayede doğrudan `TestLevel_Gauntlet` içinde Play Mode başlatıldığında da kalıcı ayarlar uygulanır.
 - **Menü (`RetroFPS.UI.Menu`):** Durum makinesi POCO'dur ve EditMode testlerinde doğrudan çalışır. Controller ve görünüm bileşenleri durumu yalnızca çizer ve girdiyi iletir.
+
+## 2.1 DİL / LOCALIZATION (2026-11-14)
+- **Diller:** Türkçe (`tr`) ve English (`en`). Kod değerleri sabittir. `LanguageSetting` `GameSettingsData` içinde özel serileştirilmiş alanla tutulur, dış erişim salt okunur getter ile sağlanır.
+- **Varsayılan:** İlk açılışta `Application.systemLanguage == Turkish` ise `tr`, diğer her değer (Unknown dahil) `en`. Kayıtlı geçerli bir kod sistem varsayılanını geçersiz kılar.
+- **Kalıcılık:** PlayerPrefs anahtarı `language` (değerler `tr` / `en`). Eksik veya geçersiz kod sistem varsayılanına döner.
+- **Yetki:** `ISettingsService.SetLanguage` canlı anlık görüntüyü değiştirir ve `Changed` olayını bir kez yayar. Tek dil yetkilisi `GameSettings.Current.Language`'dir. Aynı dil tekrar seçilirse olay yayılmaz.
+- **Metin tablosu:** `StringTable` her anahtar için iki değer tutar: mevcut `value` alanı Türkçe, yeni `en` alanı İngilizce. Varlık adları ve GUID'ler korunur (`StringTable_MainMenu_tr.asset`, `StringTable_CombatHud_tr.asset`); `_tr` soneki artık eski adlandırmadır. `Get(key, language)` açık dil ister, `Get(key)` mevcut ayar diline göre çözer.
+- **Canlı yenileme:** `LocalizedText`, `GameSettings.Changed` olayına OnEnable/OnDisable ile abone olur ve dil değişince metni hemen yeniler. Menü ve HUD önbellekleri dil değişiminde bir kez yeniden kurulur.
+- **Oyun tarafı sağlayıcısı:** `LocalizationBootstrap` (BeforeSceneLoad) `Resources/Localization/LocalizationCatalog` varlığını yükler ve Core'daki `ILocalizedStringProvider` olarak kaydeder. Doğrudan oyun sahnesi başlatıldığında da çalışır. `DamageNumberSystem` ve `ArafTransition` bu sağlayıcıyı kullanır; Core Menu'ye bağımlı değildir.
+- **Ayrıntı:** Mimari ve tablo listesi için `production/ui/localization/plan.md`.
 
 ## 3. BİLEŞEN TABLOSU
 
@@ -83,10 +93,10 @@ flowchart LR
 | `MenuFocusVisual.cs` | Seçim görselleri, fare üzerine gelince seçim, basma görseli. |
 | `MenuSlider.cs` | `Slider` alt sınıfı, 5% adımlı, basılı tutma hızlanması. |
 | `MenuCycleRow.cs` | Sol/sağ ile seçenek döngüsü. |
-| `SettingsPanelView.cs` | 8 ayar satırını `ISettingsService`'e bağlar. |
+| `SettingsPanelView.cs` | 9 ayar satırını (dil dahil) `ISettingsService`'e bağlar; yüzde ve mod metinlerini dil değişiminde bir kez yeniden kurar. |
 | `ConfirmDialogView.cs` | Genel onay diyaloğu (çıkış ve geri alma). |
 | `ScreenFader.cs` | Karartma katmanı, geçiş sırasında raycast engeller. |
-| `LocalizedText.cs` | TMP etiketini `StringTable` anahtarından doldurur. |
+| `LocalizedText.cs` | TMP etiketini `StringTable` anahtarından doldurur ve `GameSettings.Changed` ile canlı yeniler. |
 | `MenuAmbientMotion.cs` | Meşale ışığı, sis kayması, hareket azaltmada parçacık duraklatma. |
 | `MenuAudioPlayer.cs` | `MenuEvents.UiAudio` dinler, `UiVolume` ile çalar. |
 | `MenuLifecycle.cs` | Sahneyi asenkron yükler, hata olayı üretir, çıkışta ayarları kaydeder. |

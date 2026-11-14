@@ -1,4 +1,6 @@
 using System.Threading;
+using RetroFPS.Localization;
+using RetroFPS.Settings;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -11,6 +13,16 @@ namespace RetroFPS.Run
     [DisallowMultipleComponent]
     public class ArafTransition : MonoBehaviour
     {
+        /// <summary>Semantic caption identity retained through both asynchronous fade phases.</summary>
+        public enum MessageKind
+        {
+            /// <summary>No localized transition caption.</summary>
+            None,
+            /// <summary>Falling into Araf.</summary>
+            Enter,
+            /// <summary>Escaping Araf.</summary>
+            Escape
+        }
         [Header("Zamanlama ve Ağır Çekim")]
         [SerializeField] private float fadeOutDuration = 0.6f;
         [SerializeField] private float fadeInDuration = 0.5f;
@@ -26,6 +38,9 @@ namespace RetroFPS.Run
         private Canvas _canvas;
         private Image _overlayImage;
         private Text _messageText;
+        private MessageKind _messageKind;
+        private LanguageSetting _language;
+        private bool _subscribed;
 
         /// <summary>Ekranın kararma süresi (saniye, unscaled).</summary>
         public float FadeOutDuration => fadeOutDuration;
@@ -56,7 +71,29 @@ namespace RetroFPS.Run
 
         private void OnDisable()
         {
+            if (_subscribed) { GameSettings.Changed -= SettingsChanged; _subscribed = false; }
             EndSlowMo();
+        }
+
+        private void OnEnable()
+        {
+            if (!_subscribed) { GameSettings.Changed += SettingsChanged; _subscribed = true; }
+            _language = GameSettings.Current.Language;
+            RefreshCaption();
+        }
+
+        private void SettingsChanged(GameSettingsData data)
+        {
+            if (_language == data.Language) return;
+            _language = data.Language;
+            RefreshCaption();
+        }
+
+        private void RefreshCaption()
+        {
+            if (_messageText == null || _messageKind == MessageKind.None) return;
+            _messageText.text = LocalizedStrings.Get(_messageKind == MessageKind.Enter
+                ? "transition.araf.enter" : "transition.araf.escape", _language);
         }
 
         private void BuildCanvas()
@@ -89,6 +126,7 @@ namespace RetroFPS.Run
             _messageText = textGo.AddComponent<Text>();
             _messageText.raycastTarget = false;
             _messageText.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            _messageText.font.RequestCharactersInTexture("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyzÇçĞğİıÖöŞşÜü—'!?0123456789", 52, FontStyle.Normal);
             _messageText.fontSize = 52;
             _messageText.alignment = TextAnchor.MiddleCenter;
             _messageText.color = new Color(1f, 1f, 1f, 0f);
@@ -122,7 +160,23 @@ namespace RetroFPS.Run
         /// <summary>
         /// Ekranı verilen renge doğru karartır ve mesajı görünür kılar (unscaled time).
         /// </summary>
-        public async Awaitable FadeOut(Color color, string message, CancellationToken ct = default)
+        public Awaitable FadeOut(Color color, string message, CancellationToken ct = default)
+        {
+            _messageKind = MessageKind.None;
+            return FadeOutCore(color, message, ct);
+        }
+
+        /// <summary>Starts a localized caption without tying an async fade to a resolved string.</summary>
+        public Awaitable FadeOut(Color color, MessageKind message, CancellationToken ct = default)
+        {
+            if (_canvas == null) BuildCanvas();
+            _messageKind = message;
+            _language = GameSettings.Current.Language;
+            RefreshCaption();
+            return FadeOutCore(color, message == MessageKind.None ? string.Empty : _messageText.text, ct);
+        }
+
+        private async Awaitable FadeOutCore(Color color, string message, CancellationToken ct)
         {
             if (_canvas == null) BuildCanvas();
 
@@ -181,6 +235,7 @@ namespace RetroFPS.Run
         /// </summary>
         public void ShowPersistentMessage(Color color, string message)
         {
+            _messageKind = MessageKind.None;
             if (_canvas == null) BuildCanvas();
 
             EndSlowMo();
@@ -195,6 +250,7 @@ namespace RetroFPS.Run
         /// </summary>
         public void Hide()
         {
+            _messageKind = MessageKind.None;
             EndSlowMo();
             if (_overlayImage != null)
             {

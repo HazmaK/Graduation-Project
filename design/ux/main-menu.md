@@ -4,7 +4,7 @@
 
 > **Status**: Draft
 > **Author**: user + ux-designer
-> **Last Updated**: 2026-11-12
+> **Last Updated**: 2026-11-14
 > **Journey Phase(s)**: Boot -> Menu -> Run start (ASSUMED; `design/player-journey.md` absent)
 > **Screen / Flow Name**: `MainMenu` (scene `MainMenu`, Build Settings index 0). Sub-panels: `MainMenu.Settings`, `MainMenu.QuitConfirm`
 > **Platform Target**: PC Win64. Keyboard/mouse primary, gamepad partial, no touch. 1920x1080 reference; scales to 16:10 and 21:9 with safe layout.
@@ -119,6 +119,8 @@ MainMenu (scene, root)
 
 Settings panel (replaces menu list area, left ~45%, art stays visible right):
   AYARLAR
+  GENEL              (non-focusable group label)
+  Dil                <  Türkçe  >              (P4, applies live, no revert)
   SES                (non-focusable group label)
   Ana Ses            [=========----]  70%      (P3)
   Müzik              [=======------]  50%      (P3)
@@ -146,7 +148,7 @@ QuitConfirm (centered over dimmed scene):
 | Safe area | Anchored container, 5% margin all sides; all UI inside | 90% x 90% | No | Anchors scale with aspect; no UI outside |
 | Title | PURGATOR logotype text, top-left | ~35% x 15% | No | Shrink-to-fit to zone width; never wraps |
 | Menu list | Vertical list, bottom-left, bottom-aligned | ~25% x 30% | No | Fixed 3 items; per-item min width, text shrink-to-fit |
-| Settings panel | Replaces menu list; grows upward from bottom-left | ~42% x 60% | No (8 rows + 3 group labels + back must fit; verify at 1280x720) | Rows shrink-to-fit; at min resolution panel fits within safe area |
+| Settings panel | Replaces menu list; grows upward from bottom-left | ~42% x 60% | No (9 rows + 4 group labels + back must fit; verify at 1280x720) | Rows shrink-to-fit; at min resolution panel fits within safe area |
 | Scene art | Right-side illustration, full-bleed behind UI | 100% bg, subject on right ~55% | No | Background scales to cover (crop-to-fill); at 21:9 extend dark gradient/side extension, subject stays inside 16:9 centre-right; at 16:10 crop top/bottom only |
 | Dialog | Centered modal with dim layer | ~30% x 20% | No | Buttons stack vertically if text exceeds width |
 
@@ -161,8 +163,8 @@ QuitConfirm (centered over dimmed scene):
 | SceneArtLayers | Image layers + particle/UI scroll | Scene art | Tower illustration, smoke/ember motion | Yes | No — new |
 | SettingsPanel | Panel | Settings panel | Hosts rows | Yes | No — new |
 | SliderRow x5 | Settings row | Settings panel | Master/Music/SFX/UI (Arayüz Sesleri)/Mouse sensitivity | Yes | Yes — P3 |
-| GroupLabel x3 (SES, KONTROL, GÖRÜNTÜ) | TMP label | Settings panel | Non-focusable group headers | No | No — new |
-| CycleRow x2 (+1 reduce-motion) | Settings row | Settings panel | Window mode, resolution (+ reduce motion) | Yes (motion reduction is a Standard-tier feature) | Yes — P4 |
+| GroupLabel x4 (GENEL, SES, KONTROL, GÖRÜNTÜ) | TMP label | Settings panel | Non-focusable group headers | No | No — new |
+| CycleRow x4 (+1 language) | Settings row | Settings panel | Language (Türkçe/English, applies immediately, no revert prompt), window mode, resolution, reduce motion (motion reduction is a Standard-tier feature) | Yes | Yes — P4 |
 | BackButton | Button | Settings panel | Visible "Geri" (mouse) | Yes | Yes — P6 |
 | RevertPrompt | Dialog + 10 s countdown | Dialog | Confirm/revert every resolution or window-mode change | Yes | Yes — P4 + P5 |
 | QuitConfirmDialog | Modal | Dialog | Quit confirmation | Yes | Yes — P5 |
@@ -345,7 +347,7 @@ Art behind text zones must be darkened/backed so ratio holds regardless of ember
 **Focus order** (Tab key sequence, numbered):
 
 Root: 1. BAŞLA, 2. AYARLAR, 3. ÇIKIŞ, then wraps to 1. Title, art, version tag are not focusable.
-Settings: 1. Ana Ses, 2. Müzik, 3. Efektler, 4. Arayüz Sesleri, 5. Fare Hassasiyeti, 6. Pencere Modu, 7. Çözünürlük, 8. Hareketi Azalt, 9. GERİ, wraps to 1. Group labels (SES, KONTROL, GÖRÜNTÜ) are not focusable. Root list is inert.
+Settings: 1. Dil (Language, initial focus on entering Settings), 2. Ana Ses, 3. Müzik, 4. Efektler, 5. Arayüz Sesleri, 6. Fare Hassasiyeti, 7. Pencere Modu, 8. Çözünürlük, 9. Hareketi Azalt, 10. GERİ, wraps to 1. Group labels (GENEL, SES, KONTROL, GÖRÜNTÜ) are not focusable. Root list is inert.
 QuitConfirm: HAYIR (default), EVET, wraps. Nothing behind is reachable.
 
 **Screen reader announcements for key state changes**:
@@ -358,7 +360,7 @@ Screen reader announcements: not required. Menu screen reader is a Comprehensive
 
 **Cognitive load assessment**:
 
-Root: 3 choices, 0 concurrent streams. Settings: 9 rows (5 sliders, 3 cycle rows, GERİ), all independent and visible at once in one column with no tabs. That is at the top of the 7±2 range, so the rows are grouped under three non-focusable headers (SES, KONTROL, GÖRÜNTÜ) to chunk them into 4+1+3. Dialog: 2 choices. Ambient motion is non-informational and can be turned off.
+Root: 3 choices, 0 concurrent streams. Settings: 10 rows (5 sliders, 4 cycle rows, GERİ), all independent and visible at once in one column with no tabs. That is at the top of the 7±2 range, so the rows are grouped under four non-focusable headers (GENEL, SES, KONTROL, GÖRÜNTÜ) to chunk them into 1+4+1+3, with GERİ last. Dialog: 2 choices. Ambient motion is non-informational and can be turned off.
 
 Additional: no flashing content; ember/smoke motion is slow and low-contrast; no information by sound alone (P8 visual equivalents).
 
@@ -367,7 +369,7 @@ Additional: no flashing content; ember/smoke motion is slow and low-contrast; no
 ## 13. Localization Considerations
 
 **General rules for this screen**:
-- Player-facing text is Turkish only (no other locale planned). All strings go through a simple ScriptableObject string table keyed by the keys below; none hardcoded. The Unity Localization package is NOT used now; the key scheme stays package-compatible so migration later is a data import.
+- Player-facing text is Turkish and English. Default language comes from the system language (Turkish → `tr`; every other language → `en`); a saved choice overrides it. The switch is Settings › GENEL/GENERAL › Dil/Language, cycling `Türkçe` / `English` (both names are invariant across UI languages). The change applies live with no revert prompt and keeps the current focus. All strings go through a bilingual ScriptableObject string table (tr and en per key) keyed by the keys below; none hardcoded. The Unity Localization package is NOT used now; the key scheme stays package-compatible so migration later is a data import.
 - Budget >= 40% expansion; menu items and title shrink-to-fit.
 - RTL not a target; CJK not a target (revisit if locale plan changes).
 - No text in images. The title is rendered text (or a logo image with a text-key alt in the string table; art decision deferred to art-director).
@@ -376,9 +378,10 @@ Additional: no flashing content; ember/smoke motion is slow and low-contrast; no
 `menu.title`, `menu.start`, `menu.settings`, `menu.quit`, `menu.version_format`, `menu.load_error`,
 `settings.title`, `settings.master_volume`, `settings.music_volume`, `settings.sfx_volume`, `settings.ui_volume`, `settings.group.audio`, `settings.group.controls`, `settings.group.display`, `settings.mouse_sensitivity`, `settings.window_mode`, `settings.window_mode.fullscreen`, `settings.window_mode.borderless`, `settings.window_mode.windowed`, `settings.resolution`, `settings.reduce_motion`, `settings.on`, `settings.off`, `settings.back`, `settings.percent_format`,
 `display.revert_title`, `display.revert_countdown_format`, `display.keep`, `display.revert`,
-`quit.prompt`, `quit.yes`, `quit.no`.
+`quit.prompt`, `quit.yes`, `quit.no`,
+`settings.group.general`, `settings.language`, `language.tr`, `language.en` (added 2026-11-14).
 
-Turkish defaults: BAŞLA, AYARLAR, ÇIKIŞ, GERİ, EVET, HAYIR, "Oyundan çıkılsın mı?", "Seviye yüklenemedi". Note Turkish dotted/dotless I casing (İ/ı): use culture-aware upper-casing or store strings pre-cased; verify font glyph coverage for Ç Ş Ğ İ Ö Ü.
+English counterparts for every key are in `production/ui/localization/plan.md` (e.g. START, SETTINGS, QUIT, BACK, YES, NO, GENERAL, Language). Turkish defaults: BAŞLA, AYARLAR, ÇIKIŞ, GERİ, EVET, HAYIR, "Oyundan çıkılsın mı?", "Seviye yüklenemedi". Note Turkish dotted/dotless I casing (İ/ı): use culture-aware upper-casing or store strings pre-cased; verify font glyph coverage for Ç Ş Ğ İ Ö Ü.
 
 | Text Element | English Baseline Length | Max Characters | Expansion Budget | RTL Behavior | Overflow Behavior | Risk |
 |--------------|------------------------|----------------|-----------------|--------------|-------------------|------|
@@ -455,5 +458,5 @@ Turkish defaults: BAŞLA, AYARLAR, ÇIKIŞ, GERİ, EVET, HAYIR, "Oyundan çıkı
 | Default values for volume/sensitivity and supported minimum resolution (1280x720 assumed). | game-designer | Before implementation | Open |
 | Title is a text placeholder (serialized later): final logotype and tower illustration art direction. | art-director | Before implementation | Open |
 | Menu audio: P8 event system has no UI counterpart yet; sound assets for focus/confirm/back undefined. | audio-director / ui-programmer | Before implementation | Open |
-| Localization plan: which locales and which mechanism? | user | Before Approved | Resolved 2026-11-12: Turkish only; ScriptableObject string table keyed by Section 13 keys; no Unity Localization package now (migratable later). |
+| Localization plan: which locales and which mechanism? | user | Before Approved | Resolved 2026-11-14: Turkish and English; default from system language (Turkish → tr, else en), switch in Settings › GENEL/GENERAL › Dil/Language (Türkçe/English, names invariant), applied live with no revert prompt. Bilingual ScriptableObject string table keyed by Section 13 keys; no Unity Localization package now (migratable later). |
 | Screen reader announcements for UGUI menus at Standard? | accessibility-specialist | Before Approved | Resolved 2026-11-12: not required — Comprehensive feature, out of scope per `design/accessibility-requirements.md` Known Intentional Limitations. |

@@ -34,7 +34,8 @@ namespace RetroFPS.Settings
             ResolutionOption[] options = PlayerPrefs.HasKey("resolution")
                 ? ScreenDisplayApplier.GetResolutionOptions() : null;
             service = new SettingsService(new PlayerPrefsSettingsStore(), new ScreenDisplayApplier(),
-                new ListenerVolumeApplier(), GameSettingsData.Defaults(desktop.Width, desktop.Height), options);
+                new ListenerVolumeApplier(), GameSettingsData.Defaults(desktop.Width, desktop.Height,
+                    UnityLanguageDefaults.FromSystemLanguage(Application.systemLanguage)), options);
             service.Changed += ForwardChanged;
         }
 

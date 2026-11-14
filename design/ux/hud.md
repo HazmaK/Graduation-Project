@@ -2,7 +2,7 @@
 
 > **Status**: Approved (`/ux-review` APPROVED 2026-11-12; visual layer in `production/ui/combat-hud/visual-design.md`)
 > **Author**: ux-designer (decisions by user, 2026-11-12)
-> **Last Updated**: 2026-11-12
+> **Last Updated**: 2026-11-14
 > **Game**: PURGATOR
 > **Platform Targets**: PC Win64. Keyboard/mouse primary, gamepad partial. 1920x1080 reference; must hold 1280x720 to 4K, 16:10 and 21:9. HUD is display-only except the death card button.
 > **Related GDDs**: none read for this draft (no GDD or game brief supplied). Data comes from `production/ui/combat-hud/inventory.md`. Systems: PlayerHealth, PlayerMovement, PlayerParryController, WeaponController/WeaponBase, PlayerAmmoInventory, WaveSpawnDirector, RunEvents/RunState, ArafLabyrinthDirector.
@@ -289,9 +289,11 @@ Rules:
 3. True-death card is critical: bypasses queue, clears the current banner. Scene change clears all banners.
 4. All timing uses unscaled time so hitstop/timeScale does not freeze or stretch banners.
 
-### String Table keys (Turkish, pre-uppercased, existing ScriptableObject StringTable)
+### String Table keys (bilingual tr/en, pre-cased, existing ScriptableObject StringTable)
 
 Final wording TBD by user; `{0}`/`{1}` formatting happens once per event, never per frame.
+
+All HUD strings are bilingual (Turkish and English) under the same keys; the keys listed below are unchanged. The English column lives in `production/ui/localization/plan.md` (full bilingual table, 82 keys across both assets). On a language change, each HUD view rebuilds its cached strings once (never per frame) and redraws current data without resetting timers, banners, cooldowns or the death card.
 
 | Key | Value |
 |---|---|

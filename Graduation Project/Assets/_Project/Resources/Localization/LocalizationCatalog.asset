@@ -1,0 +1,15 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a7cd4f0c0a442414ab381307de26112a, type: 3}
+  m_Name: LocalizationCatalog
+  m_EditorClassIdentifier: RetroFPS.Menu::RetroFPS.UI.Menu.LocalizationCatalog
+  combatTable: {fileID: 11400000, guid: 169af019b672b4d4c8a9b2b6a16b962d, type: 2}

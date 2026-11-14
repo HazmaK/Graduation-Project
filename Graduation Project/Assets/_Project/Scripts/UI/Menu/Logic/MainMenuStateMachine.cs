@@ -5,7 +5,7 @@ namespace RetroFPS.UI.Menu
     /// <summary>The menu's mutually exclusive input contexts.</summary>
     public enum MainMenuState { FirstLoad, Root, Settings, RevertPrompt, QuitConfirm, Loading }
     /// <summary>Logical focus destinations; views map them to selectable objects.</summary>
-    public enum MenuFocusTarget { None, Start, Settings, Quit, MasterVolume, WindowMode, Resolution, Revert, No }
+    public enum MenuFocusTarget { None, Start, Settings, Quit, MasterVolume, WindowMode, Resolution, Revert, No, Language }
 
     /// <summary>Caller-driven menu logic. Accepted buttons act after their 80 ms press feedback.</summary>
     public sealed class MainMenuStateMachine
@@ -61,7 +61,7 @@ namespace RetroFPS.UI.Menu
             pending = Pending.None;
             switch (action)
             {
-                case Pending.Settings: Change(MainMenuState.Settings, MenuFocusTarget.MasterVolume); break;
+                case Pending.Settings: Change(MainMenuState.Settings, MenuFocusTarget.Language); break;
                 case Pending.Quit: Change(MainMenuState.QuitConfirm, MenuFocusTarget.No); break;
                 case Pending.Start:
                     HasLoadError = false;

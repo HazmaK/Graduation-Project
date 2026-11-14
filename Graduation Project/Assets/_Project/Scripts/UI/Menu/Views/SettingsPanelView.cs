@@ -5,12 +5,13 @@ using UnityEngine;
 
 namespace RetroFPS.UI.Menu
 {
-    /// <summary>Binds five sliders and three cycles to scene-independent settings requests.</summary>
+    /// <summary>Binds language, five sliders and display/accessibility cycles to live settings.</summary>
     public sealed class SettingsPanelView : MonoBehaviour
     {
         [SerializeField] private StringTable strings;
         [SerializeField] private MenuSlider[] sliders;
         [SerializeField] private TMP_Text[] percentages;
+        [SerializeField] private MenuCycleRow language;
         [SerializeField] private MenuCycleRow windowMode;
         [SerializeField] private MenuCycleRow resolution;
         [SerializeField] private MenuCycleRow reduceMotion;
@@ -21,35 +22,56 @@ namespace RetroFPS.UI.Menu
         private string[] resolutionStrings;
         private string[] modeStrings;
         private string[] motionStrings;
+        private readonly string[] languageStrings = { "Türkçe", "English" };
+        private static readonly CultureInfo TurkishCulture = CultureInfo.GetCultureInfo("tr-TR");
+        private static readonly CultureInfo EnglishCulture = CultureInfo.GetCultureInfo("en-US");
+        private LanguageSetting cachedLanguage;
+        private bool hasLanguage;
         private int resolutionCount = -1;
 
         private void Awake()
         {
             service = GameSettings.Service;
             percentStrings = new string[21];
-            string format = strings.Get("settings.percent_format");
-            for (int i = 0; i < percentStrings.Length; i++)
-                percentStrings[i] = string.Format(CultureInfo.GetCultureInfo("tr-TR"), format, i * 5);
-            modeStrings = new[] { strings.Get("settings.window_mode.fullscreen"),
-                strings.Get("settings.window_mode.borderless"), strings.Get("settings.window_mode.windowed") };
-            motionStrings = new[] { strings.Get("settings.off"), strings.Get("settings.on") };
-            windowMode.SetOptions(modeStrings);
-            reduceMotion.SetOptions(motionStrings);
+            modeStrings = new string[3];
+            motionStrings = new string[2];
+            language.SetOptions(languageStrings);
+            RebuildLanguageCache(service.Current.Language);
             RefreshResolutionOptions();
             sliders[0].onValueChanged.AddListener(MasterChanged);
             sliders[1].onValueChanged.AddListener(MusicChanged);
             sliders[2].onValueChanged.AddListener(SfxChanged);
             sliders[3].onValueChanged.AddListener(UiChanged);
             sliders[4].onValueChanged.AddListener(SensitivityChanged);
+            language.Changed += LanguageChanged;
             windowMode.Changed += ModeChanged;
             resolution.Changed += ResolutionChanged;
             reduceMotion.Changed += MotionChanged;
+        }
+
+        private void RebuildLanguageCache(LanguageSetting selected)
+        {
+            if (hasLanguage && cachedLanguage == selected) return;
+            cachedLanguage = selected;
+            hasLanguage = true;
+            CultureInfo culture = selected == LanguageSetting.Turkish ? TurkishCulture : EnglishCulture;
+            string format = strings.Get("settings.percent_format", selected);
+            for (int i = 0; i < percentStrings.Length; i++)
+                percentStrings[i] = string.Format(culture, format, i * 5);
+            modeStrings[0] = strings.Get("settings.window_mode.fullscreen", selected);
+            modeStrings[1] = strings.Get("settings.window_mode.borderless", selected);
+            modeStrings[2] = strings.Get("settings.window_mode.windowed", selected);
+            motionStrings[0] = strings.Get("settings.off", selected);
+            motionStrings[1] = strings.Get("settings.on", selected);
+            windowMode.SetOptions(modeStrings);
+            reduceMotion.SetOptions(motionStrings);
         }
 
         private void OnEnable()
         {
             GameSettings.Changed += Refresh;
             Display.onDisplaysUpdated += RefreshResolutionOptions;
+            Refresh(service.Current);
         }
         private void OnDisable()
         {
@@ -63,6 +85,7 @@ namespace RetroFPS.UI.Menu
             sliders[2].onValueChanged.RemoveListener(SfxChanged);
             sliders[3].onValueChanged.RemoveListener(UiChanged);
             sliders[4].onValueChanged.RemoveListener(SensitivityChanged);
+            language.Changed -= LanguageChanged;
             windowMode.Changed -= ModeChanged;
             resolution.Changed -= ResolutionChanged;
             reduceMotion.Changed -= MotionChanged;
@@ -101,6 +124,8 @@ namespace RetroFPS.UI.Menu
 
         private void Refresh(GameSettingsData data)
         {
+            RebuildLanguageCache(data.Language);
+            language.SetIndex(data.Language == LanguageSetting.Turkish ? 0 : 1);
             SetSlider(0, data.MasterVolume);
             SetSlider(1, data.MusicVolume);
             SetSlider(2, data.SfxVolume);
@@ -119,6 +144,11 @@ namespace RetroFPS.UI.Menu
             percentages[index].text = percentStrings[step];
         }
         private bool CanEdit => controller != null && controller.CanEditSettings;
+        private void LanguageChanged(int index)
+        {
+            if (CanEdit) service.SetLanguage(index == 0 ? LanguageSetting.Turkish : LanguageSetting.English);
+            else Refresh(service.Current);
+        }
         private void MasterChanged(float value) => Volume("masterVolume", value);
         private void MusicChanged(float value) => Volume("musicVolume", value);
         private void SfxChanged(float value) => Volume("sfxVolume", value);

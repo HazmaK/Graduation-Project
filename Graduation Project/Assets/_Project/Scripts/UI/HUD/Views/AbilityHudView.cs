@@ -1,6 +1,7 @@
 using RetroFPS.Presentation;
 using RetroFPS.UI.Menu;
 using RetroFPS.Weapons;
+using RetroFPS.Settings;
 using TMPro;
 using UnityEngine;
 
@@ -36,13 +37,10 @@ namespace RetroFPS.UI.HUD
             if (pipRoot != null) pipRoot.gameObject.SetActive(movement != null);
             int count = movement != null ? Mathf.Max(0, movement.MaxDashCharges) : 0;
             if (pips != null && pips.Length == count) return;
-            dashFormat = strings.Get("hud.dash.counter");
-            ready = strings.Get("hud.parry.ready"); active = strings.Get("hud.parry.active");
-            cooldown = strings.Get("hud.parry.cooldown"); success = strings.Get("hud.parry.success");
-            hookReady = strings.Get("hud.hook.ready"); hookCooldown = strings.Get("hud.hook.cooldown");
             dashCache = new CooldownDisplayCache(config.CooldownFillSteps);
             parryCache = new CooldownDisplayCache(config.CooldownFillSteps);
             hookCache = new CooldownDisplayCache(config.CooldownFillSteps);
+            RefreshLanguage(GameSettings.Current.Language);
             HudText.Prewarm(dashCurrent);
             HudText.Prewarm(parryState, success); HudText.Prewarm(hookState, hookCooldown);
             dashTextDirty = stateTextDirty = true;
@@ -58,6 +56,20 @@ namespace RetroFPS.UI.HUD
                 pips[i] = pip.transform.Find("Fill").GetComponent<UnityEngine.UI.Image>();
             }
             if (pipTemplate != null) pipTemplate.gameObject.SetActive(false);
+        }
+
+        /// <summary>Redraws cached words and unchanged counts without restarting success or flash timers.</summary>
+        public void RefreshLanguage(LanguageSetting language)
+        {
+            if (dashCache == null || strings == null) return;
+            dashFormat = strings.Get("hud.dash.counter", language);
+            ready = strings.Get("hud.parry.ready", language); active = strings.Get("hud.parry.active", language);
+            cooldown = strings.Get("hud.parry.cooldown", language); success = strings.Get("hud.parry.success", language);
+            hookReady = strings.Get("hud.hook.ready", language); hookCooldown = strings.Get("hud.hook.cooldown", language);
+            dashTextDirty = stateTextDirty = true;
+            if (charges >= 0) SetDash(charges, maximum);
+            if (showingSuccess && parryState != null) parryState.text = success;
+            Poll();
         }
 
         /// <summary>Sets a cached shotgun reference only on weapon changes.</summary>

@@ -1,5 +1,7 @@
 using UnityEngine;
 using RetroFPS.Weapons;
+using RetroFPS.Localization;
+using RetroFPS.Settings;
 
 namespace RetroFPS.Combat
 {
@@ -90,12 +92,19 @@ namespace RetroFPS.Combat
         }
 
         private const int MaxPopups = 32;
-        private const int CachedAmounts = 4096;
+        private const int CachedAmounts = DamagePopupTextCache.CachedAmounts;
         private const int MaxLabelParts = 12;
-        private readonly string[][] _labels = new string[6][];
+        private DamagePopupTextCache _textCache;
+        private LanguageSetting _language;
+        private bool _subscribed;
+        private sealed class RegistryProvider : ILocalizedStringProvider
+        {
+            internal static readonly RegistryProvider Instance = new RegistryProvider();
+            /// <inheritdoc/>
+            public string Get(string key, LanguageSetting language) => LocalizedStrings.Get(key, language);
+        }
         private readonly GUIContent[] _contents = new GUIContent[MaxPopups];
         private readonly GUIContent[] _largeLabelParts = new GUIContent[MaxPopups * MaxLabelParts];
-        private readonly string[] _digits = new string[10];
         private readonly PopupEntry[] _pool = new PopupEntry[MaxPopups];
         private int _nextIndex = 0;
 
@@ -122,20 +131,34 @@ namespace RetroFPS.Combat
 
         private void InitializeLabels()
         {
-            for (int kind = 0; kind < _labels.Length; kind++) _labels[kind] = new string[CachedAmounts];
-            for (int amount = 0; amount < CachedAmounts; amount++)
-            {
-                string number = amount.ToString(System.Globalization.CultureInfo.InvariantCulture);
-                _labels[0][amount] = number;
-                _labels[1][amount] = "CRIT! " + number;
-                _labels[2][amount] = "PARRY " + number;
-                _labels[3][amount] = "+" + number + " HP";
-                _labels[4][amount] = "+" + number + " OK";
-                _labels[5][amount] = "+" + number + " SAÇMA";
-                if (amount < 10) _digits[amount] = number;
-            }
+            _language = GameSettings.Current.Language;
+            _textCache = new DamagePopupTextCache(RegistryProvider.Instance, _language);
             for (int i = 0; i < _contents.Length; i++) _contents[i] = new GUIContent();
             for (int i = 0; i < _largeLabelParts.Length; i++) _largeLabelParts[i] = new GUIContent();
+        }
+
+        private void OnEnable()
+        {
+            if (_instance != this || _subscribed) return;
+            _subscribed = true;
+            GameSettings.Changed += SettingsChanged;
+            SettingsChanged(GameSettings.Current);
+        }
+
+        private void OnDisable()
+        {
+            if (!_subscribed) return;
+            _subscribed = false;
+            GameSettings.Changed -= SettingsChanged;
+        }
+
+        private void SettingsChanged(GameSettingsData data)
+        {
+            if (_textCache == null || _language == data.Language) return;
+            _language = data.Language;
+            _textCache = new DamagePopupTextCache(RegistryProvider.Instance, _language);
+            for (int i = 0; i < MaxPopups; i++)
+                if (_pool[i].Active) SetLabel(i, (int)_pool[i].Kind);
         }
 
         private void SetLabel(int index, int kind)
@@ -143,7 +166,7 @@ namespace RetroFPS.Combat
             int amount = Mathf.Max(0, _pool[index].Amount);
             if (amount < CachedAmounts)
             {
-                _pool[index].Label = _labels[kind][amount];
+                _pool[index].Label = _textCache.GetLabel((DamagePopupKind)kind, amount);
                 _contents[index].text = _pool[index].Label;
                 _pool[index].PartCount = 0;
                 return;
@@ -152,19 +175,18 @@ namespace RetroFPS.Combat
             // Preserve arbitrary integer totals without allocating strings on a hit.
             int offset = index * MaxLabelParts;
             int count = 0;
-            string prefix = kind == 1 ? "CRIT! " : kind == 2 ? "PARRY " : kind >= 3 ? "+" : "";
+            string prefix = _textCache.GetPrefix((DamagePopupKind)kind);
             _pool[index].Label = prefix;
             if (prefix.Length > 0) _largeLabelParts[offset + count++].text = prefix;
             int divisor = 1;
             while (amount / divisor >= 10 && divisor <= 100000000) divisor *= 10;
             while (divisor > 0)
             {
-                _largeLabelParts[offset + count++].text = _digits[amount / divisor % 10];
+                _largeLabelParts[offset + count++].text = _textCache.GetDigit(amount / divisor % 10);
                 divisor /= 10;
             }
-            if (kind == 3) _largeLabelParts[offset + count++].text = " HP";
-            else if (kind == 4) _largeLabelParts[offset + count++].text = " OK";
-            else if (kind == 5) _largeLabelParts[offset + count++].text = " SAÇMA";
+            string suffix = _textCache.GetSuffix((DamagePopupKind)kind);
+            if (suffix.Length > 0) _largeLabelParts[offset + count++].text = suffix;
             _pool[index].PartCount = count;
         }
 
@@ -193,25 +215,36 @@ namespace RetroFPS.Combat
         {
             if (_stylesInitialized) return;
 
+            Font popupFont = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            const string glyphs = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyzÇçĞğİıÖöŞşÜü—'!?+0123456789 ";
+            popupFont.RequestCharactersInTexture(glyphs, 17, FontStyle.Bold);
+            popupFont.RequestCharactersInTexture(glyphs, 20, FontStyle.Bold);
+            popupFont.RequestCharactersInTexture(glyphs, 21, FontStyle.Bold);
+            popupFont.RequestCharactersInTexture(glyphs, 24, FontStyle.Bold);
+
             _styleNormal = new GUIStyle();
+            _styleNormal.font = popupFont;
             _styleNormal.fontSize = 17;
             _styleNormal.fontStyle = FontStyle.Bold;
             _styleNormal.alignment = TextAnchor.MiddleCenter;
             _styleNormal.normal.textColor = normalDamageColor;
 
             _styleCrit = new GUIStyle();
+            _styleCrit.font = popupFont;
             _styleCrit.fontSize = 24;
             _styleCrit.fontStyle = FontStyle.Bold;
             _styleCrit.alignment = TextAnchor.MiddleCenter;
             _styleCrit.normal.textColor = critDamageColor;
 
             _styleReflected = new GUIStyle();
+            _styleReflected.font = popupFont;
             _styleReflected.fontSize = 21;
             _styleReflected.fontStyle = FontStyle.Bold;
             _styleReflected.alignment = TextAnchor.MiddleCenter;
             _styleReflected.normal.textColor = reflectedDamageColor;
 
             _styleHeal = new GUIStyle();
+            _styleHeal.font = popupFont;
             _styleHeal.fontSize = 20;
             _styleHeal.fontStyle = FontStyle.Bold;
             _styleHeal.alignment = TextAnchor.MiddleCenter;

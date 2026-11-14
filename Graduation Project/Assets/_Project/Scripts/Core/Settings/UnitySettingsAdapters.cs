@@ -3,6 +3,14 @@ using UnityEngine;
 
 namespace RetroFPS.Settings
 {
+    /// <summary>Unity system locale boundary for first-launch defaults.</summary>
+    public static class UnityLanguageDefaults
+    {
+        /// <summary>Turkish alone maps to Turkish; every other value maps to English.</summary>
+        public static LanguageSetting FromSystemLanguage(SystemLanguage language) =>
+            LanguageDefaults.FromSystemLanguage(language == SystemLanguage.Turkish);
+    }
+
     /// <summary>PlayerPrefs persistence using the exact UX keys.</summary>
     public sealed class PlayerPrefsSettingsStore : ISettingsStore
     {
@@ -39,7 +47,8 @@ namespace RetroFPS.Settings
                 PlayerPrefs.GetFloat("uiVolume", defaults.UiVolume),
                 PlayerPrefs.GetFloat("mouseSensitivity", defaults.MouseSensitivity),
                 (WindowModeSetting)PlayerPrefs.GetInt("windowMode", (int)defaults.WindowMode),
-                width, height, motion == 0 ? false : motion == 1 ? true : defaults.ReduceMotion);
+                width, height, motion == 0 ? false : motion == 1 ? true : defaults.ReduceMotion,
+                LanguageDefaults.FromCode(PlayerPrefs.GetString("language", string.Empty), defaults.Language));
         }
 
         /// <inheritdoc/>
@@ -65,6 +74,7 @@ namespace RetroFPS.Settings
                 resolutionWritten = true;
             }
             PlayerPrefs.SetInt("reduceMotion", data.ReduceMotion ? 1 : 0);
+            PlayerPrefs.SetString("language", LanguageDefaults.ToCode(data.Language));
         }
 
         /// <inheritdoc/>

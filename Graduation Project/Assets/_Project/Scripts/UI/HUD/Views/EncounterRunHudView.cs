@@ -1,5 +1,6 @@
 using RetroFPS.Presentation;
 using RetroFPS.Run;
+using RetroFPS.Settings;
 using RetroFPS.UI.Menu;
 using TMPro;
 using UnityEngine;
@@ -22,7 +23,7 @@ namespace RetroFPS.UI.HUD
         private string ready, used, waveFormat, remainingFormat, roomsFormat;
         private bool initialized, inAraf, encounterVisible, hiding, reduceMotion, runPresent;
         private int wave = -1, waveTotal = -1, remaining = -1, enemyTotal = -1, rooms = -1, roomTotal = -1;
-        private bool exit;
+        private bool exit, chargeConsumed;
         private bool waveTextDirty, remainingTextDirty, roomsTextDirty;
         private float roomFlashUntil;
 
@@ -31,12 +32,24 @@ namespace RetroFPS.UI.HUD
         {
             if (initialized || strings == null) return;
             initialized = true;
-            waveFormat = strings.Get("hud.wave.counter"); remainingFormat = strings.Get("hud.wave.remaining");
-            roomsFormat = strings.Get("hud.araf.rooms");
-            ready = strings.Get("hud.araf.ready"); used = strings.Get("hud.araf.used");
+            RefreshLanguage(GameSettings.Current.Language);
             HudText.Prewarm(waveText); HudText.Prewarm(remainingText);
             HudText.Prewarm(roomsText); HudText.Prewarm(chargeText, used);
             waveTextDirty = remainingTextDirty = roomsTextDirty = true;
+        }
+
+        /// <summary>Refreshes counters and charge copy while retaining fades, room flashes and context.</summary>
+        public void RefreshLanguage(LanguageSetting language)
+        {
+            if (!initialized || strings == null) return;
+            waveFormat = strings.Get("hud.wave.counter", language); remainingFormat = strings.Get("hud.wave.remaining", language);
+            roomsFormat = strings.Get("hud.araf.rooms", language);
+            ready = strings.Get("hud.araf.ready", language); used = strings.Get("hud.araf.used", language);
+            waveTextDirty = remainingTextDirty = roomsTextDirty = true;
+            if (wave >= 0) SetWave(wave, waveTotal);
+            if (remaining >= 0) SetRemaining(remaining, enemyTotal);
+            if (rooms >= 0) SetRooms(rooms, roomTotal, exit);
+            SetCharge(chargeConsumed);
         }
 
         /// <summary>Snapshots run/phase without reconstructing true death from a phase value.</summary>
@@ -59,6 +72,7 @@ namespace RetroFPS.UI.HUD
         /// <summary>Changes the sigil fill and its redundant ready/used wording.</summary>
         public void SetCharge(bool consumed)
         {
+            chargeConsumed = consumed;
             if (chargeText != null) chargeText.text = consumed ? used : ready;
             if (sigilFill != null) sigilFill.enabled = !consumed;
         }

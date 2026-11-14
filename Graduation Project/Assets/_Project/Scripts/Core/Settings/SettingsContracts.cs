@@ -17,6 +17,8 @@ namespace RetroFPS.Settings
         void SetSensitivity(float value);
         /// <summary>Applies and stages persistence for the accessibility preference.</summary>
         void SetReduceMotion(bool value);
+        /// <summary>Changes language immediately and stages committed persistence.</summary>
+        void SetLanguage(LanguageSetting language);
         /// <summary>Previews display values without committing them.</summary>
         void RequestDisplay(WindowModeSetting mode, int width, int height);
         /// <summary>Commits the preview and flushes persistence.</summary>
