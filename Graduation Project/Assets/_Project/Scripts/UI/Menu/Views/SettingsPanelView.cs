@@ -9,16 +9,25 @@ namespace RetroFPS.UI.Menu
     public sealed class SettingsPanelView : MonoBehaviour
     {
         [SerializeField] private StringTable strings;
+        [SerializeField] private CanvasGroup group;
+        [SerializeField] private UnityEngine.UI.Selectable[] orderedSelectables;
+        /// <summary>Shared settings opacity and interaction boundary.</summary>
+        public CanvasGroup Group => group;
+        /// <summary>Language-first navigation order shared by both hosts.</summary>
+        public UnityEngine.UI.Selectable[] OrderedSelectables => orderedSelectables;
         [SerializeField] private MenuSlider[] sliders;
         [SerializeField] private TMP_Text[] percentages;
         [SerializeField] private MenuCycleRow language;
         [SerializeField] private MenuCycleRow windowMode;
         [SerializeField] private MenuCycleRow resolution;
         [SerializeField] private MenuCycleRow reduceMotion;
-        private MainMenuController controller;
+        private ISettingsPanelHost controller;
         private ISettingsService service;
         private ResolutionOption[] resolutions;
         private string[] percentStrings;
+        private readonly string[][] localePercent = new string[2][];
+        private readonly string[][] localeModes = new string[2][];
+        private readonly string[][] localeMotion = new string[2][];
         private string[] resolutionStrings;
         private string[] modeStrings;
         private string[] motionStrings;
@@ -32,9 +41,7 @@ namespace RetroFPS.UI.Menu
         private void Awake()
         {
             service = GameSettings.Service;
-            percentStrings = new string[21];
-            modeStrings = new string[3];
-            motionStrings = new string[2];
+            PrewarmLanguageCaches();
             language.SetOptions(languageStrings);
             RebuildLanguageCache(service.Current.Language);
             RefreshResolutionOptions();
@@ -49,20 +56,42 @@ namespace RetroFPS.UI.Menu
             reduceMotion.Changed += MotionChanged;
         }
 
+        private void PrewarmLanguageCaches()
+        {
+            for (int locale = 0; locale < 2; locale++)
+            {
+                LanguageSetting selected = locale == 0 ? LanguageSetting.Turkish : LanguageSetting.English;
+                CultureInfo culture = locale == 0 ? TurkishCulture : EnglishCulture;
+                string format = strings.Get("settings.percent_format", selected);
+                var percents = new string[21];
+                for (int i = 0; i < percents.Length; i++) percents[i] = string.Format(culture, format, i * 5);
+                localePercent[locale] = percents;
+                localeModes[locale] = new[] { strings.Get("settings.window_mode.fullscreen", selected),
+                    strings.Get("settings.window_mode.borderless", selected), strings.Get("settings.window_mode.windowed", selected) };
+                localeMotion[locale] = new[] { strings.Get("settings.off", selected), strings.Get("settings.on", selected) };
+                for (int i = 0; i < percentages.Length; i++) Warm(percentages[i], percents);
+                WarmValue(windowMode, localeModes[locale]);
+                WarmValue(reduceMotion, localeMotion[locale]);
+            }
+            WarmValue(language, languageStrings);
+        }
+
+        private static void WarmValue(MenuCycleRow row, string[] values) => Warm(row.transform.Find("Value").GetComponent<TMP_Text>(), values);
+
+        private static void Warm(TMP_Text label, string[] values)
+        {
+            label.vertexBufferAutoSizeReduction = false;
+            for (int i = 0; i < values.Length; i++) { label.text = values[i]; label.ForceMeshUpdate(true); }
+        }
         private void RebuildLanguageCache(LanguageSetting selected)
         {
             if (hasLanguage && cachedLanguage == selected) return;
             cachedLanguage = selected;
             hasLanguage = true;
-            CultureInfo culture = selected == LanguageSetting.Turkish ? TurkishCulture : EnglishCulture;
-            string format = strings.Get("settings.percent_format", selected);
-            for (int i = 0; i < percentStrings.Length; i++)
-                percentStrings[i] = string.Format(culture, format, i * 5);
-            modeStrings[0] = strings.Get("settings.window_mode.fullscreen", selected);
-            modeStrings[1] = strings.Get("settings.window_mode.borderless", selected);
-            modeStrings[2] = strings.Get("settings.window_mode.windowed", selected);
-            motionStrings[0] = strings.Get("settings.off", selected);
-            motionStrings[1] = strings.Get("settings.on", selected);
+            int locale = selected == LanguageSetting.Turkish ? 0 : 1;
+            percentStrings = localePercent[locale];
+            modeStrings = localeModes[locale];
+            motionStrings = localeMotion[locale];
             windowMode.SetOptions(modeStrings);
             reduceMotion.SetOptions(motionStrings);
         }
@@ -77,6 +106,7 @@ namespace RetroFPS.UI.Menu
         {
             GameSettings.Changed -= Refresh;
             Display.onDisplaysUpdated -= RefreshResolutionOptions;
+            if (service != null && service.HasPendingDisplay) service.RevertDisplay();
         }
         private void OnDestroy()
         {
@@ -92,7 +122,7 @@ namespace RetroFPS.UI.Menu
         }
 
         /// <summary>Injects the controller gate without coupling the settings service to UI.</summary>
-        public void Bind(MainMenuController owner) => controller = owner;
+        public void Bind(ISettingsPanelHost owner) => controller = owner;
 
         /// <summary>Reads the current live snapshot using cached display options.</summary>
         public void Open() => Refresh(service.Current);
@@ -111,6 +141,7 @@ namespace RetroFPS.UI.Menu
             for (int i = 0; i < resolutions.Length; i++)
                 resolutionStrings[i] = resolutions[i].Width.ToString(CultureInfo.InvariantCulture) + "x"
                     + resolutions[i].Height.ToString(CultureInfo.InvariantCulture);
+            WarmValue(resolution, resolutionStrings);
             resolution.SetOptions(resolutionStrings);
             Refresh(service.Current);
         }

@@ -15,6 +15,7 @@ namespace RetroFPS.UI.Menu
         [SerializeField] private StringTable strings;
         [SerializeField] private MenuTheme theme;
         private string[] countdownStrings;
+        private readonly string[][] localeCountdowns = new string[2][];
         private int shownSeconds = -1;
         private RevertCountdown activeCountdown;
         private LanguageSetting cachedLanguage;
@@ -31,7 +32,23 @@ namespace RetroFPS.UI.Menu
 
         private void Awake()
         {
-            countdownStrings = new string[11];
+            for (int locale = 0; locale < 2; locale++)
+            {
+                LanguageSetting language = locale == 0 ? LanguageSetting.Turkish : LanguageSetting.English;
+                CultureInfo culture = locale == 0 ? TurkishCulture : EnglishCulture;
+                string format = strings.Get("display.revert_countdown_format", language);
+                var values = new string[11];
+                for (int i = 0; i < values.Length; i++)
+                {
+                    values[i] = string.Format(culture, format, i);
+                    if (countdownLabel == null) continue;
+                    countdownLabel.vertexBufferAutoSizeReduction = false;
+                    countdownLabel.text = values[i];
+                    countdownLabel.ForceMeshUpdate(true);
+                }
+                localeCountdowns[locale] = values;
+            }
+            if (countdownLabel != null) countdownLabel.text = string.Empty;
             RefreshLanguage(GameSettings.Current);
         }
 
@@ -48,10 +65,7 @@ namespace RetroFPS.UI.Menu
             if (hasLanguage && cachedLanguage == data.Language) return;
             cachedLanguage = data.Language;
             hasLanguage = true;
-            CultureInfo culture = data.Language == LanguageSetting.Turkish ? TurkishCulture : EnglishCulture;
-            string format = strings.Get("display.revert_countdown_format", data.Language);
-            for (int i = 0; i < countdownStrings.Length; i++)
-                countdownStrings[i] = string.Format(culture, format, i);
+            countdownStrings = localeCountdowns[data.Language == LanguageSetting.Turkish ? 0 : 1];
             shownSeconds = -1;
             if (activeCountdown != null) ShowCountdown(activeCountdown);
         }

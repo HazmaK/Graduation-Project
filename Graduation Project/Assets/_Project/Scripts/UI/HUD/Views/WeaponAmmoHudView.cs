@@ -1,3 +1,4 @@
+using RetroFPS.Pause;
 using RetroFPS.Combat;
 using RetroFPS.Presentation;
 using RetroFPS.UI.Menu;
@@ -92,7 +93,7 @@ namespace RetroFPS.UI.HUD
         /// <summary>Starts a short glyph highlight only for an actual pickup of the equipped resource.</summary>
         public void AmmoCollected(AmmoType type, int added)
         {
-            if (type == ammoType && added > 0 && !reduceMotion) pickupUntil = Time.unscaledTime + 0.15f;
+            if (type == ammoType && added > 0 && !reduceMotion) pickupUntil = GamePause.UnscaledTime + 0.15f;
         }
 
         /// <summary>Keeps warning backing opaque and makes its outline static under reduced motion.</summary>
@@ -110,13 +111,13 @@ namespace RetroFPS.UI.HUD
             if (warningHighlight != null && low && !reduceMotion)
             {
                 Color color = theme.MenuTheme.Text;
-                color.a = 0.775f + 0.225f * Mathf.Cos(Time.unscaledTime * Mathf.PI * 2f * config.LowPulseHz);
+                color.a = 0.775f + 0.225f * Mathf.Cos(GamePause.UnscaledTime * Mathf.PI * 2f * config.LowPulseHz);
                 warningHighlight.color = color;
             }
             if (pickupUntil > 0f)
             {
-                glyph.color = Time.unscaledTime < pickupUntil ? theme.MenuTheme.Focus : ammoType == AmmoType.Bolts ? theme.TypeBolts : theme.TypeShells;
-                if (Time.unscaledTime >= pickupUntil) pickupUntil = 0f;
+                glyph.color = GamePause.UnscaledTime < pickupUntil ? theme.MenuTheme.Focus : ammoType == AmmoType.Bolts ? theme.TypeBolts : theme.TypeShells;
+                if (GamePause.UnscaledTime >= pickupUntil) pickupUntil = 0f;
             }
         }
     }

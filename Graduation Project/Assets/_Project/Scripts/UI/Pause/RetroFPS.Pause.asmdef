@@ -1,0 +1,6 @@
+{
+    "name": "RetroFPS.Pause",
+    "rootNamespace": "RetroFPS.Pause",
+    "references": ["RetroFPS.Core", "RetroFPS.Gameplay", "RetroFPS.Menu", "RetroFPS.HUD", "Unity.InputSystem", "UnityEngine.UI", "Unity.TextMeshPro"],
+    "autoReferenced": true
+}

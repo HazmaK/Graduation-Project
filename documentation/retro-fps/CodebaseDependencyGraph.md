@@ -183,6 +183,7 @@ flowchart TD
 
 ## 2.1 ASSEMBLY, KATMAN VE PREFAB YERLEŞİMİ (2026-11-11)
 
+- **Duraklatma (2026-11-15):** `RetroFPS.Pause` assembly'si Core/Gameplay (`IPauseService`, `PauseService`, `GamePause`), Gameplay `PauseRuntime`, UI `Pause/Logic` ve `Pause/Views` katmanlarından oluşur. `Player.prefab` içinde iç içe `Prefabs/UI/Pause/PauseMenu.prefab` bulunur. Ayrıntı: [[PauseMenu]].
 - **Assembly'ler:** `RetroFPS.Core` (arayüzler, `AmmoType`, `GameLayers`, `CombatEvents`) ⬅ `RetroFPS.Gameplay` (tüm oynanış) ⬅ `RetroFPS.Editor`. Ayrıntı ve hedef bölünme: [[CollaborationAndGitWorkflow]].
 - **Katmanlar:** `GameLayers` tüm fizik maskelerinin tek kaynağıdır. Silahlar ve parry `PlayerAttackMask`, düşman görüşü `EnemySightMask` (diğer düşmanların arkasını görür), engelden kaçınma `EnemyObstacleMask`, düşman mermisi `EnemyProjectileMask`, zemin taraması `GroundMask` kullanır.
 - **Prefab'lar:** `Prefabs/Player/Player.prefab` (oyuncu, kamera, üç silah, HUD bileşenleri) ve `Prefabs/Systems/CombatSystems.prefab` (`CombatAudio`, `CombatVFXManager`, `DamageNumberSystem`, `HitstopManager`, `HealthOrbManager`). Yeni bir sahneye bu iki prefab sürüklenerek oyun kurulur. `HitstopManager` yalnızca `CombatSystems` içinde bulunmalıdır (lazy oluşturulmaz). İkinci bir kopya artık yalnızca kendi bileşenini (`Destroy(this)`) siler; `CombatAudio`, `CombatVFXManager` ve `DamageNumberSystem` ise eksikse erişimde/sahne yüklemesinde kendini oluşturur.

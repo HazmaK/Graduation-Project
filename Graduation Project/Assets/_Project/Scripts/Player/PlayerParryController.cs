@@ -208,6 +208,7 @@ namespace RetroFPS
 
         private void Update()
         {
+            if (Pause.GamePause.IsGameplayInputBlocked) return;
             if (!enableShield) return;
 
             HandleCooldownAndTimers();
@@ -330,6 +331,7 @@ namespace RetroFPS
 
         public void NotifyProjectileParried()
         {
+            if (Pause.GamePause.IsSimulationBlocked) return;
             TriggerParryFeedback(true);
         }
 
@@ -339,6 +341,7 @@ namespace RetroFPS
         /// </summary>
         public bool TryParryMelee(Vector3 hitPoint, Vector3 hitNormal, float damage, GameObject attacker = null)
         {
+            if (Pause.GamePause.IsGameplayInputBlocked) return false;
             if (!_isParrying) return false;
             if (_cam == null) return false;
 

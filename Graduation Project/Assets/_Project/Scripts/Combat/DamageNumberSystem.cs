@@ -261,6 +261,7 @@ namespace RetroFPS.Combat
         /// </summary>
         public void SpawnDamageNumber(Vector3 worldPos, float amount, bool isCrit, bool isReflected = false)
         {
+            if (Pause.GamePause.IsSimulationBlocked) return;
             if (!showDamageNumbers) return;
 
             int index = _nextIndex;
@@ -285,6 +286,7 @@ namespace RetroFPS.Combat
         /// </summary>
         public void SpawnHealNumber(Vector3 worldPos, float amount)
         {
+            if (Pause.GamePause.IsSimulationBlocked) return;
             if (!showDamageNumbers) return;
 
             int index = _nextIndex;
@@ -306,6 +308,7 @@ namespace RetroFPS.Combat
         /// <summary>Shows the actual collected ammunition as +n OK or +n SAÇMA, without damage or heal flags.</summary>
         public void SpawnAmmoNumber(Vector3 worldPos, int amount, AmmoType type)
         {
+            if (Pause.GamePause.IsSimulationBlocked) return;
             if (!showDamageNumbers || amount <= 0 || (type != AmmoType.Bolts && type != AmmoType.Shells)) return;
             int index = _nextIndex;
             _nextIndex = (_nextIndex + 1) % MaxPopups;
@@ -321,6 +324,7 @@ namespace RetroFPS.Combat
 
         private void Update()
         {
+            if (Pause.GamePause.IsSimulationBlocked) return;
             float dt = Time.deltaTime;
 
             for (int i = 0; i < MaxPopups; i++)
@@ -344,6 +348,7 @@ namespace RetroFPS.Combat
 
         private void OnGUI()
         {
+            if (Pause.GamePause.IsSimulationBlocked) return;
             if (!showDamageNumbers) return;
 
             if (_cam == null)

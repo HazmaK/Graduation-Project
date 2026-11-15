@@ -214,7 +214,7 @@ namespace RetroFPS.Editor
                     throw new InvalidOperationException("Missing menu glyph: " + text[i]);
         }
 
-        private static void ValidateSettingsLayout(RectTransform panel)
+        internal static void ValidateSettingsLayout(RectTransform panel)
         {
             foreach (TMP_Text label in panel.GetComponentsInChildren<TMP_Text>(true))
             {
@@ -332,6 +332,9 @@ namespace RetroFPS.Editor
             SavePrefab(dialogObject, "ConfirmDialog");
         }
 
+        /// <summary>Supplies shared authoring helpers without running a scene builder.</summary>
+        internal static void UseSharedPresentation(MenuTheme palette, StringTable table) { theme = palette; strings = table; }
+
         private static void BuildCanvas()
         {
             GameObject root = Rect("MainMenuCanvas", null).gameObject;
@@ -358,70 +361,14 @@ namespace RetroFPS.Editor
             var quit = Button(menu, "Quit", "menu.quit", 0, 0, 650);
             Wrap(new UnityEngine.UI.Selectable[] { start, settings, quit });
 
-            RectTransform panel = Rect("SettingsPanel", safe);
-            panel.anchorMin = panel.anchorMax = Vector2.zero; panel.pivot = Vector2.zero;
-            // At 720p the 1920x1080 canvas scales by 2/3: 36 units retain 24 screen pixels.
-            // Safe area is 1728x972 units; this panel ends at y=960, leaving room for Version.
-            panel.anchoredPosition = new Vector2(0, 60); Size(panel, 1040, 900);
-            var panelGroup = panel.gameObject.AddComponent<CanvasGroup>();
-            panelGroup.alpha = 0; panelGroup.interactable = panelGroup.blocksRaycasts = false;
-            var frame = Image(panel, "Frame", MainMenuPlaceholderArt.Sprite("PanelFrame_A"), Color.white, 0, 0, 0, 0);
-            Stretch(frame.rectTransform); frame.type = UnityEngine.UI.Image.Type.Sliced; frame.pixelsPerUnitMultiplier = 1f / 3f;
-            var jewel = Image(panel, "Jewel", MainMenuPlaceholderArt.Sprite("Sigil_A_BoneSeal"), Color.white, 0, 0, 45, 21);
-            jewel.rectTransform.anchorMin = jewel.rectTransform.anchorMax = new Vector2(0.5f, 1); jewel.rectTransform.anchoredPosition = Vector2.zero;
-            RectTransform content = Rect("Content", panel); Stretch(content); content.offsetMin = new Vector2(30, 24); content.offsetMax = new Vector2(-30, -24);
-            LabelTop(content, "Title", "settings.title", theme.SettingsTitleSize, 0, 54);
-            Group(content, "General", "settings.group.general", 86);
-            GameObject languageObject = Instantiate("MenuCycleRow", content);
-            languageObject.name = "Language";
-            Top((RectTransform)languageObject.transform, 130);
-            Localize(languageObject.transform.Find("Label").GetComponent<TMP_Text>(), "settings.language");
-            var language = languageObject.GetComponent<MenuCycleRow>();
-            language.SetOptions(new[] { strings.Get("language.tr", LanguageSetting.Turkish),
-                strings.Get("language.en", LanguageSetting.English) });
-            Group(content, "Audio", "settings.group.audio", 180);
-            string[] sliderKeys = { "settings.master_volume", "settings.music_volume", "settings.sfx_volume", "settings.ui_volume", "settings.mouse_sensitivity" };
-            var sliders = new MenuSlider[5]; var values = new TMP_Text[5];
-            float[] sliderY = { 224, 280, 336, 392, 488 };
-            for (int i = 0; i < sliders.Length; i++)
-            {
-                GameObject row = Instantiate("MenuSliderRow", content);
-                row.name = "Slider" + i;
-                Top((RectTransform)row.transform, sliderY[i]);
-                Localize(row.transform.Find("Label").GetComponent<TMP_Text>(), sliderKeys[i]);
-                sliders[i] = row.GetComponent<MenuSlider>();
-                values[i] = row.transform.Find("Value").GetComponent<TMP_Text>();
-                values[i].text = string.Empty;
-            }
-            Group(content, "Controls", "settings.group.controls", 444);
-            Group(content, "Display", "settings.group.display", 540);
-            string[] cycleKeys = { "settings.window_mode", "settings.resolution", "settings.reduce_motion" };
-            var cycles = new MenuCycleRow[3];
-            for (int i = 0; i < cycles.Length; i++)
-            {
-                GameObject row = Instantiate("MenuCycleRow", content);
-                row.name = "Cycle" + i;
-                Top((RectTransform)row.transform, 584 + i * 56);
-                Localize(row.transform.Find("Label").GetComponent<TMP_Text>(), cycleKeys[i]);
-                cycles[i] = row.GetComponent<MenuCycleRow>();
-                TMP_Text value = row.transform.Find("Value").GetComponent<TMP_Text>();
-                value.text = string.Empty;
-            }
-            var back = Button(content, "Back", "settings.back", 0, 0, 980, theme.SettingsLabelSize);
-            Top((RectTransform)back.transform, 786);
-            var order = new UnityEngine.UI.Selectable[] { language, sliders[0], sliders[1], sliders[2], sliders[3], sliders[4], cycles[0], cycles[1], cycles[2], back };
-            Wrap(order);
-            var view = panel.gameObject.AddComponent<SettingsPanelView>();
-            Set(view, "strings", strings); SetArray(view, "sliders", sliders); SetArray(view, "percentages", values);
-            Set(view, "language", language);
-            Set(view, "windowMode", cycles[0]); Set(view, "resolution", cycles[1]); Set(view, "reduceMotion", cycles[2]);
-            ValidateSettingsLayout(panel);
+            GameObject shared = (GameObject)PrefabUtility.InstantiatePrefab(SharedSettingsPanelBuilder.Build(), safe);
+            shared.name = "SettingsPanel";
 
             TMP_Text version = Label(safe, "Version", null, theme.VersionSize, 0, 0, 650, 54);
             version.rectTransform.anchorMin = version.rectTransform.anchorMax = Vector2.zero;
             version.rectTransform.pivot = Vector2.zero; version.rectTransform.anchoredPosition = Vector2.zero;
             version.color = theme.TextDim;
-            TMP_Text error = Label(safe, "LoadError", "menu.load_error", theme.SettingsLabelSize, 0, 0, 700, 50);
+            TMP_Text error = Label(safe, "LoadError", null, theme.SettingsLabelSize, 0, 0, 700, 50);
             error.rectTransform.anchorMin = error.rectTransform.anchorMax = Vector2.zero;
             error.rectTransform.anchoredPosition = new Vector2(0, 370); error.color = theme.Danger;
             error.gameObject.SetActive(false);
@@ -555,7 +502,7 @@ namespace RetroFPS.Editor
             var router = root.AddComponent<MenuInputRouter>(); Set(router, "controller", controller);
             Set(router, "cancel", ActionReference("Cancel")); Set(router, "rightClick", ActionReference("RightClick"));
             root.AddComponent<MenuLifecycle>();
-            var source = root.AddComponent<AudioSource>(); source.playOnAwake = false; source.spatialBlend = 0;
+            var source = root.AddComponent<AudioSource>(); source.playOnAwake = false; source.spatialBlend = 0; source.ignoreListenerPause = true;
             var audio = root.AddComponent<MenuAudioPlayer>(); Set(audio, "theme", theme); Set(audio, "source", source);
             SetArray(audio, "clips", new AudioClip[(int)UiAudioEventType.Error + 1]);
             SavePrefab(root, "MainMenuSystems");
@@ -641,7 +588,7 @@ namespace RetroFPS.Editor
             int split = path.LastIndexOf('/'); EnsureFolder(path.Substring(0, split));
             AssetDatabase.CreateFolder(path.Substring(0, split), path.Substring(split + 1));
         }
-        private static GameObject Instantiate(string name, Transform parent)
+        internal static GameObject Instantiate(string name, Transform parent)
         {
             var result = (GameObject)PrefabUtility.InstantiatePrefab(AssetDatabase.LoadAssetAtPath<GameObject>(Prefabs + name + ".prefab"));
             if (parent != null) result.transform.SetParent(parent, false);
@@ -663,23 +610,23 @@ namespace RetroFPS.Editor
             }
             finally { Object.DestroyImmediate(root); }
         }
-        private static RectTransform Rect(string name, Transform parent)
+        internal static RectTransform Rect(string name, Transform parent)
         {
             var rect = (RectTransform)new GameObject(name, typeof(RectTransform)).transform;
             if (parent != null) rect.SetParent(parent, false);
             return rect;
         }
-        private static void Stretch(RectTransform rect)
+        internal static void Stretch(RectTransform rect)
         {
             rect.anchorMin = Vector2.zero; rect.anchorMax = Vector2.one;
             rect.offsetMin = rect.offsetMax = Vector2.zero;
         }
-        private static void Size(RectTransform rect, float width, float height) => rect.sizeDelta = new Vector2(width, height);
+        internal static void Size(RectTransform rect, float width, float height) => rect.sizeDelta = new Vector2(width, height);
         private static void Centre(RectTransform rect)
         {
             rect.anchorMin = rect.anchorMax = rect.pivot = Vector2.one * 0.5f; rect.anchoredPosition = Vector2.zero;
         }
-        private static void Top(RectTransform rect, float y)
+        internal static void Top(RectTransform rect, float y)
         {
             rect.anchorMin = rect.anchorMax = new Vector2(0, 1); rect.pivot = new Vector2(0, 0.5f);
             rect.anchoredPosition = new Vector2(0, -y);
@@ -697,7 +644,7 @@ namespace RetroFPS.Editor
             if (raycaster) root.AddComponent<UnityEngine.UI.GraphicRaycaster>();
             return canvas;
         }
-        private static UnityEngine.UI.Image Image(Transform parent, string name, Sprite sprite, Color color,
+        internal static UnityEngine.UI.Image Image(Transform parent, string name, Sprite sprite, Color color,
             float x, float y, float width, float height)
         {
             RectTransform rect = Rect(name, parent);
@@ -735,7 +682,7 @@ namespace RetroFPS.Editor
             if (key != null) Localize(label, key); else label.text = string.Empty;
             return label;
         }
-        private static void Localize(TMP_Text label, string key)
+        internal static void Localize(TMP_Text label, string key)
         {
             LocalizedText localized = label.GetComponent<LocalizedText>();
             if (localized == null) localized = label.gameObject.AddComponent<LocalizedText>();
@@ -743,18 +690,18 @@ namespace RetroFPS.Editor
             // Editor previews never initialize or override persistent runtime settings.
             label.text = strings.Get(key, LanguageSetting.Turkish);
         }
-        private static void LabelTop(Transform parent, string name, string key, float size, float y, float height)
+        internal static void LabelTop(Transform parent, string name, string key, float size, float y, float height)
         {
             TMP_Text label = Label(parent, name, key, size, 0, 0, 980, height); Top(label.rectTransform, y + height / 2);
         }
-        private static void Group(Transform parent, string name, string key, float y)
+        internal static void Group(Transform parent, string name, string key, float y)
         {
             TMP_Text label = Label(parent, name + "Group", key, theme.GroupLabelSize, 0, 0, 980, 44);
             Top(label.rectTransform, y); label.color = theme.TextDim; label.fontStyle = FontStyles.Bold; label.characterSpacing = theme.GroupTracking;
             var divider = Image(parent, name + "Divider", null, new Color(theme.TextDim.r, theme.TextDim.g, theme.TextDim.b, 0.4f), 0, 0, 700, 3);
             Top(divider.rectTransform, y + 25);
         }
-        private static UnityEngine.UI.Button Button(Transform parent, string name, string key,
+        internal static UnityEngine.UI.Button Button(Transform parent, string name, string key,
             float x, float y, float width, float size = 44)
         {
             GameObject root = Instantiate("MenuButton", parent); root.name = name;
@@ -796,7 +743,7 @@ namespace RetroFPS.Editor
             Set(visual, "sigil", sigil); Set(visual, "underline", underline); Set(visual, "rowBand", rowBand); Set(visual, "sliderFill", fill);
             Set(visual, "pressedSigil", MainMenuPlaceholderArt.Sprite("Sigil_A_BoneSealPressed")); Set(visual, "pressShadow", shadow);
         }
-        private static void Wrap(UnityEngine.UI.Selectable[] items, bool horizontal = false)
+        internal static void Wrap(UnityEngine.UI.Selectable[] items, bool horizontal = false)
         {
             for (int i = 0; i < items.Length; i++)
             {
@@ -809,17 +756,17 @@ namespace RetroFPS.Editor
                 items[i].navigation = navigation;
             }
         }
-        private static void Set(Object target, string property, Object value)
+        internal static void Set(Object target, string property, Object value)
         {
             var serialized = new SerializedObject(target); serialized.FindProperty(property).objectReferenceValue = value;
             serialized.ApplyModifiedPropertiesWithoutUndo();
         }
-        private static void Set(Object target, string property, string value)
+        internal static void Set(Object target, string property, string value)
         {
             var serialized = new SerializedObject(target); serialized.FindProperty(property).stringValue = value;
             serialized.ApplyModifiedPropertiesWithoutUndo();
         }
-        private static void SetArray<T>(Object target, string property, T[] values) where T : Object
+        internal static void SetArray<T>(Object target, string property, T[] values) where T : Object
         {
             var serialized = new SerializedObject(target); SerializedProperty array = serialized.FindProperty(property);
             array.arraySize = values.Length;

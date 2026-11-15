@@ -144,6 +144,7 @@ namespace RetroFPS
 
         private void Update()
         {
+            if (Pause.GamePause.IsSimulationBlocked) return;
             if (_isSlashing)
             {
                 ExecuteSlashAnimation();

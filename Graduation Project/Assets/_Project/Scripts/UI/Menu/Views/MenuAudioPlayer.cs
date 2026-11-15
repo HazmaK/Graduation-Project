@@ -12,7 +12,14 @@ namespace RetroFPS.UI.Menu
         [SerializeField] private AudioClip[] clips;
         private UiAudioThrottle throttle;
 
-        private void Awake() => throttle = new UiAudioThrottle(theme.AudioThrottleSeconds);
+        private void Awake()
+        {
+            if (source == null) source = GetComponent<AudioSource>();
+            source.ignoreListenerPause = true;
+            source.spatialBlend = 0f;
+            source.playOnAwake = false;
+            throttle = new UiAudioThrottle(theme.AudioThrottleSeconds);
+        }
         private void OnEnable()
         {
             MenuEvents.UiAudio += Play;

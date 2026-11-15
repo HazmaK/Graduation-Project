@@ -71,10 +71,11 @@ namespace RetroFPS.UI
 
         private void Update()
         {
-            if (_killMarkerTimer > 0f) _killMarkerTimer -= Time.unscaledDeltaTime;
+            if (Pause.GamePause.IsSimulationBlocked) return;
+            if (_killMarkerTimer > 0f) _killMarkerTimer -= Pause.GamePause.UnscaledDeltaTime;
             if (_hitmarkerTimer > 0f)
             {
-                _hitmarkerTimer -= Time.deltaTime;
+                _hitmarkerTimer -= Pause.GamePause.UnscaledDeltaTime;
             }
 
             // Geri tepme açılmasının orijinal haline yaylanması
@@ -109,6 +110,7 @@ namespace RetroFPS.UI
 
         private void OnGUI()
         {
+            if (Pause.GamePause.IsSimulationBlocked) return;
             if (Cursor.lockState != CursorLockMode.Locked) return;
 
             float cx = Screen.width * 0.5f;

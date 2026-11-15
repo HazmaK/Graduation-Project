@@ -1,3 +1,4 @@
+using RetroFPS.Pause;
 using System;
 using RetroFPS.Combat;
 using RetroFPS.Run;
@@ -80,6 +81,7 @@ namespace RetroFPS
 
         private void Update()
         {
+            if (GamePause.IsSimulationBlocked) return;
             // The Gauntlet bounds is a child of the encounter object. This also handles a player
             // already inside at scene load, without adding a Rigidbody or modifying that hierarchy.
             if (!_triggered && !_defeated && _playerTransform != null && arenaTrigger != null
@@ -95,6 +97,7 @@ namespace RetroFPS
 
         private void TryBegin()
         {
+            if (GamePause.IsSimulationBlocked) return;
             if (_triggered || _defeated || _suspended || boss == null || arenaTrigger == null) return;
             if (_player == null || _player.IsDead) return;
             _triggered = _active = true;

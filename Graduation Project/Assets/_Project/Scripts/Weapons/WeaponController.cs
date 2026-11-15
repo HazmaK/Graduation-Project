@@ -38,6 +38,7 @@ namespace RetroFPS.Weapons
         private Camera _cam;
         private readonly Dictionary<WeaponSlot, WeaponBase> _weaponMap = new Dictionary<WeaponSlot, WeaponBase>();
         private WeaponBase _activeWeapon;
+        private bool _requireFreshFire;
 
         public event Action<bool> OnWeaponHit;
         public event Action<WeaponSlot> OnWeaponSwitched;
@@ -183,6 +184,11 @@ namespace RetroFPS.Weapons
 
         private void Update()
         {
+            if (Pause.GamePause.IsGameplayInputBlocked)
+            {
+                _requireFreshFire = true;
+                return;
+            }
             if (_activeWeapon != null)
             {
                 _activeWeapon.Tick(Time.deltaTime);
@@ -266,7 +272,15 @@ namespace RetroFPS.Weapons
 
         private void HandleFireInput()
         {
+            if (Pause.GamePause.IsGameplayInputBlocked) return;
             if (Mouse.current == null) return;
+
+            if (_requireFreshFire)
+            {
+                if (Mouse.current.leftButton.isPressed || Mouse.current.rightButton.isPressed) return;
+                _requireFreshFire = false;
+                return;
+            }
 
             // İmleç kilitli değilse, tıklama anında imleci kilitle ancak ATEŞ ETMEYİ ASLA ENGELLEME!
             if (Cursor.lockState != CursorLockMode.Locked)

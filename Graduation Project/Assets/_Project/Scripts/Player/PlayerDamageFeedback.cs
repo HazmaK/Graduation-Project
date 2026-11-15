@@ -236,6 +236,7 @@ namespace RetroFPS
 
         private void Update()
         {
+            if (Pause.GamePause.IsSimulationBlocked) return;
             float dt = Time.deltaTime;
 
             // Kan perdesi acı flaşının sönmesi
@@ -266,6 +267,7 @@ namespace RetroFPS
 
         private void OnGUI()
         {
+            if (Pause.GamePause.IsSimulationBlocked) return;
             if (_health != null && _health.IsDead) return;
 
             float screenW = Screen.width;

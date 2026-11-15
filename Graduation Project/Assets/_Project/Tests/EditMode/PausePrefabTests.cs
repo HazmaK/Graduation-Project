@@ -1,0 +1,231 @@
+using NUnit.Framework;
+using RetroFPS.Pause;
+using RetroFPS.Presentation;
+using RetroFPS.UI.HUD;
+using RetroFPS.UI.Menu;
+using TMPro;
+using UnityEditor;
+using UnityEngine;
+using UnityEngine.EventSystems;
+using UnityEngine.InputSystem;
+using UnityEngine.InputSystem.UI;
+
+namespace RetroFPS.Tests
+{
+    public sealed class PausePrefabTests
+    {
+        private const string PausePath = "Assets/_Project/Prefabs/UI/Pause/PauseMenu.prefab";
+        private const string SharedPath = "Assets/_Project/Prefabs/UI/Shared/SettingsPanel.prefab";
+        private const string PlayerPath = "Assets/_Project/Prefabs/Player/Player.prefab";
+        private const string HudPath = "Assets/_Project/Prefabs/UI/CombatHud/CombatHud.prefab";
+        private static GameObject Pause()
+        {
+            GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(PausePath);
+            if (prefab == null) Assert.Ignore("Pause prefab has not been generated yet. Run RetroFPS/Build Pause Menu, then rerun; no Ignore is allowed after generation.");
+            return prefab;
+        }
+        [Test]
+        public void BothMenusNestTheExactSharedAssetAndHaveOneOwner()
+        {
+            GameObject pause = Pause();
+            GameObject shared = AssetDatabase.LoadAssetAtPath<GameObject>(SharedPath);
+            GameObject main = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/_Project/Prefabs/UI/MainMenu/MainMenuCanvas.prefab");
+            Assert.That(shared, Is.Not.Null); Assert.That(main, Is.Not.Null);
+            Assert.That(PrefabUtility.GetCorrespondingObjectFromSource(main.transform.Find("SafeArea/SettingsPanel").gameObject), Is.EqualTo(shared));
+            Assert.That(PrefabUtility.GetCorrespondingObjectFromSource(pause.transform.Find("SafeArea/SettingsPanel").gameObject), Is.EqualTo(shared));
+            Assert.That(pause.GetComponentsInChildren<PauseMenuController>(true).Length, Is.EqualTo(1));
+            Assert.That(pause.GetComponentsInChildren<MainMenuController>(true), Is.Empty);
+            Assert.That(pause.GetComponentsInChildren<PauseRuntime>(true), Is.Empty);
+            Assert.That(pause.GetComponentsInChildren<EventSystem>(true), Is.Empty);
+            Assert.That(pause.GetComponent<Canvas>().sortingOrder, Is.EqualTo(200));
+            Assert.That(pause.GetComponent<UnityEngine.UI.GraphicRaycaster>(), Is.Not.Null);
+            var scaler = pause.GetComponent<UnityEngine.UI.CanvasScaler>();
+            Assert.That(scaler.referenceResolution, Is.EqualTo(new Vector2(1920, 1080)));
+            Assert.That(scaler.uiScaleMode, Is.EqualTo(UnityEngine.UI.CanvasScaler.ScaleMode.ScaleWithScreenSize));
+            var router = new SerializedObject(pause.GetComponent<MenuInputRouter>());
+            Assert.That(router.FindProperty("pauseHost").boolValue, Is.True);
+            Assert.That(router.FindProperty("controller").objectReferenceValue, Is.EqualTo(pause.GetComponent<PauseMenuController>()));
+            Assert.That(router.FindProperty("cancel").objectReferenceValue, Is.Null);
+            Assert.That(router.FindProperty("rightClick").objectReferenceValue, Is.Null);
+        }
+        [Test]
+        public void PlayerHasOnePauseHudAndPersistentInputReferencesAfterReload()
+        {
+            Pause();
+            GameObject player = PrefabUtility.LoadPrefabContents(PlayerPath);
+            try
+            {
+                Assert.That(player.GetComponents<PauseRuntime>().Length, Is.EqualTo(1));
+                Assert.That(player.GetComponents<PauseBindings>().Length, Is.EqualTo(1));
+                Assert.That(player.GetComponents<HudBindings>().Length, Is.EqualTo(1));
+                Assert.That(player.GetComponentsInChildren<PauseMenuController>(true).Length, Is.EqualTo(1));
+                Assert.That(player.GetComponentsInChildren<HudEventSystemGuard>(true).Length, Is.EqualTo(1));
+                Assert.That(player.GetComponentsInChildren<EventSystem>(true).Length, Is.EqualTo(1));
+                var bindings = new SerializedObject(player.GetComponent<PauseBindings>());
+                foreach (string field in new[] { "runtime", "pauseMenu", "health", "eventSystemGuard", "trueDeath" })
+                    Assert.That(bindings.FindProperty(field).objectReferenceValue, Is.Not.Null, field);
+                InputSystemUIInputModule module = player.GetComponentInChildren<InputSystemUIInputModule>(true);
+                Assert.That(module, Is.Not.Null); Assert.That(module.deselectOnBackgroundClick, Is.False);
+                var data = new SerializedObject(module);
+                Assert.That(data.FindProperty("m_ActionsAsset").objectReferenceValue, Is.Not.Null);
+                foreach (string field in new[] { "m_MoveAction", "m_SubmitAction", "m_CancelAction", "m_PointAction", "m_LeftClickAction", "m_RightClickAction", "m_ScrollWheelAction" })
+                {
+                    var reference = data.FindProperty(field).objectReferenceValue as InputActionReference;
+                    Assert.That(reference, Is.Not.Null, field);
+                    Assert.That(AssetDatabase.Contains(reference), Is.True, field);
+                    Assert.That(reference.action, Is.Not.Null, field);
+                    Assert.That(reference.action.actionMap.name, Is.EqualTo("UI"));
+                }
+                MenuInputRouter router = player.GetComponentInChildren<PauseMenuController>(true).GetComponent<MenuInputRouter>();
+                Assert.That(new SerializedObject(router).FindProperty("eventSystem").objectReferenceValue, Is.EqualTo(module.GetComponent<EventSystem>()));
+            }
+            finally { PrefabUtility.UnloadPrefabContents(player); }
+        }
+
+        [TestCase("CombatHudBuilder", "WirePlayer")]
+        [TestCase("PauseMenuBuilder", "EnsurePlayerPause")]
+        public void PlayerWiringTwiceRemovesDuplicatesAndPreservesOriginalReferences(string builderName, string methodName)
+        {
+            GameObject pausePrefab = Pause();
+            GameObject hudPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(HudPath);
+            Assert.That(hudPrefab, Is.Not.Null);
+            string copyPath = AssetDatabase.GenerateUniqueAssetPath("Assets/_Project/Tests/EditMode/PauseWiringTest.prefab");
+            GameObject player = null;
+            try
+            {
+                Assert.That(AssetDatabase.CopyAsset(PlayerPath, copyPath), Is.True);
+                string guid = AssetDatabase.AssetPathToGUID(copyPath);
+                player = PrefabUtility.LoadPrefabContents(copyPath);
+                var originalBindings = player.GetComponent<HudBindings>();
+                var originalRuntime = player.GetComponent<PauseRuntime>();
+                var originalPauseBindings = player.GetComponent<PauseBindings>();
+                var originalPause = player.GetComponentInChildren<PauseMenuController>(true);
+                var originalGuard = player.GetComponentInChildren<HudEventSystemGuard>(true);
+                var originalHud = (GameObject)new SerializedObject(originalBindings).FindProperty("hud").objectReferenceValue;
+                HudConfig originalConfig = originalBindings.Config;
+                PrefabUtility.InstantiatePrefab(hudPrefab, player.transform);
+                PrefabUtility.InstantiatePrefab(pausePrefab, player.transform);
+                var debris = new GameObject("DuplicateBindings");
+                debris.SetActive(false);
+                debris.transform.SetParent(player.transform, false);
+                debris.AddComponent<HudBindings>();
+                debris.AddComponent<PauseRuntime>();
+                debris.AddComponent<PauseBindings>();
+                System.Type builder = System.Type.GetType("RetroFPS.Editor." + builderName + ", RetroFPS.Editor", true);
+                var wire = builder.GetMethod(methodName, System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic);
+                Assert.That(wire, Is.Not.Null);
+                for (int pass = 0; pass < 2; pass++)
+                {
+                    wire.Invoke(null, new object[] { player });
+                    AssertSinglePlayerOwners(player);
+                    Assert.That(player.GetComponent<HudBindings>(), Is.EqualTo(originalBindings));
+                    Assert.That(player.GetComponent<PauseRuntime>(), Is.EqualTo(originalRuntime));
+                    Assert.That(player.GetComponent<PauseBindings>(), Is.EqualTo(originalPauseBindings));
+                    Assert.That(player.GetComponentInChildren<PauseMenuController>(true), Is.EqualTo(originalPause));
+                    Assert.That(player.GetComponentInChildren<HudEventSystemGuard>(true), Is.EqualTo(originalGuard));
+                    Assert.That(new SerializedObject(originalBindings).FindProperty("hud").objectReferenceValue, Is.EqualTo(originalHud));
+                    Assert.That(originalBindings.Config, Is.EqualTo(originalConfig));
+                    var bindings = new SerializedObject(originalPauseBindings);
+                    Assert.That(bindings.FindProperty("pauseMenu").objectReferenceValue, Is.EqualTo(originalPause));
+                    Assert.That(bindings.FindProperty("eventSystemGuard").objectReferenceValue, Is.EqualTo(originalGuard));
+                }
+                PrefabUtility.SaveAsPrefabAsset(player, copyPath, out bool saved);
+                Assert.That(saved, Is.True);
+                PrefabUtility.UnloadPrefabContents(player);
+                player = null;
+                player = PrefabUtility.LoadPrefabContents(copyPath);
+                AssertSinglePlayerOwners(player);
+                Assert.That(AssetDatabase.AssetPathToGUID(copyPath), Is.EqualTo(guid));
+                Assert.That(player.GetComponent<HudBindings>().Config, Is.EqualTo(originalConfig));
+                var reloaded = new SerializedObject(player.GetComponent<PauseBindings>());
+                Assert.That(reloaded.FindProperty("runtime").objectReferenceValue, Is.EqualTo(player.GetComponent<PauseRuntime>()));
+                Assert.That(reloaded.FindProperty("pauseMenu").objectReferenceValue, Is.EqualTo(player.GetComponentInChildren<PauseMenuController>(true)));
+                Assert.That(reloaded.FindProperty("eventSystemGuard").objectReferenceValue, Is.EqualTo(player.GetComponentInChildren<HudEventSystemGuard>(true)));
+            }
+            finally
+            {
+                if (player != null) PrefabUtility.UnloadPrefabContents(player);
+                AssetDatabase.DeleteAsset(copyPath);
+            }
+        }
+
+        private static void AssertSinglePlayerOwners(GameObject player)
+        {
+            Assert.That(player.GetComponentsInChildren<HudBindings>(true).Length, Is.EqualTo(1));
+            Assert.That(player.GetComponentsInChildren<PauseRuntime>(true).Length, Is.EqualTo(1));
+            Assert.That(player.GetComponentsInChildren<PauseBindings>(true).Length, Is.EqualTo(1));
+            Assert.That(player.GetComponentsInChildren<PauseMenuController>(true).Length, Is.EqualTo(1));
+            Assert.That(player.GetComponentsInChildren<HudEventSystemGuard>(true).Length, Is.EqualTo(1));
+            Assert.That(player.GetComponentsInChildren<EventSystem>(true).Length, Is.EqualTo(1));
+            foreach (string path in new[] { HudPath, PausePath })
+            {
+                int count = 0;
+                foreach (Transform child in player.transform)
+                    if (PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(child.gameObject) == path) count++;
+                Assert.That(count, Is.EqualTo(1), path);
+            }
+        }
+        [Test]
+        public void ModalNavigationWrapsAndSettingsStartAtLanguage()
+        {
+            GameObject pause = Pause();
+            var controller = new SerializedObject(pause.GetComponent<PauseMenuController>());
+            SerializedProperty roots = controller.FindProperty("rootItems");
+            Assert.That(roots.arraySize, Is.EqualTo(3));
+            for (int i = 0; i < 3; i++)
+            {
+                var item = (UnityEngine.UI.Selectable)roots.GetArrayElementAtIndex(i).objectReferenceValue;
+                Assert.That(item.navigation.mode, Is.EqualTo(UnityEngine.UI.Navigation.Mode.Explicit));
+                Assert.That(item.navigation.selectOnDown, Is.EqualTo(roots.GetArrayElementAtIndex((i + 1) % 3).objectReferenceValue));
+                Assert.That(item.navigation.selectOnUp, Is.EqualTo(roots.GetArrayElementAtIndex((i + 2) % 3).objectReferenceValue));
+            }
+            foreach (ConfirmDialogView dialog in pause.GetComponentsInChildren<ConfirmDialogView>(true))
+            {
+                Assert.That(dialog.Negative.navigation.selectOnDown, Is.EqualTo(dialog.Affirmative));
+                Assert.That(dialog.Negative.navigation.selectOnRight, Is.EqualTo(dialog.Affirmative));
+                Assert.That(dialog.Affirmative.navigation.selectOnUp, Is.EqualTo(dialog.Negative));
+            }
+            SettingsPanelView settings = pause.GetComponentInChildren<SettingsPanelView>(true);
+            Assert.That(settings.OrderedSelectables.Length, Is.EqualTo(10));
+            Assert.That(settings.OrderedSelectables[0].name, Is.EqualTo("Language"));
+            Assert.That(settings.OrderedSelectables[9].navigation.selectOnDown, Is.EqualTo(settings.OrderedSelectables[0]));
+        }
+        [Test]
+        public void TextFloorDynamicLabelsAndUiAudioExceptionAreValid()
+        {
+            GameObject pause = Pause();
+            foreach (TMP_Text label in pause.GetComponentsInChildren<TMP_Text>(true))
+            {
+                Assert.That(label.fontSize, Is.GreaterThanOrEqualTo(24f), label.name);
+                if (label.enableAutoSizing) Assert.That(label.fontSizeMin, Is.GreaterThanOrEqualTo(24f), label.name);
+                if (label.name == "Value" || label.name == "Countdown" || label.name == "LoadError")
+                    Assert.That(label.GetComponent<LocalizedText>(), Is.Null, label.name + " is view-owned.");
+            }
+            var sources = pause.GetComponentsInChildren<AudioSource>(true);
+            Assert.That(sources.Length, Is.EqualTo(1));
+            Assert.That(sources[0].playOnAwake, Is.False);
+            Assert.That(sources[0].spatialBlend, Is.Zero);
+            Assert.That(pause.GetComponentsInChildren<MenuAudioPlayer>(true).Length, Is.EqualTo(1));
+            var image = pause.transform.Find("Scrim").GetComponent<UnityEngine.UI.Image>();
+            MenuTheme theme = (MenuTheme)new SerializedObject(pause.GetComponent<PauseMenuController>()).FindProperty("theme").objectReferenceValue;
+            var audioObject = new GameObject("PauseAudioTest", typeof(AudioSource));
+            audioObject.SetActive(false);
+            try
+            {
+                var audio = audioObject.AddComponent<MenuAudioPlayer>();
+                var data = new SerializedObject(audio);
+                data.FindProperty("theme").objectReferenceValue = theme;
+                data.ApplyModifiedPropertiesWithoutUndo();
+                AudioSource source = audioObject.GetComponent<AudioSource>();
+                source.ignoreListenerPause = false;
+                typeof(MenuAudioPlayer).GetMethod("Awake", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic).Invoke(audio, null);
+                Assert.That(source.ignoreListenerPause, Is.True);
+                Assert.That(source.playOnAwake, Is.False);
+                Assert.That(source.spatialBlend, Is.Zero);
+            }
+            finally { Object.DestroyImmediate(audioObject); }
+            Color expected = theme.Background; expected.a = theme.PanelAlpha;
+            Assert.That(image.color, Is.EqualTo(expected)); Assert.That(image.raycastTarget, Is.True);
+        }
+    }
+}

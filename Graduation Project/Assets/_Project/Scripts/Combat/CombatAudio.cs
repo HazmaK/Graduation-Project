@@ -177,6 +177,7 @@ namespace RetroFPS.Combat
                 child.transform.SetParent(transform, false);
                 AudioSource source = child.AddComponent<AudioSource>();
                 source.playOnAwake = false;
+                source.ignoreListenerPause = false;
                 source.spatialBlend = spatial ? 1f : 0f;
                 source.minDistance = 1f;
                 source.maxDistance = 500f;
@@ -220,17 +221,20 @@ namespace RetroFPS.Combat
 
         public void PlayShotgunFire()
         {
+            if (Pause.GamePause.IsSimulationBlocked) return;
             Play2D(shotgunFireSound != null ? shotgunFireSound : _synthShotgunFire, 1.0f, Random.Range(0.94f, 1.06f));
         }
 
         public void PlayGrappleLaunch()
         {
+            if (Pause.GamePause.IsSimulationBlocked) return;
             AudioClip clip = grappleLaunchSound != null ? grappleLaunchSound : _synthGrappleLaunch;
             Play2DWithPitchVariation(clip, 0.95f, 0.04f);
         }
 
         public void PlayGrappleHookLatch(Vector3 position)
         {
+            if (Pause.GamePause.IsSimulationBlocked) return;
             AudioClip clip = grappleHookLatchSound != null ? grappleHookLatchSound : _synthGrappleHookLatch;
             if (clip != null)
             {
@@ -241,52 +245,61 @@ namespace RetroFPS.Combat
 
         public void PlayDryFire()
         {
+            if (Pause.GamePause.IsSimulationBlocked) return;
             AudioClip clip = dryFireSound != null ? dryFireSound : _synthDryFire;
             Play2DWithPitchVariation(clip, 0.85f, 0.04f);
         }
 
         public void PlayAmmoPickup()
         {
+            if (Pause.GamePause.IsSimulationBlocked) return;
             AudioClip clip = ammoPickupSound != null ? ammoPickupSound : _synthAmmoPickup;
             Play2DWithPitchVariation(clip, 0.95f, 0.05f);
         }
 
         public void PlayArbalestFire()
         {
+            if (Pause.GamePause.IsSimulationBlocked) return;
             Play2D(arbalestFireSound != null ? arbalestFireSound : _synthArbalestFire, 0.90f, Random.Range(0.94f, 1.06f));
         }
 
         public void PlayArbalestAlt()
         {
+            if (Pause.GamePause.IsSimulationBlocked) return;
             Play2D(arbalestAltSound != null ? arbalestAltSound : _synthArbalestAlt, 1.0f, Random.Range(0.94f, 1.06f));
         }
 
         public void PlayBladeSwing(float pitchMult = 1.0f)
         {
+            if (Pause.GamePause.IsSimulationBlocked) return;
             AudioClip clip = bladeSwingSound != null ? bladeSwingSound : _synthBladeSwing;
             Play2D(clip, 0.95f, pitchMult * Random.Range(0.94f, 1.06f));
         }
 
         public void PlayBladeThrust()
         {
+            if (Pause.GamePause.IsSimulationBlocked) return;
             AudioClip clip = bladeThrustSound != null ? bladeThrustSound : _synthBladeThrust;
             Play2DWithPitchVariation(clip, 1.0f, 0.05f);
         }
 
         public void PlayBladeFinisher()
         {
+            if (Pause.GamePause.IsSimulationBlocked) return;
             AudioClip clip = bladeThrustSound != null ? bladeThrustSound : _synthBladeThrust;
             Play2DWithPitchVariation(clip, 1.20f, 0.04f);
         }
 
         public void PlayBladeLunge()
         {
+            if (Pause.GamePause.IsSimulationBlocked) return;
             AudioClip clip = grappleLaunchSound != null ? grappleLaunchSound : _synthGrappleLaunch;
             Play2DWithPitchVariation(clip, 1.10f, 0.05f);
         }
 
         public void PlayBladeSlam(Vector3 position)
         {
+            if (Pause.GamePause.IsSimulationBlocked) return;
             AudioClip clip = gibExplosionSound != null ? gibExplosionSound : _synthGibExplosion;
             if (clip != null)
             {
@@ -297,12 +310,14 @@ namespace RetroFPS.Combat
 
         public void PlayCritCrunch()
         {
+            if (Pause.GamePause.IsSimulationBlocked) return;
             AudioClip critClip = critCrunchSound != null ? critCrunchSound : _synthCritCrunch;
             Play2DWithPitchVariation(critClip, 1.0f, 0.05f);
         }
 
         public void PlayHitmarker(bool isCrit)
         {
+            if (Pause.GamePause.IsSimulationBlocked) return;
             float now = Time.unscaledTime;
             if (now - _lastHitmarkerTime < 0.045f) return;
             _lastHitmarkerTime = now;
@@ -320,6 +335,7 @@ namespace RetroFPS.Combat
 
         public void PlayFleshImpact(Vector3 position, bool isCrit = false)
         {
+            if (Pause.GamePause.IsSimulationBlocked) return;
             float now = Time.unscaledTime;
             if (now - _lastFleshTime < 0.03f) return;
             _lastFleshTime = now;
@@ -336,6 +352,7 @@ namespace RetroFPS.Combat
 
         public void PlayGibExplosion(Vector3 position)
         {
+            if (Pause.GamePause.IsSimulationBlocked) return;
             AudioClip clip = gibExplosionSound != null ? gibExplosionSound : _synthGibExplosion;
             if (clip != null)
             {
@@ -345,6 +362,7 @@ namespace RetroFPS.Combat
 
         public void PlayDecapitation(Vector3 position)
         {
+            if (Pause.GamePause.IsSimulationBlocked) return;
             AudioClip clip = decapitationSound != null ? decapitationSound : _synthDecapitation;
             if (clip != null)
             {
@@ -354,6 +372,7 @@ namespace RetroFPS.Combat
 
         public void PlayGibBounce(Vector3 position)
         {
+            if (Pause.GamePause.IsSimulationBlocked) return;
             float now = Time.unscaledTime;
             if (now - _lastBounceTime < 0.05f) return;
             _lastBounceTime = now;
@@ -366,6 +385,7 @@ namespace RetroFPS.Combat
 
         public void PlayPlayerHurt(float damage, bool isLowHealth)
         {
+            if (Pause.GamePause.IsSimulationBlocked) return;
             AudioClip clip = playerPainSound != null ? playerPainSound : _synthPlayerPain;
             Play2DWithPitchVariation(clip, 1.0f, 0.08f);
 
@@ -378,6 +398,7 @@ namespace RetroFPS.Combat
 
         public void PlayHealthPickup()
         {
+            if (Pause.GamePause.IsSimulationBlocked) return;
             AudioClip clip = healthPickupSound != null ? healthPickupSound : _synthHealthPickup;
             Play2DWithPitchVariation(clip, 0.95f, 0.05f);
         }
@@ -391,6 +412,7 @@ namespace RetroFPS.Combat
         public void PlayJump() => Play2D(_synthJump, 0.55f, 1f);
         public void PlayLand(float intensity01)
         {
+            if (Pause.GamePause.IsSimulationBlocked) return;
             float intensity = Mathf.Clamp01(intensity01);
             Play2D(_synthLand, Mathf.Lerp(0.25f, 0.95f, intensity), Mathf.Lerp(1.15f, 0.75f, intensity));
         }
@@ -402,7 +424,7 @@ namespace RetroFPS.Combat
 
         public void PlayClipAt(AudioClip clip, Vector3 pos, float volume = 1f, float pitch = 1f)
         {
-            if (clip == null) return;
+            if (Pause.GamePause.IsSimulationBlocked || clip == null) return;
             AudioSource source = AcquireVoice(_sources3D, ref _next3D);
             if (source == null) return;
             source.Stop();
@@ -415,7 +437,7 @@ namespace RetroFPS.Combat
 
         private void Play2D(AudioClip clip, float volume, float pitch)
         {
-            if (clip == null) return;
+            if (Pause.GamePause.IsSimulationBlocked || clip == null) return;
             AudioSource source = AcquireVoice(_sources2D, ref _next2D);
             if (source == null) return;
             source.Stop();

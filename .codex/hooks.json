@@ -1,0 +1,121 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash|PowerShell",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo `# <#` >/dev/null; bash 'C:\\Users\\karac\\Desktop\\graduation project\\.codex\\hooks\\validate-commit.sh'; exit $? #> ; exit 0",
+            "timeout": 15
+          },
+          {
+            "type": "command",
+            "command": "echo `# <#` >/dev/null; bash 'C:\\Users\\karac\\Desktop\\graduation project\\.codex\\hooks\\validate-push.sh'; exit $? #> ; exit 0",
+            "timeout": 10
+          }
+        ]
+      },
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo `# <#` >/dev/null; bash 'C:\\Users\\karac\\Desktop\\graduation project\\.codex\\hooks\\validate-registry.sh'; exit $? #> ; exit 0",
+            "timeout": 15
+          },
+          {
+            "type": "command",
+            "command": "echo `# <#` >/dev/null; bash 'C:\\Users\\karac\\Desktop\\graduation project\\.codex\\hooks\\validate-write.sh'; exit $? #> ; exit 0",
+            "timeout": 15
+          }
+        ]
+      },
+      {
+        "matcher": "Read",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo `# <#` >/dev/null; bash 'C:\\Users\\karac\\Desktop\\graduation project\\.codex\\hooks\\validate-read.sh'; exit $? #> ; exit 0",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo `# <#` >/dev/null; bash 'C:\\Users\\karac\\Desktop\\graduation project\\.codex\\hooks\\validate-assets.sh'; exit $? #> ; exit 0",
+            "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "echo `# <#` >/dev/null; bash 'C:\\Users\\karac\\Desktop\\graduation project\\.codex\\hooks\\validate-skill-change.sh'; exit $? #> ; exit 0",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "PreCompact": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo `# <#` >/dev/null; bash 'C:\\Users\\karac\\Desktop\\graduation project\\.codex\\hooks\\pre-compact.sh'; exit $? #> ; exit 0",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo `# <#` >/dev/null; bash 'C:\\Users\\karac\\Desktop\\graduation project\\.codex\\hooks\\session-start.sh'; exit $? #> ; echo 'Claude Code Game Studios hooks are off: Claude Code found no Git Bash, so the checks on reads, writes and commits are skipped this session. Install Git for Windows (https://git-scm.com/download/win) and restart Claude Code. See .claude/docs/setup-requirements.md.'; exit 0",
+            "timeout": 20
+          },
+          {
+            "type": "command",
+            "command": "echo `# <#` >/dev/null; bash 'C:\\Users\\karac\\Desktop\\graduation project\\.codex\\hooks\\detect-gaps.sh'; exit $? #> ; exit 0",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "SubagentStart": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo `# <#` >/dev/null; bash 'C:\\Users\\karac\\Desktop\\graduation project\\.codex\\hooks\\log-agent.sh'; exit $? #> ; exit 0",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "SubagentStop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo `# <#` >/dev/null; bash 'C:\\Users\\karac\\Desktop\\graduation project\\.codex\\hooks\\log-agent-stop.sh'; exit $? #> ; exit 0",
+            "timeout": 5
+          },
+          {
+            "type": "command",
+            "command": "echo `# <#` >/dev/null; bash 'C:\\Users\\karac\\Desktop\\graduation project\\.codex\\hooks\\validate-agent-artifact.sh'; exit $? #> ; exit 0",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,3 +1,4 @@
+using RetroFPS.Pause;
 using UnityEngine;
 
 namespace RetroFPS
@@ -113,6 +114,7 @@ namespace RetroFPS
 
         private void Update()
         {
+            if (GamePause.IsSimulationBlocked) return;
             if (_prepared)
             {
                 if (_pivot == null) Cancel();

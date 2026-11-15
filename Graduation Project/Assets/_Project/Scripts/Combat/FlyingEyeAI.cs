@@ -1,3 +1,4 @@
+using RetroFPS.Pause;
 using UnityEngine;
 using RetroFPS.Combat;
 
@@ -290,6 +291,7 @@ namespace RetroFPS
 
         private void Update()
         {
+            if (GamePause.IsSimulationBlocked) return;
             if (_currentState == FlyingEyeState.Dead)
             {
                 _stateTimer -= Time.deltaTime;

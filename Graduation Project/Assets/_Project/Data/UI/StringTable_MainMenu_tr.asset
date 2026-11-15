@@ -121,3 +121,15 @@ MonoBehaviour:
   - key: language.en
     value: English
     en: English
+  - key: pause.resume
+    value: DEVAM
+    en: RESUME
+  - key: pause.main_menu
+    value: "ANA MEN\xDC"
+    en: MAIN MENU
+  - key: pause.main_menu_prompt
+    value: "Ana men\xFCye d\xF6n\xFCls\xFCn m\xFC? Bu ko\u015Fudaki ilerleme kaybolacak."
+    en: Return to the main menu? This run's progress will be lost.
+  - key: pause.main_menu_load_error
+    value: "Ana men\xFC y\xFCklenemedi. Tekrar deneyin."
+    en: Could not load the main menu. Try again.

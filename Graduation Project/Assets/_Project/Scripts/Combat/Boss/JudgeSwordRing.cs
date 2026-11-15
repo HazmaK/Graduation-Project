@@ -1,3 +1,4 @@
+using RetroFPS.Pause;
 using UnityEngine;
 
 namespace RetroFPS
@@ -75,6 +76,7 @@ namespace RetroFPS
 
         private void LateUpdate()
         {
+            if (GamePause.IsSimulationBlocked) return;
             if (!_visible) return;
             _angle = Mathf.Repeat(_angle + angularSpeed * Time.deltaTime, 360f);
             PositionSwords();

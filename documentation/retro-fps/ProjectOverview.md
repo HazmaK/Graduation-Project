@@ -45,6 +45,7 @@ tags:
 - **Çevre, Aydınlatma ve Atmosfer:** [[EnvironmentAndAudioAtmosphere]]
 - **Ana Menü ve Ayarlar:** [[MainMenuAndSettings]]
 - **Savaş HUD'u:** [[CombatHudArchitecture]]
+- **Oyun İçi Duraklatma:** [[PauseMenu]]
 
 ## İlişkiler (Sinaptik Ağ Bağlantıları)
 - [[START_HERE_AI_CONSTITUTION]] ➔ `governs_architecture`
@@ -69,4 +70,5 @@ tags:
 - [[EnvironmentAndAudioAtmosphere]] ➔ `utilizes_atmosphere`
 - [[MainMenuAndSettings]] ➔ `features_ui`
 - [[CombatHudArchitecture]] ➔ `features_ui`
+- [[PauseMenu]] ➔ `features_ui`
 - ⬅️ [[MultiAgentSharedMemory]] ➔ `manages_project` *(gelen)*

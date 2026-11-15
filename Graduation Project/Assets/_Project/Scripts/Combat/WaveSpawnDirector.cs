@@ -1,3 +1,4 @@
+using RetroFPS.Pause;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
@@ -842,6 +843,7 @@ namespace RetroFPS.Combat
 
         private void Update()
         {
+            if (GamePause.IsSimulationBlocked) return;
             switch (_state)
             {
                 case EncounterState.Warmup:

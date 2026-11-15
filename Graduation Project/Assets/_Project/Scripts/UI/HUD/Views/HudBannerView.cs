@@ -1,3 +1,4 @@
+using RetroFPS.Pause;
 using System.Globalization;
 using RetroFPS.Presentation;
 using RetroFPS.UI.Menu;
@@ -62,7 +63,7 @@ namespace RetroFPS.UI.HUD
         public void Enqueue(HudBannerKind kind, int oneBasedWave = 0)
         {
             if (queue == null) return;
-            queue.Enqueue(kind, oneBasedWave, Time.unscaledTimeAsDouble * queueTimeScale);
+            queue.Enqueue(kind, oneBasedWave, (double)GamePause.UnscaledTime * queueTimeScale);
             Render();
         }
 
@@ -76,7 +77,7 @@ namespace RetroFPS.UI.HUD
         /// <summary>Snaps current fades under reduced motion without changing message holds.</summary>
         public void SetReduceMotion(bool value) { reduceMotion = value; Render(); }
 
-        private void Update() { if (queue == null) return; queue.Tick(Time.unscaledTimeAsDouble * queueTimeScale); Render(); }
+        private void Update() { if (queue == null) return; queue.Tick((double)GamePause.UnscaledTime * queueTimeScale); Render(); }
         private void Render()
         {
             if (queue == null || group == null) return;
@@ -98,7 +99,7 @@ namespace RetroFPS.UI.HUD
                 size.y = banner.Kind == HudBannerKind.ArenaCleared ? theme.ArenaClearedRuleHeight : theme.BannerRuleHeight;
                 rule.rectTransform.sizeDelta = size;
             }
-            double now = Time.unscaledTimeAsDouble;
+            double now = (double)GamePause.UnscaledTime;
             double end = queue.ExpiresAt / queueTimeScale;
             double hold = banner.Kind == HudBannerKind.ArenaCleared ? config.ArenaClearedHoldMs * 0.001d : config.BannerHoldMs * 0.001d;
             double fadeIn = config.BannerFadeInMs * 0.001d, fadeOut = config.BannerFadeOutMs * 0.001d;

@@ -249,6 +249,7 @@ namespace RetroFPS.UI
 
         private void OnGUI()
         {
+            if (Pause.GamePause.IsSimulationBlocked) return;
             if (!showHUD) return;
 
             RunState run = RunEvents.CurrentRun;

@@ -121,8 +121,16 @@ flowchart LR
 - **SFX yalnızca `CombatAudio`'ya bağlı.** `EncounterArea`, `WaveSpawnDirector` ve `OccultSpawnTelegraph` kendi AudioSource'larını kullanır, ayar bu kaynaklara uygulanmaz.
 - **Yer tutucu font ve sanat.** Görseller `Placeholder` klasöründedir.
 
+## 7. PAYLAŞILAN AYARLAR PANELİ VE OYUN İÇİ DURAKLATMA (2026-11-15)
+- Ayarlar paneli artık `Prefabs/UI/Shared/SettingsPanel.prefab` olarak tek asset'tir. Ana menü ve oyun içi duraklatma menüsü aynı prefab'ı iç içe kullanır. Dil satırı her iki menüde de ilk sıradadır.
+- `SharedSettingsPanelBuilder` iki builder tarafından ortak kullanılır. Satır üretimi kopyalanmaz.
+- `ISettingsPanelHost` (`CanEditSettings`, `CanPreviewDisplay`, `OpenDisplayPrompt`) ve `IMenuInputContext` sözleşmeleri, ana menü ve duraklatma kontrolcüsü tarafından uygulanır.
+- Ayar kayıtları yine `GameSettings.Service` ve `ISettingsService` üzerinden yapılır. Duraklatma menüsü ayrı bir ayar modeli kurmaz.
+- Ayrıntı: [[PauseMenu]].
+
 ## İlişkiler (Sinaptik Ağ Bağlantıları)
 - [[CoreLoopAndPurgatory]] ➔ `launches_run`
+- [[PauseMenu]] ➔ `shares_settings_panel`
 - [[PlayerSubsystemArchitecture]] ➔ `receives_sensitivity`
 - [[HitstopAndAudioFeedback]] ➔ `receives_sfx_volume`
 - ⬅️ [[ProjectOverview]] ➔ `features_ui` *(gelen)*

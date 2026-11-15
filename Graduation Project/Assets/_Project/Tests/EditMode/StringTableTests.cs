@@ -254,7 +254,7 @@ namespace RetroFPS.Tests
         private sealed class NoAudio : IAudioVolumeApplier
         { public void Apply(GameSettingsData data) { } }
 
-        /// <summary>Checks all 82 serialized asset cells after the separately owned builder migration.</summary>
+        /// <summary>Checks the complete serialized manifests after menu, HUD and pause builder migration.</summary>
         [Test]
         public void MigratedAssetsMatchFullBilingualManifest()
         {
@@ -295,7 +295,11 @@ namespace RetroFPS.Tests
                 new StringTable.Translation("settings.group.general", "GENEL", "GENERAL"),
                 new StringTable.Translation("settings.language", "Dil", "Language"),
                 new StringTable.Translation("language.tr", "Türkçe", "Türkçe"),
-                new StringTable.Translation("language.en", "English", "English")
+                new StringTable.Translation("language.en", "English", "English"),
+                new StringTable.Translation("pause.resume", "DEVAM", "RESUME"),
+                new StringTable.Translation("pause.main_menu", "ANA MENÜ", "MAIN MENU"),
+                new StringTable.Translation("pause.main_menu_prompt", "Ana menüye dönülsün mü? Bu koşudaki ilerleme kaybolacak.", "Return to the main menu? This run's progress will be lost."),
+                new StringTable.Translation("pause.main_menu_load_error", "Ana menü yüklenemedi. Tekrar deneyin.", "Could not load the main menu. Try again.")
             };
             var combat = new[]
             {

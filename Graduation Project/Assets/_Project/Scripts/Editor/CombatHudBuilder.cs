@@ -535,11 +535,18 @@ namespace RetroFPS.Editor
 
         private static void WirePlayer(GameObject player)
         {
-            HudBindings bindings = Component<HudBindings>(player);
-            GameObject hud = null;
-            foreach (Transform child in player.transform)
-                if (PrefabUtility.GetCorrespondingObjectFromSource(child.gameObject) == AssetDatabase.LoadAssetAtPath<GameObject>(HudPath)) { hud = child.gameObject; break; }
-            if (hud == null) hud = (GameObject)PrefabUtility.InstantiatePrefab(AssetDatabase.LoadAssetAtPath<GameObject>(HudPath), player.transform);
+            EnsurePlayerHudWiring(player);
+            PauseMenuBuilder.EnsurePlayerPauseWiring(player);
+        }
+
+        /// <summary>Repairs only Player HUD ownership and references, without rebuilding assets or saving scenes.</summary>
+        internal static void EnsurePlayerHudWiring(GameObject player)
+        {
+            if (player == null) throw new ArgumentNullException(nameof(player));
+            config = AssetDatabase.LoadAssetAtPath<HudConfig>(Data + "HudConfig_Default.asset");
+            if (config == null) throw new InvalidOperationException("Build Combat HUD before wiring Player.");
+            HudBindings bindings = SinglePlayerComponent<HudBindings>(player);
+            GameObject hud = SingleNestedPrefab(player, AssetDatabase.LoadAssetAtPath<GameObject>(HudPath));
             hud.name = "CombatHud"; hud.transform.localPosition = Vector3.zero; hud.transform.localRotation = Quaternion.identity; hud.transform.localScale = Vector3.one;
             Set(bindings, "health", player.GetComponent<PlayerHealth>()); Set(bindings, "movement", player.GetComponent<PlayerMovement>());
             Set(bindings, "parry", player.GetComponent<PlayerParryController>()); Set(bindings, "weapons", player.GetComponent<WeaponController>());
@@ -553,6 +560,30 @@ namespace RetroFPS.Editor
             string[] sources = { "health", "movement", "parry", "weapons", "ammo" };
             foreach (string source in sources)
                 if (new SerializedObject(bindings).FindProperty(source).objectReferenceValue == null) throw new InvalidOperationException("Player is missing HUD source: " + source);
+        }
+
+        // Retain the first authored instance (and its local IDs); later duplicates are builder debris.
+        internal static GameObject SingleNestedPrefab(GameObject player, GameObject prefab)
+        {
+            if (prefab == null) throw new InvalidOperationException("Required nested prefab is missing.");
+            string path = AssetDatabase.GetAssetPath(prefab);
+            GameObject retained = null;
+            for (int i = 0; i < player.transform.childCount;)
+            {
+                GameObject child = player.transform.GetChild(i).gameObject;
+                if (PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(child) != path) { i++; continue; }
+                if (retained == null) { retained = child; i++; }
+                else Object.DestroyImmediate(child);
+            }
+            return retained != null ? retained : (GameObject)PrefabUtility.InstantiatePrefab(prefab, player.transform);
+        }
+
+        internal static T SinglePlayerComponent<T>(GameObject player) where T : Component
+        {
+            T retained = Component<T>(player);
+            foreach (T candidate in player.GetComponentsInChildren<T>(true))
+                if (candidate != retained) Object.DestroyImmediate(candidate);
+            return retained;
         }
 
         private static void WireDirectorPrefab(GameObject root)

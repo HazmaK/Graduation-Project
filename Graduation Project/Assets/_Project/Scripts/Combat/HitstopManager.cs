@@ -1,4 +1,5 @@
 using UnityEngine;
+using RetroFPS.Pause;
 
 namespace RetroFPS
 {
@@ -20,6 +21,12 @@ namespace RetroFPS
 
         public bool IsActive => _isFrozen;
 
+        /// <summary>Remaining real gameplay duration, frozen while pause owns the clock.</summary>
+        public float RemainingSeconds => _hitstopTimer;
+
+        /// <summary>The authored physics step underneath an active hitstop.</summary>
+        public float NormalFixedDeltaTime => _isFrozen ? _previousFixedDeltaTime : Time.fixedDeltaTime;
+
         private void Awake()
         {
             if (Instance != null && Instance != this)
@@ -32,10 +39,16 @@ namespace RetroFPS
 
         private void Update()
         {
-            if (!_isFrozen) return;
+            AdvanceHitstop(Time.unscaledDeltaTime);
+        }
+
+        /// <summary>Advances the real hitstop timer; menu pause and departure always win ownership.</summary>
+        public void AdvanceHitstop(float unscaledDeltaTime)
+        {
+            if (!_isFrozen || GamePause.IsSimulationBlocked) return;
 
             // Zaman ölçeğinden etkilenmeyen gerçek dünya süresini kullan
-            _hitstopTimer -= Time.unscaledDeltaTime;
+            _hitstopTimer -= Mathf.Max(0f, unscaledDeltaTime);
 
             if (_hitstopTimer <= 0f)
             {
@@ -50,7 +63,7 @@ namespace RetroFPS
         /// <param name="timeScale">Dondurma sırasındaki minimum zaman akışı</param>
         public void TriggerHitstop(float duration = 0.05f, float timeScale = 0.03f)
         {
-            if (duration <= 0f || !isActiveAndEnabled || Instance != this) return;
+            if (GamePause.IsSimulationBlocked || duration <= 0f || !isActiveAndEnabled || Instance != this) return;
 
             if (!_isFrozen)
             {
@@ -79,8 +92,28 @@ namespace RetroFPS
         private void RestoreTime()
         {
             if (!_isFrozen) return;
-            Time.timeScale = _previousTimeScale;
-            Time.fixedDeltaTime = _previousFixedDeltaTime;
+            if (GamePause.Service is PauseService pause && pause.IsLeaving)
+            {
+                CancelForSceneLeave();
+                return;
+            }
+            if (GamePause.IsPaused)
+            {
+                // Revise the saved target, never the live clock owned by the pause menu.
+                if (GamePause.Service is PauseService owner)
+                    owner.SetRestorationTime(_previousTimeScale, _previousFixedDeltaTime);
+            }
+            else
+            {
+                Time.timeScale = _previousTimeScale;
+                Time.fixedDeltaTime = _previousFixedDeltaTime;
+            }
+            CancelForSceneLeave();
+        }
+
+        /// <summary>Cancels hitstop without restoring a snapshot into a departing scene.</summary>
+        public void CancelForSceneLeave()
+        {
             _hitstopTimer = 0f;
             _isFrozen = false;
         }

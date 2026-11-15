@@ -259,6 +259,12 @@ namespace RetroFPS
 
         private void Update()
         {
+            if (Pause.GamePause.IsGameplayInputBlocked)
+            {
+                _inputVector = Vector2.zero;
+                _jumpBufferTimer = 0f;
+                return;
+            }
             _landingFrictionTimer = Mathf.Max(0f, _landingFrictionTimer - Time.deltaTime);
             CheckGround();
             ReadInput();

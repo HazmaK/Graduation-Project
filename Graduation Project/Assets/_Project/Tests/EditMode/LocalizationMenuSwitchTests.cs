@@ -178,18 +178,25 @@ namespace RetroFPS.Tests
             dialog.ShowCountdown(countdown);
             Assert.That(label.text, Is.EqualTo("7 saniye içinde geri alınacak"));
             float remaining = countdown.Remaining;
-            object cache = Get(dialog, "countdownStrings");
+            var caches = (string[][])Get(dialog, "localeCountdowns");
+            string[] turkishCache = caches[0];
+            string[] englishCache = caches[1];
+            Assert.That(Get(dialog, "countdownStrings"), Is.SameAs(turkishCache));
             service.SetLanguage(LanguageSetting.English);
             Assert.That(label.text, Is.EqualTo("Reverting in 7 seconds"));
             Assert.That(countdown.Remaining, Is.EqualTo(remaining));
             Assert.That(countdown.Running, Is.True);
-            Assert.That(Get(dialog, "countdownStrings"), Is.SameAs(cache));
-            string entry = ((string[])cache)[7];
+            Assert.That(Get(dialog, "activeCountdown"), Is.SameAs(countdown));
+            Assert.That(Get(dialog, "countdownStrings"), Is.SameAs(englishCache));
+            string entry = englishCache[7];
             service.SetSensitivity(0.8f);
-            Assert.That(((string[])cache)[7], Is.SameAs(entry));
+            Assert.That(Get(dialog, "countdownStrings"), Is.SameAs(englishCache));
+            Assert.That(englishCache[7], Is.SameAs(entry));
             service.SetLanguage(LanguageSetting.Turkish);
             Assert.That(label.text, Is.EqualTo("7 saniye içinde geri alınacak"));
             Assert.That(countdown.Remaining, Is.EqualTo(remaining));
+            Assert.That(Get(dialog, "localeCountdowns"), Is.SameAs(caches));
+            Assert.That(Get(dialog, "countdownStrings"), Is.SameAs(turkishCache));
             dialog.gameObject.SetActive(false);
             Call(dialog, "OnDisable");
             service.SetLanguage(LanguageSetting.English);
@@ -197,6 +204,7 @@ namespace RetroFPS.Tests
             Call(dialog, "OnEnable");
             Assert.That(label.text, Is.EqualTo("Reverting in 7 seconds"));
             Assert.That(countdown.Remaining, Is.EqualTo(remaining));
+            Assert.That(Get(dialog, "countdownStrings"), Is.SameAs(englishCache));
         }
 
         [Test]
@@ -235,10 +243,14 @@ namespace RetroFPS.Tests
             Assert.That(language.Index, Is.Zero);
             Assert.That(CycleText(language), Is.EqualTo("Türkçe"));
             Assert.That(percentages[0].text, Is.EqualTo("%100"));
-            object cache = Get(panel, "percentStrings");
-            string oldPercent = ((string[])cache)[20];
+            var caches = (string[][])Get(panel, "localePercent");
+            string[] turkishCache = caches[0];
+            string[] englishCache = caches[1];
+            Assert.That(Get(panel, "percentStrings"), Is.SameAs(turkishCache));
+            string oldPercent = turkishCache[20];
             service.SetSensitivity(0.75f);
-            Assert.That(((string[])cache)[20], Is.SameAs(oldPercent));
+            Assert.That(Get(panel, "percentStrings"), Is.SameAs(turkishCache));
+            Assert.That(turkishCache[20], Is.SameAs(oldPercent));
             language.Next();
             Assert.That(service.Current.Language, Is.EqualTo(LanguageSetting.English));
             Assert.That(CycleText(language), Is.EqualTo("English"));
@@ -251,12 +263,14 @@ namespace RetroFPS.Tests
             Assert.That(machine.FocusTarget, Is.EqualTo(MenuFocusTarget.Language));
             Assert.That(machine.State, Is.EqualTo(MainMenuState.Settings));
             Assert.That(service.HasPendingDisplay, Is.False);
-            Assert.That(Get(panel, "percentStrings"), Is.SameAs(cache));
+            Assert.That(Get(panel, "percentStrings"), Is.SameAs(englishCache));
             language.Previous();
             Assert.That(CycleText(language), Is.EqualTo("Türkçe"));
             Assert.That(percentages[4].text, Is.EqualTo("%75"));
             Assert.That(CycleText(mode), Is.EqualTo("Çerçevesiz"));
             Assert.That(events.currentSelectedGameObject, Is.SameAs(language.gameObject));
+            Assert.That(Get(panel, "localePercent"), Is.SameAs(caches));
+            Assert.That(Get(panel, "percentStrings"), Is.SameAs(turkishCache));
         }
 
         private void ActivateFixture()
@@ -304,7 +318,10 @@ namespace RetroFPS.Tests
         private MenuCycleRow Cycle(string name)
         {
             var cycle = Child(name).AddComponent<MenuCycleRow>();
-            Set(cycle, "valueLabel", Text(name + "Value"));
+            // Match the prefab hierarchy used by SettingsPanelView's TMP prewarming.
+            TMP_Text valueLabel = Text("Value");
+            valueLabel.transform.SetParent(cycle.transform, false);
+            Set(cycle, "valueLabel", valueLabel);
             return cycle;
         }
 

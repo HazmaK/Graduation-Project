@@ -5,6 +5,7 @@
         "RetroFPS.Menu",
         "RetroFPS.Gameplay",
         "RetroFPS.HUD",
+        "RetroFPS.Pause",
         "UnityEngine.UI",
         "Unity.TextMeshPro",
         "Unity.InputSystem",

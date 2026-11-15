@@ -18,7 +18,7 @@ namespace RetroFPS.UI.Menu
         [SerializeField] private UnityEngine.UI.Image sliderFill;
         [SerializeField] private Sprite pressedSigil;
         [SerializeField] private UnityEngine.UI.Shadow pressShadow;
-        private MainMenuController controller;
+        private IMenuInputContext controller;
         private readonly MenuTween tween = new MenuTween();
         private Vector2 labelPosition;
         private Vector3 scale;
@@ -31,6 +31,7 @@ namespace RetroFPS.UI.Menu
 
         private void Awake()
         {
+            if (label == null || sigil == null || underline == null) return;
             labelPosition = label.rectTransform.anchoredPosition;
             scale = Vector3.one;
             normalSigil = sigil.sprite;
@@ -39,7 +40,7 @@ namespace RetroFPS.UI.Menu
         }
 
         /// <summary>Injects the active menu's input gate once at startup.</summary>
-        public void Bind(MainMenuController owner) => controller = owner;
+        public void Bind(IMenuInputContext owner) => controller = owner;
 
         /// <inheritdoc/>
         public void OnSelect(BaseEventData eventData)
@@ -72,7 +73,7 @@ namespace RetroFPS.UI.Menu
         {
             pressRemaining = theme.PressSeconds;
             Vector2 position = labelPosition;
-            position.y -= theme.PressedOffset;
+            if (!GameSettings.Current.ReduceMotion) position.y -= theme.PressedOffset;
             label.rectTransform.anchoredPosition = position;
             sigil.sprite = pressedSigil;
             sigil.color = Color.white;
@@ -111,6 +112,7 @@ namespace RetroFPS.UI.Menu
         {
             if (GameSettings.Current.ReduceMotion)
             {
+                label.rectTransform.anchoredPosition = labelPosition;
                 scale.x = scale.y = scale.z = 1f;
                 label.rectTransform.localScale = scale;
             }

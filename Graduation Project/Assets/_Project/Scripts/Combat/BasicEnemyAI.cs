@@ -1,3 +1,4 @@
+using RetroFPS.Pause;
 using System.Collections.Generic;
 using UnityEngine;
 using RetroFPS.Combat;
@@ -307,6 +308,7 @@ namespace RetroFPS
 
         private void Update()
         {
+            if (GamePause.IsSimulationBlocked) return;
             if (_currentState == EnemyState.Dead)
             {
                 _stateTimer -= Time.deltaTime;

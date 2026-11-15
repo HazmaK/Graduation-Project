@@ -849,6 +849,8 @@ GameObject:
   - component: {fileID: 188974621851040827}
   - component: {fileID: 3914494989844017472}
   - component: {fileID: 6592472749984716966}
+  - component: {fileID: 2672204519215826301}
+  - component: {fileID: 7387142265642954257}
   m_Layer: 6
   m_Name: Player
   m_TagString: Untagged
@@ -871,6 +873,7 @@ Transform:
   m_Children:
   - {fileID: 4508715376019674550}
   - {fileID: 1652090276660545247}
+  - {fileID: 5288195337564481447}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!33 &107398435308259372
@@ -1191,6 +1194,37 @@ MonoBehaviour:
   indicatorColor: {r: 1, g: 0.15, b: 0.15, a: 0.95}
   enableFlinch: 1
   flinchIntensityMultiplier: 1
+--- !u!114 &2672204519215826301
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4647128150085499101}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0f347f76082e2c045b7a9fcd87654a8c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: RetroFPS.Gameplay::RetroFPS.Pause.PauseRuntime
+  player: {fileID: 8207310616486761660}
+  runDirector: {fileID: 0}
+--- !u!114 &7387142265642954257
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4647128150085499101}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e8b3adaa90235f249998d2958dfd0495, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: RetroFPS.Pause::RetroFPS.Pause.PauseBindings
+  runtime: {fileID: 2672204519215826301}
+  pauseMenu: {fileID: 8326956688914726730}
+  health: {fileID: 8207310616486761660}
+  eventSystemGuard: {fileID: 5879812188771503977}
+  trueDeath: {fileID: 5296283879113072414}
 --- !u!1 &4909038972837805670
 GameObject:
   m_ObjectHideFlags: 0
@@ -1289,6 +1323,7 @@ MonoBehaviour:
   lungeCooldown: 0.95
   lungeHealAmount: 25
   adrenalineDuration: 1.5
+  harvestTargetCapacity: 512
   slamDownwardSpeed: 34
   slamDamage: 80
   slamRadius: 5.5
@@ -2507,6 +2542,17 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 841586f1243e155489defe11d54c4fa3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: RetroFPS.HUD::RetroFPS.UI.HUD.WeaponAmmoHudView
+--- !u!114 &4451170954441252579 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 3824268018102224305, guid: 3c5dfc9cab0bd9a498cc5cf150565861, type: 3}
+  m_PrefabInstance: {fileID: 637043733453282130}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 76c392e42b5098c458856cdf6ecaaaa1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.EventSystems.EventSystem
 --- !u!114 &4823407799884337899 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 5343261682916084153, guid: 3c5dfc9cab0bd9a498cc5cf150565861, type: 3}
@@ -2529,6 +2575,17 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3308021988a39794096028f70ddb304c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: RetroFPS.HUD::RetroFPS.UI.HUD.TrueDeathView
+--- !u!114 &5879812188771503977 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 6435206184699155515, guid: 3c5dfc9cab0bd9a498cc5cf150565861, type: 3}
+  m_PrefabInstance: {fileID: 637043733453282130}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b8bd7b1a48a1c8b44bd70144ee0127f9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: RetroFPS.HUD::RetroFPS.UI.HUD.HudEventSystemGuard
 --- !u!114 &6519760220590087455 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 5957677946077546061, guid: 3c5dfc9cab0bd9a498cc5cf150565861, type: 3}
@@ -2551,3 +2608,120 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3a9609b900322da4ab5713caf572d840, type: 3}
   m_Name: 
   m_EditorClassIdentifier: RetroFPS.HUD::RetroFPS.UI.HUD.HudBannerView
+--- !u!1001 &9083354353272658547
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 8129818506611666789}
+    m_Modifications:
+    - target: {fileID: 3994128874466770388, guid: 716e12e9769d30445a5022f87d39f979, type: 3}
+      propertyPath: m_Pivot.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3994128874466770388, guid: 716e12e9769d30445a5022f87d39f979, type: 3}
+      propertyPath: m_Pivot.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3994128874466770388, guid: 716e12e9769d30445a5022f87d39f979, type: 3}
+      propertyPath: m_AnchorMax.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3994128874466770388, guid: 716e12e9769d30445a5022f87d39f979, type: 3}
+      propertyPath: m_AnchorMax.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3994128874466770388, guid: 716e12e9769d30445a5022f87d39f979, type: 3}
+      propertyPath: m_AnchorMin.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3994128874466770388, guid: 716e12e9769d30445a5022f87d39f979, type: 3}
+      propertyPath: m_AnchorMin.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3994128874466770388, guid: 716e12e9769d30445a5022f87d39f979, type: 3}
+      propertyPath: m_SizeDelta.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3994128874466770388, guid: 716e12e9769d30445a5022f87d39f979, type: 3}
+      propertyPath: m_SizeDelta.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3994128874466770388, guid: 716e12e9769d30445a5022f87d39f979, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3994128874466770388, guid: 716e12e9769d30445a5022f87d39f979, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3994128874466770388, guid: 716e12e9769d30445a5022f87d39f979, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3994128874466770388, guid: 716e12e9769d30445a5022f87d39f979, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3994128874466770388, guid: 716e12e9769d30445a5022f87d39f979, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3994128874466770388, guid: 716e12e9769d30445a5022f87d39f979, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3994128874466770388, guid: 716e12e9769d30445a5022f87d39f979, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3994128874466770388, guid: 716e12e9769d30445a5022f87d39f979, type: 3}
+      propertyPath: m_AnchoredPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3994128874466770388, guid: 716e12e9769d30445a5022f87d39f979, type: 3}
+      propertyPath: m_AnchoredPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3994128874466770388, guid: 716e12e9769d30445a5022f87d39f979, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3994128874466770388, guid: 716e12e9769d30445a5022f87d39f979, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3994128874466770388, guid: 716e12e9769d30445a5022f87d39f979, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4200711151560196767, guid: 716e12e9769d30445a5022f87d39f979, type: 3}
+      propertyPath: m_Name
+      value: PauseMenu
+      objectReference: {fileID: 0}
+    - target: {fileID: 5570424451601089686, guid: 716e12e9769d30445a5022f87d39f979, type: 3}
+      propertyPath: eventSystem
+      value: 
+      objectReference: {fileID: 4451170954441252579}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 716e12e9769d30445a5022f87d39f979, type: 3}
+--- !u!224 &5288195337564481447 stripped
+RectTransform:
+  m_CorrespondingSourceObject: {fileID: 3994128874466770388, guid: 716e12e9769d30445a5022f87d39f979, type: 3}
+  m_PrefabInstance: {fileID: 9083354353272658547}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &8326956688914726730 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 973274864192562489, guid: 716e12e9769d30445a5022f87d39f979, type: 3}
+  m_PrefabInstance: {fileID: 9083354353272658547}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8b1976480fcdc5e4f9934b204f38f5dc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: RetroFPS.Pause::RetroFPS.Pause.PauseMenuController

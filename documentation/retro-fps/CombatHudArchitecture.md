@@ -113,6 +113,12 @@ flowchart LR
 - [[PlayerSubsystemArchitecture]] ➔ `binds_player_sources`
 - [[DualLoadoutAndWeapons]] ➔ `displays_weapons`
 
+## 4. DURAKLATMA VE ZAMAN (2026-11-15)
+- HUD sağlık, yetenek, cephane, Araf/dalga, banner zamanlamaları ve hitmarker efektleri `GamePause` birimsiz oyun saatini kullanır. Duraklatma süresince bu efektler donar ve devamda kaldıkları yerden sürer.
+- Menü animasyonları ve duraklatma menüsünün kendi geri alma sayacı gerçek birimsiz zamanı kullanır.
+- Duraklatma açıkken `CrosshairHUD`, `PlayerDamageFeedback` ve `PlayerDebugHUD` OnGUI çizimi bastırılır. UGUI HUD aktif ve görünür kalır. Duraklatma menüsü HUD'un üstünde çizilir (sıralama 200, HUD 100).
+- Ayrıntı: [[PauseMenu]].
+
 ## Boss HUD integration (2026-11-14)
 - `HudBindings` owns all four `BossEvents` subscriptions and restores engaged/name/health/phase snapshots on enable. `BossBarView` owns its dynamic name label exclusively and refreshes it through the existing language pass.
 - `CombatHudBuilder` generates a 520 x 44 plate at safe-area top centre, y = -16 (bottom = 60), above banners at y = -76. Existing plate palette, blood-red accent fill and Turkish glyph validation are reused; `boss.judge.name` is THE JUDGE / YARGIÇ.

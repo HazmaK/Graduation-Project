@@ -1,3 +1,4 @@
+using RetroFPS.Pause;
 using RetroFPS.Presentation;
 using TMPro;
 using UnityEngine;
@@ -57,7 +58,7 @@ namespace RetroFPS.UI.HUD
                     Vector2 max = edge.anchorMax; max.x = old;
                     edge.anchorMin = min; edge.anchorMax = max;
                     edge.offsetMin = edge.offsetMax = Vector2.zero;
-                    damageEdge.enabled = true; damageUntil = Time.unscaledTime + 0.12f;
+                    damageEdge.enabled = true; damageUntil = GamePause.UnscaledTime + 0.12f;
                 }
             }
             low = HudLowStateRules.IsLowHealth(current, maximum, config.LowHealthPercent);
@@ -78,10 +79,10 @@ namespace RetroFPS.UI.HUD
             if (low && lowBorder != null && theme != null && config != null && !reduceMotion)
             {
                 Color color = theme.MenuTheme.Danger;
-                color.a = 0.775f + 0.225f * Mathf.Cos(Time.unscaledTime * Mathf.PI * 2f * config.LowPulseHz);
+                color.a = 0.775f + 0.225f * Mathf.Cos(GamePause.UnscaledTime * Mathf.PI * 2f * config.LowPulseHz);
                 lowBorder.color = color;
             }
-            if (damageEdge != null && damageEdge.enabled && Time.unscaledTime >= damageUntil) damageEdge.enabled = false;
+            if (damageEdge != null && damageEdge.enabled && GamePause.UnscaledTime >= damageUntil) damageEdge.enabled = false;
         }
     }
 }

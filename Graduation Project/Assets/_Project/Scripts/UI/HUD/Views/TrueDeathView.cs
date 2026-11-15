@@ -1,3 +1,4 @@
+using RetroFPS.Pause;
 using RetroFPS.Presentation;
 using RetroFPS.UI.Menu;
 using UnityEngine;
@@ -53,6 +54,7 @@ namespace RetroFPS.UI.HUD
         public void Show()
         {
             if (!gate.OnTrueDeath(Time.unscaledTimeAsDouble, config != null ? config.DeathArmSeconds : 0.6d)) return;
+            GamePause.Service?.CancelForExclusiveFlow();
             fade.Start(reduceMotion || config == null ? 0f : config.DeathFadeMs * 0.001f);
             Restore();
             if (cardGroup != null) cardGroup.alpha = fade.Value;

@@ -3,6 +3,7 @@ using System.Threading;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using RetroFPS.Combat;
+using RetroFPS.Pause;
 
 namespace RetroFPS.Run
 {
@@ -47,6 +48,20 @@ namespace RetroFPS.Run
         private Quaternion _deathRotation = Quaternion.identity;
         private bool _isTransitioning;
         private bool _restartRequested;
+        private bool _preloadingAraf;
+        private bool _sceneDeparture;
+        private AsyncOperation _arafLoad;
+        private CancellationTokenSource _flowCancellation;
+        private float _normalFixedDeltaTime;
+
+        /// <summary>Raised synchronously when loading or transition ownership changes.</summary>
+        public event Action PauseEligibilityChanged;
+
+        /// <summary>Actual additive loading, restart or pending Single scene departure.</summary>
+        public bool IsSceneLoadInProgress => _preloadingAraf || _restartRequested || _sceneDeparture;
+
+        /// <summary>Whether Araf currently owns the player's transition presentation.</summary>
+        public bool IsTransitioning => _isTransitioning;
 
         /// <summary>
         /// Mevcut koşunun saf durum verisi.
@@ -60,6 +75,9 @@ namespace RetroFPS.Run
 
         private void Awake()
         {
+            _normalFixedDeltaTime = HitstopManager.Instance != null
+                ? HitstopManager.Instance.NormalFixedDeltaTime : Time.fixedDeltaTime;
+            _flowCancellation = CancellationTokenSource.CreateLinkedTokenSource(destroyCancellationToken);
             int seed = fixedSeed != 0 ? fixedSeed : Environment.TickCount;
             _state = new RunState(seed);
             RunEvents.SetCurrentRun(_state);
@@ -110,6 +128,8 @@ namespace RetroFPS.Run
 
         private void OnDestroy()
         {
+            _flowCancellation?.Cancel();
+            _flowCancellation?.Dispose();
             if (RunEvents.CurrentRun == _state)
             {
                 RunEvents.SetCurrentRun(null);
@@ -122,29 +142,62 @@ namespace RetroFPS.Run
 
         private async void Start()
         {
+            _preloadingAraf = true;
+            PauseEligibilityChanged?.Invoke();
             try
             {
-                await PreloadArafSceneAsync(destroyCancellationToken);
+                await PreloadArafSceneAsync(_flowCancellation.Token);
             }
             catch (OperationCanceledException)
             {
                 // Sahne/nesne yok edildiğinde iptal normaldir.
             }
+            finally
+            {
+                _preloadingAraf = false;
+                PauseEligibilityChanged?.Invoke();
+            }
         }
 
         private void Update()
         {
-            _state?.AdvanceElapsedTime(Time.unscaledDeltaTime);
+            AdvanceElapsedTime(Time.unscaledDeltaTime);
+        }
+
+        /// <summary>Accumulates real run time outside pause; hitstop and Araf keep their existing timing.</summary>
+        public void AdvanceElapsedTime(float unscaledDeltaTime)
+        {
+            if (!GamePause.IsSimulationBlocked) _state?.AdvanceElapsedTime(unscaledDeltaTime);
+        }
+
+        /// <summary>Cancels Araf continuations and drains any activation-enabled additive load before unloading.</summary>
+        public async Awaitable PrepareForSceneLeaveAsync()
+        {
+            _sceneDeparture = true;
+            PauseEligibilityChanged?.Invoke();
+            _flowCancellation?.Cancel();
+            if (_arafLoad != null && !_arafLoad.isDone) await _arafLoad;
+            _pendingEncounter = null;
+        }
+
+        /// <summary>Restores run eligibility and the token for future transitions after a failed Single load.</summary>
+        public void RecoverSceneLeave()
+        {
+            _sceneDeparture = false;
+            _flowCancellation?.Dispose();
+            _flowCancellation = CancellationTokenSource.CreateLinkedTokenSource(destroyCancellationToken);
+            PauseEligibilityChanged?.Invoke();
         }
 
         /// <summary>Starts one fresh run in the saved tower scene after true death.</summary>
         public void RestartRun()
         {
             if (_state == null || _state.Phase != RunPhase.TrueDeath || _isTransitioning || _restartRequested ||
-                string.IsNullOrEmpty(towerSceneName)) return;
+                _sceneDeparture || GamePause.IsGameplayInputBlocked || string.IsNullOrEmpty(towerSceneName)) return;
             _restartRequested = true;
+            PauseEligibilityChanged?.Invoke();
             Time.timeScale = 1f;
-            Time.fixedDeltaTime = 0.02f;
+            Time.fixedDeltaTime = _normalFixedDeltaTime;
             SceneManager.LoadScene(towerSceneName, LoadSceneMode.Single);
         }
 
@@ -165,14 +218,14 @@ namespace RetroFPS.Run
                     return;
                 }
 
-                AsyncOperation loadOp = SceneManager.LoadSceneAsync(arafSceneName, LoadSceneMode.Additive);
-                if (loadOp == null)
+                _arafLoad = SceneManager.LoadSceneAsync(arafSceneName, LoadSceneMode.Additive);
+                if (_arafLoad == null)
                 {
                     Debug.LogWarning($"[RunDirector] '{arafSceneName}' sahnesi additive olarak yüklenemedi; Araf devre dışı bırakıldı.", this);
                     return;
                 }
 
-                await loadOp;
+                await _arafLoad;
                 ct.ThrowIfCancellationRequested();
             }
 
@@ -206,12 +259,12 @@ namespace RetroFPS.Run
 
         private void HandlePlayerDied()
         {
-            if (_isTransitioning || _state == null) return;
+            if (_sceneDeparture || _isTransitioning || _state == null) return;
 
             bool arafReady = _arafLevel != null && _arafScene.IsValid() && _arafScene.isLoaded;
             if (_state.Phase == RunPhase.Tower && _state.CanEnterAraf && arafReady)
             {
-                _ = EnterArafAsync(destroyCancellationToken);
+                _ = EnterArafAsync(_flowCancellation.Token);
             }
             else
             {
@@ -222,6 +275,7 @@ namespace RetroFPS.Run
         private async Awaitable EnterArafAsync(CancellationToken ct)
         {
             _isTransitioning = true;
+            PauseEligibilityChanged?.Invoke();
             try
             {
                 SetPhase(RunPhase.FallingToAraf);
@@ -275,18 +329,20 @@ namespace RetroFPS.Run
             finally
             {
                 _isTransitioning = false;
+                PauseEligibilityChanged?.Invoke();
             }
         }
 
         private void HandleEscapePortal()
         {
-            if (_isTransitioning || _state == null || _state.Phase != RunPhase.InAraf) return;
-            _ = EscapeArafAsync(destroyCancellationToken);
+            if (_sceneDeparture || _isTransitioning || _state == null || _state.Phase != RunPhase.InAraf) return;
+            _ = EscapeArafAsync(_flowCancellation.Token);
         }
 
         private async Awaitable EscapeArafAsync(CancellationToken ct)
         {
             _isTransitioning = true;
+            PauseEligibilityChanged?.Invoke();
             try
             {
                 SetPhase(RunPhase.EscapingAraf);
@@ -336,6 +392,7 @@ namespace RetroFPS.Run
             finally
             {
                 _isTransitioning = false;
+                PauseEligibilityChanged?.Invoke();
             }
         }
 

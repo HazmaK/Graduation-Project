@@ -132,6 +132,7 @@ namespace RetroFPS
         #region Pose
         private void Update()
         {
+            if (Pause.GamePause.IsSimulationBlocked) return;
             if (_movement == null || !_movement.isActiveAndEnabled ||
                 (_look != null && !_look.isActiveAndEnabled))
             {
@@ -139,7 +140,7 @@ namespace RetroFPS
                 return;
             }
 
-            float dt = Time.unscaledDeltaTime;
+            float dt = Pause.GamePause.UnscaledDeltaTime;
             _pitch.Step(0f, punchFrequency, punchDamping, dt);
             _yaw.Step(0f, punchFrequency, punchDamping, dt);
             _roll.Step(0f, punchFrequency, punchDamping, dt);

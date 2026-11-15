@@ -1,3 +1,4 @@
+using RetroFPS.Pause;
 using RetroFPS.Presentation;
 using RetroFPS.UI.Menu;
 using RetroFPS.Weapons;
@@ -80,7 +81,7 @@ namespace RetroFPS.UI.HUD
         {
             if (!dashTextDirty && current == charges && max == maximum) return;
             dashTextDirty = false;
-            if (charges >= 0 && current != charges && !reduceMotion) dashFlashUntil = Time.unscaledTime + 0.12f;
+            if (charges >= 0 && current != charges && !reduceMotion) dashFlashUntil = GamePause.UnscaledTime + 0.12f;
             charges = current; maximum = max;
             HudText.Template(dashCurrent, dashFormat, current, max, digits);
             RenderPips();
@@ -90,7 +91,7 @@ namespace RetroFPS.UI.HUD
         public void ParrySucceeded(bool projectile)
         {
             if (config == null) return;
-            successUntil = Time.unscaledTime + config.ParrySuccessMs * 0.001f;
+            successUntil = GamePause.UnscaledTime + config.ParrySuccessMs * 0.001f;
             showingSuccess = true;
             if (parryState != null) { parryState.text = success; parryState.color = theme.MenuTheme.Text; }
             if (activeChip != null) activeChip.enabled = false;
@@ -110,8 +111,8 @@ namespace RetroFPS.UI.HUD
         {
             if (dashCache == null) return;
             if (movement != null && dashCache.Update(movement.DashRechargeNormalized)) RenderPips();
-            if (dashFlashUntil > 0f && Time.unscaledTime >= dashFlashUntil) { dashFlashUntil = 0f; RenderPips(); }
-            bool expired = showingSuccess && Time.unscaledTime >= successUntil;
+            if (dashFlashUntil > 0f && GamePause.UnscaledTime >= dashFlashUntil) { dashFlashUntil = 0f; RenderPips(); }
+            bool expired = showingSuccess && GamePause.UnscaledTime >= successUntil;
             if (expired) showingSuccess = false;
             bool visible = parry != null && parry.ShieldEnabled;
             bool changed = parryCache.Update(parry != null && parry.IsOnCooldown ? 1f - parry.CooldownNormalized : 1f,
@@ -148,7 +149,7 @@ namespace RetroFPS.UI.HUD
             for (int i = 0; i < pips.Length; i++)
             {
                 pips[i].fillAmount = i < charges ? 1f : i == charges && charges < maximum && dashCache != null ? dashCache.Fill : 0f;
-                pips[i].color = !reduceMotion && dashFlashUntil > Time.unscaledTime ? theme.MenuTheme.Focus : theme.MenuTheme.Text;
+                pips[i].color = !reduceMotion && dashFlashUntil > GamePause.UnscaledTime ? theme.MenuTheme.Focus : theme.MenuTheme.Text;
             }
         }
     }

@@ -7,7 +7,7 @@ using UnityEngine.EventSystems;
 namespace RetroFPS.UI.Menu
 {
     /// <summary>Adapts the menu state machine to its four prefab instances and input contexts.</summary>
-    public sealed class MainMenuController : MonoBehaviour
+    public sealed class MainMenuController : MonoBehaviour, IMenuInputContext, ISettingsPanelHost
     {
         [SerializeField] private MenuTheme theme;
         [SerializeField] private StringTable strings;
@@ -33,6 +33,7 @@ namespace RetroFPS.UI.Menu
         private bool hasStarted;
         private LanguageSetting cachedLanguage;
         private bool hasLanguage;
+        private string turkishVersion, englishVersion;
 
         /// <summary>All activation, pointer and navigation input must respect this gate.</summary>
         public bool InputLocked => machine == null || machine.InputLocked || fader.IsFading;
@@ -64,6 +65,17 @@ namespace RetroFPS.UI.Menu
 
         private void Awake()
         {
+            // The canvas owns the nested shared asset. Old scene overrides may point at removed inline rows.
+            if (rootGroup != null)
+            {
+                SettingsPanelView shared = rootGroup.transform.parent.GetComponentInChildren<SettingsPanelView>(true);
+                if (shared != null && shared.Group != null && shared.OrderedSelectables != null && shared.OrderedSelectables.Length == 10)
+                {
+                    settingsPanel = shared;
+                    settingsGroup = shared.Group;
+                    settingsItems = shared.OrderedSelectables;
+                }
+            }
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;
             Time.timeScale = 1f;
@@ -85,6 +97,7 @@ namespace RetroFPS.UI.Menu
             revertDialog.Negative.onClick.AddListener(RevertDisplay);
             machine.DisplayResolved += settingsPanel.ResolveDisplay;
             loadError.color = theme.Danger;
+            PrewarmLabels();
             RefreshLanguage(GameSettings.Current);
         }
 
@@ -114,8 +127,23 @@ namespace RetroFPS.UI.Menu
             cachedLanguage = data.Language;
             hasLanguage = true;
             loadError.text = strings.Get("menu.load_error", data.Language);
-            versionLabel.text = string.IsNullOrEmpty(Application.version) ? string.Empty
-                : string.Format(CultureInfo.InvariantCulture, strings.Get("menu.version_format", data.Language), Application.version);
+            versionLabel.text = data.Language == LanguageSetting.Turkish ? turkishVersion : englishVersion;
+        }
+        private void PrewarmLabels()
+        {
+            string version = Application.version;
+            turkishVersion = string.IsNullOrEmpty(version) ? string.Empty
+                : string.Format(CultureInfo.InvariantCulture, strings.Get("menu.version_format", LanguageSetting.Turkish), version);
+            englishVersion = string.IsNullOrEmpty(version) ? string.Empty
+                : string.Format(CultureInfo.InvariantCulture, strings.Get("menu.version_format", LanguageSetting.English), version);
+            Warm(versionLabel, turkishVersion, englishVersion);
+            Warm(loadError, strings.Get("menu.load_error", LanguageSetting.Turkish), strings.Get("menu.load_error", LanguageSetting.English));
+        }
+        private static void Warm(TMP_Text label, string tr, string en)
+        {
+            label.vertexBufferAutoSizeReduction = false;
+            label.text = tr; label.ForceMeshUpdate(true);
+            label.text = en; label.ForceMeshUpdate(true);
         }
         private void Update()
         {

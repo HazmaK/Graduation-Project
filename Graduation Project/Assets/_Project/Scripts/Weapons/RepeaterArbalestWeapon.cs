@@ -1,3 +1,4 @@
+using RetroFPS.Pause;
 using UnityEngine;
 using RetroFPS.Combat;
 using RetroFPS.UI;
@@ -359,6 +360,7 @@ namespace RetroFPS.Weapons
 
         private void Update()
         {
+            if (GamePause.IsSimulationBlocked) return;
             _aliveTime += Time.deltaTime;
             if (_aliveTime >= _maxLifetime)
             {

@@ -1,3 +1,4 @@
+using RetroFPS.Pause;
 using System;
 using System.Collections;
 using RetroFPS.Combat;
@@ -295,6 +296,7 @@ namespace RetroFPS
 
         private void Update()
         {
+            if (GamePause.IsSimulationBlocked) return;
             if (_loop == null || _dead || Phase == JudgePhase.Dormant) return;
             float dt = Time.deltaTime;
             if (_flashRemaining > 0f)
@@ -900,6 +902,7 @@ namespace RetroFPS
             while (true)
             {
                 yield return null;
+                if (GamePause.IsSimulationBlocked) continue;
                 for (int i = 0; i < _shotCount; i++)
                 {
                     int slot = -1;
@@ -947,6 +950,7 @@ namespace RetroFPS
 
         private void LateUpdate()
         {
+            if (GamePause.IsSimulationBlocked) return;
             if (_loop == null || _dead) return;
             if (_loop.Step == JudgeStep.Windup)
             {

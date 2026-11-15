@@ -117,8 +117,8 @@ namespace RetroFPS.Tests
                 var field = new SerializedObject(view).FindProperty("config");
                 if (field != null) Assert.AreEqual(config, field.objectReferenceValue, view.GetType().Name);
             }
-            Assert.AreEqual(1, player.GetComponentsInChildren<Canvas>(true).Length);
-            Assert.AreEqual(1, player.GetComponentsInChildren<UnityEngine.UI.CanvasScaler>(true).Length);
+            Assert.AreEqual(1, nested.GetComponentsInChildren<Canvas>(true).Length);
+            Assert.AreEqual(1, nested.GetComponentsInChildren<UnityEngine.UI.CanvasScaler>(true).Length);
             // Standalone HUD must contain no enclosing-player source references.
             Assert.IsEmpty(Hud().GetComponentsInChildren<HudBindings>(true));
         }

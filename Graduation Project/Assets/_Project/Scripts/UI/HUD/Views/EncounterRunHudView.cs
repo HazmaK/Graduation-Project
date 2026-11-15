@@ -1,3 +1,4 @@
+using RetroFPS.Pause;
 using RetroFPS.Presentation;
 using RetroFPS.Run;
 using RetroFPS.Settings;
@@ -123,7 +124,7 @@ namespace RetroFPS.UI.HUD
                 bool flash = rooms >= 0 && revealed > rooms;
                 rooms = revealed; roomTotal = total;
                 HudText.Template(roomsText, roomsFormat, revealed, total, buffer);
-                if (flash && !reduceMotion) { roomFlashUntil = Time.unscaledTime + 0.2f; roomsText.color = theme.MenuTheme.Focus; }
+                if (flash && !reduceMotion) { roomFlashUntil = GamePause.UnscaledTime + 0.2f; roomsText.color = theme.MenuTheme.Focus; }
             }
             exit = exitRevealed;
             exitGroup.SetActive(inAraf && exit);
@@ -153,10 +154,10 @@ namespace RetroFPS.UI.HUD
         {
             if (hiding)
             {
-                completedFade.Tick(Time.unscaledDeltaTime); waveOpacity.alpha = 1f - completedFade.Value;
+                completedFade.Tick(GamePause.UnscaledDeltaTime); waveOpacity.alpha = 1f - completedFade.Value;
                 if (completedFade.Complete) SetEncounter(false);
             }
-            if (roomFlashUntil > 0f && Time.unscaledTime >= roomFlashUntil)
+            if (roomFlashUntil > 0f && GamePause.UnscaledTime >= roomFlashUntil)
             { roomFlashUntil = 0f; roomsText.color = theme.MenuTheme.Text; }
         }
     }

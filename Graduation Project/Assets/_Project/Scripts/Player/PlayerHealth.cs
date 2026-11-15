@@ -75,6 +75,7 @@ namespace RetroFPS
 
         public void TakeDamage(float amount, Vector3 hitPoint, Vector3 hitNormal, GameObject attacker, bool isCritical = false)
         {
+            if (Pause.GamePause.IsSimulationBlocked) return;
             if (_isDead) return;
 
             // 1. Dash sırasında I-Frame kontrolü (Hasar almama penceresi)
@@ -117,6 +118,7 @@ namespace RetroFPS
         /// <returns>Whether damage was applied, including lethal damage.</returns>
         public bool TakeUnparryableDamage(float amount, Vector3 hitPoint, Vector3 hitNormal)
         {
+            if (Pause.GamePause.IsSimulationBlocked) return false;
             if (_isDead || (_movement != null && _movement.IsInvincible)) return false;
             _currentHealth = Mathf.Max(0f, _currentHealth - amount);
             _timeSinceLastDamage = 0f;
@@ -138,6 +140,7 @@ namespace RetroFPS
         /// <returns>Can yenilendiyse true, yenilenmediyse (tavan doluysa) false döner.</returns>
         public bool Heal(float amount, bool allowOverheal = false, float overhealCap = 125f)
         {
+            if (Pause.GamePause.IsSimulationBlocked) return false;
             if (_isDead || amount <= 0f) return false;
 
             float cap = allowOverheal ? overhealCap : maxHealth;
@@ -199,6 +202,7 @@ namespace RetroFPS
         /// </summary>
         public void RestartGame()
         {
+            if (Pause.GamePause.IsGameplayInputBlocked) return;
             Time.timeScale = 1.0f; // Mikro dondurma varsa zamanı normale çek
             Time.fixedDeltaTime = 0.02f;
 
@@ -249,6 +253,7 @@ namespace RetroFPS
 
         private void Update()
         {
+            if (Pause.GamePause.IsGameplayInputBlocked) return;
             if (_isDead)
             {
                 if (ExternalDeathControl)

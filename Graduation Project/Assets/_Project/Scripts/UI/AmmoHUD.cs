@@ -101,6 +101,7 @@ namespace RetroFPS.UI
 
         private void OnGUI()
         {
+            if (Pause.GamePause.IsSimulationBlocked) return;
             if (!showHUD) return;
 
             ResolveReferences();

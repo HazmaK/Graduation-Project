@@ -277,6 +277,7 @@ namespace RetroFPS
 
         private void Update()
         {
+            if (Pause.GamePause.IsGameplayInputBlocked) return;
             // F2 Tuşu ile Dinamik HUD Açma/Kapatma (Unity 6 New Input System)
             if (enableF2Toggle && Keyboard.current != null && Keyboard.current.f2Key.wasPressedThisFrame)
             {
@@ -543,6 +544,7 @@ namespace RetroFPS
 
         private void OnGUI()
         {
+            if (Pause.GamePause.IsSimulationBlocked) return;
             if (!showHUD || !_stylesInitialized) return;
 
             float screenH = Screen.height;

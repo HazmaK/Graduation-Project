@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
+using RetroFPS.Pause;
 
 namespace RetroFPS
 {
@@ -190,6 +191,7 @@ namespace RetroFPS
 
         private void Update()
         {
+            if (GamePause.IsGameplayInputBlocked) return;
             // Ekrana tıklandığında imleci otomatik kilitle
             if (Mouse.current != null && Mouse.current.leftButton.wasPressedThisFrame && Cursor.lockState != CursorLockMode.Locked)
             {
@@ -197,19 +199,11 @@ namespace RetroFPS
             }
 
             HandleLook();
-
-            // ESC ile imleç kilidini aç / kapat
-            if (Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame)
-            {
-                if (Cursor.lockState == CursorLockMode.Locked)
-                    UnlockCursor();
-                else
-                    LockCursor();
-            }
         }
 
         private void HandleLook()
         {
+            if (GamePause.IsGameplayInputBlocked) return;
             if (Cursor.lockState != CursorLockMode.Locked) return;
             if (Mouse.current == null) return;
 
@@ -229,6 +223,7 @@ namespace RetroFPS
 
         private void LateUpdate()
         {
+            if (GamePause.IsSimulationBlocked) return;
             HandleTilt();
             HandleDynamicFOV();
 
@@ -240,9 +235,9 @@ namespace RetroFPS
 
             if (_trauma > 0.001f)
             {
-                _trauma = Mathf.Max(0f, _trauma - Time.unscaledDeltaTime * traumaDecay);
+                _trauma = Mathf.Max(0f, _trauma - GamePause.UnscaledDeltaTime * traumaDecay);
                 float shake = _trauma * _trauma;
-                float time = Time.unscaledTime * shakeFrequency;
+                float time = GamePause.UnscaledTime * shakeFrequency;
                 shakePitch = (Mathf.PerlinNoise(time, 0f) * 2f - 1f) * maxShakeAngle * shake;
                 shakeYaw = (Mathf.PerlinNoise(0f, time) * 2f - 1f) * maxShakeAngle * shake;
                 shakeRoll = (Mathf.PerlinNoise(time, time) * 2f - 1f) * (maxShakeAngle * 0.6f) * shake;
@@ -254,7 +249,7 @@ namespace RetroFPS
             if (_directionalFlinch.sqrMagnitude > 0.001f)
             {
                 _directionalFlinch = Vector3.Lerp(_directionalFlinch, Vector3.zero,
-                    1f - Mathf.Exp(-Time.unscaledDeltaTime * _flinchRecoverySpeed));
+                    1f - Mathf.Exp(-GamePause.UnscaledDeltaTime * _flinchRecoverySpeed));
             }
             else
             {
@@ -351,18 +346,19 @@ namespace RetroFPS
         private void HandleDynamicFOV()
         {
             float kick = _dashFovKick;
-            _dashFovKick = Mathf.Lerp(_dashFovKick, 0f, 1f - Mathf.Exp(-Time.unscaledDeltaTime * 6f));
+            _dashFovKick = Mathf.Lerp(_dashFovKick, 0f, 1f - Mathf.Exp(-GamePause.UnscaledDeltaTime * 6f));
             if (playerCamera == null || _movement == null) return;
 
             float horizontalSpeed = _movement.CurrentHorizontalSpeed;
             float speedRatio = Mathf.InverseLerp(fovStartSpeed, fovMaxSpeed, horizontalSpeed);
             float targetFOV = Mathf.Lerp(baseFOV, maxFOV, speedRatio) + kick;
             playerCamera.fieldOfView = Mathf.Lerp(playerCamera.fieldOfView, targetFOV,
-                1f - Mathf.Exp(-Time.unscaledDeltaTime * fovLerpSpeed));
+                1f - Mathf.Exp(-GamePause.UnscaledDeltaTime * fovLerpSpeed));
         }
 
         public void LockCursor()
         {
+            if (GamePause.IsGameplayInputBlocked) return;
             Cursor.lockState = CursorLockMode.Locked;
             Cursor.visible = false;
         }

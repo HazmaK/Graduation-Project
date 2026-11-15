@@ -1,3 +1,4 @@
+using RetroFPS.Pause;
 using UnityEngine;
 
 namespace RetroFPS
@@ -97,6 +98,7 @@ namespace RetroFPS
 
         private void Update()
         {
+            if (GamePause.IsSimulationBlocked) return;
             if (!_isBusy) return;
             float step = Mathf.Min(_speed * Time.deltaTime, _travelLength - _travelled);
             if (step > 0f && Physics.RaycastNonAlloc(_position, _direction, _rayHits, step,

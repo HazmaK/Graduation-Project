@@ -1,3 +1,4 @@
+using RetroFPS.Pause;
 using System.Collections.Generic;
 using UnityEngine;
 using RetroFPS.Combat;
@@ -144,6 +145,7 @@ namespace RetroFPS
 
         private void Update()
         {
+            if (GamePause.IsSimulationBlocked) return;
             if (_hasImpacted) return;
 
             _age += Time.deltaTime;

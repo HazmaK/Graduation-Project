@@ -101,7 +101,7 @@ colourblind support unable to play a game whose core loop depends on both.
 | Feature | Target Tier | Scope | Status | Implementation Notes |
 |---------|-------------|-------|--------|---------------------|
 | Difficulty options | Standard | Damage dealt/received, enemy aggression | Not Started | Granular sliders preferred over a single label. |
-| Pause anywhere | Basic | All gameplay states | Not Started | **Risk:** no pause menu exists yet. Araf transition and run end must also be pausable. |
+| Pause anywhere | Basic | All gameplay states | Implemented (partial) | Esc / Start opens a full pause menu (DEVAM, AYARLAR, ANA MENÜ) with time, audio and cursor handling. **Blocked by design:** FallingToAraf and EscapingAraf (Araf transition), true death card, scene load and MainMenu. Araf transition and run end are not pausable. See `documentation/retro-fps/PauseMenu.md`. |
 | Tutorial persistence | Standard | Help text | Not Started | No tutorial system yet; applies when added. |
 | Objective clarity | Standard | Araf "find the exit" goal | Not Started | Current objective visible within 2 presses (RunHUD shows Araf warning). |
 | Visual indicators for audio-only info | Standard | Gameplay-critical SFX | Not Started | See SFX audit below. |
