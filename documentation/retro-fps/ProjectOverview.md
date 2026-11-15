@@ -37,6 +37,7 @@ tags:
 - **Dövüş ve Hasar Arayüzleri:** [[CombatAndDamageInterfaces]]
 - **Can Küresi ve Düşüş Sistemi:** [[HealthOrbAndDropSystem]]
 - **Karşılaşma ve Dalga Direktörü:** [[WaveAndEncounterArchitecture]]
+- **Yargıç Boss Prototipi:** [[JudgeBossPrototype]]
 - **Seed'li Rastgelelik ve Dalga Havuzları:** [[RunRandomness]]
 - **Görsel Efekt ve Parçalanma:** [[CombatVFXAndDecalSystem]]
 - **Vuruş Tokluğu ve Ses:** [[HitstopAndAudioFeedback]]
@@ -61,6 +62,7 @@ tags:
 - [[CombatAndDamageInterfaces]] ➔ `utilizes_interfaces`
 - [[HealthOrbAndDropSystem]] ➔ `utilizes_health_drops`
 - [[WaveAndEncounterArchitecture]] ➔ `orchestrates_encounters`
+- [[JudgeBossPrototype]] ➔ `features_boss`
 - [[CombatVFXAndDecalSystem]] ➔ `utilizes_vfx`
 - [[HitstopAndAudioFeedback]] ➔ `utilizes_feedback`
 - [[GameFeelArchitecture]] ➔ `utilizes_game_feel`

@@ -60,7 +60,7 @@ flowchart LR
 - **Mermi Dilimleme (Projectile Slicing):**
   * Savurma açısına giren düşman plazma mermilerini (`EnemyProjectile`) havada keser ve crosshair hedefine geri saptırır (`Deflect`).
 - **İkincil Saldırı (Sağ Tık - Çift Fonksiyonlu Hareket Darbesi):**
-  * **Düz / Yerde (Executioner's Lunge):** 8-10 metre ileriye şimşek hızında atılma (`damage = 95f`, `lungeSpeed = 28f`, I-Frames). Sersemlemiş düşmana vurulduğunda veya düşman öldürüldüğünde **Blood Harvest** tetiklenir: Oyuncuya **+25 HP Can Sömürüsü** ve 1.5s boyunca **+%35 Adrenalin Hız Bonusu** verir.
+  * **Düz / Yerde (Executioner's Lunge):** 8-10 metre ileriye şimşek hızında atılma (`damage = 95f`, `lungeSpeed = 28f`, I-Frames). Vuruştan önce gerçekten sersemlemiş yaşayan hedefte **kabul edilen stun başına bir kez** veya canlı → ölü geçişini sağlayan öldürmede bir kez **Blood Harvest** tetiklenir; bir lunge en fazla bir ödül verir. Aynı yaşayan hedef için yeni hasat yeni bir stun gerektirir; 0,95 sn lunge bekleme süresinin dolması bu hakkı yenilemez. Judge Idle/Recover, Transition ve Kneeling stun sayılmaz; reddedilen silah stun'ı hak açmaz, kneel bitiricisi öldürme sayılır. Ödül **+25 HP Can Sömürüsü** ve 1.5s boyunca **+%35 Adrenalin Hız Bonusu**dur.
   * **Havada Aşağı Bakarken (Meteor Slam):** Oyuncu havadayken yere doğru -34f hızla çakılır. Yere indiğinde 5.5 metre çapında 80 alan hasarı vurur ve tüm düşmanları 2.2 saniye sersemletir (`IStunnable.Stun`).
 - **Görsel Sunum ve Vuruş Kinematiği:** Prosedürel viewmodel savurma, lunge saplama ve çakılma animasyonları, hitstop mikro dondurması ve dinamik pitch/çan sesleri.
 

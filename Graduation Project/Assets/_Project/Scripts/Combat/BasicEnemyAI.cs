@@ -26,7 +26,7 @@ namespace RetroFPS
     /// - Ölümden 4 saniye sonra otomatik yeniden doğma (Kesintisiz arena testi)
     /// </summary>
     [RequireComponent(typeof(CharacterController))]
-    public class BasicEnemyAI : MonoBehaviour, IDamageable, IAlertableEnemy, IStunnable, IEncounterEnemy, IThreatCost, IEliteScalable
+    public class BasicEnemyAI : MonoBehaviour, IDamageable, IAlertableEnemy, IStunnable, IEncounterEnemy, IThreatCost, IEliteScalable, IStunState
     {
         [Header("Sağlık ve Ödül")]
         [SerializeField] private float maxHealth = 150f;
@@ -141,6 +141,11 @@ namespace RetroFPS
         private float _respawnPopTimer = 0f;
 
         public EnemyState CurrentState => _currentState;
+        /// <inheritdoc />
+        public bool IsStunned => _currentState == EnemyState.Stagger;
+        /// <inheritdoc />
+        public uint StunSequence => _stunSequence;
+        private uint _stunSequence;
         public float CurrentHealth => _currentHealth;
         public float MaxHealth => maxHealth;
         public Vector3 Position => transform.position;
@@ -878,6 +883,7 @@ namespace RetroFPS
                 ReleaseToken();
                 _currentState = EnemyState.Stagger;
                 _stateTimer = wasStaggered ? Mathf.Max(_stateTimer, 0.35f) : 0.35f;
+                if (!wasStaggered) _stunSequence++;
                 Vector3 impulse = -hitNormal;
                 impulse.y = 0f;
                 impulse = impulse.normalized * Mathf.Clamp(amount * 0.09f, 2.5f, 10f);
@@ -910,6 +916,7 @@ namespace RetroFPS
 
             _currentState = EnemyState.Stagger;
             _stateTimer = duration;
+            _stunSequence++;
             _flashTimer = 0f; // Bekleyen hit flash süresi sersemleme rengini silmesin.
             // knockbackDir bir yöndür (çağıranlar normalize gönderir); güç stunKnockbackSpeed'den gelir.
             _velocity = knockbackDir.sqrMagnitude > 0.0001f

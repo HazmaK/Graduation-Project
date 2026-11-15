@@ -1162,6 +1162,7 @@ MonoBehaviour:
   weaponView: {fileID: 2640332368820965599}
   encounterView: {fileID: 2589112013577362392}
   bannerView: {fileID: 7911658764415417938}
+  bossView: {fileID: 6519760220590087455}
   deathView: {fileID: 5296283879113072414}
 --- !u!114 &6592472749984716966
 MonoBehaviour:
@@ -2528,6 +2529,17 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3308021988a39794096028f70ddb304c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: RetroFPS.HUD::RetroFPS.UI.HUD.TrueDeathView
+--- !u!114 &6519760220590087455 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 5957677946077546061, guid: 3c5dfc9cab0bd9a498cc5cf150565861, type: 3}
+  m_PrefabInstance: {fileID: 637043733453282130}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b1e96286d9974904db492c1aa865727c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: RetroFPS.HUD::RetroFPS.UI.HUD.BossBarView
 --- !u!114 &7911658764415417938 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 7285944982983746816, guid: 3c5dfc9cab0bd9a498cc5cf150565861, type: 3}

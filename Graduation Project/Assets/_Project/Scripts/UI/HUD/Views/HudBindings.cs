@@ -27,6 +27,7 @@ namespace RetroFPS.UI.HUD
         [SerializeField] private WeaponAmmoHudView weaponView;
         [SerializeField] private EncounterRunHudView encounterView;
         [SerializeField] private HudBannerView bannerView;
+        [SerializeField] private BossBarView bossView;
         [SerializeField] private TrueDeathView deathView;
         private WaveSpawnDirector director;
         private bool started, subscribed, araf, suppressBanners;
@@ -66,6 +67,7 @@ namespace RetroFPS.UI.HUD
             Subscribe();
             SettingsChanged(GameSettings.Current);
             if (started) Snapshot();
+            else BossSnapshot();
         }
         private void Start()
         {
@@ -81,13 +83,13 @@ namespace RetroFPS.UI.HUD
                 Debug.LogWarning("[CombatHud] Missing local sources/config; dependent content is hidden. No further searches will run.", this);
             if (healthView != null) { healthView.Initialize(); healthView.gameObject.SetActive(health != null); }
             abilityView?.Initialize(movement, parry); weaponView?.Initialize(ammo);
-            encounterView?.Initialize(); bannerView?.Initialize(); deathView?.Initialize();
+            encounterView?.Initialize(); bannerView?.Initialize(); deathView?.Initialize(); bossView?.Initialize();
             started = true; Subscribe(); Snapshot();
         }
         private void PrepareViews()
         {
             healthView?.Initialize(); abilityView?.Initialize(movement, parry); weaponView?.Initialize(ammo);
-            encounterView?.Initialize(); bannerView?.Initialize(); deathView?.Initialize();
+            encounterView?.Initialize(); bannerView?.Initialize(); deathView?.Initialize(); bossView?.Initialize();
         }
         private void OnDisable()
         {
@@ -103,6 +105,8 @@ namespace RetroFPS.UI.HUD
             RunEvents.OnArafChargeChanged -= ChargeChanged; RunEvents.OnArafRoomsChanged -= RoomsChanged;
             RunEvents.OnTrueDeath -= TrueDeath; GameSettings.Changed -= SettingsChanged;
             SceneManager.activeSceneChanged -= SceneChanged;
+            BossEvents.OnBossEngaged -= BossEngaged; BossEvents.OnBossHealthChanged -= BossHealthChanged;
+            BossEvents.OnBossPhaseChanged -= BossPhaseChanged; BossEvents.OnBossDisengaged -= BossDisengaged;
             BindDirector(null);
             bannerView?.Clear();
         }
@@ -121,6 +125,8 @@ namespace RetroFPS.UI.HUD
             RunEvents.OnArafChargeChanged += ChargeChanged; RunEvents.OnArafRoomsChanged += RoomsChanged;
             RunEvents.OnTrueDeath += TrueDeath; GameSettings.Changed += SettingsChanged;
             SceneManager.activeSceneChanged += SceneChanged;
+            BossEvents.OnBossEngaged += BossEngaged; BossEvents.OnBossHealthChanged += BossHealthChanged;
+            BossEvents.OnBossPhaseChanged += BossPhaseChanged; BossEvents.OnBossDisengaged += BossDisengaged;
         }
 
         private void Snapshot()
@@ -129,8 +135,19 @@ namespace RetroFPS.UI.HUD
             if (movement != null) DashChanged(movement.CurrentDashCharges, movement.MaxDashCharges);
             WeaponChanged(weapons != null ? weapons.CurrentSlot : WeaponSlot.RepeaterArbalest);
             RunChanged(RunEvents.CurrentRun); BindDirector(WaveSpawnDirector.ActiveDirector);
-            SnapshotRooms();
+            SnapshotRooms(); BossSnapshot();
         }
+        private void BossSnapshot()
+        {
+            if (!BossEvents.IsEngaged) { bossView?.Hide(); return; }
+            bossView?.Show(BossEvents.NameLocKey, BossEvents.MaxHealth);
+            bossView?.SetPhase(BossEvents.Phase);
+            bossView?.SetHealth(BossEvents.CurrentHealth, BossEvents.MaxHealth);
+        }
+        private void BossEngaged(string key, float max) => bossView?.Show(key, max);
+        private void BossHealthChanged(float current, float max) => bossView?.SetHealth(current, max);
+        private void BossPhaseChanged(int phase) => bossView?.SetPhase(phase);
+        private void BossDisengaged() => bossView?.Hide();
         private void HealthSnapshot() { if (health != null) HealthChanged(health.CurrentHealth, health.MaxHealth); }
         private void HealthChanged(float current, float max) => healthView?.Render(current, max);
         private void DashChanged(int current, int max) => abilityView?.SetDash(current, max);
@@ -208,6 +225,7 @@ namespace RetroFPS.UI.HUD
                 languageKnown = true; lastLanguage = data.Language;
                 abilityView?.RefreshLanguage(data.Language); encounterView?.RefreshLanguage(data.Language);
                 weaponView?.RefreshLanguage(data.Language); bannerView?.RefreshLanguage(data.Language);
+                bossView?.RefreshLanguage(data.Language);
             }
             // A language/audio event must not clear pickup, dash or room feedback or finish fades.
             if (motionKnown && lastReduceMotion == data.ReduceMotion) return;

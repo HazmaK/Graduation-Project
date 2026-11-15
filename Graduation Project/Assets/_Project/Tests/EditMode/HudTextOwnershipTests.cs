@@ -16,6 +16,19 @@ namespace RetroFPS.Tests
     {
         private const string PrefabPath = "Assets/_Project/Prefabs/UI/CombatHud/CombatHud.prefab";
 
+        /// <summary>The dynamic boss name has exactly one text owner.</summary>
+        [Test]
+        public void BossName_IsOwnedOnlyByBossBarView()
+        {
+            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(PrefabPath);
+            if (prefab == null) Assert.Ignore("Run RetroFPS/Build Combat HUD first; the prefab is generated.");
+            var view = prefab.GetComponentInChildren<BossBarView>(true);
+            Assert.IsNotNull(view, "Rebuild Combat HUD to include BossBarView.");
+            var label = new SerializedObject(view).FindProperty("nameText").objectReferenceValue as TMP_Text;
+            Assert.IsNotNull(label);
+            Assert.IsNull(label.GetComponent<LocalizedText>());
+        }
+
         [Test]
         public void AmmoWarningText_IsOwnedOnlyByWeaponAmmoView()
         {

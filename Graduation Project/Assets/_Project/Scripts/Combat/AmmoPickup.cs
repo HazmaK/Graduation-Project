@@ -41,6 +41,9 @@ namespace RetroFPS.Combat
         public AmmoType Type => ammoType;
         public int Amount => ammoAmount;
 
+        /// <summary>Sets expiry in seconds; zero keeps a cache pickup available until collection.</summary>
+        public void SetLifetime(float seconds) { lifetime = Mathf.Max(0f, seconds); _lifeTimer = 0f; }
+
         public void Initialize(AmmoType type, int amount, Vector3 spawnPosition)
         {
             ammoType = type;
@@ -95,7 +98,7 @@ namespace RetroFPS.Combat
         private void Update()
         {
             _lifeTimer += Time.deltaTime;
-            if (_lifeTimer >= lifetime)
+            if (lifetime > 0f && _lifeTimer >= lifetime)
             {
                 Destroy(gameObject);
                 return;

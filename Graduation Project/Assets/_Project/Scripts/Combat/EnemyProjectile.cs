@@ -28,9 +28,21 @@ namespace RetroFPS
         private Renderer _renderer;
         private TrailRenderer _trail;
         private Vector3 _baseScale;
+        private readonly RaycastHit[] _collisionHits = new RaycastHit[32];
+        private readonly Collider[] _initialOverlaps = new Collider[32];
+        private PlayerParryController[] _playerParries;
 
         public bool IsDeflected => _isDeflected;
         public float Damage => damage;
+
+        /// <summary>Raised before damage when a reflected projectile impacts a collider.</summary>
+        public static event System.Action<EnemyProjectile, Collider> OnDeflectedImpact;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetDeflectedImpactSubscribers()
+        {
+            OnDeflectedImpact = null;
+        }
 
         private void OnEnable()
         {
@@ -53,6 +65,7 @@ namespace RetroFPS
             _age = 0f;
             _hasImpacted = false;
             _isDeflected = false;
+            _playerParries = FindObjectsByType<PlayerParryController>(FindObjectsInactive.Exclude);
             _renderer = GetComponent<Renderer>();
             _baseScale = transform.localScale != Vector3.zero ? transform.localScale : new Vector3(0.40f, 0.40f, 0.40f);
             SetupTrail();
@@ -147,38 +160,15 @@ namespace RetroFPS
             float stepDistance = speed * Time.deltaTime;
             Vector3 stepMove = transform.forward * stepDistance;
 
-            // Çarpışma testi (SphereCast)
-            if (Physics.SphereCast(transform.position, collisionRadius, transform.forward, out RaycastHit hit, stepDistance, GameLayers.EnemyProjectileMask, QueryTriggerInteraction.Collide))
+            // Sphere casts omit colliders already overlapping the launch point.
+            Collider initial = FindInitialOverlap();
+            if (initial != null)
             {
-                // 1. Oyuncuya çarpıyorsa ve oyuncu şu an aktif Parry yapıyorsa: ANINDA YANSIT!
-                if (!_isDeflected)
-                {
-                    PlayerParryController parry = hit.collider.GetComponentInParent<PlayerParryController>();
-                    if (parry != null && parry.IsParrying && parry.IsFacingTarget(transform.position))
-                    {
-                        Deflect(parry.GetAimDirection());
-                        parry.NotifyProjectileParried();
-                        return;
-                    }
-
-                    // Kendi atanını vurmasın
-                    if (_shooter != null && (hit.transform == _shooter || hit.transform.IsChildOf(_shooter)))
-                    {
-                        transform.position += stepMove;
-                        return;
-                    }
-                }
-                else
-                {
-                    // Yansıtılmışsa oyuncuyu vurmasın (Düşmanları vursun)
-                    if (hit.collider.GetComponentInParent<PlayerHealth>() != null)
-                    {
-                        transform.position += stepMove;
-                        return;
-                    }
-                }
-
-                Impact(hit.point, hit.normal, hit.collider);
+                HandleCollision(initial, transform.position, -transform.forward);
+            }
+            else if (TryFindCollision(stepDistance, out RaycastHit hit))
+            {
+                HandleCollision(hit.collider, hit.point, hit.normal);
             }
             else
             {
@@ -186,10 +176,81 @@ namespace RetroFPS
             }
         }
 
+        private void HandleCollision(Collider collider, Vector3 point, Vector3 normal)
+        {
+            PlayerParryController parry = !_isDeflected ? ParryFor(collider) : null;
+            if (parry != null && parry.IsParrying && parry.IsFacingTarget(transform.position))
+            {
+                Deflect(parry.GetAimDirection());
+                parry.NotifyProjectileParried();
+                return;
+            }
+            Impact(point, normal, collider);
+        }
+
+        private Collider FindInitialOverlap()
+        {
+            // SphereCast ignores colliders it starts inside, so only the player needs this fallback.
+            // Walls, arena trigger volumes and other level geometry the sword is born inside (for
+            // example the boss arena bounds) must stay ignored, exactly as before the fix.
+            if (_isDeflected) return null;
+            int count = Physics.OverlapSphereNonAlloc(transform.position, collisionRadius, _initialOverlaps,
+                1 << GameLayers.Player, QueryTriggerInteraction.Collide);
+            for (int i = 0; i < count; i++)
+            {
+                Collider candidate = _initialOverlaps[i];
+                if (candidate == null) continue;
+                if (!_isDeflected && _shooter != null
+                    && (candidate.transform == _shooter || candidate.transform.IsChildOf(_shooter))) continue;
+                return candidate;
+            }
+            return null;
+        }
+
+        private bool TryFindCollision(float distance, out RaycastHit hit)
+        {
+            int mask = GameLayers.EnemyProjectileMask;
+            if (_isDeflected) mask &= ~(1 << GameLayers.Player);
+            int count = Physics.SphereCastNonAlloc(transform.position, collisionRadius, transform.forward,
+                _collisionHits, distance, mask, QueryTriggerInteraction.Collide);
+            hit = default;
+            float nearest = float.PositiveInfinity;
+            for (int i = 0; i < count; i++)
+            {
+                RaycastHit candidate = _collisionHits[i];
+                if (candidate.collider == null || candidate.distance >= nearest) continue;
+                // Unity reports colliders the cast starts inside at distance 0 (boss body, arena
+                // bounds trigger, walls). Those are not impacts; the player is handled by
+                // FindInitialOverlap, so only genuine sweep hits count here.
+                if (candidate.distance <= 0f) continue;
+                if (!_isDeflected && _shooter != null
+                    && (candidate.transform == _shooter || candidate.transform.IsChildOf(_shooter))) continue;
+                // Ignore the source before choosing the nearest hit, so a player immediately
+                // behind a boss collider is still tested within this same movement segment.
+                nearest = candidate.distance;
+                hit = candidate;
+            }
+            return nearest < float.PositiveInfinity;
+        }
+
+        private PlayerParryController ParryFor(Collider collider)
+        {
+            if (_playerParries == null) return null;
+            for (int i = 0; i < _playerParries.Length; i++)
+            {
+                PlayerParryController parry = _playerParries[i];
+                if (parry != null && (collider.transform == parry.transform || collider.transform.IsChildOf(parry.transform)))
+                    return parry;
+            }
+            return null;
+        }
+
         private void Impact(Vector3 point, Vector3 normal, Collider hitCollider)
         {
             if (_hasImpacted) return;
             _hasImpacted = true;
+
+            if (_isDeflected) OnDeflectedImpact?.Invoke(this, hitCollider);
 
             // Okült enerji patlaması VFX (Parry yansıması ise mavi-altın, normal ise karanlık mor)
             if (CombatVFXManager.Instance != null)

@@ -32,6 +32,27 @@ namespace RetroFPS.Tests
             return property.objectReferenceValue;
         }
 
+        /// <summary>The boss plate is wired, hidden and separated vertically from the announcement zone.</summary>
+        [Test]
+        public void BossBar_IsWiredHiddenAndAboveBanners()
+        {
+            var view = Hud().GetComponentInChildren<BossBarView>(true);
+            Assert.IsNotNull(view, "Rebuild Combat HUD to include BossBarView.");
+            foreach (string field in new[] { "strings", "plate", "nameText", "healthFill", "firstPip", "secondPip" })
+                Assert.IsNotNull(Reference(view, field), field);
+            var plate = (GameObject)Reference(view, "plate");
+            Assert.IsFalse(plate.activeSelf);
+            var rect = (RectTransform)view.transform;
+            Assert.AreEqual(new Vector2(0.5f, 1f), rect.anchorMin);
+            Assert.AreEqual(new Vector2(0.5f, 1f), rect.anchorMax);
+            Assert.AreEqual(new Vector2(520f, 44f), rect.sizeDelta);
+            var banner = (RectTransform)Hud().GetComponentInChildren<HudBannerView>(true).transform;
+            Assert.LessOrEqual(-rect.anchoredPosition.y + rect.sizeDelta.y, -banner.anchoredPosition.y);
+            var fill = (UnityEngine.UI.Image)Reference(view, "healthFill");
+            Assert.AreEqual(UnityEngine.UI.Image.Type.Filled, fill.type);
+            Assert.AreEqual(UnityEngine.UI.Image.FillMethod.Horizontal, fill.fillMethod);
+        }
+
         [Test]
         public void Hud_HasOneOverlayCanvasAndHeightMatchedScaler()
         {
@@ -79,7 +100,7 @@ namespace RetroFPS.Tests
             Assert.IsNotNull(player);
             HudBindings[] bindings = player.GetComponentsInChildren<HudBindings>(true);
             Assert.AreEqual(1, bindings.Length);
-            foreach (string field in new[] { "health", "movement", "parry", "weapons", "ammo", "hud", "healthView", "abilityView", "weaponView", "encounterView", "bannerView", "deathView" })
+            foreach (string field in new[] { "health", "movement", "parry", "weapons", "ammo", "hud", "healthView", "abilityView", "weaponView", "encounterView", "bannerView", "deathView", "bossView" })
             {
                 Object value = Reference(bindings[0], field); Assert.IsNotNull(value, field);
                 if (value is Component source) Assert.IsTrue(source.transform.IsChildOf(player.transform), field + " escapes Player.prefab");
@@ -129,6 +150,9 @@ namespace RetroFPS.Tests
             Assert.IsNotNull(table); table.RebuildCache();
             string[] keys = { "health.label", "dash.label", "parry.label", "parry.ready", "parry.active", "parry.cooldown", "parry.success", "hook.label", "hook.ready", "hook.cooldown", "ammo.empty", "weapon.melee", "ammo.bolts", "ammo.shells", "wave.counter", "wave.remaining", "araf.ready", "araf.used", "araf.warning", "araf.rooms", "araf.exitFound", "banner.arenaSealed", "banner.wave", "banner.waveCleared", "banner.arenaCleared", "truedeath.title", "truedeath.restart", "weapon.RepeaterArbalest", "weapon.ExecutionerBlade", "weapon.GothicShotgun" };
             foreach (string key in keys) Assert.IsTrue(table.ContainsKey("hud." + key), key);
+            Assert.IsTrue(table.ContainsKey("boss.judge.name"));
+            Assert.AreEqual("THE JUDGE", table.Get("boss.judge.name", RetroFPS.Settings.LanguageSetting.English));
+            Assert.AreEqual("YARGI\u00C7", table.Get("boss.judge.name", RetroFPS.Settings.LanguageSetting.Turkish));
             var theme = AssetDatabase.LoadAssetAtPath<HudTheme>("Assets/_Project/Data/UI/HudTheme_KanVeKemik.asset");
             Assert.IsNotNull(theme); Assert.IsNotNull(theme.MenuTheme);
             foreach (var font in new[] { theme.MenuTheme.UiFont, theme.MenuTheme.TitleFont })

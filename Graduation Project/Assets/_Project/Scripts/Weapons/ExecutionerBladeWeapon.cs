@@ -31,6 +31,7 @@ namespace RetroFPS.Weapons
         [SerializeField] private float lungeCooldown = 0.95f;
         [SerializeField] private float lungeHealAmount = 25f;
         [SerializeField] private float adrenalineDuration = 1.5f;
+        [SerializeField, Min(1)] private int harvestTargetCapacity = 512;
 
         [Header("Havada Sağ Tık: Meteor Çakılması (Meteor Slam)")]
         [SerializeField] private float slamDownwardSpeed = 34f;
@@ -61,6 +62,7 @@ namespace RetroFPS.Weapons
         private PlayerMovement _movement;
         private PlayerHealth _playerHealth;
         private CrosshairHUD _crosshairHUD;
+        private BloodHarvestTracker _harvestTracker;
 
         public override WeaponSlot Slot => WeaponSlot.ExecutionerBlade;
         public override bool IsFullAuto => false;
@@ -70,6 +72,7 @@ namespace RetroFPS.Weapons
 
         private void Awake()
         {
+            _harvestTracker = new BloodHarvestTracker(harvestTargetCapacity);
             _slamLandedCallback = OnMeteorSlamLanded;
             if (string.IsNullOrEmpty(weaponDisplayName) || weaponDisplayName == "Weapon")
             {
@@ -371,6 +374,11 @@ namespace RetroFPS.Weapons
                 {
                     _hitEntitiesBuffer.Add(target);
 
+                    IEncounterEnemy enemy = target as IEncounterEnemy;
+                    IStunState stun = target as IStunState;
+                    bool wasAlive = enemy != null && enemy.IsAlive;
+                    bool wasStunned = stun != null && stun.IsStunned;
+                    uint stunSequence = stun != null ? stun.StunSequence : 0;
                     float finalDamage = lungeDamage;
                     MeleeDamageScope.Begin();
                     try { target.TakeDamage(finalDamage, hit.point, hit.normal, true); }
@@ -383,7 +391,8 @@ namespace RetroFPS.Weapons
                     }
 
                     // İNFAZ SÖMÜRÜSÜ (Blood Harvest): İlk isabette oyuncuyu ödüllendir
-                    if (!triggeredHarvest)
+                    if (!triggeredHarvest && _harvestTracker.TryHarvest(target, wasAlive,
+                        enemy != null && enemy.IsAlive, wasStunned, stunSequence))
                     {
                         triggeredHarvest = true;
                         TriggerBloodHarvest(hit.point);
