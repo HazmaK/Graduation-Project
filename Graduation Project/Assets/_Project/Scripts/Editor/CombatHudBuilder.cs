@@ -118,6 +118,7 @@ namespace RetroFPS.Editor
         {
             StringTable.Translation[] defaults =
             {
+                new StringTable.Translation("boss.judge.name", "YARGI\u00C7", "THE JUDGE"),
                 new StringTable.Translation("hud.health.label", "CAN", "HEALTH"),
                 new StringTable.Translation("hud.dash.label", "ATILMA", "DASH"),
                 new StringTable.Translation("hud.parry.label", "PARRY", "PARRY"),
@@ -293,7 +294,7 @@ namespace RetroFPS.Editor
             RectTransform announcements = Rect("Announcements", safe);
             announcements.anchorMin = announcements.anchorMax = announcements.pivot = new Vector2(0.5f, 1f);
             announcements.anchoredPosition = new Vector2(0f, -76f); announcements.sizeDelta = theme.MergedBannerSize;
-            BuildHealth(bl); BuildAbilities(bl); BuildAmmo(br); BuildEncounter(tr); BuildBanner(announcements);
+            BuildHealth(bl); BuildAbilities(bl); BuildAmmo(br); BuildEncounter(tr); BuildBanner(announcements); BuildBoss(safe);
             HudEventSystemGuard guard = BuildEventSystem(root);
             RectTransform death = Rect("DeathLayer", canvasRect); Stretch(death);
             RectTransform deathContent = BuildDeath(death, canvasRect, gameplay, guard);
@@ -440,6 +441,28 @@ namespace RetroFPS.Editor
             Set(view, "remainingFill", remainingFill); Set(view, "remainingUnderline", underline); Set(view, "sigilFill", sigilFill);
         }
 
+        private static void BuildBoss(RectTransform parent)
+        {
+            RectTransform container = Corner("BossBar", parent, new Vector2(0.5f, 1f), new Vector2(520f, 44f));
+            container.anchoredPosition = new Vector2(0f, -16f);
+            RectTransform plate = Plate("BossPlate", container, new Vector2(520f, 44f));
+            TMP_Text name = Label("Name", plate, null, 20f, 12f, 2f, 448f, 25f);
+            name.alignment = TextAlignmentOptions.Center;
+            // This dynamic label belongs exclusively to BossBarView, including language changes.
+            LocalizedText obsoleteOwner = name.GetComponent<LocalizedText>();
+            if (obsoleteOwner != null) Object.DestroyImmediate(obsoleteOwner);
+            var fill = Bar("Health", plate, 12f, 29f, 496f, 9f, Palette.Accent);
+            Image("PhaseOneTrack", plate, theme.Diamond, theme.Track, 472f, 9f, 12f, 12f);
+            Image("PhaseTwoTrack", plate, theme.Diamond, theme.Track, 490f, 9f, 12f, 12f);
+            var first = Image("PhaseOne", plate, theme.Diamond, Palette.Accent, 472f, 9f, 12f, 12f);
+            var second = Image("PhaseTwo", plate, theme.Diamond, Palette.Accent, 490f, 9f, 12f, 12f);
+            var view = Component<BossBarView>(container.gameObject);
+            Set(view, "strings", strings); Set(view, "plate", plate.gameObject); Set(view, "nameText", name);
+            Set(view, "healthFill", fill); Set(view, "firstPip", first); Set(view, "secondPip", second);
+            fill.fillAmount = 0f; first.enabled = second.enabled = false;
+            plate.gameObject.SetActive(false);
+        }
+
         private static void BuildBanner(RectTransform parent)
         {
             RectTransform plate = Plate("BannerPlate", parent, theme.BannerSize);
@@ -523,6 +546,7 @@ namespace RetroFPS.Editor
             Set(bindings, "ammo", player.GetComponent<PlayerAmmoInventory>()); Set(bindings, "config", config); Set(bindings, "hud", hud);
             Set(bindings, "healthView", hud.GetComponentInChildren<HealthHudView>(true)); Set(bindings, "abilityView", hud.GetComponentInChildren<AbilityHudView>(true));
             Set(bindings, "weaponView", hud.GetComponentInChildren<WeaponAmmoHudView>(true)); Set(bindings, "encounterView", hud.GetComponentInChildren<EncounterRunHudView>(true));
+            Set(bindings, "bossView", hud.GetComponentInChildren<BossBarView>(true));
             Set(bindings, "bannerView", hud.GetComponentInChildren<HudBannerView>(true)); Set(bindings, "deathView", hud.GetComponentInChildren<TrueDeathView>(true));
             var feedback = Component<PlayerDamageFeedback>(player); Set(feedback, "hudConfig", config);
             var debug = Component<PlayerDebugHUD>(player); Set(debug, "hudConfig", config); Set(debug, "showHUD", false);
@@ -576,6 +600,11 @@ namespace RetroFPS.Editor
             {
                 if (component == null) continue;
                 result.Append(EditorJsonUtility.ToJson(component)); result.Append(EditorJsonUtility.ToJson(component.gameObject));
+                // ToJson does not reflect object-reference changes, so fold references in explicitly.
+                SerializedProperty it = new SerializedObject(component).GetIterator();
+                while (it.NextVisible(true))
+                    if (it.propertyType == SerializedPropertyType.ObjectReference)
+                    { Object reference = it.objectReferenceValue; result.Append(it.propertyPath).Append('=').Append(reference == null ? "null" : reference.GetType().Name + ":" + reference.name).Append(';'); }
             }
             return result.ToString();
         }

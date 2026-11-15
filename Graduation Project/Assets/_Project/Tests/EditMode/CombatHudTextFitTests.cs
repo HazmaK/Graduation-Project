@@ -73,6 +73,9 @@ namespace RetroFPS.Tests
                 FitKeys(encounter, "waveText", "hud.wave.counter"); FitKeys(encounter, "remainingText", "hud.wave.remaining");
                 FitKeys(encounter, "roomsText", "hud.araf.rooms"); FitKeys(encounter, "chargeText", "hud.araf.ready", "hud.araf.used");
                 var banner = prefab.GetComponentInChildren<HudBannerView>(true);
+                var boss = prefab.GetComponentInChildren<BossBarView>(true);
+                Assert.That(boss, Is.Not.Null, "Rebuild Combat HUD to include BossBarView.");
+                FitKeys(boss, "nameText", "boss.judge.name");
                 FitKeys(banner, "firstLine", "hud.banner.arenaSealed", "hud.banner.arenaCleared", "hud.banner.wave", "hud.banner.waveCleared");
                 FitKeys(banner, "secondLine", "hud.banner.wave", "hud.banner.waveCleared");
 

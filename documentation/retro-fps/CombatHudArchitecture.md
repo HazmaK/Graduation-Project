@@ -36,7 +36,7 @@ tags:
 ```mermaid
 flowchart LR
     PP["Player.prefab"] --> HB["HudBindings<br/>(oyuncu tarafı kaynak referansları)"]
-    HB --> HV["Views<br/>(HealthHudView, AbilityHudView,<br/>WeaponAmmoHudView, EncounterRunHudView,<br/>HudBannerView)"]
+    HB --> HV["Views<br/>(HealthHudView, AbilityHudView,<br/>WeaponAmmoHudView, EncounterRunHudView,<br/>HudBannerView, BossBarView)"]
     PH["PlayerHealth.OnHealthChanged"] --> HV
     PM["PlayerMovement.OnDashChargesChanged"] --> HV
     WC["WeaponController.OnWeaponSwitched"] --> HV
@@ -71,6 +71,8 @@ flowchart LR
 | HUD/Views | `AbilityHudView.cs` | Atılma, savuşturma ve kanca göstergeleri. |
 | HUD/Views | `WeaponAmmoHudView.cs` | Sağ alt silah ve cephane. |
 | HUD/Views | `EncounterRunHudView.cs` | Sağ üst dalga ve Araf bilgisi. |
+| Core/Presentation | `BossEvents.cs` | `RetroFPS.Combat`: boss events and read-only current-phase snapshot; subsystem registration clears state and listeners. |
+| HUD/Views | `BossBarView.cs` | Top-centre localized boss name, phase health fill and two reached-phase pips; hidden until engaged. |
 | HUD/Views | `HudBannerView.cs` | Üst orta duyuru gösterimi. |
 | HUD/Views | `TrueDeathView.cs` | Gerçek Ölüm kartı. Onay sonrası `NewRunRequested` gönderir. |
 | HUD/Views | `HudEventSystemGuard.cs` | Sahnede tek etkin EventSystem olmasını sağlar. |
@@ -99,7 +101,7 @@ flowchart LR
 ## 6. BİLİNEN EKSİKLER
 - **UI ölçekleme ertelendi.**
 - **Renk körlüğü paleti yok.**
-- **Ruh cevheri, lanet eşyası ve boss barı HUD'u yok.**
+- **Ruh cevheri ve lanet eşyası HUD'u yok.**
 - **Yer tutucu font ve sanat.**
 - **TMP metin kutuları:** Ellipsis modunda satır yüksekliği font boyutunun 1.2 katından küçükse metin boş görünür. `CombatHudTextFitTests` bunu korur.
 
@@ -110,3 +112,8 @@ flowchart LR
 - [[WaveAndEncounterArchitecture]] ➔ `observes_director`
 - [[PlayerSubsystemArchitecture]] ➔ `binds_player_sources`
 - [[DualLoadoutAndWeapons]] ➔ `displays_weapons`
+
+## Boss HUD integration (2026-11-14)
+- `HudBindings` owns all four `BossEvents` subscriptions and restores engaged/name/health/phase snapshots on enable. `BossBarView` owns its dynamic name label exclusively and refreshes it through the existing language pass.
+- `CombatHudBuilder` generates a 520 x 44 plate at safe-area top centre, y = -16 (bottom = 60), above banners at y = -76. Existing plate palette, blood-red accent fill and Turkish glyph validation are reused; `boss.judge.name` is THE JUDGE / YARGIÇ.
+- Run `RetroFPS/Build Combat HUD` to regenerate prefab wiring and the string table, then run the HUD EditMode tests. No generated YAML is maintained by hand.

@@ -344,7 +344,8 @@ namespace RetroFPS.Tests
                 new StringTable.Translation("popup.bolts", "OK", "BOLTS"),
                 new StringTable.Translation("popup.shells", "SAÇMA", "SHELLS"),
                 new StringTable.Translation("transition.araf.enter", "ARAF", "ARAF"),
-                new StringTable.Translation("transition.araf.escape", "KAÇIŞ", "ESCAPE")
+                new StringTable.Translation("transition.araf.escape", "KAÇIŞ", "ESCAPE"),
+                new StringTable.Translation("boss.judge.name", "YARGIÇ", "THE JUDGE")
             };
             AssertAssetManifest("Assets/_Project/Data/UI/StringTable_MainMenu_tr.asset", menu);
             AssertAssetManifest("Assets/_Project/Data/UI/StringTable_CombatHud_tr.asset", combat);

@@ -1406,13 +1406,7 @@ namespace RetroFPS.Combat
 
         private AmmoType ChooseRewardAmmoType()
         {
-            if (_ammoInventory == null) return Random.value > 0.5f ? AmmoType.Shells : AmmoType.Bolts;
-
-            float shells = _ammoInventory.GetAmmoRatio(AmmoType.Shells);
-            float bolts = _ammoInventory.GetAmmoRatio(AmmoType.Bolts);
-            if (shells < bolts) return AmmoType.Shells;
-            if (bolts < shells) return AmmoType.Bolts;
-            return Random.value > 0.5f ? AmmoType.Shells : AmmoType.Bolts;
+            return AmmoRewardUtility.ChooseType(_ammoInventory);
         }
 
         // ───────────────────────────── Dinamik Zorluk & Retry ─────────────────────────────

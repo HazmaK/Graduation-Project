@@ -113,6 +113,21 @@ namespace RetroFPS
             }
         }
 
+        /// <summary>Applies damage without consulting parry; dash invulnerability, feedback and death still apply.</summary>
+        /// <returns>Whether damage was applied, including lethal damage.</returns>
+        public bool TakeUnparryableDamage(float amount, Vector3 hitPoint, Vector3 hitNormal)
+        {
+            if (_isDead || (_movement != null && _movement.IsInvincible)) return false;
+            _currentHealth = Mathf.Max(0f, _currentHealth - amount);
+            _timeSinceLastDamage = 0f;
+            if (_damageFeedback != null) _damageFeedback.OnPlayerDamaged(amount, hitPoint, hitNormal, null);
+            else if (_look != null) _look.AddTrauma(0.35f);
+            OnHealthChanged?.Invoke(_currentHealth, maxHealth);
+            OnDamageTaken?.Invoke(amount);
+            if (_currentHealth <= 0f && !_isDead) Die();
+            return true;
+        }
+
         /// <summary>
         /// Can küresi veya iyileştirici kaynaklardan can yeniler.
         /// Can zaten tavandaysa ve allowOverheal kapalıysa false döner.

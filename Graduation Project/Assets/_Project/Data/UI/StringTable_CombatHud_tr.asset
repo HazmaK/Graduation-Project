@@ -151,3 +151,6 @@ MonoBehaviour:
   - key: transition.araf.escape
     value: "KA\xC7I\u015E"
     en: ESCAPE
+  - key: boss.judge.name
+    value: "YARGI\xC7"
+    en: THE JUDGE

@@ -791,6 +791,79 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 19221467}
   m_Mesh: {fileID: 10206, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!1001 &21527187
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 1865686251}
+    m_Modifications:
+    - target: {fileID: 666282704201604369, guid: 39c21da32acfdb4478470f9f3d4a38c7, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 19
+      objectReference: {fileID: 0}
+    - target: {fileID: 666282704201604369, guid: 39c21da32acfdb4478470f9f3d4a38c7, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 666282704201604369, guid: 39c21da32acfdb4478470f9f3d4a38c7, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 205
+      objectReference: {fileID: 0}
+    - target: {fileID: 666282704201604369, guid: 39c21da32acfdb4478470f9f3d4a38c7, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 666282704201604369, guid: 39c21da32acfdb4478470f9f3d4a38c7, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 666282704201604369, guid: 39c21da32acfdb4478470f9f3d4a38c7, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 666282704201604369, guid: 39c21da32acfdb4478470f9f3d4a38c7, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 666282704201604369, guid: 39c21da32acfdb4478470f9f3d4a38c7, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 666282704201604369, guid: 39c21da32acfdb4478470f9f3d4a38c7, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 666282704201604369, guid: 39c21da32acfdb4478470f9f3d4a38c7, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1417908263579829654, guid: 39c21da32acfdb4478470f9f3d4a38c7, type: 3}
+      propertyPath: m_Name
+      value: Boss_AmmoCache_1
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 39c21da32acfdb4478470f9f3d4a38c7, type: 3}
+--- !u!4 &21527188 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 666282704201604369, guid: 39c21da32acfdb4478470f9f3d4a38c7, type: 3}
+  m_PrefabInstance: {fileID: 21527187}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &21527189 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 2835455654707431021, guid: 39c21da32acfdb4478470f9f3d4a38c7, type: 3}
+  m_PrefabInstance: {fileID: 21527187}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 10a86b6b92927204881279e468d760de, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: RetroFPS.Gameplay::RetroFPS.Combat.ArenaAmmoCache
 --- !u!1 &21750079
 GameObject:
   m_ObjectHideFlags: 0
@@ -31375,6 +31448,79 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1088411624}
   m_Mesh: {fileID: 1329367423}
+--- !u!1001 &1093013925
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 1865686251}
+    m_Modifications:
+    - target: {fileID: 666282704201604369, guid: 39c21da32acfdb4478470f9f3d4a38c7, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 19
+      objectReference: {fileID: 0}
+    - target: {fileID: 666282704201604369, guid: 39c21da32acfdb4478470f9f3d4a38c7, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 666282704201604369, guid: 39c21da32acfdb4478470f9f3d4a38c7, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 243
+      objectReference: {fileID: 0}
+    - target: {fileID: 666282704201604369, guid: 39c21da32acfdb4478470f9f3d4a38c7, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 666282704201604369, guid: 39c21da32acfdb4478470f9f3d4a38c7, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 666282704201604369, guid: 39c21da32acfdb4478470f9f3d4a38c7, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 666282704201604369, guid: 39c21da32acfdb4478470f9f3d4a38c7, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 666282704201604369, guid: 39c21da32acfdb4478470f9f3d4a38c7, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 666282704201604369, guid: 39c21da32acfdb4478470f9f3d4a38c7, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 666282704201604369, guid: 39c21da32acfdb4478470f9f3d4a38c7, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1417908263579829654, guid: 39c21da32acfdb4478470f9f3d4a38c7, type: 3}
+      propertyPath: m_Name
+      value: Boss_AmmoCache_3
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 39c21da32acfdb4478470f9f3d4a38c7, type: 3}
+--- !u!4 &1093013926 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 666282704201604369, guid: 39c21da32acfdb4478470f9f3d4a38c7, type: 3}
+  m_PrefabInstance: {fileID: 1093013925}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &1093013927 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 2835455654707431021, guid: 39c21da32acfdb4478470f9f3d4a38c7, type: 3}
+  m_PrefabInstance: {fileID: 1093013925}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 10a86b6b92927204881279e468d760de, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: RetroFPS.Gameplay::RetroFPS.Combat.ArenaAmmoCache
 --- !u!1 &1095091678
 GameObject:
   m_ObjectHideFlags: 0
@@ -41207,7 +41353,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8129818506611666789, guid: 8a7854e3713bc4343b5a793ccb58fac2, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 0
+      value: -10.42
       objectReference: {fileID: 0}
     - target: {fileID: 8129818506611666789, guid: 8a7854e3713bc4343b5a793ccb58fac2, type: 3}
       propertyPath: m_LocalPosition.y
@@ -41215,7 +41361,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8129818506611666789, guid: 8a7854e3713bc4343b5a793ccb58fac2, type: 3}
       propertyPath: m_LocalPosition.z
-      value: -4
+      value: 208.19
       objectReference: {fileID: 0}
     - target: {fileID: 8129818506611666789, guid: 8a7854e3713bc4343b5a793ccb58fac2, type: 3}
       propertyPath: m_LocalRotation.w
@@ -41695,6 +41841,79 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1395381697}
   m_Mesh: {fileID: 1016711478}
+--- !u!1001 &1395879401
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 1865686251}
+    m_Modifications:
+    - target: {fileID: 666282704201604369, guid: 39c21da32acfdb4478470f9f3d4a38c7, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -19
+      objectReference: {fileID: 0}
+    - target: {fileID: 666282704201604369, guid: 39c21da32acfdb4478470f9f3d4a38c7, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 666282704201604369, guid: 39c21da32acfdb4478470f9f3d4a38c7, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 243
+      objectReference: {fileID: 0}
+    - target: {fileID: 666282704201604369, guid: 39c21da32acfdb4478470f9f3d4a38c7, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 666282704201604369, guid: 39c21da32acfdb4478470f9f3d4a38c7, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 666282704201604369, guid: 39c21da32acfdb4478470f9f3d4a38c7, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 666282704201604369, guid: 39c21da32acfdb4478470f9f3d4a38c7, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 666282704201604369, guid: 39c21da32acfdb4478470f9f3d4a38c7, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 666282704201604369, guid: 39c21da32acfdb4478470f9f3d4a38c7, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 666282704201604369, guid: 39c21da32acfdb4478470f9f3d4a38c7, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1417908263579829654, guid: 39c21da32acfdb4478470f9f3d4a38c7, type: 3}
+      propertyPath: m_Name
+      value: Boss_AmmoCache_2
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 39c21da32acfdb4478470f9f3d4a38c7, type: 3}
+--- !u!4 &1395879402 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 666282704201604369, guid: 39c21da32acfdb4478470f9f3d4a38c7, type: 3}
+  m_PrefabInstance: {fileID: 1395879401}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &1395879403 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 2835455654707431021, guid: 39c21da32acfdb4478470f9f3d4a38c7, type: 3}
+  m_PrefabInstance: {fileID: 1395879401}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 10a86b6b92927204881279e468d760de, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: RetroFPS.Gameplay::RetroFPS.Combat.ArenaAmmoCache
 --- !u!43 &1397515654
 Mesh:
   m_ObjectHideFlags: 0
@@ -49916,6 +50135,83 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1736194495}
   m_Mesh: {fileID: 10206, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!1001 &1747388497
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 1865686251}
+    m_Modifications:
+    - target: {fileID: 306391397773175407, guid: e5aa45434f09a2e41a32159bcff3ce63, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 306391397773175407, guid: e5aa45434f09a2e41a32159bcff3ce63, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 1.2
+      objectReference: {fileID: 0}
+    - target: {fileID: 306391397773175407, guid: e5aa45434f09a2e41a32159bcff3ce63, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 234
+      objectReference: {fileID: 0}
+    - target: {fileID: 306391397773175407, guid: e5aa45434f09a2e41a32159bcff3ce63, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: -0.00000004371139
+      objectReference: {fileID: 0}
+    - target: {fileID: 306391397773175407, guid: e5aa45434f09a2e41a32159bcff3ce63, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 306391397773175407, guid: e5aa45434f09a2e41a32159bcff3ce63, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 306391397773175407, guid: e5aa45434f09a2e41a32159bcff3ce63, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 306391397773175407, guid: e5aa45434f09a2e41a32159bcff3ce63, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 306391397773175407, guid: e5aa45434f09a2e41a32159bcff3ce63, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 306391397773175407, guid: e5aa45434f09a2e41a32159bcff3ce63, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4097272261677922319, guid: e5aa45434f09a2e41a32159bcff3ce63, type: 3}
+      propertyPath: groundReference
+      value: 
+      objectReference: {fileID: 1622505611}
+    - target: {fileID: 6652431952027442911, guid: e5aa45434f09a2e41a32159bcff3ce63, type: 3}
+      propertyPath: m_Name
+      value: Boss_Judge
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: e5aa45434f09a2e41a32159bcff3ce63, type: 3}
+--- !u!4 &1747388498 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 306391397773175407, guid: e5aa45434f09a2e41a32159bcff3ce63, type: 3}
+  m_PrefabInstance: {fileID: 1747388497}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &1747388499 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 4097272261677922319, guid: e5aa45434f09a2e41a32159bcff3ce63, type: 3}
+  m_PrefabInstance: {fileID: 1747388497}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3dc025e91ee84d74dbe40faf007e7db8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: RetroFPS.Gameplay::RetroFPS.JudgeBossAI
 --- !u!1 &1750178428
 GameObject:
   m_ObjectHideFlags: 0
@@ -52780,6 +53076,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1865686251}
+  - component: {fileID: 1865686252}
   m_Layer: 0
   m_Name: BossEncounter_Placeholder
   m_TagString: Untagged
@@ -52803,8 +53100,39 @@ Transform:
   - {fileID: 199828675}
   - {fileID: 1798259180}
   - {fileID: 1622505611}
+  - {fileID: 1747388498}
+  - {fileID: 2137431254}
+  - {fileID: 21527188}
+  - {fileID: 1395879402}
+  - {fileID: 1093013926}
   m_Father: {fileID: 427800774}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1865686252
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1865686250}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 45adb7563c470c34c98eb10c31a0ce39, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: RetroFPS.Gameplay::RetroFPS.BossEncounter
+  boss: {fileID: 1747388499}
+  arenaTrigger: {fileID: 199828676}
+  barriers: []
+  ammoCaches:
+  - {fileID: 2137431255}
+  - {fileID: 21527189}
+  - {fileID: 1395879403}
+  - {fileID: 1093013927}
+  retryCheckpoint: {fileID: 1622505611}
+  bossSpawnAnchor: {fileID: 1798259180}
+  retryWarmupDuration: 2.5
+  onBossDefeated:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!1 &1872533111
 GameObject:
   m_ObjectHideFlags: 0
@@ -61466,6 +61794,79 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2130450313}
   m_Mesh: {fileID: 295559065}
+--- !u!1001 &2137431253
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 1865686251}
+    m_Modifications:
+    - target: {fileID: 666282704201604369, guid: 39c21da32acfdb4478470f9f3d4a38c7, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -19
+      objectReference: {fileID: 0}
+    - target: {fileID: 666282704201604369, guid: 39c21da32acfdb4478470f9f3d4a38c7, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 666282704201604369, guid: 39c21da32acfdb4478470f9f3d4a38c7, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 205
+      objectReference: {fileID: 0}
+    - target: {fileID: 666282704201604369, guid: 39c21da32acfdb4478470f9f3d4a38c7, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 666282704201604369, guid: 39c21da32acfdb4478470f9f3d4a38c7, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 666282704201604369, guid: 39c21da32acfdb4478470f9f3d4a38c7, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 666282704201604369, guid: 39c21da32acfdb4478470f9f3d4a38c7, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 666282704201604369, guid: 39c21da32acfdb4478470f9f3d4a38c7, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 666282704201604369, guid: 39c21da32acfdb4478470f9f3d4a38c7, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 666282704201604369, guid: 39c21da32acfdb4478470f9f3d4a38c7, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1417908263579829654, guid: 39c21da32acfdb4478470f9f3d4a38c7, type: 3}
+      propertyPath: m_Name
+      value: Boss_AmmoCache_0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 39c21da32acfdb4478470f9f3d4a38c7, type: 3}
+--- !u!4 &2137431254 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 666282704201604369, guid: 39c21da32acfdb4478470f9f3d4a38c7, type: 3}
+  m_PrefabInstance: {fileID: 2137431253}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &2137431255 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 2835455654707431021, guid: 39c21da32acfdb4478470f9f3d4a38c7, type: 3}
+  m_PrefabInstance: {fileID: 2137431253}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 10a86b6b92927204881279e468d760de, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: RetroFPS.Gameplay::RetroFPS.Combat.ArenaAmmoCache
 --- !u!1 &2139029335
 GameObject:
   m_ObjectHideFlags: 0

@@ -26,6 +26,7 @@ namespace RetroFPS.Tests.EditMode
         private EncounterRunHudView encounter;
         private WeaponAmmoHudView weapon;
         private HudBannerView banner;
+        private BossBarView boss;
         private TrueDeathView death;
         private float timeScale, fixedDelta;
         private CursorLockMode cursorLock;
@@ -54,15 +55,19 @@ namespace RetroFPS.Tests.EditMode
             encounter = hud.GetComponentInChildren<EncounterRunHudView>(true);
             weapon = hud.GetComponentInChildren<WeaponAmmoHudView>(true);
             banner = hud.GetComponentInChildren<HudBannerView>(true);
+            boss = hud.GetComponentInChildren<BossBarView>(true);
+            Assert.That(boss, Is.Not.Null, "Rebuild Combat HUD to include BossBarView.");
             death = hud.GetComponentInChildren<TrueDeathView>(true);
-            foreach (object view in new object[] { ability, encounter, weapon, banner })
+            foreach (object view in new object[] { ability, encounter, weapon, banner, boss })
                 LocalizationHudTestContext.Set(view, "strings", context.Table);
             ability.Initialize(null, null); encounter.Initialize(); weapon.Initialize(null); banner.Initialize();
+            boss.Initialize();
             bindings = root.AddComponent<HudBindings>();
             LocalizationHudTestContext.Set(bindings, "abilityView", ability);
             LocalizationHudTestContext.Set(bindings, "encounterView", encounter);
             LocalizationHudTestContext.Set(bindings, "weaponView", weapon);
             LocalizationHudTestContext.Set(bindings, "bannerView", banner);
+            LocalizationHudTestContext.Set(bindings, "bossView", boss);
             LocalizationHudTestContext.Set(bindings, "deathView", death);
             LocalizationHudTestContext.Call(bindings, "OnEnable");
         }
@@ -82,6 +87,7 @@ namespace RetroFPS.Tests.EditMode
         [Test]
         public void LiveHudSwitchPreservesCountersChargeSuccessAndFeedbackTimers()
         {
+            boss.Show("boss.judge.name", 100f); boss.SetPhase(2); boss.SetHealth(30f, 100f);
             ability.SetDash(1, 3); ability.ParrySucceeded(true);
             encounter.SetRun(new RunState(7)); encounter.SetPhase(RunPhase.InAraf);
             encounter.SetCharge(true); encounter.SetWave(2, 5); encounter.SetRemaining(1, 8);
@@ -95,6 +101,8 @@ namespace RetroFPS.Tests.EditMode
             object pickupUntil = LocalizationHudTestContext.Get(weapon, "pickupUntil");
             object fade = LocalizationHudTestContext.Get(encounter, "completedFade");
             context.Service.SetLanguage(LanguageSetting.English);
+            Assert.That(Text(boss, "nameText"), Is.EqualTo("THE JUDGE"));
+            Assert.That(((UnityEngine.UI.Image)LocalizationHudTestContext.Get(boss, "healthFill")).fillAmount, Is.EqualTo(0.3f));
             Assert.That(Text(ability, "dashCurrent"), Is.EqualTo("DASH 1/3"));
             Assert.That(Text(ability, "parryState"), Is.EqualTo("PARRIED"));
             Assert.That(Text(encounter, "waveText"), Is.EqualTo("WAVE 2/5"));
@@ -110,6 +118,7 @@ namespace RetroFPS.Tests.EditMode
             Assert.That(LocalizationHudTestContext.Get(weapon, "pickupUntil"), Is.EqualTo(pickupUntil));
             Assert.That(LocalizationHudTestContext.Get(weapon, "ammoType"), Is.EqualTo(AmmoType.Bolts));
             context.Service.SetLanguage(LanguageSetting.Turkish);
+            Assert.That(Text(boss, "nameText"), Is.EqualTo("YARGI\u00C7"));
             Assert.That(Text(ability, "parryState"), Is.EqualTo("PARRY!"));
             Assert.That(Text(weapon, "warningText"), Is.EqualTo("BOŞ"));
         }

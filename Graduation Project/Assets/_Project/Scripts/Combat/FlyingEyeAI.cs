@@ -22,7 +22,7 @@ namespace RetroFPS
     /// - Gözbebeği Kritik Vuruş Noktasıdır (2x Headshot / Crit).
     /// </summary>
     [RequireComponent(typeof(CharacterController))]
-    public class FlyingEyeAI : MonoBehaviour, IDamageable, IAlertableEnemy, IStunnable, IEncounterEnemy, IThreatCost, IEliteScalable
+    public class FlyingEyeAI : MonoBehaviour, IDamageable, IAlertableEnemy, IStunnable, IEncounterEnemy, IThreatCost, IEliteScalable, IStunState
     {
         [Header("Sağlık ve Ödül")]
         [SerializeField] private float maxHealth = 90f; // Havada olduğu için biraz daha kırılgan
@@ -126,6 +126,11 @@ namespace RetroFPS
         private float _respawnPopTimer = 0f;
 
         public FlyingEyeState CurrentState => _currentState;
+        /// <inheritdoc />
+        public bool IsStunned => _currentState == FlyingEyeState.Stagger;
+        /// <inheritdoc />
+        public uint StunSequence => _stunSequence;
+        private uint _stunSequence;
         public float CurrentHealth => _currentHealth;
         public float MaxHealth => maxHealth;
         public Vector3 Position => transform.position;
@@ -728,6 +733,7 @@ namespace RetroFPS
             {
                 _currentState = FlyingEyeState.Stagger;
                 _stateTimer = wasStaggered ? Mathf.Max(_stateTimer, 0.30f) : 0.30f;
+                if (!wasStaggered) _stunSequence++;
             }
 
             if (HitstopManager.Instance != null)
@@ -751,6 +757,7 @@ namespace RetroFPS
 
             _currentState = FlyingEyeState.Stagger;
             _stateTimer = duration;
+            _stunSequence++;
             _cooldownTimer = duration + 0.6f;
             // knockbackDir bir yöndür; toplam kayma ~ stunKnockbackSpeed / KnockbackDecay (24.5 / 7 = 3.5 m).
             _knockbackVelocity = knockbackDir.sqrMagnitude > 0.0001f
