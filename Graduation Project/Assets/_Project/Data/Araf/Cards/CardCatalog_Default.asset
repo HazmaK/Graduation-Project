@@ -1,0 +1,21 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8fb473cc0d545f4419dadb0e530039d7, type: 3}
+  m_Name: CardCatalog_Default
+  m_EditorClassIdentifier: RetroFPS.Gameplay::RetroFPS.Run.Cards.CardCatalog
+  cards:
+  - {fileID: 11400000, guid: 98193b91e65b2df4e80242bb423bc1dc, type: 2}
+  - {fileID: 11400000, guid: 16145b99b1d803740b1cf9e926468e09, type: 2}
+  - {fileID: 11400000, guid: f44d55a5f788f7d44b6018966fceb6d8, type: 2}
+  - {fileID: 11400000, guid: 16af94326cc98124db28e3089e2655d8, type: 2}
+  - {fileID: 11400000, guid: 01cff7d68903c5748bd29d2d6fd5a6e8, type: 2}
+  - {fileID: 11400000, guid: 56d44f0ded90d4949911dc87965640e1, type: 2}

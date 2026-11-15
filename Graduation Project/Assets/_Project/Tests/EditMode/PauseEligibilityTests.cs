@@ -15,8 +15,16 @@ namespace RetroFPS.Tests
         [TestCase(RunPhase.TrueDeath, false)]
         public void AdapterMapsExactRunPhases(RunPhase phase, bool expected)
         {
-            Assert.That(PauseRuntime.EvaluateEligibility(true, true, false, false, false, true, phase),
+            Assert.That(PauseRuntime.EvaluateEligibility(true, true, false, false, false, false, true, phase),
                 Is.EqualTo(expected));
+        }
+
+        /// <summary>An open card offer denies pause through the explicit parameter.</summary>
+        [Test]
+        public void CardOfferFlagDeniesPause()
+        {
+            Assert.That(PauseRuntime.EvaluateEligibility(true, true, false, true, false, false, true,
+                RunPhase.Tower), Is.False);
         }
 
         /// <summary>MainMenu, dead player, death card, preload/load and transitions independently deny entry.</summary>
@@ -27,7 +35,7 @@ namespace RetroFPS.Tests
         [TestCase(true, true, false, false, true)]
         public void AdapterDeniesEveryExclusiveOwner(bool gameplay, bool alive, bool card, bool load, bool transition)
         {
-            Assert.That(PauseRuntime.EvaluateEligibility(gameplay, alive, card, load, transition,
+            Assert.That(PauseRuntime.EvaluateEligibility(gameplay, alive, card, false, load, transition,
                 true, RunPhase.Tower), Is.False);
         }
 
@@ -35,9 +43,9 @@ namespace RetroFPS.Tests
         [Test]
         public void NoRunDoesNotRequireRunDirectorAndNeverAdmitsMainMenu()
         {
-            Assert.That(PauseRuntime.EvaluateEligibility(true, true, false, false, false, false,
+            Assert.That(PauseRuntime.EvaluateEligibility(true, true, false, false, false, false, false,
                 RunPhase.Tower), Is.True);
-            Assert.That(PauseRuntime.EvaluateEligibility(false, true, false, false, false, false,
+            Assert.That(PauseRuntime.EvaluateEligibility(false, true, false, false, false, false, false,
                 RunPhase.Tower), Is.False);
         }
 

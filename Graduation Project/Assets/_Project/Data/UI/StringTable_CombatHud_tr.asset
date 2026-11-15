@@ -154,3 +154,97 @@ MonoBehaviour:
   - key: boss.judge.name
     value: "YARGI\xC7"
     en: THE JUDGE
+  - key: hud.card.title
+    value: "B\u0130R BEDEL SE\xC7"
+    en: CHOOSE YOUR PRICE
+  - key: hud.card.boon.label
+    value: "L\xDCTUF"
+    en: BOON
+  - key: hud.card.curse.label
+    value: LANET
+    en: CURSE
+  - key: hud.card.refuse
+    value: REDDET
+    en: REFUSE
+  - key: hud.card.hint
+    value: "SE\xC7: A/D   ONAYLA: ENTER"
+    en: 'SELECT: A/D   CONFIRM: ENTER'
+  - key: hud.card.acquired.banner
+    value: "BEDEL \xD6DEND\u0130: {0}"
+    en: 'PRICE PAID: {0}'
+  - key: hud.card.blood_debt.name
+    value: Kan Borcu
+    en: Blood Debt
+  - key: hud.card.blood_debt.boon
+    value: "T\xFCm hasar +%35"
+    en: All damage +35%
+  - key: hud.card.blood_debt.curse
+    value: Maksimum can -%30
+    en: Max health -30%
+  - key: hud.card.blood_debt.flavor
+    value: Kule borcunu etinden tahsil eder.
+    en: The tower collects its due in flesh.
+  - key: hud.card.starving_steel.name
+    value: "A\xE7 \xC7elik"
+    en: Starving Steel
+  - key: hud.card.starving_steel.boon
+    value: "B\u0131\xE7ak hasar\u0131 +%50, Kan Hasad\u0131 iki kat iyile\u015Ftirir"
+    en: Blade damage +50%, Blood Harvest heals double
+  - key: hud.card.starving_steel.curse
+    value: "D\xFC\u015Fmanlar can k\xFCresi d\xFC\u015F\xFCrmez"
+    en: Enemies drop no health orbs
+  - key: hud.card.starving_steel.flavor
+    value: "\xC7elik doymad\u0131k\xE7a sen de doymazs\u0131n."
+    en: While the steel hungers, so do you.
+  - key: hud.card.last_breath.name
+    value: Son Nefes
+    en: Last Breath
+  - key: hud.card.last_breath.boon
+    value: "Can yar\u0131n\u0131n alt\u0131ndayken hasar +%60, h\u0131z +%20"
+    en: 'Below half health: damage +60%, speed +20%'
+  - key: hud.card.last_breath.curse
+    value: "T\xFCm iyile\u015Fmeler -%50"
+    en: All healing -50%
+  - key: hud.card.last_breath.flavor
+    value: "\xD6l\xFCm yakla\u015Ft\u0131k\xE7a elin a\u011F\u0131rla\u015F\u0131r."
+    en: The nearer death comes, the heavier your hand.
+  - key: hud.card.bone_wings.name
+    value: Kemik Kanatlar
+    en: Bone Wings
+  - key: hud.card.bone_wings.boon
+    value: "Dash %40 h\u0131zl\u0131 dolar, h\u0131z +%15"
+    en: Dash recharges 40% faster, speed +15%
+  - key: hud.card.bone_wings.curse
+    value: "Al\u0131nan hasar +%25"
+    en: Damage taken +25%
+  - key: hud.card.bone_wings.flavor
+    value: "Hafif kemik \xE7abuk k\u0131r\u0131l\u0131r."
+    en: Light bones break fast.
+  - key: hud.card.brimming_chalice.name
+    value: Dolu Kadeh
+    en: Brimming Chalice
+  - key: hud.card.brimming_chalice.boon
+    value: "Fazla can s\u0131n\u0131r\u0131 +50; fazla can varken at\u0131\u015F
+      h\u0131z\u0131 +%35"
+    en: Overheal cap +50; while overhealed, fire rate +35%
+  - key: hud.card.brimming_chalice.curse
+    value: "Can yar\u0131n\u0131n alt\u0131ndayken h\u0131z -%20"
+    en: 'Below half health: speed -20%'
+  - key: hud.card.brimming_chalice.flavor
+    value: Kadeh doluyken herkes cesurdur.
+    en: Everyone is brave while the cup is full.
+  - key: hud.card.glutton_barrel.name
+    value: Obur Namlu
+    en: Glutton's Barrel
+  - key: hud.card.glutton_barrel.boon
+    value: "At\u0131\u015F h\u0131z\u0131 +%40"
+    en: Fire rate +40%
+  - key: hud.card.glutton_barrel.curse
+    value: Toplanan cephane -%50
+    en: Ammo pickups -50%
+  - key: hud.card.glutton_barrel.flavor
+    value: "\xC7abuk yer, a\xE7 kal\u0131r."
+    en: It eats fast and starves faster.
+  - key: hud.card.strip.title
+    value: KARTLAR
+    en: CARDS

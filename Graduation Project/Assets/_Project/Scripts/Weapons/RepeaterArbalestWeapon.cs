@@ -1,5 +1,6 @@
 using RetroFPS.Pause;
 using UnityEngine;
+using RetroFPS.Stats;
 using RetroFPS.Combat;
 using RetroFPS.UI;
 
@@ -138,13 +139,13 @@ namespace RetroFPS.Weapons
             // Cephane kontrolü: Ok yoksa kuru tetik tıkı çal
             if (!HasAmmo(PrimaryAmmoCost))
             {
-                _primaryCooldownTimer = 0.22f;
+                _primaryCooldownTimer = 0.22f / Mathf.Max(0.05f, PlayerStats.Get(StatId.FireRate, 1f));
                 if (CombatAudio.Instance != null) CombatAudio.Instance.PlayDryFire();
                 return;
             }
 
             TryConsumeAmmo(PrimaryAmmoCost);
-            _primaryCooldownTimer = primaryFireRate;
+            _primaryCooldownTimer = primaryFireRate / Mathf.Max(0.05f, PlayerStats.Get(StatId.FireRate, 1f));
 
             Vector3 shootDir = cam.transform.forward;
             Vector2 spread = Random.insideUnitCircle * ((primarySpread + _bloom) * 0.015f);
@@ -200,14 +201,14 @@ namespace RetroFPS.Weapons
             // Cephane kontrolü: 5 ok yoksa kuru tetik tıkı çal
             if (!HasAmmo(AltAmmoCost))
             {
-                _altCooldownTimer = 0.30f;
+                _altCooldownTimer = 0.30f / Mathf.Max(0.05f, PlayerStats.Get(StatId.FireRate, 1f));
                 if (CombatAudio.Instance != null) CombatAudio.Instance.PlayDryFire();
                 return;
             }
 
             TryConsumeAmmo(AltAmmoCost);
-            _altCooldownTimer = altCooldown;
-            _primaryCooldownTimer = 0.35f;
+            _altCooldownTimer = altCooldown / Mathf.Max(0.05f, PlayerStats.Get(StatId.FireRate, 1f));
+            _primaryCooldownTimer = 0.35f / Mathf.Max(0.05f, PlayerStats.Get(StatId.FireRate, 1f));
 
             Vector3 startPos = FirePoint != null ? FirePoint.position : cam.transform.position + cam.transform.forward * 0.4f;
 
@@ -277,6 +278,7 @@ namespace RetroFPS.Weapons
 
         private void ApplyHitDamage(RaycastHit hit, float damage)
         {
+            damage *= PlayerStats.Get(StatId.DamageDealt, 1f);
             CombatTargetLookup.Binding binding = CombatTargetLookup.Get(hit.collider);
             Hitbox hitbox = binding.Hitbox;
             if (hitbox != null)

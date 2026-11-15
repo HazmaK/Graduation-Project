@@ -1,6 +1,7 @@
 using System;
 using UnityEngine;
 using RetroFPS.Combat;
+using RetroFPS.Run.Cards;
 
 namespace RetroFPS.Run
 {
@@ -13,6 +14,23 @@ namespace RetroFPS.Run
         private static RunState _currentRun;
         private static RunRandom[] _fallbackStreams;
         private static int _fallbackSeed;
+        private static bool _isCardOfferOpen;
+        private static CardOffer _currentCardOffer;
+
+        /// <summary>Whether an offer is waiting for a choice or refusal.</summary>
+        public static bool IsCardOfferOpen => _isCardOfferOpen;
+
+        /// <summary>The currently open offer, or an empty offer when closed.</summary>
+        public static CardOffer CurrentCardOffer => _currentCardOffer;
+
+        /// <summary>Raised when a new card offer opens.</summary>
+        public static event Action<CardOffer> OnCardOfferOpened;
+
+        /// <summary>Raised when an offer closes; null means refused or acquisition failed.</summary>
+        public static event Action<CurseBlessingDefinition> OnCardOfferResolved;
+
+        /// <summary>Raised after the current run successfully acquires an offered card.</summary>
+        public static event Action<CurseBlessingDefinition> OnCardAcquired;
 
         /// <summary>Sahnedeki etkin koşu; yönetici bulunmadığında null döndürür.</summary>
         public static RunState CurrentRun => _currentRun;
@@ -28,6 +46,8 @@ namespace RetroFPS.Run
         {
             if (_currentRun != null) _currentRun.OnArafChargeChanged -= ForwardArafChargeChanged;
             _currentRun = state;
+            _isCardOfferOpen = false;
+            _currentCardOffer = default;
             if (_currentRun != null) _currentRun.OnArafChargeChanged += ForwardArafChargeChanged;
             OnRunChanged?.Invoke(state);
             OnArafChargeChanged?.Invoke(state != null && state.ArafChargeUsed);
@@ -42,7 +62,7 @@ namespace RetroFPS.Run
             if (_fallbackStreams == null)
             {
                 _fallbackSeed = Environment.TickCount;
-                _fallbackStreams = new RunRandom[7];
+                _fallbackStreams = new RunRandom[8];
             }
             int index = (int)stream;
             return _fallbackStreams[index] ??
@@ -135,6 +155,31 @@ namespace RetroFPS.Run
         public static void RaiseArafRoomsChanged(int revealed, int total, bool exitRevealed)
             => OnArafRoomsChanged?.Invoke(revealed, total, exitRevealed);
 
+        /// <summary>Opens an offer unless another offer is already open.</summary>
+        public static void RaiseCardOfferOpened(CardOffer offer)
+        {
+            if (_isCardOfferOpen) return;
+            _currentCardOffer = offer;
+            _isCardOfferOpen = true;
+            OnCardOfferOpened?.Invoke(offer);
+        }
+
+        /// <summary>Closes the open offer and acquires a valid choice, or reports refusal.</summary>
+        public static void ResolveCardOffer(CurseBlessingDefinition chosenOrNull)
+        {
+            if (!_isCardOfferOpen) return;
+            CurseBlessingDefinition chosen = _currentCardOffer.Contains(chosenOrNull) ? chosenOrNull : null;
+            RunState run = _currentRun;
+            // Close before callbacks so a reentrant resolution cannot acquire twice.
+            _isCardOfferOpen = false;
+            _currentCardOffer = default;
+            if (chosen != null && run != null && run.Cards.TryAcquire(chosen))
+                OnCardAcquired?.Invoke(chosen);
+            else
+                chosen = null;
+            OnCardOfferResolved?.Invoke(chosen);
+        }
+
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStatics()
         {
@@ -147,6 +192,11 @@ namespace RetroFPS.Run
             OnTrueDeath = null;
             OnEscapePortalReached = null;
             OnArafRoomsChanged = null;
+            OnCardOfferOpened = null;
+            OnCardOfferResolved = null;
+            OnCardAcquired = null;
+            _isCardOfferOpen = false;
+            _currentCardOffer = default;
             _activeEncounter = null;
             _currentRun = null;
             _fallbackStreams = null;

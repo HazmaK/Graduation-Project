@@ -41383,6 +41383,10 @@ PrefabInstance:
       propertyPath: m_AnchorMax.y
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 1858836810682456249, guid: 8a7854e3713bc4343b5a793ccb58fac2, type: 3}
+      propertyPath: m_TextStyleHashCode
+      value: -1183493901
+      objectReference: {fileID: 0}
     - target: {fileID: 1929588900584902331, guid: 8a7854e3713bc4343b5a793ccb58fac2, type: 3}
       propertyPath: m_fontSize
       value: 48.3

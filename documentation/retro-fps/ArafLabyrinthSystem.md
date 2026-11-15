@@ -95,7 +95,7 @@ Namespace: `RetroFPS.Run.Labyrinth` (`Scripts/Run/Labyrinth/`).
 - Minimap / harita yok (labirentte kaybolma riski).
 - `RunHUD` Araf yazısı koyu kızıl — kontrast düşük.
 - Oda prefabları basit küp sahne formatındadır.
-- Faz 3 lanet / lütuf kartları Shrine odasına bağlanabilir.
+- Faz 3 lanet / lütuf kartları, temizlenen Combat ve Ambush odalarındaki sunaklardan (altar) gelir; ayrıntılar için bkz. [[CurseBlessingCards]].
 
 ---
 

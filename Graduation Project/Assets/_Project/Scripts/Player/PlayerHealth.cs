@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.SceneManagement;
 using RetroFPS.Weapons;
+using RetroFPS.Stats;
 
 namespace RetroFPS
 {
@@ -13,7 +14,7 @@ namespace RetroFPS
     /// - Otomatik can yenilenmesi varsayılan olarak kapalıdır (enableAutoHeal); can yalnızca savaşarak kazanılır.
     /// </summary>
     [RequireComponent(typeof(PlayerMovement))]
-    public class PlayerHealth : MonoBehaviour, IDamageable
+    public class PlayerHealth : MonoBehaviour, IDamageable, IStatContext
     {
         [Header("Can Ayarları")]
         [SerializeField] private float maxHealth = 100f;
@@ -32,9 +33,29 @@ namespace RetroFPS
         private PlayerDamageFeedback _damageFeedback;
         private WeaponController _weapons;
 
+        private StatSheet _statSheet;
+        private float _previousMaxHealth;
+
         public float CurrentHealth => _currentHealth;
-        public float MaxHealth => maxHealth;
-        public float HealthPercent => Mathf.Clamp01(_currentHealth / maxHealth);
+        public float MaxHealth => Mathf.Max(1f, PlayerStats.Get(StatId.MaxHealth, maxHealth));
+        public float BaseMaxHealth => maxHealth;
+        public float HealthFraction
+        {
+            get
+            {
+                float maximum = MaxHealth;
+                return maximum > 0f ? _currentHealth / maximum : 0f;
+            }
+        }
+        public bool IsOverhealed => _currentHealth > MaxHealth;
+        public float HealthPercent
+        {
+            get
+            {
+                float maximum = MaxHealth;
+                return maximum > 0f ? Mathf.Clamp01(_currentHealth / maximum) : 0f;
+            }
+        }
         public bool IsDead => _isDead;
 
         public event System.Action<float> OnDamageTaken;
@@ -58,7 +79,9 @@ namespace RetroFPS
 
         private void Awake()
         {
-            _currentHealth = maxHealth;
+            float initialMax = MaxHealth;
+            _previousMaxHealth = initialMax;
+            _currentHealth = initialMax;
             _isDead = false;
             _movement = GetComponent<PlayerMovement>();
             _look = GetComponent<PlayerLook>();
@@ -66,6 +89,48 @@ namespace RetroFPS
             _weapons = GetComponent<WeaponController>();
             _damageFeedback = GetComponent<PlayerDamageFeedback>();
             if (_damageFeedback == null) _damageFeedback = gameObject.AddComponent<PlayerDamageFeedback>();
+        }
+
+        private void OnEnable() => BindStats();
+        private void Start() => BindStats();
+        private void OnDisable() => UnbindStats();
+        private void OnDestroy() => UnbindStats();
+
+        private void BindStats()
+        {
+            StatSheet current = PlayerStats.Current;
+            if (ReferenceEquals(_statSheet, current) && (_statSheet == null || ReferenceEquals(_statSheet.Context, this)))
+                return;
+            UnbindStats();
+            _statSheet = current;
+            if (_statSheet != null)
+            {
+                _statSheet.SetContext(this);
+                _statSheet.OnChanged += OnStatsChanged;
+            }
+            OnStatsChanged();
+        }
+
+        private void UnbindStats()
+        {
+            if (_statSheet == null) return;
+            _statSheet.OnChanged -= OnStatsChanged;
+            if (ReferenceEquals(_statSheet.Context, this))
+                _statSheet.SetContext(null);
+            _statSheet = null;
+        }
+
+        private void OnStatsChanged()
+        {
+            float newMax = MaxHealth;
+            if (newMax < _previousMaxHealth)
+            {
+                float overheal = Mathf.Max(0f, _currentHealth - _previousMaxHealth);
+                _currentHealth = Mathf.Min(_currentHealth, newMax + overheal);
+                if (!_isDead) _currentHealth = Mathf.Max(1f, _currentHealth);
+            }
+            _previousMaxHealth = newMax;
+            OnHealthChanged?.Invoke(_currentHealth, newMax);
         }
 
         public void TakeDamage(float amount, Vector3 hitPoint, Vector3 hitNormal, bool isCritical = false)
@@ -92,6 +157,7 @@ namespace RetroFPS
                 return;
             }
 
+            amount = PlayerStats.Get(StatId.DamageTaken, amount);
             _currentHealth = Mathf.Max(0f, _currentHealth - amount);
             _timeSinceLastDamage = 0f;
 
@@ -105,7 +171,7 @@ namespace RetroFPS
                 _look.AddTrauma(0.35f);
             }
 
-            OnHealthChanged?.Invoke(_currentHealth, maxHealth);
+            OnHealthChanged?.Invoke(_currentHealth, MaxHealth);
             OnDamageTaken?.Invoke(amount);
 
             if (_currentHealth <= 0f && !_isDead)
@@ -120,11 +186,12 @@ namespace RetroFPS
         {
             if (Pause.GamePause.IsSimulationBlocked) return false;
             if (_isDead || (_movement != null && _movement.IsInvincible)) return false;
+            amount = PlayerStats.Get(StatId.DamageTaken, amount);
             _currentHealth = Mathf.Max(0f, _currentHealth - amount);
             _timeSinceLastDamage = 0f;
             if (_damageFeedback != null) _damageFeedback.OnPlayerDamaged(amount, hitPoint, hitNormal, null);
             else if (_look != null) _look.AddTrauma(0.35f);
-            OnHealthChanged?.Invoke(_currentHealth, maxHealth);
+            OnHealthChanged?.Invoke(_currentHealth, MaxHealth);
             OnDamageTaken?.Invoke(amount);
             if (_currentHealth <= 0f && !_isDead) Die();
             return true;
@@ -143,7 +210,11 @@ namespace RetroFPS
             if (Pause.GamePause.IsSimulationBlocked) return false;
             if (_isDead || amount <= 0f) return false;
 
-            float cap = allowOverheal ? overhealCap : maxHealth;
+            amount = PlayerStats.Get(StatId.HealReceived, amount);
+            float effectiveMax = MaxHealth;
+            float cap = allowOverheal
+                ? Mathf.Max(effectiveMax, PlayerStats.Get(StatId.OverhealCap, overhealCap))
+                : effectiveMax;
             if (_currentHealth >= cap) return false;
 
             float previousHealth = _currentHealth;
@@ -157,7 +228,7 @@ namespace RetroFPS
                 _damageFeedback.TriggerHealFlash(0.35f);
             }
 
-            OnHealthChanged?.Invoke(_currentHealth, maxHealth);
+            OnHealthChanged?.Invoke(_currentHealth, effectiveMax);
             OnHealed?.Invoke(actualHealed);
             return true;
         }
@@ -226,8 +297,10 @@ namespace RetroFPS
         /// </summary>
         public void Revive(Vector3 position, Quaternion rotation)
         {
+            BindStats();
             _isDead = false;
-            _currentHealth = maxHealth;
+            _currentHealth = MaxHealth;
+            _previousMaxHealth = MaxHealth;
             _timeSinceLastDamage = 0f;
 
             if (_movement != null)
@@ -246,7 +319,7 @@ namespace RetroFPS
 
             if (_parry != null) _parry.enabled = true;
 
-            OnHealthChanged?.Invoke(_currentHealth, maxHealth);
+            OnHealthChanged?.Invoke(_currentHealth, MaxHealth);
             OnRevived?.Invoke();
             Debug.Log("<color=green><b>[PLAYER REVIVED]</b></color> Checkpoint retry.");
         }
@@ -272,21 +345,22 @@ namespace RetroFPS
             }
 
             // Fazla can (Overheal) sönümlenmesi (Retro Quake / DOOM standardı: max üstü yavaşça 100'e iner)
+            float effectiveMaxHealth = MaxHealth;
             float previousHealth = _currentHealth;
-            if (_currentHealth > maxHealth)
+            if (_currentHealth > effectiveMaxHealth)
             {
-                _currentHealth = Mathf.MoveTowards(_currentHealth, maxHealth, 3.5f * Time.deltaTime);
+                _currentHealth = Mathf.MoveTowards(_currentHealth, effectiveMaxHealth, 3.5f * Time.deltaTime);
             }
             // Çatışma dışı can yenilenmesi (varsayılan kapalı; bkz. enableAutoHeal)
             else if (enableAutoHeal)
             {
                 _timeSinceLastDamage += Time.deltaTime;
-                if (_timeSinceLastDamage >= autoHealDelay && _currentHealth < maxHealth)
+                if (_timeSinceLastDamage >= autoHealDelay && _currentHealth < effectiveMaxHealth)
                 {
-                    _currentHealth = Mathf.MoveTowards(_currentHealth, maxHealth, autoHealRate * Time.deltaTime);
+                    _currentHealth = Mathf.MoveTowards(_currentHealth, effectiveMaxHealth, autoHealRate * Time.deltaTime);
                 }
             }
-            if (_currentHealth != previousHealth) OnHealthChanged?.Invoke(_currentHealth, maxHealth);
+            if (_currentHealth != previousHealth) OnHealthChanged?.Invoke(_currentHealth, MaxHealth);
         }
     }
 }

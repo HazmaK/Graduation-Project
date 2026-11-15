@@ -118,6 +118,37 @@ namespace RetroFPS.Editor
         {
             StringTable.Translation[] defaults =
             {
+                new StringTable.Translation("hud.card.title", "B\u0130R BEDEL SE\u00c7", "CHOOSE YOUR PRICE"),
+                new StringTable.Translation("hud.card.boon.label", "L\u00dcTUF", "BOON"),
+                new StringTable.Translation("hud.card.curse.label", "LANET", "CURSE"),
+                new StringTable.Translation("hud.card.refuse", "REDDET", "REFUSE"),
+                new StringTable.Translation("hud.card.hint", "SE\u00c7: A/D   ONAYLA: ENTER", "SELECT: A/D   CONFIRM: ENTER"),
+                new StringTable.Translation("hud.card.acquired.banner", "BEDEL \u00d6DEND\u0130: {0}", "PRICE PAID: {0}"),
+                new StringTable.Translation("hud.card.strip.title", "KARTLAR", "CARDS"),
+                new StringTable.Translation("hud.card.blood_debt.name", "Kan Borcu", "Blood Debt"),
+                new StringTable.Translation("hud.card.blood_debt.boon", "T\u00fcm hasar +%35", "All damage +35%"),
+                new StringTable.Translation("hud.card.blood_debt.curse", "Maksimum can -%30", "Max health -30%"),
+                new StringTable.Translation("hud.card.blood_debt.flavor", "Kule borcunu etinden tahsil eder.", "The tower collects its due in flesh."),
+                new StringTable.Translation("hud.card.starving_steel.name", "A\u00e7 \u00c7elik", "Starving Steel"),
+                new StringTable.Translation("hud.card.starving_steel.boon", "B\u0131\u00e7ak hasar\u0131 +%50, Kan Hasad\u0131 iki kat iyile\u015ftirir", "Blade damage +50%, Blood Harvest heals double"),
+                new StringTable.Translation("hud.card.starving_steel.curse", "D\u00fc\u015fmanlar can k\u00fcresi d\u00fc\u015f\u00fcrmez", "Enemies drop no health orbs"),
+                new StringTable.Translation("hud.card.starving_steel.flavor", "\u00c7elik doymad\u0131k\u00e7a sen de doymazs\u0131n.", "While the steel hungers, so do you."),
+                new StringTable.Translation("hud.card.last_breath.name", "Son Nefes", "Last Breath"),
+                new StringTable.Translation("hud.card.last_breath.boon", "Can yar\u0131n\u0131n alt\u0131ndayken hasar +%60, h\u0131z +%20", "Below half health: damage +60%, speed +20%"),
+                new StringTable.Translation("hud.card.last_breath.curse", "T\u00fcm iyile\u015fmeler -%50", "All healing -50%"),
+                new StringTable.Translation("hud.card.last_breath.flavor", "\u00d6l\u00fcm yakla\u015ft\u0131k\u00e7a elin a\u011f\u0131rla\u015f\u0131r.", "The nearer death comes, the heavier your hand."),
+                new StringTable.Translation("hud.card.bone_wings.name", "Kemik Kanatlar", "Bone Wings"),
+                new StringTable.Translation("hud.card.bone_wings.boon", "Dash %40 h\u0131zl\u0131 dolar, h\u0131z +%15", "Dash recharges 40% faster, speed +15%"),
+                new StringTable.Translation("hud.card.bone_wings.curse", "Al\u0131nan hasar +%25", "Damage taken +25%"),
+                new StringTable.Translation("hud.card.bone_wings.flavor", "Hafif kemik \u00e7abuk k\u0131r\u0131l\u0131r.", "Light bones break fast."),
+                new StringTable.Translation("hud.card.brimming_chalice.name", "Dolu Kadeh", "Brimming Chalice"),
+                new StringTable.Translation("hud.card.brimming_chalice.boon", "Fazla can s\u0131n\u0131r\u0131 +50; fazla can varken at\u0131\u015f h\u0131z\u0131 +%35", "Overheal cap +50; while overhealed, fire rate +35%"),
+                new StringTable.Translation("hud.card.brimming_chalice.curse", "Can yar\u0131n\u0131n alt\u0131ndayken h\u0131z -%20", "Below half health: speed -20%"),
+                new StringTable.Translation("hud.card.brimming_chalice.flavor", "Kadeh doluyken herkes cesurdur.", "Everyone is brave while the cup is full."),
+                new StringTable.Translation("hud.card.glutton_barrel.name", "Obur Namlu", "Glutton's Barrel"),
+                new StringTable.Translation("hud.card.glutton_barrel.boon", "At\u0131\u015f h\u0131z\u0131 +%40", "Fire rate +40%"),
+                new StringTable.Translation("hud.card.glutton_barrel.curse", "Toplanan cephane -%50", "Ammo pickups -50%"),
+                new StringTable.Translation("hud.card.glutton_barrel.flavor", "\u00c7abuk yer, a\u00e7 kal\u0131r.", "It eats fast and starves faster."),
                 new StringTable.Translation("boss.judge.name", "YARGI\u00C7", "THE JUDGE"),
                 new StringTable.Translation("hud.health.label", "CAN", "HEALTH"),
                 new StringTable.Translation("hud.dash.label", "ATILMA", "DASH"),
@@ -295,7 +326,10 @@ namespace RetroFPS.Editor
             announcements.anchorMin = announcements.anchorMax = announcements.pivot = new Vector2(0.5f, 1f);
             announcements.anchoredPosition = new Vector2(0f, -76f); announcements.sizeDelta = theme.MergedBannerSize;
             BuildHealth(bl); BuildAbilities(bl); BuildAmmo(br); BuildEncounter(tr); BuildBanner(announcements); BuildBoss(safe);
+            BuildActiveCards(tr, safe);
             HudEventSystemGuard guard = BuildEventSystem(root);
+            RectTransform offers = Rect("CardOfferLayer", canvasRect); Stretch(offers);
+            BuildCardOffer(offers, canvasRect);
             RectTransform death = Rect("DeathLayer", canvasRect); Stretch(death);
             RectTransform deathContent = BuildDeath(death, canvasRect, gameplay, guard);
             HudLayout layout = Component<HudLayout>(root);
@@ -329,6 +363,114 @@ namespace RetroFPS.Editor
             Set(view, "currentText", number); Set(view, "overflowText", extra);
             Set(view, "overflowGroup", overflow.gameObject); Set(view, "warningChip", warning.gameObject);
             Set(view, "fill", fill); Set(view, "leadingTick", tick); Set(view, "lowBorder", low); Set(view, "damageEdge", edge);
+        }
+
+        private static void BuildActiveCards(RectTransform zone, RectTransform safe)
+        {
+            // Encounter/Araf plate reaches 150px; leave 18px before the compact card list.
+            RectTransform container = At("ActiveCards", zone, 0, 168, 340, 180);
+            container.anchorMin = container.anchorMax = container.pivot = Vector2.one;
+            container.anchoredPosition = new Vector2(0, -168);
+            RectTransform plate = Plate("List", container, new Vector2(340, 180));
+            var view = Component<ActiveCardsHudView>(container.gameObject); Set(view, "strings", strings); Set(view, "list", plate.gameObject);
+            Set(view, "plate", plate);
+            // Plate height is driven at runtime from the visible row count (8 pad + 32 header + 28 per row + 8 pad).
+            TMP_Text header = Label("Header", plate, "hud.card.strip.title", 20, 12, 8, 316, 28);
+            header.color = Palette.Focus; header.fontStyle = FontStyles.Bold | FontStyles.SmallCaps;
+            var serialized = new SerializedObject(view);
+            SerializedProperty rows = serialized.FindProperty("rows"); rows.arraySize = 6;
+            SerializedProperty markers = serialized.FindProperty("markers"); markers.arraySize = 6;
+            for (int i = 0; i < 6; i++)
+            {
+                float y = 40 + i * 28;
+                var marker = Image("Marker" + i, plate, null, Palette.Text, 12, y + 4, 4, 20);
+                TMP_Text row = Label("Card" + i, plate, null, 20, 24, y, 304, 28);
+                row.fontStyle = FontStyles.Bold | FontStyles.SmallCaps; row.color = Palette.Text;
+                rows.GetArrayElementAtIndex(i).objectReferenceValue = row;
+                markers.GetArrayElementAtIndex(i).objectReferenceValue = marker;
+            }
+            serialized.ApplyModifiedPropertiesWithoutUndo();
+            plate.gameObject.SetActive(false);
+            RectTransform bannerRoot = Rect("CardAnnouncement", safe);
+            bannerRoot.anchorMin = bannerRoot.anchorMax = bannerRoot.pivot = new Vector2(0.5f, 1f);
+            // Separate from the encounter queue's reserved two-line announcement area.
+            bannerRoot.anchoredPosition = new Vector2(0, -240); bannerRoot.sizeDelta = new Vector2(880, 72);
+            RectTransform bannerPlate = Plate("Plate", bannerRoot, new Vector2(880, 72));
+            TMP_Text message = Label("Message", bannerPlate, null, 24, 18, 12, 844, 48);
+            message.alignment = TextAlignmentOptions.Center;
+            var group = Component<CanvasGroup>(bannerRoot.gameObject); group.alpha = 0; group.blocksRaycasts = false; group.interactable = false;
+            var banner = Component<CardAcquiredBannerView>(bannerRoot.gameObject);
+            Set(banner, "config", config); Set(banner, "strings", strings); Set(banner, "group", group); Set(banner, "label", message);
+            Set(view, "banner", banner);
+            // No own Canvas: the banner was verified visible with the shared HUD canvas (the "invisible" captures were stale frames).
+            if (bannerRoot.TryGetComponent(out Canvas staleBannerCanvas)) UnityEngine.Object.DestroyImmediate(staleBannerCanvas);
+            bannerRoot.SetAsLastSibling();
+        }
+
+        private static void BuildCardOffer(RectTransform layer, RectTransform canvas)
+        {
+            var backdrop = Image("Backdrop", layer, null, theme.DeathOverlay, 0, 0, 0, 0);
+            Stretch(backdrop.rectTransform); backdrop.raycastTarget = true;
+            RectTransform content = Rect("Content", layer);
+            content.anchorMin = content.anchorMax = content.pivot = Vector2.one * 0.5f;
+            content.anchoredPosition = Vector2.zero; content.sizeDelta = new Vector2(1160, 700);
+            TMP_Text title = Label("Title", content, "hud.card.title", 42, 0, 0, 1160, 70);
+            title.font = Palette.TitleFont; title.alignment = TextAlignmentOptions.Center;
+            CardOfferChoiceView first = BuildOfferChoice("First", content, 20);
+            CardOfferChoiceView second = BuildOfferChoice("Second", content, 600);
+            RectTransform refuseRect = Plate("Refuse", content, new Vector2(360, 72));
+            refuseRect.anchoredPosition = new Vector2(400, -556);
+            refuseRect.GetComponent<UnityEngine.UI.Image>().raycastTarget = true;
+            TMP_Text refuseLabel = Label("Label", refuseRect, "hud.card.refuse", 28, 12, 8, 336, 56);
+            refuseLabel.alignment = TextAlignmentOptions.Center;
+            var refuse = Component<CardOfferChoiceView>(refuseRect.gameObject);
+            Set(refuse, "nameText", refuseLabel); Set(refuse, "frame", ChoiceFrame(refuseRect, 360, 72));
+            WireChoiceButton(refuse, refuseRect);
+            TMP_Text hint = Label("Hint", content, "hud.card.hint", 22, 0, 650, 1160, 40);
+            hint.alignment = TextAlignmentOptions.Center;
+            var view = Component<CardOfferView>(canvas.gameObject);
+            Set(view, "strings", strings); Set(view, "offerLayer", layer.gameObject);
+            Set(view, "first", first); Set(view, "second", second); Set(view, "refuse", refuse);
+            layer.SetAsLastSibling(); layer.gameObject.SetActive(false);
+        }
+
+        private static CardOfferChoiceView BuildOfferChoice(string name, Transform content, float x)
+        {
+            RectTransform card = Plate(name, content, new Vector2(540, 440));
+            card.anchoredPosition = new Vector2(x, -90);
+            card.GetComponent<UnityEngine.UI.Image>().raycastTarget = true;
+            TMP_Text nameText = Label("Name", card, null, 32, 24, 18, 492, 54);
+            Label("BoonLabel", card, "hud.card.boon.label", 22, 24, 90, 492, 34).color = new Color(1f, 0.70f, 0.15f);
+            TMP_Text boon = Label("Boon", card, null, 24, 24, 126, 492, 92);
+            boon.color = new Color(1f, 0.70f, 0.15f); boon.textWrappingMode = TextWrappingModes.Normal;
+            Label("CurseLabel", card, "hud.card.curse.label", 22, 24, 228, 492, 34).color = Palette.Danger;
+            TMP_Text curse = Label("Curse", card, null, 24, 24, 264, 492, 68);
+            curse.color = Palette.Danger; curse.textWrappingMode = TextWrappingModes.Normal;
+            TMP_Text flavor = Label("Flavor", card, null, 20, 24, 350, 492, 72);
+            flavor.fontStyle = FontStyles.Italic; flavor.color = new Color(160f / 255f, 150f / 255f, 132f / 255f);
+            flavor.textWrappingMode = TextWrappingModes.Normal;
+            var view = Component<CardOfferChoiceView>(card.gameObject);
+            Set(view, "nameText", nameText); Set(view, "boonText", boon); Set(view, "curseText", curse); Set(view, "flavorText", flavor);
+            Set(view, "frame", ChoiceFrame(card, 540, 440));
+            WireChoiceButton(view, card);
+            return view;
+        }
+
+        private static void WireChoiceButton(CardOfferChoiceView view, RectTransform rect)
+        {
+            var button = Component<CardOfferButton>(rect.gameObject);
+            button.targetGraphic = rect.GetComponent<UnityEngine.UI.Image>();
+            button.transition = UnityEngine.UI.Selectable.Transition.None;
+            button.navigation = new UnityEngine.UI.Navigation { mode = UnityEngine.UI.Navigation.Mode.None };
+            Set(view, "button", button);
+        }
+
+        private static UnityEngine.UI.Image ChoiceFrame(RectTransform rect, float width, float height)
+        {
+            var frame = Image("SelectionFrame", rect, theme.Chip, Palette.Focus, 0, 0, width, height);
+            Stretch(frame.rectTransform); frame.type = UnityEngine.UI.Image.Type.Sliced;
+            frame.fillCenter = false; frame.pixelsPerUnitMultiplier = 1f / 3f; frame.enabled = false;
+            return frame;
         }
 
         private static void BuildAbilities(RectTransform parent)
@@ -555,6 +697,8 @@ namespace RetroFPS.Editor
             Set(bindings, "weaponView", hud.GetComponentInChildren<WeaponAmmoHudView>(true)); Set(bindings, "encounterView", hud.GetComponentInChildren<EncounterRunHudView>(true));
             Set(bindings, "bossView", hud.GetComponentInChildren<BossBarView>(true));
             Set(bindings, "bannerView", hud.GetComponentInChildren<HudBannerView>(true)); Set(bindings, "deathView", hud.GetComponentInChildren<TrueDeathView>(true));
+            Set(bindings, "cardOfferView", hud.GetComponentInChildren<CardOfferView>(true));
+            Set(bindings, "activeCardsView", hud.GetComponentInChildren<ActiveCardsHudView>(true));
             var feedback = Component<PlayerDamageFeedback>(player); Set(feedback, "hudConfig", config);
             var debug = Component<PlayerDebugHUD>(player); Set(debug, "hudConfig", config); Set(debug, "showHUD", false);
             string[] sources = { "health", "movement", "parry", "weapons", "ammo" };

@@ -36,7 +36,7 @@ namespace RetroFPS.Pause
             || (runDirector != null && runDirector.IsSceneLoadInProgress);
         /// <summary>Fresh primitive eligibility, independent of whether the menu is already open.</summary>
         public bool CanPause => EvaluateEligibility(gameplayScene, player != null && !player.IsDead,
-            trueDeathOpen, IsSceneLoadInProgress, runDirector != null && runDirector.IsTransitioning,
+            trueDeathOpen, RunEvents.IsCardOfferOpen, IsSceneLoadInProgress, runDirector != null && runDirector.IsTransitioning,
             run != null, phase);
         /// <summary>Raised after load/preflight failure has restored visible pause ownership.</summary>
         public event Action SceneLeaveFailed;
@@ -105,6 +105,9 @@ namespace RetroFPS.Pause
                 if (exclusive) service.CancelForExclusiveFlow();
                 else service.Release();
                 if (ReferenceEquals(GamePause.Service, service)) GamePause.SetService(null);
+                // A card modal torn down after this runtime holds a service that wraps ours; drop it so the
+                // next scene's OnEnable never sees a foreign owner (the modal's own Close tolerates this).
+                else if (GamePause.Service != null && RunEvents.IsCardOfferOpen) GamePause.SetService(null);
             }
             ownsService = false;
         }
@@ -129,9 +132,9 @@ namespace RetroFPS.Pause
 
         /// <summary>Maps gameplay-only run phases without introducing Gameplay dependencies into Core.</summary>
         public static bool EvaluateEligibility(bool isGameplayScene, bool playerAlive, bool deathCardOpen,
-            bool sceneLoadInProgress, bool transitioning, bool hasRun, RunPhase runPhase)
+            bool cardOfferOpen, bool sceneLoadInProgress, bool transitioning, bool hasRun, RunPhase runPhase)
         {
-            return isGameplayScene && playerAlive && !deathCardOpen && !sceneLoadInProgress
+            return isGameplayScene && playerAlive && !deathCardOpen && !cardOfferOpen && !sceneLoadInProgress
                 && !transitioning && (!hasRun || runPhase == RunPhase.Tower || runPhase == RunPhase.InAraf);
         }
 
@@ -198,7 +201,7 @@ namespace RetroFPS.Pause
         {
             if (!ownsService) return false;
             return service.TryPause(gameplayScene, player != null && !player.IsDead, trueDeathOpen,
-                IsSceneLoadInProgress, (runDirector == null || !runDirector.IsTransitioning)
+                IsSceneLoadInProgress, !RunEvents.IsCardOfferOpen && (runDirector == null || !runDirector.IsTransitioning)
                     && (run == null || phase == RunPhase.Tower || phase == RunPhase.InAraf));
         }
 

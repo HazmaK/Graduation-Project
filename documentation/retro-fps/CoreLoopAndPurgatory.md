@@ -79,7 +79,7 @@ flowchart TD
 ### Temel Dosyalar ve Bileşenler
 | Dosya | Rolü / Sorumluluğu |
 | :--- | :--- |
-| `Run/RunState.cs` | POCO durum nesnesi: `Seed`, `FloorIndex`, `ArafChargeUsed`, `Phase`. |
+| `Run/RunState.cs` | POCO durum nesnesi: `Seed`, `FloorIndex`, `ArafChargeUsed`, `Phase`, `Stats`, `Cards`, `CardOffers`. |
 | `Run/RunEvents.cs` | Statik eventler + `ActiveEncounter` kaydı. |
 | `Run/RunDirector.cs` | Durum makinesi, kule/araf yaşam döngüsü ve ölüm sahibi. |
 | `Run/ArafTransition.cs` | uGUI fade / durum mesajları / slow-mo efekti (`Awaitable` + unscaled time). |
@@ -124,7 +124,7 @@ stateDiagram-v2
 ### Sonraki Fazlar
 - **Faz 2:** Tamamlandı (Seed'li `RunRandom`, `WaveSetPool`, `RunHUD`).
 - **Faz 2.5 (Labirent):** tamamlandı (Ayrıntılar: [[ArafLabyrinthSystem]]).
-- **Faz 3:** Lanet/lütuf kartları (`CurseBlessingDefinition`) + stat modifier katmanı ve sunak etkileşimi.
+- **Faz 3:** Tamamlandı (2026-11-15). Lanet/lütuf kartları (`CurseBlessingDefinition`), stat modifier katmanı ve sunak etkileşimi. Ayrıntılar: [[CurseBlessingCards]].
 - **Faz 4:** Run özeti + Araf müziği.
 
 ---
@@ -141,5 +141,6 @@ stateDiagram-v2
 - [[CombatAndDamageInterfaces]] ➔ `evaluates_combat_stakes`
 - [[RunRandomness]] ➔ `seeds_run`
 - [[ArafLabyrinthSystem]] ➔ `implements_labyrinth`
+- [[CurseBlessingCards]] ➔ `implements_cards`
 - ⬅️ [[ProjectOverview]] ➔ `features_mechanic` *(gelen)*
 - ⬅️ [[START_HERE_AI_CONSTITUTION]] ➔ `mandated_by_constitution` *(gelen)*

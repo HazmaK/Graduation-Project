@@ -1,0 +1,29 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c56e1463869a5404f81f708caa32a28b, type: 3}
+  m_Name: Card_glutton_barrel
+  m_EditorClassIdentifier: RetroFPS.Gameplay::RetroFPS.Run.Cards.CurseBlessingDefinition
+  id: glutton_barrel
+  nameKey: hud.card.glutton_barrel.name
+  boonKey: hud.card.glutton_barrel.boon
+  curseKey: hud.card.glutton_barrel.curse
+  flavorKey: hud.card.glutton_barrel.flavor
+  accentColor: {r: 0.95, g: 0.25, b: 0.035, a: 1}
+  modifiers:
+  - stat: 2
+    op: 0
+    value: 0.4
+    condition: 0
+  - stat: 10
+    op: 0
+    value: -0.5
+    condition: 0

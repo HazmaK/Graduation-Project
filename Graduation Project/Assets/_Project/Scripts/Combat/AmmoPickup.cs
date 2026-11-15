@@ -1,5 +1,6 @@
 using UnityEngine;
 using RetroFPS.Weapons;
+using RetroFPS.Stats;
 
 namespace RetroFPS.Combat
 {
@@ -153,7 +154,9 @@ namespace RetroFPS.Combat
         {
             if (_playerInventory != null)
             {
-                int added = _playerInventory.AddAmmo(ammoType, ammoAmount);
+                int amount = Mathf.RoundToInt(PlayerStats.Get(StatId.AmmoPickupAmount, ammoAmount));
+                if (ammoAmount > 0) amount = Mathf.Max(1, amount);
+                int added = _playerInventory.AddAmmo(ammoType, amount);
                 if (added > 0)
                 {
                     // Combat Audio: Cephane doldurma sesi

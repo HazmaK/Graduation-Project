@@ -1,4 +1,5 @@
 using UnityEngine;
+using RetroFPS.Stats;
 using RetroFPS.Combat;
 using RetroFPS.UI;
 
@@ -50,7 +51,7 @@ namespace RetroFPS.Weapons
         public override bool CanFirePrimary => _primaryCooldownTimer <= 0f;
         public override bool CanFireAlt => _altCooldownTimer <= 0f;
         /// <summary>Remaining hook cooldown fraction; zero is ready.</summary>
-        public float HookCooldownNormalized => hookCooldown <= 0f ? 0f : Mathf.Clamp01(_altCooldownTimer / hookCooldown);
+        public float HookCooldownNormalized => hookCooldown <= 0f ? 0f : Mathf.Clamp01(_altCooldownTimer / (hookCooldown / Mathf.Max(0.05f, PlayerStats.Get(StatId.FireRate, 1f))));
 
         private void Awake()
         {
@@ -118,12 +119,12 @@ namespace RetroFPS.Weapons
             if (cam == null || !CanFirePrimary) return;
             if (!TryConsumeAmmo(PrimaryAmmoCost))
             {
-                _primaryCooldownTimer = 0.25f;
+                _primaryCooldownTimer = 0.25f / Mathf.Max(0.05f, PlayerStats.Get(StatId.FireRate, 1f));
                 if (CombatAudio.Instance != null) CombatAudio.Instance.PlayDryFire();
                 return;
             }
 
-            _primaryCooldownTimer = fireRate;
+            _primaryCooldownTimer = fireRate / Mathf.Max(0.05f, PlayerStats.Get(StatId.FireRate, 1f));
             Vector3 startPos = FirePoint.position;
             Vector3 camForward = cam.transform.forward;
             Vector3 camRight = cam.transform.right;
@@ -144,7 +145,7 @@ namespace RetroFPS.Weapons
                     && !hit.collider.transform.IsChildOf(transform.root))
                 {
                     endPos = hit.point;
-                    AccumulatePellet(hit, damagePerPellet);
+                    AccumulatePellet(hit, damagePerPellet * PlayerStats.Get(StatId.DamageDealt, 1f));
                 }
                 if (i % 3 == 0 && CombatVFXManager.Instance != null)
                     CombatVFXManager.Instance.SpawnBulletTracer(startPos, endPos, new Color(1f, 0.65f, 0.15f));
@@ -228,10 +229,10 @@ namespace RetroFPS.Weapons
             if (_movement.IsGrappling)
             {
                 _movement.StopGrapple(true);
-                _altCooldownTimer = 0.35f;
+                _altCooldownTimer = 0.35f / Mathf.Max(0.05f, PlayerStats.Get(StatId.FireRate, 1f));
                 return;
             }
-            _altCooldownTimer = hookCooldown;
+            _altCooldownTimer = hookCooldown / Mathf.Max(0.05f, PlayerStats.Get(StatId.FireRate, 1f));
             if (_look != null) _look.AddViewPunch(0.8f, 0f);
             if (TryFindEnemyHookTarget(cam, out RaycastHit hit, out IDamageable damageable,
                 out IStunnable stunnable, out Transform enemyTransform))
@@ -239,10 +240,11 @@ namespace RetroFPS.Weapons
                 if (stunnable != null) stunnable.Stun(1.5f, Vector3.zero);
                 if (damageable != null)
                 {
-                    damageable.TakeDamage(10f, hit.point, hit.normal, false);
+                    float hookDamage = 10f * PlayerStats.Get(StatId.DamageDealt, 1f);
+                    damageable.TakeDamage(hookDamage, hit.point, hit.normal, false);
                     NotifyHit(false);
                     if (DamageNumberSystem.Instance != null)
-                        DamageNumberSystem.Instance.SpawnDamageNumber(hit.point, 10f, false);
+                        DamageNumberSystem.Instance.SpawnDamageNumber(hit.point, hookDamage, false);
                 }
                 _movement.StartGrapple(hit.point, hookPullSpeed, enemyTransform);
                 if (CombatAudio.Instance != null) CombatAudio.Instance.PlayGrappleHookLatch(hit.point);

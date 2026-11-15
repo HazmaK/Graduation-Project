@@ -29,6 +29,12 @@ namespace RetroFPS.UI.HUD
         [SerializeField] private HudBannerView bannerView;
         [SerializeField] private BossBarView bossView;
         [SerializeField] private TrueDeathView deathView;
+        [SerializeField] private CardOfferView cardOfferView;
+        [SerializeField] private ActiveCardsHudView activeCardsView;
+        /// <summary>Exclusive card offer presentation owned by this HUD.</summary>
+        public CardOfferView CardOfferView => cardOfferView;
+        /// <summary>Acquired card strip owned by this HUD.</summary>
+        public ActiveCardsHudView ActiveCardsView => activeCardsView;
         private WaveSpawnDirector director;
         private bool started, subscribed, araf, suppressBanners;
         private LanguageSetting lastLanguage;
@@ -90,6 +96,7 @@ namespace RetroFPS.UI.HUD
         {
             healthView?.Initialize(); abilityView?.Initialize(movement, parry); weaponView?.Initialize(ammo);
             encounterView?.Initialize(); bannerView?.Initialize(); deathView?.Initialize(); bossView?.Initialize();
+            cardOfferView?.Initialize(); activeCardsView?.RefreshSnapshot();
         }
         private void OnDisable()
         {

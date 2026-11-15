@@ -1,0 +1,33 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c56e1463869a5404f81f708caa32a28b, type: 3}
+  m_Name: Card_starving_steel
+  m_EditorClassIdentifier: RetroFPS.Gameplay::RetroFPS.Run.Cards.CurseBlessingDefinition
+  id: starving_steel
+  nameKey: hud.card.starving_steel.name
+  boonKey: hud.card.starving_steel.boon
+  curseKey: hud.card.starving_steel.curse
+  flavorKey: hud.card.starving_steel.flavor
+  accentColor: {r: 0.36, g: 0.45, b: 0.55, a: 1}
+  modifiers:
+  - stat: 1
+    op: 0
+    value: 0.5
+    condition: 0
+  - stat: 8
+    op: 1
+    value: 2
+    condition: 0
+  - stat: 9
+    op: 1
+    value: 0
+    condition: 0

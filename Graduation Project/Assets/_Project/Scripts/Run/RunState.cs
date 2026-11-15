@@ -1,3 +1,6 @@
+using RetroFPS.Run.Cards;
+using RetroFPS.Stats;
+
 namespace RetroFPS.Run
 {
     /// <summary>
@@ -19,7 +22,7 @@ namespace RetroFPS.Run
     public sealed class RunState
     {
         private readonly int _seed;
-        private readonly RunRandom[] _streams = new RunRandom[7];
+        private readonly RunRandom[] _streams = new RunRandom[8];
         private int _floorIndex;
         private bool _arafChargeUsed;
         private RunPhase _phase;
@@ -30,6 +33,15 @@ namespace RetroFPS.Run
 
         /// <summary>Unscaled run duration, frozen at true death.</summary>
         public float ElapsedSeconds => _elapsedSeconds;
+
+        /// <summary>Stat modifiers owned by this run.</summary>
+        public StatSheet Stats { get; }
+
+        /// <summary>Acquired cards contributing to this run's statistics.</summary>
+        public CardInventory Cards { get; }
+
+        /// <summary>Deterministic offers for this run's Araf visit.</summary>
+        public CardOfferRoller CardOffers { get; }
 
         /// <summary>
         /// Koşunun rastgelelik tohumu (Seed).
@@ -66,6 +78,9 @@ namespace RetroFPS.Run
             _floorIndex = 0;
             _arafChargeUsed = false;
             _phase = RunPhase.Tower;
+            Stats = new StatSheet();
+            Cards = new CardInventory(Stats);
+            CardOffers = new CardOfferRoller(GetStream(RunStream.ArafCards));
         }
 
         /// <summary>

@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using RetroFPS.Run.Cards;
 using UnityEngine;
 
 namespace RetroFPS.Run.Labyrinth
@@ -12,6 +13,8 @@ namespace RetroFPS.Run.Labyrinth
         [SerializeField] private LabyrinthKit kit;
         [SerializeField] private ArafRoomTable roomTable;
         [SerializeField] private ArafLevel level;
+        [SerializeField] private CardCatalog cardCatalog;
+        [SerializeField] private ArafCardAltar cardAltarPrefab;
         [SerializeField] private float eliteDamage = 1.4f;
         [SerializeField] private float eliteSpeed = 1.4f;
         [SerializeField] private float eliteHealth = 1.25f;
@@ -275,6 +278,14 @@ namespace RetroFPS.Run.Labyrinth
         {
             for (int i = 0; i < _slots.Length; i++)
                 if (_slots[i] != null && _slots[i].Room == room) _slots[i].SetBarriersActive(false);
+
+            if (room == null || room.Definition == null || cardCatalog == null || cardAltarPrefab == null) return;
+            ArafRoomKind kind = room.Definition.Kind;
+            if (kind != ArafRoomKind.Combat && kind != ArafRoomKind.Ambush) return;
+            RunState run = RunEvents.CurrentRun;
+            if (run == null || !run.CardOffers.TryRoll(cardCatalog, run.Cards, out CardOffer offer)) return;
+            ArafCardAltar altar = Instantiate(cardAltarPrefab, room.transform.position, room.transform.rotation, room.transform);
+            altar.Initialize(offer);
         }
 
         private void PublishRoomsChanged()

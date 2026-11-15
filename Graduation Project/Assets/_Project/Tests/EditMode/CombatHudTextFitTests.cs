@@ -78,6 +78,25 @@ namespace RetroFPS.Tests
                 FitKeys(boss, "nameText", "boss.judge.name");
                 FitKeys(banner, "firstLine", "hud.banner.arenaSealed", "hud.banner.arenaCleared", "hud.banner.wave", "hud.banner.waveCleared");
                 FitKeys(banner, "secondLine", "hud.banner.wave", "hud.banner.waveCleared");
+                var offer = prefab.GetComponentInChildren<CardOfferView>(true);
+                Assert.That(offer, Is.Not.Null, "Rebuild Combat HUD to include card offers.");
+                var choice = (CardOfferChoiceView)LocalizationHudTestContext.Get(offer, "first");
+                var cardBanner = prefab.GetComponentInChildren<CardAcquiredBannerView>(true);
+                var active = prefab.GetComponentInChildren<ActiveCardsHudView>(true);
+                var rows = (TMP_Text[])LocalizationHudTestContext.Get(active, "rows");
+                string[] cardIds = { "blood_debt", "starving_steel", "last_breath", "bone_wings", "brimming_chalice", "glutton_barrel" };
+                foreach (string id in cardIds)
+                {
+                    string prefix = "hud.card." + id;
+                    string name = table.Get(prefix + ".name", language);
+                    CheckFit(choice.NameText, name, measured, 1);
+                    CheckFit(choice.BoonText, table.Get(prefix + ".boon", language), measured, 3);
+                    CheckFit(choice.CurseText, table.Get(prefix + ".curse", language), measured, 2);
+                    CheckFit(choice.FlavorText, table.Get(prefix + ".flavor", language), measured, 3);
+                    foreach (TMP_Text row in rows) CheckFit(row, name, measured, 1);
+                    CheckFit((TMP_Text)LocalizationHudTestContext.Get(cardBanner, "label"),
+                        string.Format(CultureInfo.InvariantCulture, table.Get("hud.card.acquired.banner", language), name), measured, 1);
+                }
 
                 void FitKeys(object view, string field, params string[] keys)
                 {

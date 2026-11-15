@@ -191,6 +191,8 @@ MonoBehaviour:
   kit: {fileID: 11400000, guid: f158408429c95fe4ebfd83d00824ec82, type: 2}
   roomTable: {fileID: 11400000, guid: 10fb7085b84497540884de7e04bde47c, type: 2}
   level: {fileID: 774307456}
+  cardCatalog: {fileID: 11400000, guid: 21ed4c20eb23f2d4fb4f33156750578c, type: 2}
+  cardAltarPrefab: {fileID: 4921400497666458138, guid: 61c784924e8e223409cd05adc808d25a, type: 3}
   eliteDamage: 1.4
   eliteSpeed: 1.4
   eliteHealth: 1.25

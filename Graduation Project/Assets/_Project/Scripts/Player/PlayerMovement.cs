@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
+using RetroFPS.Stats;
 
 namespace RetroFPS
 {
@@ -96,6 +97,10 @@ namespace RetroFPS
         private float _meteorSlamSpeed;
         private System.Action _onMeteorLanded;
 
+        private float _effectiveWalkSpeed;
+        private bool _inMovementStep;
+        private float EffectiveWalkSpeed => _inMovementStep ? _effectiveWalkSpeed : WalkSpeed;
+
         private float _speedBoostMultiplier = 1.0f;
         private float _speedBoostTimer = 0f;
 
@@ -113,7 +118,7 @@ namespace RetroFPS
         public event System.Action OnSlideStarted;
         public event System.Action OnSlideEnded;
         public Vector3 Velocity => _velocity;
-        public float WalkSpeed => walkSpeed;
+        public float WalkSpeed => PlayerStats.Get(StatId.MoveSpeed, walkSpeed);
         public float CameraBaseHeight => _cameraBaseHeight;
         public Vector2 InputVector => _inputVector;
         public float CurrentHorizontalSpeed => new Vector3(_velocity.x, 0f, _velocity.z).magnitude;
@@ -129,8 +134,15 @@ namespace RetroFPS
         /// <summary>Maximum number of available dash charges.</summary>
         public int MaxDashCharges => maxDashCharges;
         /// <summary>Recovered fraction of the next charge; one when full or recharge is instantaneous.</summary>
-        public float DashRechargeNormalized => _currentDashCharges >= maxDashCharges || dashRechargeTime <= 0f
-            ? 1f : Mathf.Clamp01(_dashRechargeTimer / dashRechargeTime);
+        public float DashRechargeNormalized
+        {
+            get
+            {
+                float rechargeTime = PlayerStats.Get(StatId.DashRechargeTime, dashRechargeTime);
+                return _currentDashCharges >= maxDashCharges || rechargeTime <= 0f
+                    ? 1f : Mathf.Clamp01(_dashRechargeTimer / rechargeTime);
+            }
+        }
         /// <summary>Reports current and maximum dash charges after spending, recovering or resetting.</summary>
         public event System.Action<int, int> OnDashChargesChanged;
         public Vector3 GrappleTargetPoint => (_grappleTargetTransform != null) ? (_grappleTargetTransform.position + _grappleTargetOffset) : _grappleTargetPoint;
@@ -265,6 +277,8 @@ namespace RetroFPS
                 _jumpBufferTimer = 0f;
                 return;
             }
+            _effectiveWalkSpeed = WalkSpeed;
+            _inMovementStep = true;
             _landingFrictionTimer = Mathf.Max(0f, _landingFrictionTimer - Time.deltaTime);
             CheckGround();
             ReadInput();
@@ -343,6 +357,7 @@ namespace RetroFPS
                 _controller.enabled = true;
                 _velocity.y = 0f;
             }
+            _inMovementStep = false;
         }
 
         #region Girdi Okuma
@@ -458,7 +473,7 @@ namespace RetroFPS
             wishDir.Normalize();
 
             if (_landingFrictionTimer <= 0f) ApplyFriction(groundFriction);
-            float targetSpeed = _isCrouching ? crouchSpeed : (walkSpeed * _speedBoostMultiplier);
+            float targetSpeed = _isCrouching ? crouchSpeed : (EffectiveWalkSpeed * _speedBoostMultiplier);
             Accelerate(wishDir, targetSpeed, groundAcceleration);
         }
 
@@ -641,14 +656,14 @@ namespace RetroFPS
 
             // Dinamik Easing Out: İlk anlarda yüksek hız korunarak belirgin bir mesafe (~7 metre) kat edilir
             float t = 1f - Mathf.Clamp01(_dashTimer / dashDuration);
-            float currentSpeed = Mathf.Lerp(dashSpeed, walkSpeed * 1.25f, Mathf.Pow(t, 1.5f));
+            float currentSpeed = Mathf.Lerp(dashSpeed, EffectiveWalkSpeed * 1.25f, Mathf.Pow(t, 1.5f));
             _velocity = _dashDirection * currentSpeed;
 
             if (_dashTimer <= 0f)
             {
                 _isDashing = false;
                 _isInvincible = false;
-                _velocity = _dashDirection * walkSpeed;
+                _velocity = _dashDirection * EffectiveWalkSpeed;
             }
         }
 
@@ -657,7 +672,7 @@ namespace RetroFPS
             if (_currentDashCharges < maxDashCharges)
             {
                 _dashRechargeTimer += Time.deltaTime;
-                if (_dashRechargeTimer >= dashRechargeTime)
+                if (_dashRechargeTimer >= PlayerStats.Get(StatId.DashRechargeTime, dashRechargeTime))
                 {
                     _dashRechargeTimer = 0f;
                     _currentDashCharges++;
@@ -711,9 +726,9 @@ namespace RetroFPS
             else
             {
                 Vector3 horiz = new Vector3(_velocity.x, 0f, _velocity.z);
-                if (horiz.magnitude > walkSpeed * 1.4f)
+                if (horiz.magnitude > EffectiveWalkSpeed * 1.4f)
                 {
-                    _velocity = horiz.normalized * (walkSpeed * 1.55f) + Vector3.up * Mathf.Max(_velocity.y, 3.2f);
+                    _velocity = horiz.normalized * (EffectiveWalkSpeed * 1.55f) + Vector3.up * Mathf.Max(_velocity.y, 3.2f);
                 }
             }
 
@@ -784,7 +799,7 @@ namespace RetroFPS
             if (!_isLunging) return;
             _isLunging = false;
             _isInvincible = false;
-            _velocity = _lungeDirection * (walkSpeed * 1.35f);
+            _velocity = _lungeDirection * (EffectiveWalkSpeed * 1.35f);
             var cb = _onLungeFinished;
             _onLungeFinished = null;
             cb?.Invoke();

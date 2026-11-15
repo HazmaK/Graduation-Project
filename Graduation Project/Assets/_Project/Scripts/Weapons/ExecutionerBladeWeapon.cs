@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using RetroFPS.Combat;
+using RetroFPS.Stats;
 using RetroFPS.UI;
 
 namespace RetroFPS.Weapons
@@ -225,6 +226,7 @@ namespace RetroFPS.Weapons
 
         private void ExecuteSlashCone(Camera cam, float damage, bool isFinisher)
         {
+            damage *= PlayerStats.Get(StatId.DamageDealt, 1f) * PlayerStats.Get(StatId.MeleeDamage, 1f);
             float range = isFinisher ? (slashRange * 1.15f) : slashRange;
             float angleLimit = isFinisher ? (slashAngle * 0.75f) : slashAngle;
 
@@ -379,7 +381,7 @@ namespace RetroFPS.Weapons
                     bool wasAlive = enemy != null && enemy.IsAlive;
                     bool wasStunned = stun != null && stun.IsStunned;
                     uint stunSequence = stun != null ? stun.StunSequence : 0;
-                    float finalDamage = lungeDamage;
+                    float finalDamage = lungeDamage * PlayerStats.Get(StatId.DamageDealt, 1f) * PlayerStats.Get(StatId.MeleeDamage, 1f);
                     MeleeDamageScope.Begin();
                     try { target.TakeDamage(finalDamage, hit.point, hit.normal, true); }
                     finally { MeleeDamageScope.End(); }
@@ -406,7 +408,7 @@ namespace RetroFPS.Weapons
             // 1. Oyuncuya +25 HP Can Sömürüsü (Vampiric Leech)
             if (_playerHealth != null)
             {
-                _playerHealth.Heal(lungeHealAmount, true, 125f);
+                _playerHealth.Heal(PlayerStats.Get(StatId.HarvestHeal, lungeHealAmount), true, 125f);
             }
 
             // 2. 1.5 saniyelik Adrenalin Hız Patlaması (%35)
@@ -492,14 +494,15 @@ namespace RetroFPS.Weapons
                         stunnable.Stun(slamStunDuration, knockDir * 4.5f);
                     }
 
+                    float damage = slamDamage * PlayerStats.Get(StatId.DamageDealt, 1f) * PlayerStats.Get(StatId.MeleeDamage, 1f);
                     MeleeDamageScope.Begin();
-                    try { target.TakeDamage(slamDamage, hitPos, -knockDir, true); }
+                    try { target.TakeDamage(damage, hitPos, -knockDir, true); }
                     finally { MeleeDamageScope.End(); }
                     NotifyHit(true);
 
                     if (DamageNumberSystem.Instance != null)
                     {
-                        DamageNumberSystem.Instance.SpawnDamageNumber(hitPos, slamDamage, true);
+                        DamageNumberSystem.Instance.SpawnDamageNumber(hitPos, damage, true);
                     }
                 }
             }

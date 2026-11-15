@@ -4,6 +4,7 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using RetroFPS.Combat;
 using RetroFPS.Pause;
+using RetroFPS.Stats;
 
 namespace RetroFPS.Run
 {
@@ -81,6 +82,7 @@ namespace RetroFPS.Run
             int seed = fixedSeed != 0 ? fixedSeed : Environment.TickCount;
             _state = new RunState(seed);
             RunEvents.SetCurrentRun(_state);
+            PlayerStats.SetCurrent(_state.Stats);
             if (logTransitions)
             {
                 Debug.Log($"<color=crimson><b>[RUN DIRECTOR]</b></color> Koşu başladı (Seed: {_state.Seed}).");
@@ -128,6 +130,10 @@ namespace RetroFPS.Run
 
         private void OnDestroy()
         {
+            if (_state != null && ReferenceEquals(PlayerStats.Current, _state.Stats))
+            {
+                PlayerStats.SetCurrent(null);
+            }
             _flowCancellation?.Cancel();
             _flowCancellation?.Dispose();
             if (RunEvents.CurrentRun == _state)

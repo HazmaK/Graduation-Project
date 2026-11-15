@@ -150,6 +150,7 @@ namespace RetroFPS.Editor
                 }
             }
 
+            if (result == 0) CurseCardBuilder.WireArafScene();
             if (result == 0)
                 Debug.Log("<color=green>[ArafSceneBuilder]</color> Araf labirenti, kit/oda prefabları ve RunDirector kuruldu.");
             return result;

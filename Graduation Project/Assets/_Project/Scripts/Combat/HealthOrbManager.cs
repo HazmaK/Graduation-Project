@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using RetroFPS.Stats;
 
 namespace RetroFPS.Combat
 {
@@ -201,7 +202,9 @@ namespace RetroFPS.Combat
             finalChance = Mathf.Clamp(finalChance, minDropChance, maxDropChance);
 
             // 2. Şans Zarını At
-            bool shouldDrop = Random.value <= finalChance;
+            finalChance = PlayerStats.Get(StatId.OrbDropChance, finalChance);
+            float roll = Random.value;
+            bool shouldDrop = finalChance > 0f && roll <= finalChance;
 
             if (!shouldDrop)
             {
