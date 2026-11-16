@@ -70,6 +70,16 @@ MonoBehaviour:
       spawnPattern: 1
       runInParallel: 1
       threatCostOverride: 0
+    - enemyPrefab: {fileID: 7637322481129231680, guid: a88eba293ab871d4ba7c37b1af78554f, type: 3}
+      count: 1
+      spawnInterval: 1
+      isAirEnemy: 0
+      targetZoneTag: 
+      delayFromWaveStart: 2
+      batchSize: 1
+      spawnPattern: 0
+      runInParallel: 1
+      threatCostOverride: 0
   - waveName: "Faz 3: Son Direni\u015F (Final)"
     preWaveDelay: 2.5
     maxConcurrentEnemies: 10
@@ -100,5 +110,15 @@ MonoBehaviour:
       delayFromWaveStart: 3
       batchSize: 2
       spawnPattern: 2
+      runInParallel: 1
+      threatCostOverride: 0
+    - enemyPrefab: {fileID: 7637322481129231680, guid: a88eba293ab871d4ba7c37b1af78554f, type: 3}
+      count: 1
+      spawnInterval: 1
+      isAirEnemy: 0
+      targetZoneTag: 
+      delayFromWaveStart: 2
+      batchSize: 1
+      spawnPattern: 0
       runInParallel: 1
       threatCostOverride: 0

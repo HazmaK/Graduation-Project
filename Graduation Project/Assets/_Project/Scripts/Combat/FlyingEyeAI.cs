@@ -4,13 +4,22 @@ using RetroFPS.Combat;
 
 namespace RetroFPS
 {
+    /// <summary>Locomotion and attack phases of the Flying Eye.</summary>
     public enum FlyingEyeState
     {
+        /// <summary>Waiting for a patrol or target.</summary>
         Idle,
+        /// <summary>Moving between patrol destinations.</summary>
         Patrol,
+        /// <summary>Keeping distance and choosing attacks.</summary>
         Combat,
+        /// <summary>Stationary attack telegraph.</summary>
         Windup,
+        /// <summary>Tangent burst following a projectile launch.</summary>
+        Reposition,
+        /// <summary>Interrupted or grounded by a stun.</summary>
         Stagger,
+        /// <summary>Playing death or waiting for respawn.</summary>
         Dead
     }
 
@@ -23,68 +32,160 @@ namespace RetroFPS
     /// - Gözbebeği Kritik Vuruş Noktasıdır (2x Headshot / Crit).
     /// </summary>
     [RequireComponent(typeof(CharacterController))]
-    public class FlyingEyeAI : MonoBehaviour, IDamageable, IAlertableEnemy, IStunnable, IEncounterEnemy, IThreatCost, IEliteScalable, IStunState
+    public class FlyingEyeAI : MonoBehaviour, IDamageable, IAlertableEnemy, IStunnable, IEncounterEnemy, IThreatCost, IEliteScalable, IStunState, IReflectPunishable
     {
         [Header("Sağlık ve Ödül")]
-        [SerializeField] private float maxHealth = 90f; // Havada olduğu için biraz daha kırılgan
-        [SerializeField] private float respawnTime = 4.0f;
-        [SerializeField] private bool autoRespawn = true;
+        [Tooltip("Flying Eye tuning or authored reference.")] [SerializeField] private float maxHealth = 90f; // Havada olduğu için biraz daha kırılgan
+        [Tooltip("Flying Eye tuning or authored reference.")] [SerializeField] private float respawnTime = 4.0f;
+        [Tooltip("Flying Eye tuning or authored reference.")] [SerializeField] private bool autoRespawn = true;
 
         [Tooltip("Dalga tehdit bütçesindeki ağırlık (Ghoul = 1 referans)")]
         [SerializeField] private float threatCost = 2f;
 
+        /// <summary>Whether this eye respawns itself after death; disabled for director-managed eyes.</summary>
         public bool AutoRespawn { get => autoRespawn; set => autoRespawn = value; }
+        /// <summary>Threat budget weight used by the wave director.</summary>
         public float ThreatCost => threatCost;
 
         [Header("Uçuş ve Hareket")]
-        [SerializeField] private float flySpeed = 3.8f;
-        [SerializeField] private float rotationSpeed = 8.0f;
-        [SerializeField] private float hoverHeight = 2.6f; // Zeminden ideal uçuş yüksekliği
-        [SerializeField] private float maxFlyHeight = 3.6f; // Asla 3.6m üzerine çıkamaz
-        [SerializeField] private float minFlyHeight = 1.8f; // Asla 1.8m altına inemez
-        [SerializeField] private float bobAmplitude = 0.22f; // Havada hafif süzülme dalgalanması
-        [SerializeField] private float bobFrequency = 2.0f;
-        [SerializeField] private float preferredDistance = 9.5f; // Oyuncuyla tutmak istediği ideal mesafe
-        [SerializeField] private float minDistance = 5.0f; // Çok yaklaşılırsa geri çekilme mesafesi
+        [Tooltip("Flying Eye tuning or authored reference.")] [SerializeField] private float flySpeed = 3.8f;
+        [Tooltip("Flying Eye tuning or authored reference.")] [SerializeField] private float rotationSpeed = 8.0f;
+        [Tooltip("Flying Eye tuning or authored reference.")] [SerializeField] private float hoverHeight = 2.6f; // Zeminden ideal uçuş yüksekliği
+        [Tooltip("Flying Eye tuning or authored reference.")] [SerializeField] private float maxFlyHeight = 3.6f; // Asla 3.6m üzerine çıkamaz
+        [Tooltip("Flying Eye tuning or authored reference.")] [SerializeField] private float minFlyHeight = 1.8f; // Asla 1.8m altına inemez
+        [Tooltip("Flying Eye tuning or authored reference.")] [SerializeField] private float bobAmplitude = 0.22f; // Havada hafif süzülme dalgalanması
+        [Tooltip("Flying Eye tuning or authored reference.")] [SerializeField] private float bobFrequency = 2.0f;
+        [Tooltip("Flying Eye tuning or authored reference.")] [SerializeField] private float preferredDistance = 9.5f; // Oyuncuyla tutmak istediği ideal mesafe
+        [Tooltip("Flying Eye tuning or authored reference.")] [SerializeField] private float minDistance = 5.0f; // Çok yaklaşılırsa geri çekilme mesafesi
 
         [Header("Görüş ve Algılama")]
-        [SerializeField] private float detectionRange = 22f;
-        [SerializeField] private float fieldOfView = 125f; // Geniş görüş açısı
-        [SerializeField] private float proximityRange = 3.5f;
-        [SerializeField] private float loseSightDistance = 26f;
-        [SerializeField] private float loseSightDuration = 4.0f;
+        [Tooltip("Flying Eye tuning or authored reference.")] [SerializeField] private float detectionRange = 22f;
+        [Tooltip("Flying Eye tuning or authored reference.")] [SerializeField] private float fieldOfView = 125f; // Geniş görüş açısı
+        [Tooltip("Flying Eye tuning or authored reference.")] [SerializeField] private float proximityRange = 3.5f;
+        [Tooltip("Flying Eye tuning or authored reference.")] [SerializeField] private float loseSightDistance = 26f;
+        [Tooltip("Flying Eye tuning or authored reference.")] [SerializeField] private float loseSightDuration = 4.0f;
 
         [Header("Menzilli Saldırı")]
-        [SerializeField] private float attackRange = 20f;
-        [SerializeField] private float projectileSpeed = 13.5f;
-        [SerializeField] private float projectileDamage = 18f;
-        [SerializeField] private float attackWindup = 0.50f; // Ateş etmeden önce gözün parlayıp şarj olma süresi
-        [SerializeField] private float attackCooldown = 2.2f;
-        [SerializeField] private Transform firePoint;
+        [Tooltip("Flying Eye tuning or authored reference.")] [SerializeField] private float attackRange = 20f;
+        [Tooltip("Flying Eye tuning or authored reference.")] [SerializeField] private float lightProjectileSpeed = 16f;
+        [Tooltip("Flying Eye tuning or authored reference.")] [SerializeField] private float projectileDamage = 18f;
+        [Tooltip("Flying Eye tuning or authored reference.")] [SerializeField] private float lightWindup = 0.45f; // Ateş etmeden önce gözün parlayıp şarj olma süresi
+        [Tooltip("Flying Eye tuning or authored reference.")] [SerializeField] private float lightCooldown = 1.6f;
+        [Tooltip("Flying Eye tuning or authored reference.")] [SerializeField] private Transform firePoint;
+
+        // Retain the old prefab's serialized tuning verbatim; the shooter uses the new light/heavy settings.
+        [HideInInspector, Tooltip("Preserved legacy body tint; presentation now belongs to FlyingEyeView.")] [SerializeField] private Color normalColor = Color.white;
+        [HideInInspector, Tooltip("Preserved legacy charge tint; presentation now belongs to FlyingEyeView.")] [SerializeField] private Color windupGlowColor = new Color(1f, 0.15f, 0.9f);
+
+        [Header("Shooter attacks")]
+        [Tooltip("Presentation and authored sockets.")] [SerializeField] private FlyingEyeView view;
+        [Tooltip("Light launches required before requesting a heavy.")] [SerializeField] private int lightsBeforeHeavy = 2;
+        [Tooltip("Orbs reserved during Awake.")] [SerializeField] private int projectilePrewarmCount = 6;
+        [Tooltip("Light collision radius in metres.")] [SerializeField] private float lightRadius = 0.35f;
+        [Tooltip("Light visual diameter scale.")] [SerializeField] private float lightScale = 0.40f;
+        [Tooltip("Light lifetime in seconds.")] [SerializeField] private float lightLifetime = 5f;
+        [Tooltip("Fraction of intercept prediction for lights.")] [SerializeField] private float lightLead = 0.6f;
+        [Tooltip("Maximum light prediction in seconds.")] [SerializeField] private float lightMaxLead = 0.6f;
+        [Tooltip("Reflected light homing degrees per second.")] [SerializeField] private float lightReflectTurnRate = 360f;
+        [Tooltip("Reflected light homing cone in degrees.")] [SerializeField] private float lightReflectAngle = 75f;
+        [Tooltip("Light bolt tint.")] [SerializeField] private Color lightColor = new Color(0.85f, 0.15f, 0.95f);
+        [Tooltip("Heavy windup in seconds.")] [SerializeField] private float heavyWindup = 1.1f;
+        [Tooltip("Heavy speed in metres per second.")] [SerializeField] private float heavySpeed = 9f;
+        [Tooltip("Heavy damage before elite scaling.")] [SerializeField] private float heavyDamage = 35f;
+        [Tooltip("Heavy collision radius in metres.")] [SerializeField] private float heavyRadius = 0.6f;
+        [Tooltip("Heavy visual diameter scale.")] [SerializeField] private float heavyScale = 0.9f;
+        [Tooltip("Heavy lifetime in seconds.")] [SerializeField] private float heavyLifetime = 7f;
+        [Tooltip("Fraction of intercept prediction for heavies.")] [SerializeField] private float heavyLead = 0.9f;
+        [Tooltip("Maximum heavy prediction in seconds.")] [SerializeField] private float heavyMaxLead = 0.8f;
+        [Tooltip("Reflected heavy homing degrees per second.")] [SerializeField] private float heavyReflectTurnRate = 360f;
+        [Tooltip("Reflected heavy homing cone in degrees.")] [SerializeField] private float heavyReflectAngle = 180f;
+        [Tooltip("Heavy orb tint.")] [SerializeField] private Color heavyColor = new Color(1f, 0.35f, 0.05f);
+        [Tooltip("Cooldown after a heavy launch.")] [SerializeField] private float heavyCooldown = 2.2f;
+        [Tooltip("Seconds before heavy launch when direction locks.")] [SerializeField] private float heavyAimLockSeconds = 0.15f;
+        [Tooltip("Minimum cooldown after an interrupted windup.")] [SerializeField] private float cancelledAttackCooldown = 1f;
+        [Tooltip("Aim offset above the player's position.")] [SerializeField] private float aimHeight = 1f;
+        [Tooltip("Forward fire offset without a view or socket.")] [SerializeField] private float fallbackFireOffset = 0.65f;
+
+        [Header("Evasion and reflected heavy punishment")]
+        [Tooltip("Combat strafe fraction of fly speed.")] [SerializeField] private float combatStrafeFactor = 0.9f;
+        [Tooltip("Post-launch tangent burst duration.")] [SerializeField] private float repositionDuration = 0.55f;
+        [Tooltip("Post-launch burst speed multiplier.")] [SerializeField] private float repositionSpeedFactor = 2.4f;
+        [Tooltip("Lowest random hover target above minimum height.")] [SerializeField] private float hoverTargetInset = 0.3f;
+        [Tooltip("Non-stagger hit jink duration.")] [SerializeField] private float jinkDuration = 0.3f;
+        [Tooltip("Non-stagger hit jink speed multiplier.")] [SerializeField] private float jinkSpeedFactor = 2f;
+        [Tooltip("Minimum interval between hit jinks.")] [SerializeField] private float jinkCooldown = 1.2f;
+        [Tooltip("Maximum-health damage fraction from an elite's reflected heavy.")] [SerializeField] private float eliteHeavyReflectDamageFraction = 0.45f;
+        [Tooltip("Elite grounded stun duration in seconds.")] [SerializeField] private float groundedStunDuration = 3f;
+        [Tooltip("Grounded height above the ground, within blade reach.")] [SerializeField] private float groundedHeight = 0.7f;
+        [Tooltip("Extra attack recovery after stun.")] [SerializeField] private float stunRecoveryCooldown = 0.6f;
+        [Tooltip("Damage beyond remaining health for a non-elite reflected heavy.")] [SerializeField] private float reflectedKillMargin = 1f;
+        [Tooltip("Gibs from reflected heavy kills.")] [SerializeField] private int reflectedHeavyGibCount = 10;
+        [Tooltip("Gibs from ordinary immediate gib kills.")] [SerializeField] private int normalGibCount = 6;
+        [Tooltip("Damage required to stagger without a critical hit.")] [SerializeField] private float staggerDamageThreshold = 30f;
+        [Tooltip("Stagger duration from damage.")] [SerializeField] private float damageStaggerDuration = 0.3f;
+        [Tooltip("Damage converted to knockback speed.")] [SerializeField] private float hitKnockbackFactor = 0.12f;
+        [Tooltip("Minimum damage knockback speed.")] [SerializeField] private float minHitKnockback = 2f;
+        [Tooltip("Maximum damage knockback speed.")] [SerializeField] private float maxHitKnockback = 9f;
+        [Tooltip("Noncritical hit flash duration.")] [SerializeField] private float hitFlashSeconds = 0.06f;
+        [Tooltip("Critical hit flash duration.")] [SerializeField] private float criticalFlashSeconds = 0.12f;
+        [Tooltip("Accepted stun flash tint.")] [SerializeField] private Color stunColor = new Color(1f, 0.9f, 0.2f);
 
         [Header("Sersemleme (Stun)")]
         [Tooltip("Stun knockback başlangıç hızı (m/s). 7/s sönümle ~3.5 m itme verir.")]
         [SerializeField] private float stunKnockbackSpeed = 24.5f;
 
         [Header("Devriye ve Sürü")]
-        [SerializeField] private float patrolRadius = 7.0f;
-        [SerializeField] private float alertRadius = 12.0f;
+        [Tooltip("Flying Eye tuning or authored reference.")] [SerializeField] private float patrolRadius = 7.0f;
+        [Tooltip("Flying Eye tuning or authored reference.")] [SerializeField] private float alertRadius = 12.0f;
 
         [Header("Görsel Efekt Renkleri")]
-        [SerializeField] private Color normalColor = Color.white;
-        [SerializeField] private Color windupGlowColor = new Color(1.0f, 0.15f, 0.9f); // Parlayan büyü moru
-        [SerializeField] private Color hitFlashColor = new Color(2.2f, 2.2f, 2.2f, 1f);
-        [SerializeField] private Color criticalHitFlashColor = new Color(3.2f, 2.8f, 0.35f, 1f);
+        [Tooltip("Flying Eye tuning or authored reference.")] [SerializeField] private Color hitFlashColor = new Color(2.2f, 2.2f, 2.2f, 1f);
+        [Tooltip("Flying Eye tuning or authored reference.")] [SerializeField] private Color criticalHitFlashColor = new Color(3.2f, 2.8f, 0.35f, 1f);
+
+        [Header("Legacy movement, hit and death tuning")]
+        [Tooltip("Seconds between late player discovery attempts.")] [SerializeField] private float playerSearchInterval = 0.5f;
+        [Tooltip("Exponential knockback decay per second.")] [SerializeField] private float knockbackDecay = 7f;
+        [Tooltip("Initial idle duration range in seconds.")] [SerializeField] private Vector2 initialIdleDuration = new Vector2(1f, 2.5f);
+        [Tooltip("Idle duration range between patrol legs.")] [SerializeField] private Vector2 patrolIdleDuration = new Vector2(1.5f, 3f);
+        [Tooltip("Patrol leg timeout range in seconds.")] [SerializeField] private Vector2 patrolDuration = new Vector2(4f, 7f);
+        [Tooltip("Distance ending a patrol leg.")] [SerializeField] private float patrolArrivalDistance = 1f;
+        [Tooltip("Patrol fraction of fly speed.")] [SerializeField] private float patrolSpeedFactor = 0.6f;
+        [Tooltip("Idle duration after losing the player.")] [SerializeField] private float lostSightIdleDuration = 2f;
+        [Tooltip("Retreat fraction of fly speed.")] [SerializeField] private float retreatSpeedFactor = 0.9f;
+        [Tooltip("Extra distance beyond preferred range before approaching.")] [SerializeField] private float approachDistanceSlack = 2.5f;
+        [Tooltip("Seconds between random combat strafe direction choices.")] [SerializeField] private Vector2 strafeDuration = new Vector2(1.2f, 2.4f);
+        [Tooltip("Pupil and head hitbox damage multiplier.")] [SerializeField] private float criticalDamageMultiplier = 2f;
+        [Tooltip("Ground ray start above the eye.")] [SerializeField] private float groundProbeOffset = 0.5f;
+        [Tooltip("Ground ray maximum length.")] [SerializeField] private float groundProbeDistance = 25f;
+        [Tooltip("Altitude correction fraction of fly speed.")] [SerializeField] private float hoverSpeedFactor = 2f;
+        [Tooltip("Line of sight origin forward from body.")] [SerializeField] private float sightForwardOffset = 0.5f;
+        [Tooltip("Line of sight target above player position.")] [SerializeField] private float sightTargetHeight = 1.1f;
+        [Tooltip("Falling corpse acceleration.")] [SerializeField] private float deathGravity = 16f;
+        [Tooltip("Maximum corpse tumble duration before gibbing.")] [SerializeField] private float delayedGibTime = 0.55f;
+        [Tooltip("Ground proximity triggering corpse gibs.")] [SerializeField] private float deathGroundOffset = 0.4f;
+        [Tooltip("Gib count after a tumbling death.")] [SerializeField] private int delayedGibCount = 5;
+        [Tooltip("Killing damage that always causes gibs.")] [SerializeField] private float gibDamageThreshold = 35f;
+        [Tooltip("Health below zero that always causes gibs.")] [SerializeField] private float gibOverkillThreshold = 15f;
+        [Tooltip("Ordinary kill probability of immediate gibs.")] [SerializeField] private float gibChance = 0.4f;
+        [Tooltip("Minimum tumble angular velocity on each axis.")] [SerializeField] private Vector3 deathSpinMin = new Vector3(350f, 450f, 250f);
+        [Tooltip("Maximum tumble angular velocity on each axis.")] [SerializeField] private Vector3 deathSpinMax = new Vector3(650f, 750f, 550f);
+        [Tooltip("Corpse initial knockback speed.")] [SerializeField] private float deathKnockbackSpeed = 2.2f;
+        [Tooltip("Corpse initial upward speed.")] [SerializeField] private float deathLiftSpeed = 1.4f;
+        [Tooltip("Critical hitstop duration and time scale.")] [SerializeField] private Vector2 criticalHitstop = new Vector2(0.04f, 0.03f);
+        [Tooltip("Stun hitstop duration and time scale.")] [SerializeField] private Vector2 stunHitstop = new Vector2(0.08f, 0.02f);
+        [Tooltip("Death hitstop duration and time scale.")] [SerializeField] private Vector2 deathHitstop = new Vector2(0.07f, 0.03f);
+        [Tooltip("Health orb reward tier without a dropper.")] [SerializeField] private int fallbackDropTier = 2;
+        [Tooltip("Root scale pop duration on respawn.")] [SerializeField] private float respawnPopDuration = 0.22f;
+        [Tooltip("Normalized time of the respawn scale peak.")] [SerializeField] private float respawnPopPeakTime = 0.7f;
+        [Tooltip("Initial root scale multiplier during respawn.")] [SerializeField] private float respawnPopStartScale = 0.1f;
+        [Tooltip("Peak root scale multiplier during respawn.")] [SerializeField] private float respawnPopPeakScale = 1.15f;
 
         private readonly RaycastHit[] _sightHits = new RaycastHit[32];
         private EnemyHealthDropper _healthDropper;
         private EnemyAmmoDropper _ammoDropper;
         private CharacterController _controller;
         private Transform _playerTransform;
-        private PlayerHealth _playerHealth;
         private float _playerSearchTimer;
-        private const float PlayerSearchInterval = 0.5f;
-        private const float KnockbackDecay = 7f;
 
         private FlyingEyeState _currentState = FlyingEyeState.Idle;
         private float _currentHealth;
@@ -108,17 +209,27 @@ namespace RetroFPS
 
         private float _stateTimer = 0f;
         private float _cooldownTimer = 0f;
-        private float _flashTimer = 0f;
+
         private readonly RaycastHit[] _groundHits = new RaycastHit[8];
 
-        private Renderer[] _renderers;
         private Collider[] _colliders;
-        private MaterialPropertyBlock _propBlock;
-        private static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
-        private bool[] _supportsEmission;
-        private static readonly int EmissionColorId = Shader.PropertyToID("_EmissionColor");
-        private static readonly int ColorId = Shader.PropertyToID("_Color");
-
+        private CharacterController _playerController;
+        private FlyingEyeAttackPlanner _planner;
+        private EnemyProjectileSettings _lightSettings;
+        private EnemyProjectileSettings _heavySettings;
+        private FlyingEyeAttack _pendingAttack;
+        private bool _hasAttackToken;
+        private bool _aimLocked;
+        private Vector3 _lockedDirection;
+        private Vector3 _lockedAimPoint;
+        private float _windupDuration;
+        private float _hoverTarget;
+        private float _jinkTimer;
+        private float _jinkCooldown;
+        private bool _grounded;
+        private bool _recoveringAltitude;
+        private bool _reflectedHeavyKill;
+        private float _baseHeavyDamage;
         // Ölüm ve Yeniden Doğuş Durum Değişkenleri
         private bool _isGibbed = false;
         private float _deathAnimTimer = 0f;
@@ -126,15 +237,20 @@ namespace RetroFPS
         private Vector3 _deathFallVelocity = Vector3.zero;
         private float _respawnPopTimer = 0f;
 
+        /// <summary>Current attack or movement phase.</summary>
         public FlyingEyeState CurrentState => _currentState;
         /// <inheritdoc />
         public bool IsStunned => _currentState == FlyingEyeState.Stagger;
         /// <inheritdoc />
         public uint StunSequence => _stunSequence;
         private uint _stunSequence;
+        /// <summary>Remaining health after damage and elite scaling.</summary>
         public float CurrentHealth => _currentHealth;
+        /// <summary>Maximum health for this spawn, including elite scaling.</summary>
         public float MaxHealth => maxHealth;
+        /// <summary>Current world position for targeting and encounters.</summary>
         public Vector3 Position => transform.position;
+        /// <summary>Whether the death phase has begun.</summary>
         public bool IsDead => _currentState == FlyingEyeState.Dead;
 
         /// <summary>Bu doğuşta elit güçlendirmesi uygulanıp uygulanmadığı.</summary>
@@ -148,30 +264,39 @@ namespace RetroFPS
             {
                 _baseMaxHealth = maxHealth;
                 _baseProjectileDamage = projectileDamage;
+                _baseHeavyDamage = heavyDamage;
                 _baseFlySpeed = flySpeed;
                 _eliteBaseCached = true;
             }
 
             projectileDamage = _baseProjectileDamage * damageMultiplier;
+            heavyDamage = _baseHeavyDamage * damageMultiplier;
             flySpeed = _baseFlySpeed * speedMultiplier;
             maxHealth = _baseMaxHealth * healthMultiplier;
             _currentHealth = maxHealth;
             _isElite = true;
+            RebuildProjectileSettings();
         }
 
         private void ResetEliteScaling()
         {
             if (!_eliteBaseCached) return;
             projectileDamage = _baseProjectileDamage;
+            heavyDamage = _baseHeavyDamage;
             flySpeed = _baseFlySpeed;
             maxHealth = _baseMaxHealth;
             _isElite = false;
+            RebuildProjectileSettings();
         }
 
         // IEncounterEnemy Uygulaması
+        /// <summary>Raised once when the current spawn dies.</summary>
         public event System.Action<IEncounterEnemy> OnEnemyDeath;
+        /// <summary>Whether this spawn can participate in an encounter.</summary>
         public bool IsAlive => _currentState != FlyingEyeState.Dead;
+        /// <summary>Root transform used by the encounter director.</summary>
         public Transform EnemyTransform => transform;
+        /// <summary>Root object used for pooling.</summary>
         public GameObject EnemyGameObject => gameObject;
 
         private void OnEnable()
@@ -181,21 +306,8 @@ namespace RetroFPS
 
         private void OnDisable()
         {
+            CancelWindup();
             EnemyAlertHub.Unregister(this);
-        }
-
-        private void Start()
-        {
-            CombatTargetLookup.RegisterHierarchy(this);
-            _supportsEmission = new bool[_renderers.Length];
-            for (int i = 0; i < _renderers.Length; i++)
-            {
-                Material material = _renderers[i] != null ? _renderers[i].sharedMaterial : null;
-                _supportsEmission[i] = material != null && material.HasProperty(EmissionColorId);
-            }
-            FindPlayer();
-            _healthDropper = GetComponent<EnemyHealthDropper>();
-            _ammoDropper = GetComponent<EnemyAmmoDropper>();
         }
 
         private void Awake()
@@ -209,18 +321,22 @@ namespace RetroFPS
             _patrolTarget = _spawnPosition;
             _lastKnownPlayerPos = _spawnPosition;
 
-            _renderers = GetComponentsInChildren<Renderer>();
+            if (view == null) view = GetComponent<FlyingEyeView>();
+            if (view == null) Debug.LogWarning("FlyingEyeAI has no FlyingEyeView; presentation is disabled.", this);
+            _planner = new FlyingEyeAttackPlanner(lightsBeforeHeavy);
+            _hoverTarget = hoverHeight;
+            RebuildProjectileSettings();
+            EyeProjectilePool.Prewarm(projectilePrewarmCount);
+            _healthDropper = GetComponent<EnemyHealthDropper>();
+            _ammoDropper = GetComponent<EnemyAmmoDropper>();
             _colliders = GetComponentsInChildren<Collider>();
-            _propBlock = new MaterialPropertyBlock();
-
-            ValidateAndRepairMaterials();
 
             FindPlayer();
             SetupHitboxes();
             CombatTargetLookup.RegisterHierarchy(this);
 
             _currentState = FlyingEyeState.Idle;
-            _stateTimer = Random.Range(1.0f, 2.5f);
+            _stateTimer = Random.Range(initialIdleDuration.x, initialIdleDuration.y);
         }
 
         private void SetCollidersActive(bool active)
@@ -238,30 +354,14 @@ namespace RetroFPS
             }
         }
 
-        private void SetRenderersActive(bool active)
-        {
-            if (_renderers != null)
-            {
-                for (int i = 0; i < _renderers.Length; i++)
-                {
-                    if (_renderers[i] != null)
-                    {
-                        _renderers[i].enabled = active;
-                    }
-                }
-            }
-        }
-
         private void FindPlayer()
         {
-            PlayerMovement pm = Object.FindAnyObjectByType<PlayerMovement>();
-            if (pm != null)
-            {
-                _playerTransform = pm.transform;
-                _playerHealth = pm.GetComponent<PlayerHealth>();
-            }
+            PlayerMovement player = Object.FindAnyObjectByType<PlayerMovement>();
+            if (player == null) return;
+            _playerTransform = player.transform;
+            // Discovery alone caches components; aiming and firing never look them up.
+            player.TryGetComponent(out _playerController);
         }
-
         private void SetupHitboxes()
         {
             Collider[] cols = GetComponentsInChildren<Collider>();
@@ -272,18 +372,18 @@ namespace RetroFPS
                 // Gözbebeği veya kafa parçası kritik headshot noktasıdır (Sıfır GC string araması)
                 string colName = col.gameObject.name;
                 bool isCritZone = colName.IndexOf("head", System.StringComparison.OrdinalIgnoreCase) >= 0 ||
-                                  colName.IndexOf("pupil", System.StringComparison.OrdinalIgnoreCase) >= 0 ||
-                                  colName.IndexOf("eye", System.StringComparison.OrdinalIgnoreCase) >= 0;
+                                  colName.IndexOf("pupil", System.StringComparison.OrdinalIgnoreCase) >= 0;
 
                 Hitbox hb = col.GetComponent<Hitbox>();
                 if (hb == null)
                 {
                     hb = col.gameObject.AddComponent<Hitbox>();
                 }
-                hb.Initialize(this, isCritZone ? 2.0f : 1.0f, isCritZone);
+                hb.Initialize(this, isCritZone ? criticalDamageMultiplier : 1f, isCritZone);
             }
         }
 
+        /// <summary>Sets the projectile origin for existing procedural setup callers.</summary>
         public void SetFirePoint(Transform fp)
         {
             firePoint = fp;
@@ -301,24 +401,24 @@ namespace RetroFPS
                     _deathAnimTimer += Time.deltaTime;
 
                     // Havada sönerek yere düşme ve kontrolsüz dönme
-                    _deathFallVelocity.y -= 16f * Time.deltaTime;
+                    _deathFallVelocity.y -= deathGravity * Time.deltaTime;
                     transform.position += _deathFallVelocity * Time.deltaTime;
                     transform.Rotate(_deathSpinSpeed * Time.deltaTime);
 
                     // 0.55 saniye sonra veya zemine çarptığında okült patlama ile parçalan
-                    if (_deathAnimTimer >= 0.55f || transform.position.y <= _lastGroundY + 0.4f)
+                    if (_deathAnimTimer >= delayedGibTime || transform.position.y <= _lastGroundY + deathGroundOffset)
                     {
                         _isGibbed = true;
                         if (CombatVFXManager.Instance != null)
                         {
-                            CombatVFXManager.Instance.SpawnFleshGibs(transform.position, Vector3.up, 5);
+                            CombatVFXManager.Instance.SpawnFleshGibs(view != null ? view.DeathFxPosition : transform.position, Vector3.up, delayedGibCount);
                             CombatVFXManager.Instance.SpawnHitImpact(transform.position, Vector3.up, false, true);
                         }
                         if (CombatAudio.Instance != null)
                         {
                             CombatAudio.Instance.PlayGibExplosion(transform.position);
                         }
-                        SetRenderersActive(false);
+                        if (view != null) view.SetVisible(false);
                         transform.localScale = _initialScale;
                     }
                 }
@@ -338,13 +438,14 @@ namespace RetroFPS
             }
 
             UpdateTimers();
+            if (view != null) view.Tick(Time.deltaTime);
 
             // Doğuş pop yaylanması
             if (_respawnPopTimer > 0f)
             {
                 _respawnPopTimer -= Time.deltaTime;
-                float popT = 1f - (_respawnPopTimer / 0.22f);
-                float scaleMod = popT < 0.7f ? Mathf.Lerp(0.1f, 1.15f, popT / 0.7f) : Mathf.Lerp(1.15f, 1.0f, (popT - 0.7f) / 0.3f);
+                float popT = 1f - (_respawnPopTimer / Mathf.Max(respawnPopDuration, Mathf.Epsilon));
+                float scaleMod = popT < respawnPopPeakTime ? Mathf.Lerp(respawnPopStartScale, respawnPopPeakScale, popT / Mathf.Max(respawnPopPeakTime, Mathf.Epsilon)) : Mathf.Lerp(respawnPopPeakScale, 1f, (popT - respawnPopPeakTime) / Mathf.Max(1f - respawnPopPeakTime, Mathf.Epsilon));
                 transform.localScale = _initialScale * scaleMod;
             }
             else
@@ -358,17 +459,22 @@ namespace RetroFPS
                 _playerSearchTimer -= Time.deltaTime;
                 if (_playerSearchTimer <= 0f)
                 {
-                    _playerSearchTimer = PlayerSearchInterval;
+                    _playerSearchTimer = playerSearchInterval;
                     FindPlayer();
                 }
             }
+            if (_playerTransform == null && _currentState == FlyingEyeState.Windup)
+            {
+                CancelWindup();
+                _currentState = FlyingEyeState.Combat;
+            }
             if (_playerTransform != null) ExecuteStateMachine();
             else if (_currentState == FlyingEyeState.Stagger) ExecuteStagger();
-            ApplyHoverAltitude();
-            if (_knockbackVelocity.sqrMagnitude > 0.0001f)
+            if (_currentState != FlyingEyeState.Windup) ApplyHoverAltitude();
+            if (!_grounded && _currentState != FlyingEyeState.Windup && _knockbackVelocity.sqrMagnitude > 0.0001f)
             {
                 _controller.Move(_knockbackVelocity * Time.deltaTime);
-                _knockbackVelocity *= Mathf.Exp(-KnockbackDecay * Time.deltaTime);
+                _knockbackVelocity *= Mathf.Exp(-knockbackDecay * Time.deltaTime);
             }
             else
             {
@@ -379,17 +485,8 @@ namespace RetroFPS
         private void UpdateTimers()
         {
             if (_cooldownTimer > 0f) _cooldownTimer -= Time.deltaTime;
-
-            if (_flashTimer > 0f)
-            {
-                _flashTimer -= Time.deltaTime;
-                if (_flashTimer <= 0f && _currentState != FlyingEyeState.Windup)
-                {
-                    ClearFlash();
-                }
-            }
+            if (_jinkCooldown > 0f) _jinkCooldown -= Time.deltaTime;
         }
-
         private void ExecuteStateMachine()
         {
             float distToPlayer = Vector3.Distance(transform.position, _playerTransform.position);
@@ -410,6 +507,10 @@ namespace RetroFPS
 
                 case FlyingEyeState.Windup:
                     ExecuteWindup();
+                    break;
+
+                case FlyingEyeState.Reposition:
+                    ExecuteReposition();
                     break;
 
                 case FlyingEyeState.Stagger:
@@ -450,10 +551,10 @@ namespace RetroFPS
             dirToDest.y = 0f;
             float dist = dirToDest.magnitude;
 
-            if (dist <= 1.0f || _stateTimer <= 0f)
+            if (dist <= patrolArrivalDistance || _stateTimer <= 0f)
             {
                 _currentState = FlyingEyeState.Idle;
-                _stateTimer = Random.Range(1.5f, 3.0f);
+                _stateTimer = Random.Range(patrolIdleDuration.x, patrolIdleDuration.y);
                 _velocity.x = 0f;
                 _velocity.z = 0f;
                 return;
@@ -462,7 +563,7 @@ namespace RetroFPS
             dirToDest.Normalize();
             LookAtPosition(transform.position + dirToDest);
 
-            Vector3 move = dirToDest * (flySpeed * 0.6f);
+            Vector3 move = dirToDest * (flySpeed * patrolSpeedFactor);
             _velocity.x = move.x;
             _velocity.z = move.z;
             _controller.Move(_velocity * Time.deltaTime);
@@ -473,7 +574,7 @@ namespace RetroFPS
             Vector2 circle = Random.insideUnitCircle * patrolRadius;
             _patrolTarget = _spawnPosition + new Vector3(circle.x, 0f, circle.y);
             _currentState = FlyingEyeState.Patrol;
-            _stateTimer = Random.Range(4.0f, 7.0f);
+            _stateTimer = Random.Range(patrolDuration.x, patrolDuration.y);
         }
 
         private void StartCombat(bool alertAllies)
@@ -506,15 +607,22 @@ namespace RetroFPS
                 if (_loseSightTimer <= 0f || distToPlayer > loseSightDistance)
                 {
                     _currentState = FlyingEyeState.Idle;
-                    _stateTimer = 2.0f;
+                    _stateTimer = lostSightIdleDuration;
                     _velocity.x = 0f;
                     _velocity.z = 0f;
                     return;
                 }
             }
 
-            Vector3 aimTarget = canSee ? _playerTransform.position + Vector3.up * 1.0f : _lastKnownPlayerPos;
+            Vector3 aimTarget = canSee ? _playerTransform.position + Vector3.up * aimHeight : _lastKnownPlayerPos;
             LookAtPosition(aimTarget);
+
+            if (_jinkTimer > 0f)
+            {
+                _jinkTimer -= Time.deltaTime;
+                MoveTangent(jinkSpeedFactor);
+                return;
+            }
 
             // 1. Saldırı Hazırlığı Kontrolü
             if (canSee && distToPlayer <= attackRange && _cooldownTimer <= 0f)
@@ -533,10 +641,10 @@ namespace RetroFPS
             // Çok yakınsa geri çekil
             if (distToPlayer < minDistance)
             {
-                moveDir = -dirToPlayer * (flySpeed * 0.9f);
+                moveDir = -dirToPlayer * (flySpeed * retreatSpeedFactor);
             }
             // Çok uzaksa yaklaş
-            else if (distToPlayer > preferredDistance + 2.5f)
+            else if (distToPlayer > preferredDistance + approachDistanceSlack)
             {
                 moveDir = dirToPlayer * flySpeed;
             }
@@ -547,11 +655,11 @@ namespace RetroFPS
                 if (_strafeTimer <= 0f)
                 {
                     _strafeDirection = Random.value > 0.5f ? 1f : -1f;
-                    _strafeTimer = Random.Range(1.2f, 2.4f);
+                    _strafeTimer = Random.Range(strafeDuration.x, strafeDuration.y);
                 }
 
                 Vector3 strafeVector = Vector3.Cross(Vector3.up, dirToPlayer) * _strafeDirection;
-                moveDir = strafeVector * (flySpeed * 0.45f);
+                moveDir = strafeVector * (flySpeed * combatStrafeFactor);
             }
 
             _velocity.x = moveDir.x;
@@ -559,84 +667,154 @@ namespace RetroFPS
             _controller.Move(_velocity * Time.deltaTime);
         }
 
+        private Vector3 FirePosition => firePoint != null ? firePoint.position :
+            view != null ? view.FirePosition : transform.position + transform.forward * fallbackFireOffset;
+
+        private void RebuildProjectileSettings()
+        {
+            _lightSettings = new EnemyProjectileSettings
+            {
+                Speed = lightProjectileSpeed, Damage = projectileDamage, CollisionRadius = lightRadius,
+                VisualScale = lightScale, Lifetime = lightLifetime, Heavy = false,
+                ReflectHomingDegPerSec = lightReflectTurnRate, ReflectHomingMaxAngle = lightReflectAngle,
+                Color = lightColor
+            };
+            _heavySettings = new EnemyProjectileSettings
+            {
+                Speed = heavySpeed, Damage = heavyDamage, CollisionRadius = heavyRadius,
+                VisualScale = heavyScale, Lifetime = heavyLifetime, Heavy = true,
+                ReflectHomingDegPerSec = heavyReflectTurnRate, ReflectHomingMaxAngle = heavyReflectAngle,
+                Color = heavyColor
+            };
+        }
+
+        private void ReleaseToken()
+        {
+            if (!_hasAttackToken) return;
+            _hasAttackToken = false;
+            EnemyAttackTokens.Release();
+        }
+
+        private void CancelWindup()
+        {
+            if (_currentState == FlyingEyeState.Windup)
+            {
+                _cooldownTimer = Mathf.Max(_cooldownTimer, cancelledAttackCooldown);
+                _currentState = FlyingEyeState.Combat;
+                _stateTimer = 0f;
+            }
+            ReleaseToken();
+            _aimLocked = false;
+            if (view != null) view.HideWindup();
+        }
+
         private void StartWindup()
         {
+            _hasAttackToken = _planner.WantsHeavy && EnemyAttackTokens.TryAcquire();
+            _pendingAttack = _hasAttackToken ? FlyingEyeAttack.Heavy : FlyingEyeAttack.Light;
+            // Commit only at launch, so cancelled heavies remain wanted.
+            _windupDuration = _pendingAttack == FlyingEyeAttack.Heavy ? heavyWindup : lightWindup;
+            _stateTimer = _windupDuration;
             _currentState = FlyingEyeState.Windup;
-            _stateTimer = attackWindup;
-            _velocity.x = 0f;
-            _velocity.z = 0f;
+            _velocity = Vector3.zero;
+            _knockbackVelocity = Vector3.zero;
+            _aimLocked = false;
+            _jinkTimer = 0f;
+            UpdateWindupView();
+        }
 
-            // Görsel şarj telgrafı: Göz parıldamaya başlar
-            SetColor(windupGlowColor);
+        private Vector3 PredictDirection(Vector3 origin)
+        {
+            bool heavy = _pendingAttack == FlyingEyeAttack.Heavy;
+            Vector3 velocity = _playerController != null ? _playerController.velocity : Vector3.zero;
+            return ProjectileLead.Direction(origin, _playerTransform.position + Vector3.up * aimHeight,
+                velocity, heavy ? heavySpeed : lightProjectileSpeed,
+                heavy ? heavyLead : lightLead, heavy ? heavyMaxLead : lightMaxLead);
+        }
+
+        private void UpdateWindupView()
+        {
+            Vector3 origin = FirePosition;
+            Vector3 direction = _aimLocked ? _lockedDirection : PredictDirection(origin);
+            Vector3 aimPoint = _aimLocked ? _lockedAimPoint :
+                origin + direction * Vector3.Distance(origin, _playerTransform.position + Vector3.up * aimHeight);
+            if (view != null)
+                view.ShowWindup(_pendingAttack, 1f - Mathf.Clamp01(_stateTimer / Mathf.Max(_windupDuration, Mathf.Epsilon)),
+                    aimPoint, _aimLocked);
         }
 
         private void ExecuteWindup()
         {
-            if (_playerTransform != null)
-            {
-                Vector3 aimPos = _playerTransform.position + Vector3.up * 1.0f;
-                LookAtPosition(aimPos);
-            }
-
+            LookAtPosition(_playerTransform.position + Vector3.up * aimHeight);
             _stateTimer -= Time.deltaTime;
-            if (_stateTimer <= 0f)
+            if (_pendingAttack == FlyingEyeAttack.Heavy && !_aimLocked && _stateTimer <= heavyAimLockSeconds)
             {
-                LaunchProjectile();
+                _lockedDirection = PredictDirection(FirePosition);
+                _lockedAimPoint = FirePosition + _lockedDirection *
+                    Vector3.Distance(FirePosition, _playerTransform.position + Vector3.up * aimHeight);
+                _aimLocked = true;
             }
+            UpdateWindupView();
+            if (_stateTimer <= 0f) LaunchProjectile();
         }
 
         private void LaunchProjectile()
         {
-            _currentState = FlyingEyeState.Combat;
-            _cooldownTimer = attackCooldown;
-            ClearFlash();
-
+            Vector3 origin = FirePosition;
+            Vector3 direction = _aimLocked ? _lockedDirection : PredictDirection(origin);
+            FlyingEyeAttack attack = _planner.Next(_hasAttackToken);
+            if (attack == FlyingEyeAttack.Light) ReleaseToken();
+            if (attack == FlyingEyeAttack.Heavy)
+                EyeProjectilePool.Launch(transform, origin, direction, in _heavySettings);
+            else
+                EyeProjectilePool.Launch(transform, origin, direction, in _lightSettings);
+            ReleaseToken();
+            if (view != null) view.HideWindup();
+            _cooldownTimer = attack == FlyingEyeAttack.Heavy ? heavyCooldown : lightCooldown;
             EnemyAlertHub.BroadcastAlert(this, transform.position, _playerTransform, alertRadius);
+            _currentState = FlyingEyeState.Reposition;
+            _stateTimer = repositionDuration;
+            _strafeDirection = Random.value > 0.5f ? 1f : -1f;
+            _hoverTarget = Random.Range(Mathf.Min(minFlyHeight + hoverTargetInset, maxFlyHeight), maxFlyHeight);
+        }
 
-            Vector3 spawnPos = firePoint != null ? firePoint.position : transform.position + transform.forward * 0.6f;
-            Vector3 targetPos = _playerTransform.position + Vector3.up * 1.0f;
-            Vector3 shootDir = (targetPos - spawnPos).normalized;
+        private void MoveTangent(float speedFactor)
+        {
+            Vector3 radial = _playerTransform.position - transform.position;
+            radial.y = 0f;
+            Vector3 tangent = Vector3.Cross(Vector3.up, radial.normalized) * _strafeDirection;
+            CollisionFlags flags = _controller.Move(tangent * (flySpeed * speedFactor * Time.deltaTime));
+            if ((flags & CollisionFlags.Sides) != 0) _strafeDirection = -_strafeDirection;
+        }
 
-            // Okült Plazma Mermisi Yarat
-            GameObject projGO = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-            projGO.name = "OccultEyeOrb";
-            projGO.transform.position = spawnPos;
-            projGO.transform.rotation = Quaternion.LookRotation(shootDir);
-            projGO.transform.localScale = new Vector3(0.40f, 0.40f, 0.40f);
-
-            // Mermi Materyali: Parlayan Okült Mor
-            // Tek paylaşımlı materyal (atış başına yeni Material sızıntısını önler); sharedMaterial kopya üretmez.
-            if (_sharedProjectileMaterial == null)
-                _sharedProjectileMaterial = CreateEmissiveMaterial("Proj_OccultPurple", new Color(0.85f, 0.15f, 0.95f));
-            projGO.GetComponent<Renderer>().sharedMaterial = _sharedProjectileMaterial;
-
-            // Merminin collider'ını trigger yap (fiziksel engelleme yapmasın ama raycast/overlap sorguları bulabilsin)
-            Collider col = projGO.GetComponent<Collider>();
-            if (col != null) col.isTrigger = true;
-            projGO.layer = GameLayers.Projectile;
-
-            EnemyProjectile proj = projGO.AddComponent<EnemyProjectile>();
-            proj.Initialize(transform, projectileSpeed, projectileDamage);
-
+        private void ExecuteReposition()
+        {
+            LookAtPosition(_playerTransform.position + Vector3.up * aimHeight);
+            MoveTangent(repositionSpeedFactor);
+            _stateTimer -= Time.deltaTime;
+            if (_stateTimer <= 0f) _currentState = FlyingEyeState.Combat;
         }
 
         private void ExecuteStagger()
         {
             _stateTimer -= Time.deltaTime;
-            if (_stateTimer <= 0f)
+            if (_stateTimer > 0f) return;
+            if (_grounded)
             {
-                ClearFlash();
-                _currentState = FlyingEyeState.Combat;
+                _hoverTarget = hoverHeight;
+                _recoveringAltitude = true;
             }
+            _grounded = false;
+            if (view != null) view.SetGrounded(false);
+            _currentState = FlyingEyeState.Combat;
         }
-
         private void ApplyHoverAltitude()
         {
             // Zemin bulunamazsa son bilinen zemini kullan (dünya Y=0 varsayılmaz; Araf gibi yüksekteki alanlarda da çalışır)
             float groundY = _lastGroundY;
             // Zemin seviyesinde doğan göz de zemini bulabilsin; kendi collider'ları aşağıda elenir.
-            Vector3 rayOrigin = transform.position + Vector3.up * 0.5f;
-            int hitCount = Physics.RaycastNonAlloc(rayOrigin, Vector3.down, _groundHits, 25f, GameLayers.GroundMask, QueryTriggerInteraction.Ignore);
+            Vector3 rayOrigin = transform.position + Vector3.up * groundProbeOffset;
+            int hitCount = Physics.RaycastNonAlloc(rayOrigin, Vector3.down, _groundHits, groundProbeDistance, GameLayers.GroundMask, QueryTriggerInteraction.Ignore);
 
             for (int i = 0; i < hitCount; i++)
             {
@@ -651,11 +829,14 @@ namespace RetroFPS
 
             // Hedef Y yüksekliği: Zemin + hoverHeight + dalgalanma. min/maxFlyHeight ZEMİNE GÖRELİDİR (mutlak dünya Y'si değil).
             float bob = Mathf.Sin(Time.time * bobFrequency) * bobAmplitude;
-            float targetY = groundY + Mathf.Clamp(hoverHeight + bob, minFlyHeight, maxFlyHeight);
+            float targetY = groundY + Mathf.Clamp(_hoverTarget + (_grounded ? 0f : bob), _grounded ? groundedHeight : minFlyHeight, maxFlyHeight);
 
             float currentY = transform.position.y;
-            float newY = Mathf.MoveTowards(currentY, targetY, flySpeed * Time.deltaTime * 2.0f);
-            newY = Mathf.Clamp(newY, groundY + minFlyHeight, groundY + maxFlyHeight);
+            float newY = Mathf.MoveTowards(currentY, targetY, flySpeed * Time.deltaTime * hoverSpeedFactor);
+            // Recover upward smoothly instead of snapping to the minimum flight height.
+            float lowerHeight = _grounded || _recoveringAltitude ? groundedHeight : minFlyHeight;
+            newY = Mathf.Clamp(newY, groundY + lowerHeight, groundY + maxFlyHeight);
+            if (_recoveringAltitude && newY >= groundY + minFlyHeight) _recoveringAltitude = false;
 
             float deltaY = newY - currentY;
             _controller.Move(new Vector3(0f, deltaY, 0f));
@@ -671,12 +852,13 @@ namespace RetroFPS
             }
         }
 
+        /// <summary>Tests detection distance, field of view and the existing enemy sight mask.</summary>
         public bool CanSeePlayer()
         {
             if (_playerTransform == null) return false;
 
-            Vector3 eyePos = transform.position + transform.forward * 0.5f;
-            Vector3 targetPos = _playerTransform.position + Vector3.up * 1.1f;
+            Vector3 eyePos = transform.position + transform.forward * sightForwardOffset;
+            Vector3 targetPos = _playerTransform.position + Vector3.up * sightTargetHeight;
             Vector3 toPlayer = targetPos - eyePos;
             float dist = toPlayer.magnitude;
 
@@ -708,42 +890,53 @@ namespace RetroFPS
             return false;
         }
 
+        /// <summary>Accepts an allied alert while idle or patrolling.</summary>
         public void ReceiveAlert(Transform target)
         {
             if (_currentState == FlyingEyeState.Idle || _currentState == FlyingEyeState.Patrol)
             {
                 _playerTransform = target;
+                // An alert can discover a player before the periodic search does.
+                if (target != null) target.TryGetComponent(out _playerController);
                 StartCombat(false);
             }
         }
 
+        /// <summary>Applies damage, hit reactions, interruptions and death rewards.</summary>
         public void TakeDamage(float amount, Vector3 hitPoint, Vector3 hitNormal, bool isCritical = false)
         {
             if (_currentState == FlyingEyeState.Dead) return;
 
             _currentHealth -= amount;
-            _flashTimer = isCritical ? 0.12f : 0.06f;
-            SetColor(isCritical ? criticalHitFlashColor : hitFlashColor);
+            if (view != null) view.Flash(isCritical ? criticalHitFlashColor : hitFlashColor, isCritical ? criticalFlashSeconds : hitFlashSeconds);
 
             bool wasStaggered = _currentState == FlyingEyeState.Stagger;
-            if (!wasStaggered) StartCombat(true);
+            bool wasCombat = _currentState == FlyingEyeState.Combat;
+            if (_currentState == FlyingEyeState.Idle || _currentState == FlyingEyeState.Patrol) StartCombat(true);
 
             // Geri tepme sarsıntısı
-            _knockbackVelocity = -hitNormal.normalized * Mathf.Clamp(amount * 0.12f, 2f, 9f);
+            if (!_grounded) _knockbackVelocity = -hitNormal.normalized * Mathf.Clamp(amount * hitKnockbackFactor, minHitKnockback, maxHitKnockback);
 
-            if (isCritical || amount >= 30f)
+            if (isCritical || amount >= staggerDamageThreshold)
             {
+                CancelWindup();
+                _jinkTimer = 0f;
                 _currentState = FlyingEyeState.Stagger;
-                _stateTimer = wasStaggered ? Mathf.Max(_stateTimer, 0.30f) : 0.30f;
+                _stateTimer = wasStaggered ? Mathf.Max(_stateTimer, damageStaggerDuration) : damageStaggerDuration;
                 if (!wasStaggered) _stunSequence++;
             }
 
+            if (wasCombat && _currentState == FlyingEyeState.Combat && _jinkCooldown <= 0f)
+            {
+                _jinkTimer = jinkDuration;
+                _jinkCooldown = jinkCooldown;
+                _strafeDirection = Random.value > 0.5f ? 1f : -1f;
+            }
             if (HitstopManager.Instance != null)
             {
                 if (_currentHealth > 0f && isCritical)
-                    HitstopManager.Instance.TriggerHitstop(0.04f, 0.03f);
+                    HitstopManager.Instance.TriggerHitstop(criticalHitstop.x, criticalHitstop.y);
             }
-
 
             if (CombatVFXManager.Instance != null)
                 CombatVFXManager.Instance.SpawnHitImpact(hitPoint, hitNormal, isCritical, true);
@@ -753,24 +946,27 @@ namespace RetroFPS
                 Die(hitPoint, hitNormal, amount, isCritical);
         }
 
+        /// <summary>Cancels any attack and accepts a timed stun with decaying knockback.</summary>
         public void Stun(float duration, Vector3 knockbackDir)
         {
             if (_currentState == FlyingEyeState.Dead) return;
 
+            CancelWindup();
+            _jinkTimer = 0f;
             _currentState = FlyingEyeState.Stagger;
-            _stateTimer = duration;
+            _stateTimer = _grounded ? Mathf.Max(_stateTimer, duration) : duration;
             _stunSequence++;
-            _cooldownTimer = duration + 0.6f;
+            _cooldownTimer = Mathf.Max(_cooldownTimer, duration + stunRecoveryCooldown);
             // knockbackDir bir yöndür; toplam kayma ~ stunKnockbackSpeed / KnockbackDecay (24.5 / 7 = 3.5 m).
-            _knockbackVelocity = knockbackDir.sqrMagnitude > 0.0001f
+            _knockbackVelocity = !_grounded && knockbackDir.sqrMagnitude > 0.0001f
                 ? knockbackDir.normalized * stunKnockbackSpeed
                 : Vector3.zero;
 
-            SetColor(new Color(1f, 0.9f, 0.2f));
+            if (view != null) view.Flash(stunColor, duration);
 
             if (HitstopManager.Instance != null)
             {
-                HitstopManager.Instance.TriggerHitstop(0.08f, 0.02f);
+                HitstopManager.Instance.TriggerHitstop(stunHitstop.x, stunHitstop.y);
             }
 
         }
@@ -778,10 +974,13 @@ namespace RetroFPS
         private void Die(Vector3 hitPoint, Vector3 hitNormal, float killingDamage, bool isCritical)
         {
             if (!IsAlive) return;
+            CancelWindup();
+            _grounded = false;
+            _recoveringAltitude = false;
+            if (view != null) view.SetGrounded(false);
             _currentState = FlyingEyeState.Dead;
             _stateTimer = respawnTime;
-            ClearFlash();
-
+            if (view != null) view.HideWindup();
 
             // İnfaz öldürmesi = yakın dövüş silahından gelen son darbe (hasar miktarı değil, kaynak belirler)
             bool isMeleeKill = MeleeDamageScope.IsActive;
@@ -794,7 +993,7 @@ namespace RetroFPS
             }
             else if (HealthOrbManager.Instance != null)
             {
-                HealthOrbManager.Instance.TryDropOrbs(transform.position, 2, isCritical, isMeleeKill);
+                HealthOrbManager.Instance.TryDropOrbs(transform.position, fallbackDropTier, isCritical, isMeleeKill);
             }
 
             // Cephane Düşüşü (DOOM Kaynak Döngüsü)
@@ -808,7 +1007,7 @@ namespace RetroFPS
             SetCollidersActive(false);
 
             // 2. Parçalanma (Gibs) Kontrolü: Gözbebeği kritik vuruşu veya ağır hasar
-            bool shouldGib = isCritical || killingDamage >= 35f || _currentHealth <= -15f || Random.value < 0.40f;
+            bool shouldGib = _reflectedHeavyKill || isCritical || killingDamage >= gibDamageThreshold || _currentHealth <= -gibOverkillThreshold || Random.value < gibChance;
 
             if (shouldGib)
             {
@@ -817,8 +1016,9 @@ namespace RetroFPS
                 if (CombatVFXManager.Instance != null)
                 {
                     Vector3 blastDir = hitNormal.sqrMagnitude > 0.01f ? -hitNormal : transform.forward;
-                    CombatVFXManager.Instance.SpawnFleshGibs(transform.position, blastDir, 6);
+                    CombatVFXManager.Instance.SpawnFleshGibs(view != null ? view.DeathFxPosition : transform.position, blastDir, _reflectedHeavyKill ? reflectedHeavyGibCount : normalGibCount);
                     CombatVFXManager.Instance.SpawnHitImpact(transform.position, hitNormal, true, false);
+                    if (_reflectedHeavyKill) CombatVFXManager.Instance.SpawnOccultEnergyBurst(view != null ? view.DeathFxPosition : transform.position, true);
                 }
 
                 if (CombatAudio.Instance != null)
@@ -826,7 +1026,7 @@ namespace RetroFPS
                     CombatAudio.Instance.PlayGibExplosion(transform.position);
                 }
 
-                SetRenderersActive(false);
+                if (view != null) view.SetVisible(false);
                 transform.localScale = _initialScale;
 
             }
@@ -834,22 +1034,35 @@ namespace RetroFPS
             {
                 _isGibbed = false;
                 _deathAnimTimer = 0f;
-                _deathSpinSpeed = new Vector3(Random.Range(350f, 650f), Random.Range(450f, 750f), Random.Range(250f, 550f));
+                _deathSpinSpeed = new Vector3(Random.Range(deathSpinMin.x, deathSpinMax.x), Random.Range(deathSpinMin.y, deathSpinMax.y), Random.Range(deathSpinMin.z, deathSpinMax.z));
                 Vector3 knockback = hitNormal.sqrMagnitude > 0.01f ? -hitNormal : -transform.forward;
-                _deathFallVelocity = knockback * 2.2f + Vector3.up * 1.4f;
-
-
+                _deathFallVelocity = knockback * deathKnockbackSpeed + Vector3.up * deathLiftSpeed;
 
             }
             if (HitstopManager.Instance != null)
-                HitstopManager.Instance.TriggerHitstop(0.07f, 0.03f);
+                HitstopManager.Instance.TriggerHitstop(deathHitstop.x, deathHitstop.y);
             CombatEvents.RaiseEnemyKilled(transform.position, isCritical, _isGibbed);
             OnEnemyDeath?.Invoke(this);
         }
 
         private void Respawn()
         {
+            CancelWindup();
             ResetEliteScaling();
+            _planner.Reset();
+            _grounded = false;
+            _recoveringAltitude = false;
+            _reflectedHeavyKill = false;
+            _aimLocked = false;
+            _hoverTarget = hoverHeight;
+            _cooldownTimer = 0f;
+            _jinkTimer = 0f;
+            _jinkCooldown = 0f;
+            _loseSightTimer = 0f;
+            _strafeTimer = 0f;
+            _stateTimer = 0f;
+            _lastGroundY = _spawnPosition.y - hoverHeight;
+            if (view != null) view.SetGrounded(false);
             if (_controller != null) _controller.enabled = false;
             transform.position = _spawnPosition;
             transform.rotation = _spawnRotation;
@@ -864,11 +1077,11 @@ namespace RetroFPS
             _currentState = FlyingEyeState.Idle;
             _velocity = Vector3.zero;
             _knockbackVelocity = Vector3.zero;
-            ClearFlash();
+            if (view != null) view.HideWindup();
 
-            SetRenderersActive(true);
+            if (view != null) view.SetVisible(true);
             SetCollidersActive(true);
-            _respawnPopTimer = 0.22f;
+            _respawnPopTimer = respawnPopDuration;
 
             if (CombatVFXManager.Instance != null)
             {
@@ -909,223 +1122,46 @@ namespace RetroFPS
         /// </summary>
         public void OnDespawnToDirector()
         {
+            CancelWindup();
             autoRespawn = false;
             _currentState = FlyingEyeState.Dead;
             gameObject.SetActive(false);
         }
 
-        private void SetColor(Color col)
+        /// <inheritdoc />
+        public void OnOwnProjectileReflectedHit(bool heavy, float damage, Vector3 point, Vector3 normal)
         {
-            if (_renderers == null) return;
-            for (int i = 0; i < _renderers.Length; i++)
+            if (IsDead) return;
+            if (!heavy)
             {
-                if (_renderers[i] == null) continue;
-                _renderers[i].GetPropertyBlock(_propBlock);
-                _propBlock.SetColor(BaseColorId, col);
-                _propBlock.SetColor(ColorId, col);
-                if (_supportsEmission != null && i < _supportsEmission.Length && _supportsEmission[i]) _propBlock.SetColor(EmissionColorId, col);
-                _renderers[i].SetPropertyBlock(_propBlock);
+                TakeDamage(damage, point, normal, true);
+                return;
             }
+
+            uint previousStunSequence = _stunSequence;
+            _reflectedHeavyKill = true;
+            TakeDamage(_isElite ? eliteHeavyReflectDamageFraction * maxHealth :
+                Mathf.Max(damage, _currentHealth + reflectedKillMargin), point, normal, true);
+            if (IsDead) return;
+            _reflectedHeavyKill = false;
+            CancelWindup();
+            _currentState = FlyingEyeState.Stagger;
+            _grounded = true;
+            _recoveringAltitude = false;
+            _stateTimer = groundedStunDuration;
+            // The damage and its grounded punishment represent one accepted stun.
+            _stunSequence = previousStunSequence + 1;
+            _hoverTarget = groundedHeight;
+            _velocity = Vector3.zero;
+            _knockbackVelocity = Vector3.zero;
+            _jinkTimer = 0f;
+            _cooldownTimer = groundedStunDuration + stunRecoveryCooldown;
+            if (view != null) view.SetGrounded(true);
         }
-
-        private void ClearFlash()
-        {
-            if (_renderers == null) return;
-            for (int i = 0; i < _renderers.Length; i++)
-            {
-                if (_renderers[i] == null) continue;
-                _renderers[i].SetPropertyBlock(null);
-            }
-        }
-
-        #region Fallback / Eksik Materyal Onarımı (Anti-Purple Defense)
-
-        private static Material _sharedFallbackSclera;
-        private static Material _sharedFallbackPupil;
-        private static Material _sharedFallbackIris;
-        private static Material _sharedFallbackHorn;
-        private static Material _sharedFallbackTendril;
-        private static Material _sharedProjectileMaterial;
-
-        /// <summary>
-        /// Uçan Göz parçalarını tarar; eksik veya mor hata materyallerini procedural Dark Fantasy materyalleriyle onarır.
-        /// </summary>
-        public void ValidateAndRepairMaterials()
-        {
-            EnsureFeaturesExist();
-
-            if (_renderers == null || _renderers.Length == 0)
-            {
-                _renderers = GetComponentsInChildren<Renderer>(true);
-            }
-
-            if (_renderers == null) return;
-
-            for (int i = 0; i < _renderers.Length; i++)
-            {
-                Renderer r = _renderers[i];
-                if (r == null) continue;
-
-                Material m = r.sharedMaterial;
-                bool isBroken = m == null || m.shader == null || m.shader.name.Contains("InternalError") || m.shader.name.Contains("Error");
-
-                if (isBroken)
-                {
-                    string n = r.gameObject.name;
-                    if (n.Contains("Pupil") || n.Contains("Head"))
-                    {
-                        if (_sharedFallbackPupil == null)
-                            _sharedFallbackPupil = CreateFallbackMaterial("Fallback_Eye_Pupil", new Color(0.02f, 0.02f, 0.03f), false, 0.05f);
-                        r.material = _sharedFallbackPupil;
-                    }
-                    else if (n.Contains("Iris"))
-                    {
-                        if (_sharedFallbackIris == null)
-                            _sharedFallbackIris = CreateFallbackMaterial("Fallback_Eye_Iris", new Color(0.45f, 0.04f, 0.58f), true);
-                        r.material = _sharedFallbackIris;
-                    }
-                    else if (n.Contains("Horn"))
-                    {
-                        if (_sharedFallbackHorn == null)
-                            _sharedFallbackHorn = CreateFallbackMaterial("Fallback_Eye_Horn", new Color(0.08f, 0.08f, 0.09f), false, 0.15f);
-                        r.material = _sharedFallbackHorn;
-                    }
-                    else if (n.Contains("Tendril"))
-                    {
-                        if (_sharedFallbackTendril == null)
-                            _sharedFallbackTendril = CreateFallbackMaterial("Fallback_Eye_Tendril", new Color(0.22f, 0.07f, 0.11f), false, 0.15f);
-                        r.material = _sharedFallbackTendril;
-                    }
-                    else
-                    {
-                        if (_sharedFallbackSclera == null)
-                            _sharedFallbackSclera = CreateFallbackMaterial("Fallback_Eye_Sclera", new Color(0.68f, 0.64f, 0.50f), false, 0.20f);
-                        r.material = _sharedFallbackSclera;
-                    }
-                }
-            }
-        }
-
-        /// <summary>
-        /// Uçan Göz modelinin iris, boynuz ve dokunaç gibi okült parçalarını denetler; eksikse tamamlar.
-        /// </summary>
-        public void EnsureFeaturesExist()
-        {
-            bool needRefresh = false;
-
-            if (transform.Find("Eye_Iris") == null)
-            {
-                CreatePrimitivePart(transform, PrimitiveType.Sphere, "Eye_Iris", new Vector3(0f, 0f, 0.38f), Quaternion.identity, new Vector3(0.55f, 0.55f, 0.25f), _sharedFallbackIris ?? GetOrCreateFallbackIris());
-                needRefresh = true;
-            }
-
-            if (transform.Find("Horn_Top") == null)
-            {
-                CreatePrimitivePart(transform, PrimitiveType.Cube, "Horn_Top", new Vector3(0f, 0.52f, -0.15f), Quaternion.Euler(-25f, 0f, 0f), new Vector3(0.14f, 0.32f, 0.14f), _sharedFallbackHorn ?? GetOrCreateFallbackHorn());
-                needRefresh = true;
-            }
-            if (transform.Find("Horn_L") == null)
-            {
-                CreatePrimitivePart(transform, PrimitiveType.Cube, "Horn_L", new Vector3(-0.48f, 0.25f, -0.10f), Quaternion.Euler(-15f, 0f, 35f), new Vector3(0.14f, 0.32f, 0.14f), _sharedFallbackHorn ?? GetOrCreateFallbackHorn());
-                needRefresh = true;
-            }
-            if (transform.Find("Horn_R") == null)
-            {
-                CreatePrimitivePart(transform, PrimitiveType.Cube, "Horn_R", new Vector3(0.48f, 0.25f, -0.10f), Quaternion.Euler(-15f, 0f, -35f), new Vector3(0.14f, 0.32f, 0.14f), _sharedFallbackHorn ?? GetOrCreateFallbackHorn());
-                needRefresh = true;
-            }
-
-            if (transform.Find("Tendril_Center") == null)
-            {
-                CreatePrimitivePart(transform, PrimitiveType.Cylinder, "Tendril_Center", new Vector3(0f, -0.65f, 0f), Quaternion.identity, new Vector3(0.08f, 0.25f, 0.08f), _sharedFallbackTendril ?? GetOrCreateFallbackTendril());
-                needRefresh = true;
-            }
-            if (transform.Find("Tendril_L") == null)
-            {
-                CreatePrimitivePart(transform, PrimitiveType.Cylinder, "Tendril_L", new Vector3(-0.25f, -0.60f, -0.12f), Quaternion.identity, new Vector3(0.08f, 0.25f, 0.08f), _sharedFallbackTendril ?? GetOrCreateFallbackTendril());
-                needRefresh = true;
-            }
-            if (transform.Find("Tendril_R") == null)
-            {
-                CreatePrimitivePart(transform, PrimitiveType.Cylinder, "Tendril_R", new Vector3(0.25f, -0.60f, -0.12f), Quaternion.identity, new Vector3(0.08f, 0.25f, 0.08f), _sharedFallbackTendril ?? GetOrCreateFallbackTendril());
-                needRefresh = true;
-            }
-
-            if (transform.Find("FirePoint") == null)
-            {
-                GameObject fp = new GameObject("FirePoint");
-                fp.transform.SetParent(transform);
-                fp.transform.localPosition = new Vector3(0f, 0f, 0.65f);
-                SetFirePoint(fp.transform);
-            }
-
-            if (needRefresh)
-            {
-                _renderers = GetComponentsInChildren<Renderer>(true);
-            }
-        }
-
-        private static GameObject CreatePrimitivePart(Transform parent, PrimitiveType type, string name, Vector3 pos, Quaternion rot, Vector3 scale, Material mat)
-        {
-            GameObject obj = GameObject.CreatePrimitive(type);
-            obj.name = name;
-            obj.transform.SetParent(parent);
-            obj.transform.localPosition = pos;
-            obj.transform.localRotation = rot;
-            obj.transform.localScale = scale;
-            if (mat != null) obj.GetComponent<Renderer>().material = mat;
-            Collider c = obj.GetComponent<Collider>();
-            if (c != null)
-            {
-                if (Application.isPlaying) Destroy(c);
-                else DestroyImmediate(c);
-            }
-            return obj;
-        }
-
-        private static Material GetOrCreateFallbackIris() => _sharedFallbackIris ?? (_sharedFallbackIris = CreateFallbackMaterial("Fallback_Eye_Iris", new Color(0.45f, 0.04f, 0.58f), true));
-        private static Material GetOrCreateFallbackHorn() => _sharedFallbackHorn ?? (_sharedFallbackHorn = CreateFallbackMaterial("Fallback_Eye_Horn", new Color(0.08f, 0.08f, 0.09f), false, 0.15f));
-        private static Material GetOrCreateFallbackTendril() => _sharedFallbackTendril ?? (_sharedFallbackTendril = CreateFallbackMaterial("Fallback_Eye_Tendril", new Color(0.22f, 0.07f, 0.11f), false, 0.15f));
-
-        private static Material CreateFallbackMaterial(string matName, Color color, bool unlit = false, float smoothness = 0.15f, float metallic = 0f)
-        {
-            Shader shader = unlit
-                ? Shader.Find("Universal Render Pipeline/Unlit")
-                : Shader.Find("Universal Render Pipeline/Lit");
-
-            if (shader == null) shader = Shader.Find("Standard");
-
-            Material mat = new Material(shader)
-            {
-                name = matName,
-                hideFlags = HideFlags.DontSave
-            };
-
-            mat.color = color;
-            if (mat.HasProperty(BaseColorId)) mat.SetColor(BaseColorId, color);
-            if (mat.HasProperty(Shader.PropertyToID("_Smoothness"))) mat.SetFloat(Shader.PropertyToID("_Smoothness"), smoothness);
-            if (mat.HasProperty(Shader.PropertyToID("_Metallic"))) mat.SetFloat(Shader.PropertyToID("_Metallic"), metallic);
-            return mat;
-        }
-
-        #endregion
-
-        private static Material CreateEmissiveMaterial(string matName, Color col)
-        {
-            Shader uLit = Shader.Find("Universal Render Pipeline/Unlit");
-            if (uLit == null) uLit = Shader.Find("Universal Render Pipeline/Lit");
-            if (uLit == null) uLit = Shader.Find("Standard");
-
-            Material mat = new Material(uLit);
-            mat.name = matName;
-            mat.color = col;
-            return mat;
-        }
-
 #if UNITY_EDITOR
         private void OnDrawGizmosSelected()
         {
-            Vector3 eyePos = transform.position + transform.forward * 0.5f;
+            Vector3 eyePos = transform.position + transform.forward * sightForwardOffset;
             Gizmos.color = new Color(0.8f, 0.2f, 1f, 0.35f);
             Gizmos.DrawWireSphere(eyePos, detectionRange);
 

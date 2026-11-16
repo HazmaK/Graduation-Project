@@ -25,7 +25,7 @@ MonoBehaviour:
   barFill: {fileID: 21300000, guid: 27290b1d8594a504d9302c68d589d965, type: 3}
   cross: {fileID: 21300000, guid: 7c3b1dd526065db46ac00092134e4301, type: 3}
   diamond: {fileID: 21300000, guid: 685b4c8c0823e5646b43018d59663df1, type: 3}
-  shield: {fileID: 21300000, guid: b2e4544930a99ab4fba6a019ad9e6691, type: 3}
+  counterVerdict: {fileID: 21300000, guid: 9e92338eb10bf9a4e8161819e711b436, type: 3}
   hook: {fileID: 21300000, guid: 18fd1d06c1253944abd647d0086e42de, type: 3}
   weaponBolt: {fileID: 21300000, guid: 8b31620ede8b6884ba78642a8956e826, type: 3}
   weaponShell: {fileID: 21300000, guid: e3de0737a74ba5b4e9e17dfb95e7e259, type: 3}

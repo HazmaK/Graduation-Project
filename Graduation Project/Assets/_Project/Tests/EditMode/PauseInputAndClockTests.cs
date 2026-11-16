@@ -123,6 +123,8 @@ namespace RetroFPS.Tests
     /// <summary>Real input adapter, consumer and clock coverage using deterministic injected samples.</summary>
     public sealed class PauseInputAndClockTests
     {
+        private const float CounterActiveWindow = 0.18f;
+        private const float CounterWhiffRecovery = 0.35f;
         private PauseTestWorld world;
         private Mouse mouse;
 
@@ -243,8 +245,10 @@ namespace RetroFPS.Tests
             PauseTestWorld.Set(movement, "_velocity", new Vector3(2f, 3f, 4f));
             PauseTestWorld.Set(movement, "_isDashing", true);
             var parry = world.Root.AddComponent<PlayerParryController>();
-            PauseTestWorld.Set(parry, "_isParrying", true);
-            PauseTestWorld.Set(parry, "enableShield", true);
+            var counterTimer = new CounterVerdictTimer(CounterActiveWindow, CounterWhiffRecovery);
+            counterTimer.TryStart();
+            PauseTestWorld.Set(parry, "_timer", counterTimer);
+            PauseTestWorld.Set(parry, "enableCounter", true);
             world.Sample(1, escape: true, toggleHeld: true);
             world.Health.TakeDamage(500f, Vector3.zero, Vector3.up);
             Assert.That(world.Health.TakeUnparryableDamage(500f, Vector3.zero, Vector3.up), Is.False);
@@ -254,7 +258,8 @@ namespace RetroFPS.Tests
             Assert.That(world.Health.CurrentHealth, Is.EqualTo(100f));
             Assert.That(movement.Velocity, Is.EqualTo(new Vector3(2f, 3f, 4f)));
             Assert.That(movement.IsDashing, Is.True);
-            Assert.That(parry.IsParrying, Is.True);
+            // Pausing resets the strike window: no stale parry window while paused or after resume.
+            Assert.That(parry.IsParrying, Is.False);
             Assert.That(parry.TryParryMelee(Vector3.zero, Vector3.up, 10f), Is.False);
         }
 

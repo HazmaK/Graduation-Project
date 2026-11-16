@@ -305,7 +305,7 @@ namespace RetroFPS.Tests
             {
                 new StringTable.Translation("hud.health.label", "CAN", "HEALTH"),
                 new StringTable.Translation("hud.dash.label", "ATILMA", "DASH"),
-                new StringTable.Translation("hud.parry.label", "PARRY", "PARRY"),
+                new StringTable.Translation("hud.parry.label", "HÜKÜM", "PARRY"),
                 new StringTable.Translation("hud.parry.ready", "HAZIR", "READY"),
                 new StringTable.Translation("hud.parry.active", "AKTİF", "ACTIVE"),
                 new StringTable.Translation("hud.parry.cooldown", "BEKLE", "WAIT"),
@@ -358,7 +358,7 @@ namespace RetroFPS.Tests
             Assert.That(catalog.CombatTable, Is.SameAs(AssetDatabase.LoadAssetAtPath<StringTable>("Assets/_Project/Data/UI/StringTable_CombatHud_tr.asset")));
         }
 
-        /// <summary>The P3 builder migration shortens only the legacy English cell and is repeatable.</summary>
+        /// <summary>Builder migrations update legacy weapon and Counter-Verdict labels, preserve other copy and are repeatable.</summary>
         [TestCase("EXECUTIONER BLADE", "EXECUTIONER")]
         [TestCase("CUSTOM BLADE", "CUSTOM BLADE")]
         public void CombatCopyRevisionPreservesOtherAuthoredCells(string english, string expected)
@@ -379,12 +379,18 @@ namespace RetroFPS.Tests
             {
                 table.UpsertEntries(new[] {
                     new StringTable.Translation("hud.weapon.ExecutionerBlade", "ÖZEL KILIÇ", english),
+                    new StringTable.Translation("hud.parry.label", "PARRY", "PARRY"),
+                    new StringTable.Translation("popup.reflected", "PARRY", "PARRY"),
                     new StringTable.Translation("hud.health.label", "ÖZEL CAN", "CUSTOM HEALTH"),
                     new StringTable.Translation("custom.key", "ÖZEL", "CUSTOM") });
                 field.SetValue(null, table);
                 populate.Invoke(null, null);
                 Assert.That(table.Get("hud.weapon.ExecutionerBlade", LanguageSetting.English), Is.EqualTo(expected));
                 Assert.That(table.Get("hud.weapon.ExecutionerBlade", LanguageSetting.Turkish), Is.EqualTo("ÖZEL KILIÇ"));
+                Assert.That(table.Get("hud.parry.label", LanguageSetting.Turkish), Is.EqualTo("HÜKÜM"));
+                Assert.That(table.Get("hud.parry.label", LanguageSetting.English), Is.EqualTo("PARRY"));
+                Assert.That(table.Get("popup.reflected", LanguageSetting.Turkish), Is.EqualTo("PARRY"));
+                Assert.That(table.Get("popup.reflected", LanguageSetting.English), Is.EqualTo("PARRY"));
                 Assert.That(table.Get("hud.health.label", LanguageSetting.English), Is.EqualTo("CUSTOM HEALTH"));
                 Assert.That(table.Get("hud.health.label", LanguageSetting.Turkish), Is.EqualTo("ÖZEL CAN"));
                 Assert.That(table.Get("custom.key", LanguageSetting.English), Is.EqualTo("CUSTOM"));

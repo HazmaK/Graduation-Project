@@ -1,5 +1,6 @@
 using RetroFPS.UI.Menu;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace RetroFPS.UI.HUD
 {
@@ -46,9 +47,9 @@ namespace RetroFPS.UI.HUD
         [SerializeField] private Sprite diamond;
         /// <summary>Gets the Diamond sprite.</summary>
         public Sprite Diamond => diamond;
-        [SerializeField] private Sprite shield;
-        /// <summary>Gets the Shield sprite.</summary>
-        public Sprite Shield => shield;
+        [FormerlySerializedAs("shield"), SerializeField] private Sprite counterVerdict;
+        /// <summary>Gets the Counter-Verdict blade sprite.</summary>
+        public Sprite CounterVerdict => counterVerdict;
         [SerializeField] private Sprite hook;
         /// <summary>Gets the Hook sprite.</summary>
         public Sprite Hook => hook;

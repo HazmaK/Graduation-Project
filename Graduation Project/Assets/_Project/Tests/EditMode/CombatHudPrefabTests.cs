@@ -69,6 +69,28 @@ namespace RetroFPS.Tests
             Assert.IsFalse(Reference(hud.GetComponentInChildren<TrueDeathView>(true), "deathLayer") is GameObject layer && layer.activeSelf);
         }
 
+        /// <summary>The Counter-Verdict cell retains its bindings and uses the generated blade in every glyph layer.</summary>
+        [Test]
+        public void CounterVerdictCell_UsesBladeAndKeepsReservedBindings()
+        {
+            var view = Hud().GetComponentInChildren<AbilityHudView>(true);
+            var cell = (CanvasGroup)Reference(view, "parryCell");
+            var fill = (UnityEngine.UI.Image)Reference(view, "parryFill");
+            Assert.IsTrue(fill.transform.IsChildOf(cell.transform));
+            Assert.IsNotNull(Reference(view, "parryState"));
+            Assert.IsNotNull(Reference(view, "activeChip"));
+            var theme = (HudTheme)Reference(view, "theme");
+            Assert.IsNotNull(theme.CounterVerdict);
+            Assert.AreEqual("HUD_CounterVerdict", theme.CounterVerdict.name);
+            foreach (var image in fill.transform.parent.GetComponentsInChildren<UnityEngine.UI.Image>(true))
+                Assert.AreEqual(theme.CounterVerdict, image.sprite, image.name);
+            Assert.AreEqual(UnityEngine.UI.Image.Type.Filled, fill.type);
+            Assert.AreEqual(UnityEngine.UI.Image.FillMethod.Radial360, fill.fillMethod);
+            var label = cell.transform.Find("Label").GetComponent<LocalizedText>();
+            Assert.IsNotNull(label);
+            Assert.AreEqual("hud.parry.label", new SerializedObject(label).FindProperty("key").stringValue);
+        }
+
         [Test]
         public void Hud_InputReferencesArePersistentAfterReloadAndFocusIsWired()
         {

@@ -123,6 +123,31 @@ namespace RetroFPS.Tests.EditMode
             Assert.That(Text(weapon, "warningText"), Is.EqualTo("BOŞ"));
         }
 
+        /// <summary>The Counter-Verdict label switches languages while its reserved cell stays hidden.</summary>
+        [Test]
+        public void CounterVerdictLabelSwitchesBetweenHukumAndCounterWithoutChangingVisibility()
+        {
+            var cell = (CanvasGroup)LocalizationHudTestContext.Get(ability, "parryCell");
+            var localized = cell.transform.Find("Label").GetComponent<LocalizedText>();
+            Assert.That(localized, Is.Not.Null);
+            Assert.That(LocalizationHudTestContext.Get(localized, "key"), Is.EqualTo("hud.parry.label"));
+            LocalizationHudTestContext.Set(localized, "strings", context.Table);
+            LocalizationHudTestContext.Call(localized, "OnEnable");
+            try
+            {
+                var label = localized.GetComponent<TMP_Text>();
+                float alpha = cell.alpha;
+                Assert.That(label.text, Is.EqualTo("HÜKÜM"));
+                context.Service.SetLanguage(LanguageSetting.English);
+                Assert.That(label.text, Is.EqualTo("PARRY"));
+                Assert.That(cell.alpha, Is.EqualTo(alpha));
+                context.Service.SetLanguage(LanguageSetting.Turkish);
+                Assert.That(label.text, Is.EqualTo("HÜKÜM"));
+                Assert.That(cell.alpha, Is.EqualTo(alpha));
+            }
+            finally { LocalizationHudTestContext.Call(localized, "OnDisable"); }
+        }
+
         /// <summary>Both live lines and the eventual pending line use the new language at the original deadline.</summary>
         [Test]
         public void MergedCurrentAndPendingBannerSwitchWithoutResettingQueueOrClock()

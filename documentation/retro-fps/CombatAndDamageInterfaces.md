@@ -58,7 +58,7 @@ namespace RetroFPS.Combat
 
 ### Kurallar:
 - Cellat Kılıcı kombo bitiricisi (`ExecutionerBladeWeapon` 3. vuruş / Meteor Slam) veya Gotik Pompalı kancası (`GothicShotgunWeapon` Meat Hook) düşmanı sersemletmek için bu metodu tetikler.
-- *(Not: Çivili Buckler kalkanı oyun temposunu sadeleştirmek adına geçici olarak pasife alınmıştır; ilerde ihtiyaç duyulursa yeniden aktif edilebilir).*
+- *(Not: Çivili Buckler kalkanı 2026-11-15 itibarıyla Karşı Hüküm (Counter-Verdict) ile değiştirilmiştir; savuşturma artık Q / MMB ile her silahtan tetiklenen anlık Executioner Blade vuruşudur.)*
 - Düşman bu süre boyunca hareket edemez, saldırı başlatamaz ve animasyonunda sersemleme durumuna (`EnemyState.Stagger`) geçer.
 - `knockbackDir` **yalnızca yön** olarak yorumlanır (normalize edilir; sıfır vektör = itme yok). İtme hızı uygulayan sınıfın `stunKnockbackSpeed` alanındadır (`BasicEnemyAI` 5.5, `FlyingEyeAI` 24.5).
 
@@ -136,6 +136,29 @@ public static class CombatEvents
 ### Kurallar:
 - `BasicEnemyAI` ve `FlyingEyeAI` `Die` içinde `OnEnemyDeath`'ten hemen önce yayınlar; `CrosshairHUD` kill confirm için dinler.
 - Abonelik `OnEnable`/`OnDisable` çiftinde yapılmalıdır; statik olay `SubsystemRegistration`'da sıfırlanır.
+
+---
+
+## 7. `IReflectPunishable` Arayüzü
+- **Konum:** `Assets/_Project/Scripts/Core/Interfaces/IReflectPunishable.cs`
+- **Namespace:** `RetroFPS.Combat`
+- **Uygulayan Sınıflar:** `FlyingEyeAI`
+
+```csharp
+namespace RetroFPS.Combat
+{
+    public interface IReflectPunishable
+    {
+        void OnOwnProjectileReflectedHit(bool heavy, float damage, Vector3 point, Vector3 normal);
+    }
+}
+```
+
+### Kurallar:
+- `EnemyProjectile` yansıtılmış (`IsDeflected`) bir mermi, orijinal atıcısına (`OriginalShooter`) çarptığında `IDamageable.TakeDamage` yerine bu metodu çağırır. Atıcı hasar yerine kendi cezasını uygular.
+- Hitstop ve `EnemyProjectile.OnDeflectedImpact` olayı yine tetiklenir.
+- Atıcı bu arayüzü uygulamıyorsa mermi normal `TakeDamage` çağrısına döner.
+- Ayrıntı ve cezalandırma tablosu: [[FlyingEyeNisanci]].
 
 ---
 

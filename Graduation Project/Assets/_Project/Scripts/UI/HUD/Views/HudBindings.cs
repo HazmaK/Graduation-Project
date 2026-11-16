@@ -11,7 +11,7 @@ using UnityEngine.SceneManagement;
 
 namespace RetroFPS.UI.HUD
 {
-    /// <summary>Player-owned source injection, subscriptions and full snapshots for the nested HUD.</summary>
+    /// <summary>Player-owned source injection, Counter-Verdict success subscriptions and full snapshots for the nested HUD.</summary>
     [DisallowMultipleComponent]
     public sealed class HudBindings : MonoBehaviour
     {

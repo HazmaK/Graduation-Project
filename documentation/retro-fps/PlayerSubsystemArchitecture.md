@@ -15,7 +15,7 @@ tags:
 # PlayerSubsystemArchitecture (Oyuncu Alt Sistemleri Mimarisi)
 
 > [!abstract] HIZLI TEMPOLU RETRO HAREKET VE TAKTİKSEL KORUMA
-> Quake 1 / ULTRAKILL esintili hava fiziği, dinamik kamera, can ve hasar geribildirimi ile Spiked Buckler (savuşturma kalkanı).
+> Quake 1 / ULTRAKILL esintili hava fiziği, dinamik kamera, can ve hasar geribildirimi ile Karşı Hüküm (Counter-Verdict) savuşturma ve hızlı kılıç vuruşu.
 
 ---
 
@@ -29,14 +29,14 @@ flowchart LR
         JumpAction["Jump (Space)"]
         CrouchAction["Crouch / Slide (Ctrl/C)"]
         DashAction["Dash (Shift)"]
-        ParryAction["Parry (Q / MMB)"]
+        ParryAction["Karşı Hüküm (Q / MMB)"]
     end
 
     subgraph CONTROLLERS["Oyuncu Motoru"]
         PM["PlayerMovement\nCharacterController"]
         PL["PlayerLook\nCamera Root"]
         PH["PlayerHealth\nIDamageable"]
-        PP["PlayerParryController\nBuckler Socket"]
+        PP["PlayerParryController\nKarşı Hüküm"]
         PDF["PlayerDamageFeedback\nIMGUI Vinyet & Flinch"]
         PCF["PlayerCameraFeel\nSpring Punch / Bob"]
         HUD["PlayerDebugHUD\nHız & State"]
@@ -68,16 +68,22 @@ flowchart LR
 - **Otomatik Can Yenileme (Regen): KAPALI (2026-11-11).** `enableAutoHeal = false` (varsayılan). Açılırsa 4.5 saniye hasar alınmadığında saniyede 12 birim can tazeler. Kaynak kıtlığı ekonomisi gereği can yalnızca küre ve infazla kazanılır, bkz. [[HealthOrbAndDropSystem]]. Overheal sönümü bu ayardan bağımsız olarak çalışmaya devam eder.
 - **Ölüm Durumu:** Can 0 olunca `OnDied` olayını tetikler, kontrolleri ve silahları kilitler, imleci serbest bırakır.
 
-### 2. `PlayerParryController.cs` (Çivili Buckler / Parry Kalkanı)
+### 2. `PlayerParryController.cs` (Karşı Hüküm / Counter-Verdict)
 - **Konum:** `Assets/_Project/Scripts/Player/PlayerParryController.cs`
-- **Modülerlik Durumu (`enableShield`):** Kalkan sistemi oyun akışını ve hızlı taarruz temposunu desteklemek için tercihe bağlı (`[SerializeField] private bool enableShield = false;`) hale getirilmiştir. Pasifken sol el soketi ve nesneleri hiyerarşiden temizlenir, tuş dinlenmez. Açıldığında anında devreye girer.
-- **Girdi:** `Q` veya `Fare Orta Tuşu (MMB)`.
-- **Aktif Pencere:** 0.35 saniye aktif kabul süresi, 0.20 saniye toparlanma, 0.50 saniye bekleme süresi (Cooldown).
-- **Kabul Açısı:** Oyuncunun baktığı yöne doğru 130 derecelik geniş koni.
+- **Kalkan Kaldırıldı:** Spiked Buckler (sol el kalkanı, `enableShield`, prosedürel buckler, `customShieldModel` ve `leftHandSocket`) kaldırıldı. Yerine Karşı Hüküm geldi (2026-11-15). Awake'te kalan `FP_LeftHand_Socket` objeleri hiyerarşiden temizlenir.
+- **Modülerlik Durumu (`enableCounter`):** `[SerializeField] private bool enableCounter = true;` varsayılan açıktır. `CounterEnabled` kapalıyken tüm sorgular pasif döner ve zamanlayıcı sıfırlanır. Bileşen devre dışıyken de sorgular etkisizdir.
+- **Girdi:** `Q` veya `Fare Orta Tuşu (MMB)`. Girdi her silahta çalışır; `WeaponController.TryPlayQuickBlade()` ile Executioner Blade'in hızlı savurma vuruşu oynatılır (bkz. [[DualLoadoutAndWeapons]]).
+- **Saldırı Penceresi:** `counterActiveWindow` 0.18 saniye. Pencere içinde gelen saldırılar savuşturulur.
+- **Boşa Vuruş Toparlanması:** Pencere içinde savuşturma olmazsa `counterWhiffRecovery` 0.35 saniye kilitlenme (`IsOnCooldown`) başlar. Ayrı bir cooldown yoktur.
+- **Başarı Davranışı:** Herhangi bir savuşturma, sonraki vuruşu hemen kullanılabilir yapar ve pencereyi kapatmaz; böylece tek vuruşta birden fazla mermi yansıtılabilir.
+- **Kabul Açısı:** `counterAngle` 110 derece koni (bakış yönü etrafında).
+- **Duraklatma:** Oyun duraklatıldığında saldırı penceresi sıfırlanır.
 - **Çift Katmanlı Koruma:**
-  1. *Menzilli Mermi Yansıtma (Deflection):* `EnemyProjectile` mermilerini havada yakalar, yönünü crosshair merkezine çevirir, hızını 1.7x ve hasarını 2.5x artırarak hedefe geri fırlatır (mermi elektro maviye döner).
-  2. *Yakın Dövüş Savuşturması (Melee Stun):* Düşman darbe anında savuşturulursa darbe %100 bloke edilir; düşman 2.2 saniye sersemler (`IStunnable.Stun`).
-- **3D Model Soketi:** 3D modelcinin hazırlayacağı kalkan modeli için `customShieldModel` soketi sunar; model atanmadığında gotik kukla buckler otomatik oluşturulur.
+  1. *Menzilli Mermi Yansıtma (Deflection):* `EnemyProjectile` mermilerini koni içinde yakalar, yönünü crosshair yönüne çevirir, hızını 1.7x ve hasarını 2.5x artırarak geri fırlatır (mermi elektro maviye döner).
+  2. *Yakın Dövüş Savuşturması (Melee Stun):* Önden gelen düşman darbesi pencere içinde savuşturulursa darbe bloke edilir ve saldırgan 2.2 saniye sersemler (`IStunnable.Stun`).
+- **Hızlı Savurma Etkisi:** Karşı Hüküm vuruşu Executioner Blade'in `QuickSwipe()` metodunu çağırır; 25 hasar (`quickSwipeDamage`) ile blade konisine vurur. Kombo ilerlemez ve mermi kesmez.
+- **Durum Mantığı:** Zamanlama kuralları saf C# sınıfı `CounterVerdictTimer` içindedir ve EditMode testleriyle (`CounterVerdictTimerTests`, `PlayerParryControllerTests`) doğrulanır.
+- **Dış API:** `OnParryTriggered`, `OnParrySuccess(bool)`, `IsParrying`, `IsOnCooldown`, `CooldownRemaining`, `CooldownNormalized`, `TryParryMelee`, `IsFacingTarget`, `GetAimDirection`, `NotifyProjectileParried`.
 
 ### 3. `PlayerLook.cs` (Kamera ve Sarsıntı Motoru)
 - **Konum:** `Assets/_Project/Scripts/Player/PlayerLook.cs`

@@ -156,7 +156,7 @@ sequenceDiagram
 ## 8. DÜŞMAN KNOCKBACK'İ
 
 - **`BasicEnemyAI`:** Kritik veya `amount ≥ 40` → Stagger (0.35 s; zaten stagger'daysa süre `max(kalan, 0.35)` ve chase yeniden başlatılmaz). Yatay impuls `-hitNormal` yönünde `clamp(amount × 0.09, 2.5, 10)` m/s, `amount ≥ 60` ise `y = 1.5`. Stagger boyunca `CharacterController.Move` + 8/s üstel sönüm. Oyuncu henüz bulunamasa bile stagger işlenir.
-- **`FlyingEyeAI`:** Her vuruşta `_knockbackVelocity = -hitNormal × clamp(amount × 0.12, 2, 9)`, `KnockbackDecay = 7`/s. Kritik veya `amount ≥ 30` → 0.30 s stagger.
+- **`FlyingEyeAI`:** Her vuruşta (yerde değilse; elit grounded stun sırasında itme uygulanmaz) `_knockbackVelocity = -hitNormal × clamp(amount × 0.12, 2, 9)`, `KnockbackDecay = 7`/s. Kritik veya `amount ≥ 30` → 0.30 s stagger. Ayrıntı: [[FlyingEyeNisanci]].
 - **`IStunnable.Stun(duration, knockbackDir)`:** `knockbackDir` artık **yalnızca yön**dür; büyüklük düşmanın `stunKnockbackSpeed` alanından gelir (Ghoul `5.5` m/s, Uçan Göz `24.5` m/s ≈ 3.5 m toplam kayma). Sıfır vektör = knockback yok.
 - Kılıç finisher artık `binding.Stunnable.Stun(1.2f, forward × 12)` çağırır; meteor slam hasar normali düzeltildi (`-knockDir`).
 

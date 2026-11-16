@@ -25,13 +25,20 @@ tags:
 - **Teknoloji:** UGUI (Canvas, TextMeshPro, `RetroFPS.HUD` asmdef, kök namespace `RetroFPS.UI.HUD`). Yeni Input System kullanılır.
 - **Görsel yön:** "Kan ve Kemik". Koyu, %90 opak plakalar, `HudTheme` paleti ve yazı referansları. Ana menü ile aynı tema ve metin tablosu kullanılır.
 - **Köşe düzeni:**
-  - Sol alt: can, atılma/savuşturma, kanca.
+  - Sol alt: can, atılma/Karşı Hüküm (Counter-Verdict), kanca.
   - Sağ alt: silah ve cephane.
   - Sağ üst: dalga ve Araf bilgisi.
   - Üst orta: duyuru (banner).
 - **OnGUI'de kalanlar:** nişangah, hasar sayıları, vinyet. Bu öğeler UGUI'ye taşınmamıştır.
 
 ## 2. MİMARİ AKIŞ
+
+### Counter-Verdict HUD sözleşmesi (2026-11-15, P2)
+- Hücre görünürlüğü `PlayerParryController.CounterEnabled` ile belirlenir; yetenek varsayılan olarak açıktır. `IsParrying` yaklaşık 0,18 saniyelik saldırı penceresini, `IsOnCooldown` yalnızca boşa giden saldırıdan sonraki yaklaşık 0,35 saniyelik toparlanmayı gösterir. Doluluk toparlanırken `1 - CooldownNormalized`, hazırken 1 olur.
+- `HudBindings`, `OnParrySuccess(bool)` olayını mevcut başarı göstergesine iletir. `OnParryTriggered` için ayrı HUD aboneliği gerekmez; pencere mevcut önbellekli durum sorgusuyla çizilir.
+- `hud.parry.label` anahtarı ve `Parry` hiyerarşisi/serialized referansları korunur. Türkçe `HÜKÜM`, İngilizce `PARRY` kullanılır; tam `KARŞI HÜKÜM` 20 px yazıyla ayrılan tek satıra sığmaz. Hasar popup'ı `PARRY` olarak kalır.
+- Tema alanı `counterVerdict`, `[FormerlySerializedAs("shield")]` ile eski referansı korur. Builder yeni `HUD_CounterVerdict` bıçak maskesini üretir; 128 px hücre içinde ikon 18 px, etiket kutusu 106 px olur.
+- Prefab ve ikon üretimi için Unity menüsünden `RetroFPS/Build Combat HUD` yeniden çalıştırılmalıdır. P2 sırasında Unity, builder ve testler çalıştırılmadı; TMP yerleşimi yeniden üretimden sonra EditMode testleriyle doğrulanmalıdır.
 
 ```mermaid
 flowchart LR
@@ -68,7 +75,7 @@ flowchart LR
 | HUD/Views | `HudBindings.cs` | Oyuncu kaynaklarını (PlayerHealth, PlayerMovement, PlayerParryController, WeaponController, PlayerAmmoInventory) ve paylaşılan config'i tutar. Abonelikleri yönetir. |
 | HUD/Views | `HudLayout.cs` | Köşe ve konum düzeni. |
 | HUD/Views | `HealthHudView.cs` | Sol alt can göstergesi. |
-| HUD/Views | `AbilityHudView.cs` | Atılma, savuşturma ve kanca göstergeleri. |
+| HUD/Views | `AbilityHudView.cs` | Atılma, Karşı Hüküm (Counter-Verdict) ve kanca göstergeleri. |
 | HUD/Views | `WeaponAmmoHudView.cs` | Sağ alt silah ve cephane. |
 | HUD/Views | `EncounterRunHudView.cs` | Sağ üst dalga ve Araf bilgisi. |
 | Core/Presentation | `BossEvents.cs` | `RetroFPS.Combat`: boss events and read-only current-phase snapshot; subsystem registration clears state and listeners. |

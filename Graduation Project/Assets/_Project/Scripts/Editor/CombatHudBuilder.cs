@@ -85,8 +85,8 @@ namespace RetroFPS.Editor
             EnsureLocalizationCatalog();
             HudPlaceholderArt.Generate();
             Set(theme, "menuTheme", menu);
-            string[] fields = { "plate", "chip", "barTrack", "barFill", "cross", "diamond", "shield", "hook", "weaponBolt", "weaponShell", "weaponBlade", "sigilAraf", "arrow", "hatch" };
-            string[] sprites = { "HUD_Plate_9S", "HUD_Chip_9S", "HUD_Bar_Track", "HUD_Bar_Fill", "HUD_Cross", "HUD_Diamond", "HUD_Shield", "HUD_Hook", "HUD_Weapon_Bolt", "HUD_Weapon_Shell", "HUD_Weapon_Blade", "HUD_Sigil_Araf", "HUD_Arrow", "HUD_Hatch" };
+            string[] fields = { "plate", "chip", "barTrack", "barFill", "cross", "diamond", "counterVerdict", "hook", "weaponBolt", "weaponShell", "weaponBlade", "sigilAraf", "arrow", "hatch" };
+            string[] sprites = { "HUD_Plate_9S", "HUD_Chip_9S", "HUD_Bar_Track", "HUD_Bar_Fill", "HUD_Cross", "HUD_Diamond", "HUD_CounterVerdict", "HUD_Hook", "HUD_Weapon_Bolt", "HUD_Weapon_Shell", "HUD_Weapon_Blade", "HUD_Sigil_Araf", "HUD_Arrow", "HUD_Hatch" };
             for (int i = 0; i < fields.Length; i++) Set(theme, fields[i], HudPlaceholderArt.Sprite(sprites[i]));
             Set(theme, "deathSeal", MainMenuPlaceholderArt.Sprite("Sigil_A_BoneSeal"));
             Set(theme, "deathSealPressed", MainMenuPlaceholderArt.Sprite("Sigil_A_BoneSealPressed"));
@@ -152,7 +152,7 @@ namespace RetroFPS.Editor
                 new StringTable.Translation("boss.judge.name", "YARGI\u00C7", "THE JUDGE"),
                 new StringTable.Translation("hud.health.label", "CAN", "HEALTH"),
                 new StringTable.Translation("hud.dash.label", "ATILMA", "DASH"),
-                new StringTable.Translation("hud.parry.label", "PARRY", "PARRY"),
+                new StringTable.Translation("hud.parry.label", "HÜKÜM", "PARRY"),
                 new StringTable.Translation("hud.parry.ready", "HAZIR", "READY"),
                 new StringTable.Translation("hud.parry.active", "AKTİF", "ACTIVE"),
                 new StringTable.Translation("hud.parry.cooldown", "BEKLE", "WAIT"),
@@ -200,6 +200,7 @@ namespace RetroFPS.Editor
             if (strings.UpsertEntries(defaults)) EditorUtility.SetDirty(strings);
             ApplyEnglishCopyV1();
             ApplyTurkishCopyV2();
+            ApplyCounterVerdictCopy();
             strings.ValidateEntries();
             for (int i = 0; i < defaults.Length; i++)
             {
@@ -236,8 +237,7 @@ namespace RetroFPS.Editor
             }
         }
 
-        // Copy revision v2 (user decision 2026-11-14): "SAVUŞTUR" did not fit the parry cell, so the
-        // Turkish label uses the game-jargon "PARRY" like the popups. Only the original value migrates.
+        // Retain the approved short success state; the ability label is migrated separately below.
         private static void ApplyTurkishCopyV2()
         {
             var serialized = new SerializedObject(strings);
@@ -248,14 +248,35 @@ namespace RetroFPS.Editor
                 SerializedProperty entry = entries.GetArrayElementAtIndex(i);
                 string key = entry.FindPropertyRelative("key").stringValue;
                 SerializedProperty turkish = entry.FindPropertyRelative("value");
-                // "SAVUŞTURULDU" also overflowed the parry state cell; it follows the same jargon decision.
-                if (key == "hud.parry.label" && turkish.stringValue == "SAVUŞTUR") { turkish.stringValue = "PARRY"; changed = true; }
-                else if (key == "hud.parry.success" && turkish.stringValue == "SAVUŞTURULDU") { turkish.stringValue = "PARRY!"; changed = true; }
+                // "SAVUŞTURULDU" overflowed the parry state cell.
+                if (key == "hud.parry.success" && turkish.stringValue == "SAVUŞTURULDU") { turkish.stringValue = "PARRY!"; changed = true; }
             }
             if (!changed) return;
             serialized.ApplyModifiedPropertiesWithoutUndo();
             strings.RebuildCache();
             EditorUtility.SetDirty(strings);
+        }
+
+        // The ability identity changed. Replace both label translations even in an already populated table.
+        // Keep the stable localization key so existing prefab bindings survive until the next rebuild.
+        private static void ApplyCounterVerdictCopy()
+        {
+            var serialized = new SerializedObject(strings);
+            SerializedProperty entries = serialized.FindProperty("entries");
+            for (int i = 0; i < entries.arraySize; i++)
+            {
+                SerializedProperty entry = entries.GetArrayElementAtIndex(i);
+                if (entry.FindPropertyRelative("key").stringValue != "hud.parry.label") continue;
+                SerializedProperty turkish = entry.FindPropertyRelative("value");
+                SerializedProperty english = entry.FindPropertyRelative("en");
+                if (turkish.stringValue == "HÜKÜM" && english.stringValue == "PARRY") return;
+                turkish.stringValue = "HÜKÜM";
+                english.stringValue = "PARRY";
+                serialized.ApplyModifiedPropertiesWithoutUndo();
+                strings.RebuildCache();
+                EditorUtility.SetDirty(strings);
+                return;
+            }
         }
 
         private static string PlaceholderSignature(string text)
@@ -487,8 +508,10 @@ namespace RetroFPS.Editor
             count.characterSpacing = 0f;
             RectTransform parry = At("Parry", row, 136, 0, 128, 60);
             CanvasGroup parryGroup = Component<CanvasGroup>(parry.gameObject);
-            var parryFill = AbilityGlyph(parry, theme.Shield);
-            Label("Label", parry, "hud.parry.label", 20, 30, 0, 98, 27).characterSpacing = 0f; // Label stays inside its reserved cell.
+            // Retain the Parry hierarchy and serialized bindings; this cell now presents Counter-Verdict.
+            var parryFill = AbilityGlyph(parry, theme.CounterVerdict, 18f);
+            // KARŞI HÜKÜM exceeds this single-line cell; HÜKÜM keeps the 20px text floor.
+            Label("Label", parry, "hud.parry.label", 20, 22, 0, 106, 27).characterSpacing = 0f;
 
             var activeChip = Image("ActiveChip", parry, theme.Chip, Palette.Focus, 0, 30, 128, 28);
             activeChip.type = UnityEngine.UI.Image.Type.Sliced; activeChip.enabled = false;
@@ -506,11 +529,11 @@ namespace RetroFPS.Editor
             Set(view, "parryFill", parryFill); Set(view, "hookFill", hookFill); Set(view, "activeChip", activeChip);
         }
 
-        private static UnityEngine.UI.Image AbilityGlyph(Transform parent, Sprite sprite)
+        private static UnityEngine.UI.Image AbilityGlyph(Transform parent, Sprite sprite, float size = 27f)
         {
-            var outline = Image("GlyphOutline", parent, sprite, Palette.Text, 0, 0, 27, 27);
-            Image("Inner", outline.transform, sprite, theme.Track, 6, 6, 15, 15);
-            var fill = Image("Fill", outline.transform, sprite, Palette.Text, 0, 0, 27, 27); Radial(fill); return fill;
+            var outline = Image("GlyphOutline", parent, sprite, Palette.Text, 0, 0, size, size);
+            Image("Inner", outline.transform, sprite, theme.Track, size * 2f / 9f, size * 2f / 9f, size * 5f / 9f, size * 5f / 9f);
+            var fill = Image("Fill", outline.transform, sprite, Palette.Text, 0, 0, size, size); Radial(fill); return fill;
         }
 
         private static void BuildAmmo(RectTransform parent)

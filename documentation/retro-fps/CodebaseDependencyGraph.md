@@ -30,7 +30,7 @@ flowchart TD
         PM["PlayerMovement\n(Quake Strafe, Slide, Dash)"]
         PL["PlayerLook\n(Mouse Look, Tilt, FOV, Shake)"]
         PH["PlayerHealth\n(Can, İyileşme, IDamageable)"]
-        PP["PlayerParryController\n(Buckler, Yansıtma, Stun)"]
+        PP["PlayerParryController\n(Karşı Hüküm, Yansıtma, Stun)"]
         PDF["PlayerDamageFeedback\n(IMGUI Vinyet, Flinch)"]
         PCF["PlayerCameraFeel + Spring\n(View Punch, Land Dip, Bob, Footsteps)"]
         WC["WeaponController\n(Silah Orkestrasyonu)"]
@@ -49,6 +49,7 @@ flowchart TD
         IDamage["IDamageable Interface"]
         IStun["IStunnable Interface"]
         IEncounter["IEncounterEnemy Interface"]
+        IReflect["IReflectPunishable Interface"]
         IAlert["IAlertableEnemy Interface"]
         Events["CombatEvents (Core)\nOnEnemyKilled"]
         Lookup["CombatTargetLookup + CombatRaycast\n(Collider Önbelleği)"]
@@ -68,6 +69,8 @@ flowchart TD
     subgraph ENEMIES["👹 Düşman Yapay Zekası"]
         Ghoul["BasicEnemyAI (Ghoul Stalker)"]
         FlyingEye["FlyingEyeAI (Uçan Göz)"]
+        EyeView["FlyingEyeView (Sunum)"]
+        EyePool["EyeProjectilePool (Orb Havuzu)"]
         AlertHub["EnemyAlertHub (Sürü Alarmı)"]
         Projectile["EnemyProjectile (Plazma Mermisi)"]
         Dummy["CombatDummy (Antrenman Mankeni)"]
@@ -157,6 +160,10 @@ flowchart TD
     Director -->|Spawns & Tracks| IEncounter
     IEncounter <|.. Ghoul
     IEncounter <|.. FlyingEye
+    FlyingEye -->|Sunum| EyeView
+    FlyingEye -->|Launch| EyePool -->|Orb| Projectile
+    Projectile -.->|Yansıyan ağır/hafif çarpma| IReflect
+    IReflect <|.. FlyingEye
     
     WC -.->|OnWeaponHit| HUD
     AmmoInv -.->|OnAmmoChanged| AmmoHUD
@@ -173,7 +180,7 @@ flowchart TD
 | :--- | :--- | :--- | :--- |
 | **Player** | `PlayerMovement`, `PlayerLook`, `PlayerHealth`, `PlayerParryController`, `PlayerDamageFeedback`, `Feel/PlayerCameraFeel`, `Feel/Spring` | `UnityEngine.InputSystem`, `IDamageable`, `IStunnable`, `CombatAudio` | `OnDamageTaken`, `OnDied`, `OnParrySuccess`, `OnGrappleEnded`, `OnJumped`, `OnLanded(impact)`, `OnDashStarted`, `OnSlideStarted`, `OnSlideEnded` |
 | **Weapons** | `WeaponBase` (+ `CombatTargetLookup`, `CombatRaycast`), `WeaponController`, `ProceduralViewmodel`, `RepeaterArbalestWeapon`, `ExecutionerBladeWeapon`, `GothicShotgunWeapon`, `PlayerAmmoInventory` | `PlayerLook`, `PlayerMovement`, `Hitbox`, `IDamageable`, `IStunnable`, `CombatAudio`, `CombatVFXManager`, `HitstopManager`, `DamageNumberSystem` | `OnWeaponHit(isCrit)`, `OnWeaponSwitched(slot)`, `OnAmmoChanged(type, cur, max)` |
-| **Enemies** | `BasicEnemyAI`, `FlyingEyeAI`, `EnemyAlertHub`, `EnemyProjectile`, `CombatDummy` | `IDamageable`, `IStunnable`, `IEncounterEnemy`, `PlayerHealth`, `CombatVFXManager`, `CombatAudio`, `HitstopManager`, `BloodDecalManager`, `CombatTargetLookup` | `OnEnemyDeath`, `CombatEvents.OnEnemyKilled`, `OnAlertTriggered` |
+| **Enemies** | `BasicEnemyAI`, `FlyingEyeAI`, `FlyingEyeView`, `EyeProjectilePool`, `EnemyAlertHub`, `EnemyProjectile`, `CombatDummy` | `IDamageable`, `IStunnable`, `IEncounterEnemy`, `IReflectPunishable`, `PlayerHealth`, `CombatVFXManager`, `CombatAudio`, `HitstopManager`, `BloodDecalManager`, `CombatTargetLookup` | `OnEnemyDeath`, `CombatEvents.OnEnemyKilled`, `OnAlertTriggered` |
 | **Encounter** | `WaveSpawnDirector`, `EncounterArea`, `EncounterTriggerVolume`, `EncounterSpawnPoint`, `OccultSpawnTelegraph` | `IEncounterEnemy`, `CombatAudio` | `OnWaveStarted`, `OnWaveCompleted`, `OnEncounterCleared` |
 | **Feedback/VFX**| `CombatVFXManager`, `BloodDecalManager`, `HitstopManager`, `DamageNumberSystem`, `CombatAudio`, `ParryVFX` | Yok (Statik Tekil Yönetici / Olay Temelli Dinleyici) | Bağımsız havuzlanmış parçacık ve ses üretimi |
 | **Pickups/Loot**| `HealthOrb`, `HealthOrbManager`, `EnemyHealthDropper`, `AmmoPickup`, `EnemyAmmoDropper` | `PlayerHealth`, `PlayerAmmoInventory`, `DamageNumberSystem`, `CombatAudio` | `TryDropOrbs`, `OnHealed`, `SpawnHealNumber`, `AddAmmo` |
@@ -202,7 +209,7 @@ flowchart TD
    - Asla `BasicEnemyAI.cs`'yi kopyalayıp içine farklı davranış tıkıştırmayın.
    - Yeni düşman scriptiniz mutlaka şu arayüzleri uygulamalıdır:
      * `IDamageable` ➔ Hasar alabilmesi için
-     * `IStunnable` ➔ Parry ve kalkan vuruşlarından etkilenmesi için
+     * `IStunnable` ➔ Karşı Hüküm (Parry) savuşturmalarından etkilenmesi için
      * `IEncounterEnemy` ➔ `WaveSpawnDirector` tarafından doğurulabilmesi ve dalga takibine girmesi için
      * `IAlertableEnemy` ➔ Sürü alarmından haberdar olabilmesi için
 

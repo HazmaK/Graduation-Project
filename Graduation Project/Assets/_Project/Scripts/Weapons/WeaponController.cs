@@ -34,11 +34,23 @@ namespace RetroFPS.Weapons
         [Header("Kayıtlı Silahlar")]
         [SerializeField] private WeaponBase[] registeredWeapons;
 
+        [Header("Counter-Verdict Quick Blade")]
+        [SerializeField, Min(0f)] private float quickBladeDuration = 0.25f;
+
         private PlayerLook _look;
         private Camera _cam;
         private readonly Dictionary<WeaponSlot, WeaponBase> _weaponMap = new Dictionary<WeaponSlot, WeaponBase>();
         private WeaponBase _activeWeapon;
         private bool _requireFreshFire;
+        private float _quickBladeTimer;
+        private int _quickBladeStartFrame = -1;
+        private bool _isQuickBladeActive;
+        private ExecutionerBladeWeapon _quickBladeWeapon;
+        private GameObject _quickBladeSourceVisual;
+        private GameObject _quickBladeShownVisual;
+
+        /// <summary>Whether the quick blade temporarily owns weapon visuals and fire/switch input.</summary>
+        public bool IsQuickBladeActive => _isQuickBladeActive;
 
         public event Action<bool> OnWeaponHit;
         public event Action<WeaponSlot> OnWeaponSwitched;
@@ -186,7 +198,16 @@ namespace RetroFPS.Weapons
         {
             if (Pause.GamePause.IsGameplayInputBlocked)
             {
+                RestoreQuickBlade();
                 _requireFreshFire = true;
+                return;
+            }
+            if (_isQuickBladeActive)
+            {
+                if (_activeWeapon != null) _activeWeapon.Tick(Time.deltaTime);
+                if (Time.frameCount != _quickBladeStartFrame)
+                    _quickBladeTimer = Mathf.Max(0f, _quickBladeTimer - Time.deltaTime);
+                if (_quickBladeTimer <= 0f) RestoreQuickBlade();
                 return;
             }
             if (_activeWeapon != null)
@@ -198,8 +219,78 @@ namespace RetroFPS.Weapons
             HandleFireInput();
         }
 
+        private void OnDisable()
+        {
+            RestoreQuickBlade();
+            _requireFreshFire = true;
+        }
+
+        /// <summary>Strikes with the registered blade, temporarily borrowing its visual from any weapon.</summary>
+        /// <returns>False when no Executioner Blade is registered or gameplay input is blocked.</returns>
+        public bool TryPlayQuickBlade()
+        {
+            if (!isActiveAndEnabled || Pause.GamePause.IsGameplayInputBlocked) return false;
+            if (!_weaponMap.TryGetValue(WeaponSlot.ExecutionerBlade, out WeaponBase weapon)
+                || !(weapon is ExecutionerBladeWeapon blade) || blade == null) return false;
+
+            if (!_isQuickBladeActive)
+            {
+                _quickBladeWeapon = blade;
+                _isQuickBladeActive = true;
+                if (_activeWeapon != blade)
+                {
+                    _quickBladeSourceVisual = GetWeaponVisual(_activeWeapon);
+                    _quickBladeShownVisual = GetWeaponVisual(blade);
+                    SetWeaponVisuals(WeaponSlot.ExecutionerBlade);
+                    if (_quickBladeSourceVisual != null) _quickBladeSourceVisual.SetActive(false);
+                    if (_quickBladeShownVisual != null) _quickBladeShownVisual.SetActive(true);
+                }
+            }
+
+            // A successful parry can restart the strike before this visual timer expires.
+            _quickBladeTimer = Mathf.Max(0f, quickBladeDuration);
+            _quickBladeStartFrame = Time.frameCount;
+            blade.QuickSwipe();
+            if (_quickBladeTimer <= 0f) RestoreQuickBlade();
+            return true;
+        }
+
+        private GameObject GetWeaponVisual(WeaponBase weapon)
+        {
+            if (weapon == null) return null;
+            if (weapon.WeaponVisual != null) return weapon.WeaponVisual;
+            GameObject visual = null;
+            switch (weapon.Slot)
+            {
+                case WeaponSlot.RepeaterArbalest: visual = rangedWeaponVisual; break;
+                case WeaponSlot.ExecutionerBlade: visual = meleeWeaponVisual; break;
+                case WeaponSlot.GothicShotgun: visual = shotgunWeaponVisual; break;
+            }
+            if (visual != null) return visual;
+            return weapon.gameObject != gameObject ? weapon.gameObject : null;
+        }
+
+        private void RestoreQuickBlade()
+        {
+            if (!_isQuickBladeActive) return;
+            _isQuickBladeActive = false;
+            _quickBladeTimer = 0f;
+            SetWeaponVisuals(CurrentSlot);
+            GameObject activeVisual = GetWeaponVisual(_activeWeapon);
+            if (_quickBladeShownVisual != null && _activeWeapon != _quickBladeWeapon
+                && _quickBladeShownVisual != activeVisual)
+                _quickBladeShownVisual.SetActive(false);
+            if (_quickBladeSourceVisual != null && _quickBladeSourceVisual == activeVisual)
+                _quickBladeSourceVisual.SetActive(true);
+            if (activeVisual != null) activeVisual.SetActive(true);
+            _quickBladeSourceVisual = null;
+            _quickBladeShownVisual = null;
+            _quickBladeWeapon = null;
+        }
+
         private void HandleWeaponSwitchInput()
         {
+            if (_isQuickBladeActive) return;
             if (Keyboard.current == null) return;
 
             // 1 Tuşu: Arbalest
@@ -235,8 +326,10 @@ namespace RetroFPS.Weapons
             }
         }
 
+        /// <summary>Equips a registered weapon; switch attempts during a quick blade strike are ignored.</summary>
         public void EquipWeapon(WeaponSlot slot)
         {
+            if (_isQuickBladeActive) return;
             if (!_weaponMap.TryGetValue(slot, out WeaponBase newWeapon) || newWeapon == null)
             {
                 return;
@@ -253,6 +346,14 @@ namespace RetroFPS.Weapons
             _activeWeapon = newWeapon;
             _activeWeapon.OnEquip();
 
+            SetWeaponVisuals(slot);
+
+            if (isSwitch && CombatAudio.Instance != null) CombatAudio.Instance.PlayWeaponSwitch();
+            OnWeaponSwitched?.Invoke(slot);
+        }
+
+        private void SetWeaponVisuals(WeaponSlot slot)
+        {
             if (rangedWeaponVisual != null)
             {
                 rangedWeaponVisual.SetActive(slot == WeaponSlot.RepeaterArbalest);
@@ -265,13 +366,11 @@ namespace RetroFPS.Weapons
             {
                 shotgunWeaponVisual.SetActive(slot == WeaponSlot.GothicShotgun);
             }
-
-            if (isSwitch && CombatAudio.Instance != null) CombatAudio.Instance.PlayWeaponSwitch();
-            OnWeaponSwitched?.Invoke(slot);
         }
 
         private void HandleFireInput()
         {
+            if (_isQuickBladeActive) return;
             if (Pause.GamePause.IsGameplayInputBlocked) return;
             if (Mouse.current == null) return;
 

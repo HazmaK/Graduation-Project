@@ -14,7 +14,7 @@ tags:
 # DualLoadoutAndWeapons (Dual-Loadout ve Silah Dövüş Dinamikleri)
 
 > [!abstract] HIZLI SİLAH DEĞİŞİMİ VE DÖVÜŞ DENGESİ (COMBAT BALANCE)
-> Hızlı tempolu çatışmalar için tasarlanmış ana silahlar (Menzilli Seri Arbalest ve Ağır Cellat Kılıcı) ile sol el taktiksel savuşturma kalkanının (Spiked Buckler) sinerjisi ve denge parametreleri.
+> Hızlı tempolu çatışmalar için tasarlanmış ana silahlar (Menzilli Seri Arbalest, Ağır Cellat Kılıcı ve Gotik Pompalı) ile Karşı Hüküm (Counter-Verdict) savuşturma sisteminin sinerjisi ve denge parametreleri. Spiked Buckler kaldırıldı (2026-11-15).
 
 ---
 
@@ -28,12 +28,12 @@ flowchart LR
         W3["Gothic Shotgun\nÇifte Saçma & Meat Hook"]
     end
     
-    subgraph IKINCIL_TAKTIK["Sol El Modüler Ekipmanı"]
-        Buckler["Spiked Buckler (İsteğe Bağlı Parry)\nMermi Yansıtma & Sersemletme"]
+    subgraph IKINCIL_TAKTIK["Karşı Hüküm (Counter-Verdict)"]
+        KH["Q / MMB: Anlık Executioner Blade Savurması\nPencere içinde Mermi Yansıtma & Sersemletme"]
     end
     
     W1 <-->|Silah Değişimi (1/2/3 veya Tekerlek)| W2 <--> W3
-    W1 & W2 & W3 -.->|Parry Aktifken (Q / MMB)| Buckler
+    W1 & W2 & W3 -.->|Q / MMB (her silahtan)| KH
 ```
 
 ---
@@ -72,10 +72,15 @@ flowchart LR
   * Oyuncuyu 29f sabit hızla (`hookPullSpeed`) düşmana doğru çeker (`PlayerMovement.StartGrapple`). Düşman hareket etse bile dinamik olarak takip eder.
   * Hedefe 2.0m kala kanca çözülür ve oyuncu yüksek hız ivmesiyle düşmanın tepesinde pompalı veya kılıçla ölümcül kombinasyon yapabilir.
 
-### 4. `Spiked Buckler` (Çivili Savuşturma Kalkanı - Opsiyonel Sol El)
-- **Modülerlik:** `PlayerParryController.enableShield` ile tercihe bağlıdır (varsayılan: pasif).
-- **Savuşturma Penceresi:** 0.35s aktif süre, 0.50s bekleme.
-- **Yansıtma & Sersemletme:** Düşman mermilerini crosshair'a 1.7x hız ve 2.5x hasarla yansıtır; yakın dövüş saldırılarını %100 bloke edip düşmanı 2.2 saniye sersemletir (`IStunnable.Stun`).
+### 4. `Karşı Hüküm` (Counter-Verdict - Spiked Buckler yerine)
+- **Kaldırılma:** Spiked Buckler kalkanı kaldırıldı; yerine bu yetenek geldi (2026-11-15). Kalkan, `enableShield` ve sol el soketi artık kodda yoktur.
+- **Modülerlik:** `PlayerParryController.enableCounter` ile açılıp kapanır (varsayılan: açık).
+- **Girdi ve Hızlı Vuruş:** `Q` veya `Fare Orta Tuşu (MMB)` her silahta çalışır. Executioner Blade'in anlık savurma vuruşu oynatılır (`WeaponController.TryPlayQuickBlade()`): aktif silahın görseli 0.25 saniye gizlenir ve kılıç görseli gösterilir; bu sürede ateş ve silah değişimi girdileri yok sayılır.
+- **Hasar:** Savurma 25 hasar (`quickSwipeDamage`) ile kılıç konisine vurur. Kombo ilerlemez, kombo/cooldown durumu değişmez ve mermi kesmez.
+- **Savuşturma Penceresi:** 0.18s saldırı penceresi (`counterActiveWindow`). Boşa çıkarsa 0.35s toparlanma kilitlenmesi (`counterWhiffRecovery`); ayrı cooldown yoktur.
+- **Başarı:** Her başarılı savuşturma sonraki vuruşu hemen kullanılabilir yapar ve pencereyi açık tutar; tek vuruşta birden fazla mermi yansıtılabilir.
+- **Kabul Açısı:** 110 derece koni (`counterAngle`).
+- **Yansıtma & Sersemletme:** Düşman mermilerini crosshair'a 1.7x hız ve 2.5x hasarla yansıtır; önden gelen yakın dövüş darbesini pencere içinde bloke edip saldırganı 2.2 saniye sersemletir (`IStunnable.Stun`).
 
 ---
 

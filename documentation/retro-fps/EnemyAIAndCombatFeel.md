@@ -62,7 +62,7 @@ flowchart TD
 - **Vuruş Tepkisi (Hit Flash & Et Geri Bildirimi):** Düşman `TakeDamage` içinde HDR beyaz (kritikte altın) hit flash (0.06s / 0.12s, `_EmissionColor` dahil), et darbe VFX'i ve et sesini **kendisi** üretir; silahlar bunları çağırmaz ([[GameFeelArchitecture]]).
 - **Tökezleme (Stagger):**
   * Ghoul: Poise kırılması (1.0s pencerede ≥70 hasar) veya kritik vuruşta (Lunging hariç; ClawStrike/Lunging sırasında non-kritik hyper-armor) 0.35s stagger; `-hitNormal` yönünde `clamp(hasar × 0.09, 2.5, 10)` m/s yatay itme (≥60 hasarda hafif dikey sıçrama), 8/s üstel sönüm. Stagger sırasında gelen vuruşlar süreyi uzatır, chase'i yeniden başlatmaz.
-  * Uçan Göz: Her vuruşta `clamp(hasar × 0.12, 2, 9)` m/s itme (7/s sönüm); kritik veya ≥30 hasarda 0.30s stagger.
+  * Uçan Göz: Her vuruşta (yerde değilse) `clamp(hasar × 0.12, 2, 9)` m/s itme (7/s sönüm); kritik veya ≥30 hasarda 0.30s stagger. Elit ağır yansıma sonrası yerde sersemlemede itme yoktur ([[FlyingEyeNisanci]]).
   * Stun / parry (`IStunnable.Stun`): `knockbackDir` yalnızca yön; itme hızı `stunKnockbackSpeed` (Ghoul 5.5, Uçan Göz 24.5 ≈ 3.5 m). 1.2 - 2.2 saniyelik savunmasız pencere oluşturur.
 - **Ölüm Olayı:** `Die` → `CombatEvents.RaiseEnemyKilled(pos, wasCritical, wasGibbed)` → `OnEnemyDeath`. Kill confirm UI/ses bu olayı dinler.
 

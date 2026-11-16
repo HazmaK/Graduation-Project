@@ -8,7 +8,7 @@ using UnityEngine;
 
 namespace RetroFPS.UI.HUD
 {
-    /// <summary>Renders prebuilt dash pips and quantized parry/hook readiness in reserved cells.</summary>
+    /// <summary>Renders prebuilt dash pips and quantized Counter-Verdict/hook readiness in reserved cells.</summary>
     public sealed class AbilityHudView : MonoBehaviour
     {
         [SerializeField] private HudConfig config;
@@ -31,9 +31,9 @@ namespace RetroFPS.UI.HUD
         private bool reduceMotion, showingSuccess, dashTextDirty, stateTextDirty;
 
         /// <summary>Creates exactly the authored number of pips before any recharge/dash event.</summary>
-        public void Initialize(PlayerMovement source, PlayerParryController shield)
+        public void Initialize(PlayerMovement source, PlayerParryController counter)
         {
-            movement = source; parry = shield;
+            movement = source; parry = counter;
             if (config == null || theme == null || strings == null) return;
             if (pipRoot != null) pipRoot.gameObject.SetActive(movement != null);
             int count = movement != null ? Mathf.Max(0, movement.MaxDashCharges) : 0;
@@ -114,7 +114,7 @@ namespace RetroFPS.UI.HUD
             if (dashFlashUntil > 0f && GamePause.UnscaledTime >= dashFlashUntil) { dashFlashUntil = 0f; RenderPips(); }
             bool expired = showingSuccess && GamePause.UnscaledTime >= successUntil;
             if (expired) showingSuccess = false;
-            bool visible = parry != null && parry.ShieldEnabled;
+            bool visible = parry != null && parry.CounterEnabled;
             bool changed = parryCache.Update(parry != null && parry.IsOnCooldown ? 1f - parry.CooldownNormalized : 1f,
                 parry != null && parry.IsParrying, visible);
             if (stateTextDirty || changed || expired)

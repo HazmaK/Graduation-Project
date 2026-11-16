@@ -250,12 +250,6 @@ namespace RetroFPS
                 if (ghouls[i] != null) ghouls[i].ValidateAndRepairMaterials();
             }
 
-            FlyingEyeAI[] eyes = root.GetComponentsInChildren<FlyingEyeAI>(true);
-            for (int i = 0; i < eyes.Length; i++)
-            {
-                if (eyes[i] != null) eyes[i].ValidateAndRepairMaterials();
-            }
-
             // Mevcut veya eski konumu bozuk meşale objesi varsa temizle ve güncel 34m arena konumlarıyla yeniden üret
             Transform oldTorches = root.Find("Gothic_Torches");
             if (oldTorches != null)

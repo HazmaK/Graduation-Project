@@ -2,369 +2,181 @@ using System;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using RetroFPS.Combat;
+using RetroFPS.Weapons;
 
 namespace RetroFPS
 {
-    /// <summary>
-    /// Sol El İkincil Taktiksel Araç: Çivili Buckler (Spiked Buckler / Parry Kalkanı).
-    /// - Q veya Fare Orta Tuşu ile parry savurması yapar.
-    /// - 0.35 saniyelik aktif parry penceresi boyunca:
-    ///   * Gelen menzilli mermileri (EnemyProjectile) algılar ve baktığınız yöne 2.5x hasarla geri yansıtır.
-    ///   * Yakın dövüş darbelerini (Ghul / Melee) %100 bloke eder ve saldıran düşmanı 2 saniye sersemletir (Stun).
-    /// - Çift katmanlı koruma: Hem aktif alan taraması (Every Frame Sweep) hem de temas anı reaktif koruma içerir.
-    /// - 3D Modelci için hazır soket sistemi (customShieldModel) sunar; model yoksa gotik kukla kalkan oluşturur.
-    /// </summary>
+    /// <summary>Counter-Verdict quick blade strike, melee stun and aim-directed projectile parry.</summary>
     [RequireComponent(typeof(PlayerLook))]
     [DisallowMultipleComponent]
+    [DefaultExecutionOrder(-50)]
     public class PlayerParryController : MonoBehaviour
     {
-        [Header("Kalkan Sistemi Durumu")]
-        [Tooltip("Kalkan sistemini tamamen aktif veya pasif yapar. Pasifken kalkan modeli oluşturulmaz ve tuş dinlenmez.")]
-        [SerializeField] private bool enableShield = false;
-
-        [Header("Parry & Zamanlama Parametreleri")]
-        [Tooltip("Kusursuz savuşturma (Parry) aktif penceresi (saniye)")]
-        [SerializeField] private float parryActiveWindow = 0.35f;
-
-        [Tooltip("Savurma sonrası toparlanma süresi (saniye)")]
-        [SerializeField] private float parryRecoveryDuration = 0.20f;
-
-        [Tooltip("Tekrar parry yapabilmek için gereken bekleme süresi")]
-        [SerializeField] private float parryCooldown = 0.50f;
-
-        [Tooltip("Oyuncunun baktığı yöne göre parry kabul açısı (derece)")]
-        [SerializeField] private float parryAngle = 130f;
-
-        [Tooltip("Mermileri havada yakalayıp yansıtma tarama menzili (metre)")]
+        [Header("Counter-Verdict")]
+        [SerializeField] private bool enableCounter = true;
+        [SerializeField, Min(0f)] private float counterActiveWindow = 0.18f;
+        [SerializeField, Min(0f)] private float counterWhiffRecovery = 0.35f;
+        [SerializeField] private float counterAngle = 110f;
         [SerializeField] private float projectileCatchRadius = 4.2f;
 
-        [Header("Sersemletme ve Yansıtma Değerleri")]
+        [Header("Stun and Reflection")]
         [SerializeField] private float meleeStunDuration = 2.2f;
+        [SerializeField] private float meleeFallbackRadius = 4f;
         [SerializeField] private float reflectedSpeedMultiplier = 1.7f;
         [SerializeField] private float reflectedDamageMultiplier = 2.5f;
-
-        [Header("İşitsel Geri Bildirim")]
-        [Tooltip("İsteğe bağlı özel parry sesi; boşsa dinamik metalik çınlama sentezlenir.")]
         [SerializeField] private AudioClip customParrySound;
-
-        [Header("Görsel & Model Soketi (3D Modelci İçin)")]
-        [Tooltip("Blender/Maya'dan aktarılan kalkan 3D modeli buraya bağlanır.")]
-        [SerializeField] private GameObject customShieldModel;
-
-        [Tooltip("Kalkanın kameraya bağlı duracağı sol el soketi")]
-        [SerializeField] private Transform leftHandSocket;
 
         private PlayerLook _look;
         private Camera _cam;
-        private Transform _cameraHolder;
-        private GameObject _proceduralShieldRoot;
-        private Transform _shieldVisualTransform;
-        private Renderer[] _shieldRenderers;
-
-        private float _stateTimer = 0f;
-        private float _cooldownTimer = 0f;
-        private bool _isParrying = false;
-        private bool _isInRecovery = false;
-
+        private WeaponController _weapons;
+        private CounterVerdictTimer _timer;
+        private bool _wasGameplayBlocked;
         private readonly Collider[] _overlapResults = new Collider[16];
 
+        /// <summary>Raised when a new Counter-Verdict strike starts.</summary>
         public event Action OnParryTriggered;
-        public event Action<bool> OnParrySuccess; // true: Mermi, false: Yakın dövüş
+        /// <summary>Raised for every successful parry; true for projectiles, false for melee.</summary>
+        public event Action<bool> OnParrySuccess;
 
-        public bool IsParrying => _isParrying;
-        /// <summary>Whether the optional shield mechanic is enabled.</summary>
-        public bool ShieldEnabled => enableShield;
-        public bool IsOnCooldown => _cooldownTimer > 0f;
-        public float CooldownRemaining => Mathf.Max(0f, _cooldownTimer);
-        public float CooldownNormalized => Mathf.Clamp01(_cooldownTimer / parryCooldown);
-
-        private Vector3 _defaultLocalPos;
-        private Quaternion _defaultLocalRot;
-        private Vector3 _parryPunchPos;
-        private Quaternion _parryPunchRot;
+        /// <summary>Whether Counter-Verdict is enabled in gameplay configuration.</summary>
+        public bool CounterEnabled => enableCounter;
+        /// <summary>Whether the strike's parry window is open.</summary>
+        public bool IsParrying => CounterEnabled && isActiveAndEnabled && !Pause.GamePause.IsGameplayInputBlocked
+            && !Pause.GamePause.IsSimulationBlocked && _timer != null && _timer.IsActive;
+        /// <summary>Whether an unsuccessful strike is in whiff recovery.</summary>
+        public bool IsOnCooldown => CounterEnabled && isActiveAndEnabled && _timer != null && _timer.IsRecovering;
+        /// <summary>Seconds of whiff recovery remaining.</summary>
+        public float CooldownRemaining => CounterEnabled && isActiveAndEnabled && _timer != null ? _timer.RecoveryRemaining : 0f;
+        /// <summary>Whiff recovery fraction, from one to zero.</summary>
+        public float CooldownNormalized => CounterEnabled && isActiveAndEnabled && _timer != null ? _timer.RecoveryNormalized : 0f;
 
         private void Awake()
         {
-            if (!enableShield)
-            {
-                enabled = false;
-                _look = GetComponent<PlayerLook>();
-                Transform holder = _look != null ? _look.CameraHolder : null;
-                if (holder == null && Camera.main != null) holder = Camera.main.transform.parent ?? Camera.main.transform;
-                if (holder != null)
-                {
-                    Transform found = holder.Find("FP_LeftHand_Socket");
-                    if (found != null)
-                    {
-                        if (Application.isPlaying) Destroy(found.gameObject);
-                        else DestroyImmediate(found.gameObject);
-                    }
-                }
-                return;
-            }
-
+            _timer = new CounterVerdictTimer(counterActiveWindow, counterWhiffRecovery);
             _look = GetComponent<PlayerLook>();
-            if (_look != null)
-            {
-                _cam = _look.PlayerCam;
-                _cameraHolder = _look.CameraHolder;
-            }
+            _weapons = GetComponent<WeaponController>();
+            if (_look != null) _cam = _look.PlayerCam;
             if (_cam == null) _cam = Camera.main ?? FindAnyObjectByType<Camera>();
-            if (_cameraHolder == null && _cam != null) _cameraHolder = _cam.transform.parent ?? _cam.transform;
 
-            SetupLeftHandSocket();
-            SetupShieldVisual();
-        }
-
-        private void SetupLeftHandSocket()
-        {
-            if (leftHandSocket == null && _cameraHolder != null)
+            Transform holder = _look != null ? _look.CameraHolder : null;
+            if (holder == null && _cam != null) holder = _cam.transform.parent ?? _cam.transform;
+            Transform leftover = holder != null ? holder.Find("FP_LeftHand_Socket") : null;
+            if (leftover == null) leftover = transform.Find("FP_LeftHand_Socket");
+            if (leftover != null)
             {
-                Transform found = _cameraHolder.Find("FP_LeftHand_Socket");
-                if (found != null)
-                {
-                    leftHandSocket = found;
-                }
-                else
-                {
-                    GameObject socketGO = new GameObject("FP_LeftHand_Socket");
-                    socketGO.transform.SetParent(_cameraHolder, false);
-                    socketGO.transform.localPosition = new Vector3(-0.38f, -0.32f, 0.60f);
-                    socketGO.transform.localRotation = Quaternion.Euler(12f, 24f, -10f);
-                    leftHandSocket = socketGO.transform;
-                }
+                if (Application.isPlaying) Destroy(leftover.gameObject);
+                else DestroyImmediate(leftover.gameObject);
             }
 
-            _defaultLocalPos = new Vector3(-0.38f, -0.32f, 0.60f);
-            _defaultLocalRot = Quaternion.Euler(12f, 24f, -10f);
-            _parryPunchPos = new Vector3(-0.10f, -0.12f, 0.85f);
-            _parryPunchRot = Quaternion.Euler(-18f, -12f, 25f);
+            // Synthesis allocates once at initialization, never on a parry press.
+            if (customParrySound == null) GetOrCreateParryClip();
         }
 
-        private void SetupShieldVisual()
+        private void Start()
         {
-            if (customShieldModel != null)
-            {
-                _shieldVisualTransform = customShieldModel.transform;
-                _shieldRenderers = customShieldModel.GetComponentsInChildren<Renderer>();
-                return;
-            }
-
-            if (leftHandSocket == null) return;
-
-            // Modelci kendi modelini koyana kadar ekranda görünen gotik çivili kalkan kuklası
-            _proceduralShieldRoot = new GameObject("SpikedBuckler_Procedural");
-            _proceduralShieldRoot.transform.SetParent(leftHandSocket, false);
-            _proceduralShieldRoot.transform.localPosition = Vector3.zero;
-            _proceduralShieldRoot.transform.localRotation = Quaternion.identity;
-
-            // Kalkan Gövdesi (Disk)
-            GameObject disk = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
-            disk.name = "Buckler_Disc";
-            disk.transform.SetParent(_proceduralShieldRoot.transform, false);
-            disk.transform.localScale = new Vector3(0.36f, 0.025f, 0.36f);
-            disk.transform.localRotation = Quaternion.Euler(90f, 0f, 0f);
-
-            // Kalkan Göbek Bombesi
-            GameObject boss = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-            boss.name = "Buckler_Boss";
-            boss.transform.SetParent(_proceduralShieldRoot.transform, false);
-            boss.transform.localScale = new Vector3(0.14f, 0.14f, 0.14f);
-            boss.transform.localPosition = new Vector3(0f, 0f, 0.04f);
-
-            // 4 Adet Gotik Çivi (Spikes)
-            for (int i = 0; i < 4; i++)
-            {
-                GameObject spike = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
-                spike.name = $"Buckler_Spike_{i}";
-                spike.transform.SetParent(_proceduralShieldRoot.transform, false);
-                float angle = i * 90f * Mathf.Deg2Rad;
-                spike.transform.localPosition = new Vector3(Mathf.Cos(angle) * 0.13f, Mathf.Sin(angle) * 0.13f, 0.05f);
-                spike.transform.localScale = new Vector3(0.028f, 0.05f, 0.028f);
-                spike.transform.localRotation = Quaternion.Euler(90f, 0f, 0f);
-            }
-
-            // Kamera görünümünde collider'ları temizle
-            Collider[] colliders = _proceduralShieldRoot.GetComponentsInChildren<Collider>();
-            for (int i = 0; i < colliders.Length; i++) Destroy(colliders[i]);
-
-            Material shieldMat = CreateMaterial("Mat_SpikedBuckler", new Color(0.18f, 0.20f, 0.24f));
-            _shieldRenderers = _proceduralShieldRoot.GetComponentsInChildren<Renderer>();
-            for (int i = 0; i < _shieldRenderers.Length; i++) _shieldRenderers[i].material = shieldMat;
-
-            _shieldVisualTransform = _proceduralShieldRoot.transform;
+            if (_weapons == null) _weapons = GetComponent<WeaponController>();
+            if (_cam == null && _look != null) _cam = _look.PlayerCam;
         }
 
-        private Material CreateMaterial(string name, Color col)
+        private void OnDisable()
         {
-            Shader shader = Shader.Find("Universal Render Pipeline/Lit")
-                         ?? Shader.Find("Universal Render Pipeline/Unlit")
-                         ?? Shader.Find("Standard");
-
-            Material mat = new Material(shader) { name = name };
-            mat.color = col;
-            return mat;
+            _timer?.Reset();
         }
 
         private void Update()
         {
-            if (Pause.GamePause.IsGameplayInputBlocked) return;
-            if (!enableShield) return;
+            if (Pause.GamePause.IsGameplayInputBlocked || Pause.GamePause.IsSimulationBlocked)
+            {
+                if (!_wasGameplayBlocked) _timer?.Reset();
+                _wasGameplayBlocked = true;
+                return;
+            }
+            _wasGameplayBlocked = false;
+            if (!CounterEnabled)
+            {
+                _timer?.Reset();
+                return;
+            }
 
-            HandleCooldownAndTimers();
+            _timer.Tick(Time.deltaTime);
             HandleInput();
-
-            // Parry aktif penceresi boyunca her kare yaklaşan mermileri tara
-            if (_isParrying)
-            {
-                CheckAndReflectProjectiles();
-            }
-
-            UpdateShieldProceduralAnimation();
-        }
-
-        private void HandleCooldownAndTimers()
-        {
-            if (_cooldownTimer > 0f)
-            {
-                _cooldownTimer -= Time.deltaTime;
-            }
-
-            if (_isParrying)
-            {
-                _stateTimer -= Time.deltaTime;
-                if (_stateTimer <= 0f)
-                {
-                    _isParrying = false;
-                    _isInRecovery = true;
-                    _stateTimer = parryRecoveryDuration;
-                }
-            }
-            else if (_isInRecovery)
-            {
-                _stateTimer -= Time.deltaTime;
-                if (_stateTimer <= 0f)
-                {
-                    _isInRecovery = false;
-                }
-            }
+            if (IsParrying) CheckAndReflectProjectiles();
         }
 
         private void HandleInput()
         {
-            if (Keyboard.current == null && Mouse.current == null) return;
-
-            // Q Tuşu veya Fare Orta Tuşu ile Savuşturma (Parry)
-            bool parryPressed = (Keyboard.current != null && Keyboard.current.qKey.wasPressedThisFrame)
-                             || (Mouse.current != null && Mouse.current.middleButton.wasPressedThisFrame);
-
-            if (parryPressed && !IsOnCooldown && !_isParrying && !_isInRecovery)
-            {
-                ExecuteParry();
-            }
-        }
-
-        private void ExecuteParry()
-        {
-            _isParrying = true;
-            _isInRecovery = false;
-            _stateTimer = parryActiveWindow;
-            _cooldownTimer = parryCooldown;
+            bool pressed = (Keyboard.current != null && Keyboard.current.qKey.wasPressedThisFrame)
+                        || (Mouse.current != null && Mouse.current.middleButton.wasPressedThisFrame);
+            if (!pressed || !_timer.TryStart()) return;
 
             OnParryTriggered?.Invoke();
-
-            // İlk karede hemen tara
-            CheckAndReflectProjectiles();
-
-            Debug.Log("<color=yellow><b>[PARRY ACTIVE]</b></color> Shield swung! 0.35s active parry window opened.");
+            if (_weapons != null) _weapons.TryPlayQuickBlade();
         }
 
-        /// <summary>
-        /// Sahnedeki aktif düşman mermilerini tarar ve oyuncunun önündekileri nişangaha geri yansıtır.
-        /// </summary>
         private void CheckAndReflectProjectiles()
         {
-            if (_cam == null) return;
-
+            if (!CounterEnabled || !IsParrying || _cam == null) return;
             Vector3 aimDirection = _cam.transform.forward;
             Vector3 camPos = _cam.transform.position;
-
             for (int i = EnemyProjectile.ActiveProjectiles.Count - 1; i >= 0; i--)
             {
+                if (i >= EnemyProjectile.ActiveProjectiles.Count) continue;
                 EnemyProjectile proj = EnemyProjectile.ActiveProjectiles[i];
                 if (proj == null || proj.IsDeflected) continue;
-
                 Vector3 toProj = proj.transform.position - camPos;
-                float dist = toProj.magnitude;
+                if (toProj.sqrMagnitude > projectileCatchRadius * projectileCatchRadius
+                    || (toProj.sqrMagnitude >= 0.0001f
+                        && Vector3.Angle(aimDirection, toProj.normalized) > counterAngle * 0.5f)) continue;
 
-                if (dist <= projectileCatchRadius)
-                {
-                    float angle = Vector3.Angle(aimDirection, toProj.normalized);
-                    if (angle <= parryAngle * 0.5f)
-                    {
-                        proj.Deflect(aimDirection, reflectedSpeedMultiplier, reflectedDamageMultiplier);
-                        TriggerParryFeedback(true);
-
-                        if (Combat.DamageNumberSystem.Instance != null)
-                        {
-                            Combat.DamageNumberSystem.Instance.SpawnDamageNumber(proj.transform.position, proj.Damage * reflectedDamageMultiplier, true, true);
-                        }
-                    }
-                }
+                proj.Deflect(aimDirection, reflectedSpeedMultiplier, reflectedDamageMultiplier);
+                if (!proj.IsDeflected) continue;
+                TriggerParryFeedback(true);
+                if (DamageNumberSystem.Instance != null)
+                    DamageNumberSystem.Instance.SpawnDamageNumber(proj.transform.position, proj.Damage, true, true);
             }
         }
 
-        /// <summary>
-        /// Merminin hedefe çarpış anında oyuncunun o yöne bakıp bakmadığını doğrular.
-        /// </summary>
+        /// <summary>Checks whether a target lies in the counter's forward acceptance cone.</summary>
         public bool IsFacingTarget(Vector3 targetPos)
         {
-            if (_cam == null) return true;
-            Vector3 toTarget = (targetPos - _cam.transform.position).normalized;
-            return Vector3.Angle(_cam.transform.forward, toTarget) <= parryAngle * 0.5f;
+            if (!isActiveAndEnabled || !CounterEnabled || _cam == null) return false;
+            Vector3 toTarget = targetPos - _cam.transform.position;
+            return toTarget.sqrMagnitude < 0.0001f
+                || Vector3.Angle(_cam.transform.forward, toTarget.normalized) <= counterAngle * 0.5f;
         }
 
+        /// <summary>Returns the crosshair direction used by reflected projectiles.</summary>
         public Vector3 GetAimDirection()
         {
+            if (!CounterEnabled) return Vector3.zero;
             return _cam != null ? _cam.transform.forward : transform.forward;
         }
 
+        /// <summary>Records a contact-path projectile parry without closing the active window.</summary>
         public void NotifyProjectileParried()
         {
-            if (Pause.GamePause.IsSimulationBlocked) return;
+            if (!isActiveAndEnabled || !CounterEnabled || !IsParrying || Pause.GamePause.IsSimulationBlocked) return;
             TriggerParryFeedback(true);
         }
 
-        /// <summary>
-        /// PlayerHealth.TakeDamage sırasında çağrılır.
-        /// Gelen saldırı parry penceresindeyse hasarı %100 sıfırlar ve düşmanı sersemletir.
-        /// </summary>
+        /// <summary>Blocks a frontal melee hit during the active window and stuns its attacker.</summary>
         public bool TryParryMelee(Vector3 hitPoint, Vector3 hitNormal, float damage, GameObject attacker = null)
         {
-            if (Pause.GamePause.IsGameplayInputBlocked) return false;
-            if (!_isParrying) return false;
-            if (_cam == null) return false;
+            if (!isActiveAndEnabled || !CounterEnabled || Pause.GamePause.IsGameplayInputBlocked || !IsParrying || _cam == null)
+                return false;
 
-            // Saldırganın oyuncunun ön tarafında olup olmadığını yatay açıyla kontrol et
             Vector3 toAttacker = attacker != null
-                ? (attacker.transform.position - transform.position)
-                : (hitPoint - transform.position);
-
+                ? attacker.transform.position - transform.position
+                : hitPoint - transform.position;
             toAttacker.y = 0f;
-
-            if (toAttacker.sqrMagnitude > 0.001f)
+            if (toAttacker.sqrMagnitude >= 0.0001f)
             {
-                Vector3 playerForwardHoriz = Vector3.ProjectOnPlane(_cam.transform.forward, Vector3.up).normalized;
-                float angle = Vector3.Angle(playerForwardHoriz, toAttacker.normalized);
-
-                if (angle > parryAngle * 0.5f)
-                {
-                    // Arkadan veya kör noktadan gelen saldırılar parrylenemez
-                    return false;
-                }
+                Vector3 forward = Vector3.ProjectOnPlane(_cam.transform.forward, Vector3.up);
+                if (forward.sqrMagnitude < 0.001f)
+                    forward = Vector3.ProjectOnPlane(transform.forward, Vector3.up);
+                if (Vector3.Angle(forward, toAttacker.normalized) > counterAngle * 0.5f) return false;
             }
 
-            // 1. Doğrudan saldıran düşmanı sersemlet (Stun)
             bool stunned = false;
             if (attacker != null)
             {
@@ -375,32 +187,24 @@ namespace RetroFPS
                     stunned = true;
                 }
             }
-
-            // 2. Saldırgan null ise etraftaki en yakın düşmanı bul ve sersemlet
             if (!stunned)
             {
-                int hitCount = Physics.OverlapSphereNonAlloc(transform.position, 4.0f, _overlapResults, GameLayers.PlayerAttackMask, QueryTriggerInteraction.Ignore);
-                for (int i = 0; i < hitCount; i++)
+                int count = Physics.OverlapSphereNonAlloc(transform.position, meleeFallbackRadius,
+                    _overlapResults, GameLayers.PlayerAttackMask, QueryTriggerInteraction.Ignore);
+                for (int i = 0; i < count; i++)
                 {
                     Collider col = _overlapResults[i];
                     if (col == null || col.transform == transform || col.transform.IsChildOf(transform)) continue;
-
-                    IStunnable stunnable = col.GetComponentInParent<IStunnable>();
-                    if (stunnable != null)
-                    {
-                        stunnable.Stun(meleeStunDuration, (col.transform.position - transform.position).normalized);
-                        break;
-                    }
+                    IStunnable stunnable = CombatTargetLookup.Get(col).Stunnable;
+                    if (stunnable == null) continue;
+                    stunnable.Stun(meleeStunDuration, (col.transform.position - transform.position).normalized);
+                    break;
                 }
             }
 
             TriggerParryFeedback(false);
-
-            if (Combat.DamageNumberSystem.Instance != null && attacker != null)
-            {
-                Combat.DamageNumberSystem.Instance.SpawnDamageNumber(attacker.transform.position + Vector3.up * 1.5f, 0f, true, true);
-            }
-
+            if (DamageNumberSystem.Instance != null && attacker != null)
+                DamageNumberSystem.Instance.SpawnDamageNumber(attacker.transform.position + Vector3.up * 1.5f, 0f, true, true);
             return true;
         }
 
@@ -441,6 +245,7 @@ namespace RetroFPS
 
         private void TriggerParryFeedback(bool isProjectile)
         {
+            _timer.NotifySuccess();
             Vector3 effectPos = _cam != null
                 ? _cam.transform.position + _cam.transform.forward * 1.5f
                 : transform.position + transform.forward * 1.5f;
@@ -448,7 +253,7 @@ namespace RetroFPS
             Vector3 effectForward = _cam != null ? _cam.transform.forward : transform.forward;
 
             // 1. İşitsel Geri Bildirim: Tok Metalik Kalkan Çınlaması (CLANG!)
-            AudioClip clipToPlay = customParrySound != null ? customParrySound : GetOrCreateParryClip();
+            AudioClip clipToPlay = customParrySound != null ? customParrySound : _cachedParryClip;
             CombatAudio combatAudio = CombatAudio.Instance;
             if (clipToPlay != null && combatAudio != null)
             {
@@ -472,31 +277,6 @@ namespace RetroFPS
             }
 
             OnParrySuccess?.Invoke(isProjectile);
-
-            Debug.Log($"<color=cyan><b>[PERFECT PARRY SUCCESS!]</b></color> {(isProjectile ? "Projectile reflected with electro-blue surge!" : "Melee strike deflected and enemy staggered!")}");
-        }
-
-        private void UpdateShieldProceduralAnimation()
-        {
-            if (leftHandSocket == null) return;
-
-            Vector3 targetPos;
-            Quaternion targetRot;
-
-            if (_isParrying)
-            {
-                targetPos = _parryPunchPos;
-                targetRot = _parryPunchRot;
-            }
-            else
-            {
-                targetPos = _defaultLocalPos;
-                targetRot = _defaultLocalRot;
-            }
-
-            float lerpSpeed = _isParrying ? 32f : 10f;
-            leftHandSocket.localPosition = Vector3.Lerp(leftHandSocket.localPosition, targetPos, Time.deltaTime * lerpSpeed);
-            leftHandSocket.localRotation = Quaternion.Slerp(leftHandSocket.localRotation, targetRot, Time.deltaTime * lerpSpeed);
         }
     }
 }

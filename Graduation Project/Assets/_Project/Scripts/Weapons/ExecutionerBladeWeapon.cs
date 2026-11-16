@@ -25,6 +25,11 @@ namespace RetroFPS.Weapons
         [SerializeField] private float slashRange = 3.4f;
         [SerializeField] private float slashAngle = 85f;
 
+        [Header("Counter-Verdict Quick Swipe")]
+        [SerializeField] private float quickSwipeDamage = 25f;
+        [SerializeField, Min(0f)] private float quickSwipeDuration = 0.18f;
+        [SerializeField] private float quickSwipePitch = 0.95f;
+
         [Header("Sağ Tık: İnfaz Hücumu (Executioner's Lunge)")]
         [SerializeField] private float lungeDamage = 95f;
         [SerializeField] private float lungeSpeed = 28f;
@@ -113,6 +118,16 @@ namespace RetroFPS.Weapons
             {
                 _comboIndex = 0;
             }
+        }
+
+        /// <summary>Plays one immediate backhand cone hit without changing combo, cooldowns or harvest state.</summary>
+        public void QuickSwipe()
+        {
+            if (Pause.GamePause.IsGameplayInputBlocked) return;
+            if (Viewmodel != null) Viewmodel.TriggerMeleeBackhand(quickSwipeDuration);
+            if (CombatAudio.Instance != null) CombatAudio.Instance.PlayBladeSwing(quickSwipePitch);
+            Camera cam = PlayerCamera;
+            if (cam != null) ExecuteSlashCone(cam, quickSwipeDamage, false);
         }
 
         #region Sol Tık (Birincil Kombo Saldırısı)

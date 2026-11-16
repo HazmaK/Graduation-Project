@@ -64,18 +64,20 @@ stateDiagram-v2
 
 ### 2. `FlyingEyeAI.cs` (Uçan Göz / Watcher)
 - **Konum:** `Assets/_Project/Scripts/Combat/FlyingEyeAI.cs`
-- **Uyguladığı Arayüzler:** `IDamageable`, `IStunnable`, `IEncounterEnemy`
+- **Uyguladığı Arayüzler:** `IDamageable`, `IAlertableEnemy`, `IStunnable`, `IEncounterEnemy`, `IThreatCost`, `IEliteScalable`, `IStunState`, `IReflectPunishable`
+- **Davranış özeti (2026-11-16):** İki saldırılı nişancı. Hafif ok ve ağır "Hüküm Küresi" (L, L, H sırası; ağır saldırı jeton ister), öngörülü nişan, saldırılar arasında yanal strafe ve Reposition patlaması. Ayrıntı: [[FlyingEyeNisanci]].
 - **Havada Süzülme ve Mesafe Koruma (Kiting):**
-  * Yerçekiminden etkilenmez, oyuncunun 3-6 metre üzerinde süzülür.
+  * Yerçekiminden etkilenmez; zemine göre 1.8-3.6 metre arasında süzülür (hover hedefi rastgele değişir).
   * Oyuncu çok yaklaştığında geriye doğru çekilir (Kite mantığı).
   * **İrtifa zemine görelidir:** `ApplyHoverAltitude` aşağı raycast (`GameLayers.GroundMask`) ile zemini bulur; `hoverHeight`, `minFlyHeight` ve `maxFlyHeight` bu zemin Y'sine eklenir (mutlak dünya Y'si değil). Zemin bulunamazsa son bilinen zemin (`_lastGroundY`) kullanılır; ölüm düşüşü de `_lastGroundY + 0.4` ile biter. *(2026-11-11 düzeltmesi: önceden mutlak Y'ye kilitliydi, Y = +1000'deki Araf'ta gözler yere iniyordu.)*
-- **Menzilli Okült Plazma Mermisi:**
-  * Şarj olma süresi sonrası oyuncunun mevcut konumuna doğru `EnemyProjectile` ateşler.
-  * Mermi `PlayerParryController` tarafından geri yansıtılabilir. Geri yansıyan mermi Flying Eye'a çarparsa tek darbede imha edebilir.
+- **Menzilli Okült Mermisi:**
+  * Hafif ok (windup 0.45 sn) ve ağır orb (windup 1.1 sn) `EyeProjectilePool` üzerinden fırlatılır; nişan `ProjectileLead` ile kısmi öngörü yapar.
+  * Mermi `PlayerParryController` tarafından geri yansıtılabilir. Geri yansıyan **hafif** ok 45 hasar ile kritik vuruş sayılır (stagger). Geri yansıyan **ağır** orb normal Göz'ü tek darbede öldürür; elit Göz %45 can kaybeder ve 3 sn yerde sersemler (`IReflectPunishable.OnOwnProjectileReflectedHit`).
+  * Yansımamış mermiler diğer düşmanların içinden geçer (dost ateşi yok).
 
 ### 3. `EnemyProjectile.cs` (Düşman Mermisi)
 - **Konum:** `Assets/_Project/Scripts/Combat/EnemyProjectile.cs`
-- **Parry Dinamiği:** `Reflect(newDir, speedMultiplier, damageMultiplier)` metodu ile yansıtıldığında düşmanları vuracak şekilde hedef katmanını değiştirir ve elektro mavi parlar.
+- **Parry Dinamiği:** `Deflect(newDir, speedMultiplier, damageMultiplier)` metodu ile yansıtıldığında düşmanları vuracak şekilde hedef katmanını değiştirir ve elektro mavi parlar. Yansıyan mermi (`OriginalShooter` özelliği ile) kendi atıcısına dönerken hedefe yönelir (reflect homing).
 
 ### 4. `EnemyAlertHub.cs` (Merkezi Sürü Uyarısı)
 - **Konum:** `Assets/_Project/Scripts/Combat/EnemyAlertHub.cs`
@@ -85,6 +87,12 @@ stateDiagram-v2
 - **Konum:** `Assets/_Project/Scripts/Combat/CombatDummy.cs`
 - **Uyguladığı Arayüz:** `IDamageable`
 - **Özellik:** Dövüş mekanikleri, DPS hesaplamaları ve vuruş testleri için ölümsüz veya sıfırlanan manken hedefi.
+
+### 6. `PenitentAI.cs` (Kefaretçi / Lahit Taşıyıcı)
+- **Konum:** `Assets/_Project/Scripts/Combat/PenitentAI.cs`
+- **Uyguladığı Arayüzler:** `IDamageable`, `IAlertableEnemy`, `IStunnable`, `IStunState`, `IEncounterEnemy`, `IThreatCost`, `IEliteScalable`, `IGuardBreakable`
+- **Davranış özeti (2026-11-16):** Yavaş ön kalkanlı yakın dövüşçü. Kalkan önden gelen menzilli vuruşları engeller; yüz noktası ve melee dışındaki vuruşlar kalkanı atlar. Kapak darbesi (1.1 sn hazırlık, yönelme kilitli) önündeki sabit 6.5 × 4.5 m'lik bir zemin alanına tek, parry edilebilir 35 hasarlı vuruş yapar; zıplamak kurtarmaz, yana çıkmak ya da parry kurtarır. Parry stun'ı ve yansıyan ağır orb kalkanı kırar.
+- Ayrıntı: [[KefaretciPenitent]]
 
 ---
 
@@ -106,5 +114,6 @@ stateDiagram-v2
 - [[EnemyAIAndCombatFeel]] ➔ `shares_sensory_rules`
 - [[WaveAndEncounterArchitecture]] ➔ `controlled_by_wave_director`
 - [[CombatVFXAndDecalSystem]] ➔ `spawns_gibs_and_blood`
+- [[KefaretciPenitent]] ➔ `details_penitent_enemy`
 - ⬅️ [[START_HERE_AI_CONSTITUTION]] ➔ `mandated_by_constitution` *(gelen)*
 - ⬅️ [[ProjectOverview]] ➔ `utilizes_ai` *(gelen)*

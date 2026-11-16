@@ -52,6 +52,7 @@ namespace RetroFPS.Tests
             var measured = textObject.GetComponent<TextMeshProUGUI>();
             try
             {
+                bool measuredCounterVerdict = false;
                 foreach (LocalizedText localized in prefab.GetComponentsInChildren<LocalizedText>(true))
                 {
                     string key = (string)LocalizationHudTestContext.Get(localized, "key");
@@ -59,8 +60,14 @@ namespace RetroFPS.Tests
                     if (source == null) source = localized.GetComponent<TMP_Text>();
                     // Dynamic labels have no static key and are measured against their templates below.
                     if (string.IsNullOrEmpty(key)) continue;
+                    if (key == "hud.parry.label")
+                    {
+                        measuredCounterVerdict = true;
+                        Assert.That(table.Get(key, language), Is.EqualTo(language == LanguageSetting.Turkish ? "HÜKÜM" : "PARRY"));
+                    }
                     CheckFit(source, table.Get(key, language), measured, key == "hud.araf.warning" ? 2 : 1);
                 }
+                Assert.That(measuredCounterVerdict, Is.True, "Counter-Verdict must be measured in its authored label box.");
                 var ability = prefab.GetComponentInChildren<AbilityHudView>(true);
                 CheckFit((TMP_Text)LocalizationHudTestContext.Get(ability, "dashCurrent"),
                     string.Format(CultureInfo.InvariantCulture, table.Get("hud.dash.counter", language), 3, 3), measured, 1);

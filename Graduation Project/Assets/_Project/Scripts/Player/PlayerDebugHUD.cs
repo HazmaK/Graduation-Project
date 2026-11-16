@@ -40,7 +40,7 @@ namespace RetroFPS
     /// <summary>
     /// Tek Çatı Altında Birleştirilmiş Dark Fantasy / Retro Developer Debug HUD.
     /// - F2 tuşuyla anında açılıp kapanır (Unity 6 New Input System).
-    /// - Oyuncu telemetrisi (Can barı, Hız barı, Silah, Buckler Parry, Dash, State, Göz boyu).
+    /// - Oyuncu telemetrisi (Can barı, Hız barı, Silah, Counter-Verdict, Dash, State, Göz boyu).
     /// - Dalga & Karşılaşma telemetrisi (Dalga sayısı, Kalan düşmanlar, Sahada/Kuyrukta dağılım, Süre sayacı ve barı, Eşikler).
     /// - Dinamik Geleceğe Dönük Eklenti Mimarisi (IDebugHUDSection, SetMetric, RegisterCallback).
     /// - Sıfır GC Çöpü (Pre-allocated StringBuilder, önbellek dokuları ve stiller).
@@ -659,8 +659,8 @@ namespace RetroFPS
                 GUILayout.Label(wepLabel, _labelStyle);
             }
 
-            // Sol El Savunma / Parry (Yalnızca Kalkan Sistemi Aktifse Göster)
-            if (_parry != null && _parry.enabled)
+            // Counter-Verdict status is shown only while the mechanic is enabled.
+            if (_parry != null && _parry.enabled && _parry.CounterEnabled)
             {
                 if (_parry.IsParrying)
                 {
@@ -674,7 +674,7 @@ namespace RetroFPS
                 }
                 else
                 {
-                    GUILayout.Label("DEFENSE [Q]: <color=#55FF55><b>SPIKED BUCKLER (READY)</b></color>", _labelStyle);
+                    GUILayout.Label("DEFENSE [Q]: <color=#55FF55><b>COUNTER-VERDICT (READY)</b></color>", _labelStyle);
                 }
             }
 

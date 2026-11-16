@@ -20,7 +20,7 @@ MonoBehaviour:
     value: ATILMA
     en: DASH
   - key: hud.parry.label
-    value: PARRY
+    value: HÜKÜM
     en: PARRY
   - key: hud.parry.ready
     value: HAZIR

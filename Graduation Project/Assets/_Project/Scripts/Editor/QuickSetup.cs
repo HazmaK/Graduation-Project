@@ -675,7 +675,8 @@ namespace RetroFPS.Editor
             {
                 EnsureFlyingEyeFeaturesExist(eye.transform, sclera, iris, pupil, horn, tendril);
 
-                Renderer[] rends = eye.GetComponentsInChildren<Renderer>(true);
+                Transform eyeArt = eye.transform.Find("Visual");
+                Renderer[] rends = eyeArt != null ? eyeArt.GetComponentsInChildren<Renderer>(true) : eye.GetComponentsInChildren<Renderer>(true);
                 foreach (var r in rends)
                 {
                     string n = r.gameObject.name;
@@ -897,6 +898,7 @@ namespace RetroFPS.Editor
             EnemyHealthDropper eyeDropper = root.AddComponent<EnemyHealthDropper>();
             eyeDropper.EnemyTier = 2;
             root.AddComponent<EnemyAmmoDropper>();
+            FlyingEyeBuilder.ConfigureRoot(root);
             return root;
         }
 
@@ -1015,6 +1017,7 @@ namespace RetroFPS.Editor
 
         private static void EnsureFlyingEyeFeaturesExist(Transform eyeRoot, Material sclera, Material iris, Material pupil, Material horn, Material tendril)
         {
+            if (eyeRoot.GetComponent<FlyingEyeView>() != null) return;
             if (eyeRoot.Find("Eye_Iris") == null)
             {
                 GameObject irisGO = GameObject.CreatePrimitive(PrimitiveType.Sphere);

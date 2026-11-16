@@ -4,17 +4,17 @@
     "type": "split",
     "children": [
       {
-        "id": "b3c7b089eb2037ee",
+        "id": "ab3c9ff0d0821284",
         "type": "tabs",
         "children": [
           {
-            "id": "1ecdfb3171fca886",
+            "id": "d93b57ea0f91edca",
             "type": "leaf",
             "state": {
-              "type": "graph",
+              "type": "empty",
               "state": {},
-              "icon": "lucide-git-fork",
-              "title": "Grafik Görünümü"
+              "icon": "lucide-file",
+              "title": "Yeni sekme"
             }
           }
         ]
@@ -184,8 +184,9 @@
       "bases:Yeni taban oluştur": false
     }
   },
-  "active": "1ecdfb3171fca886",
+  "active": "d93b57ea0f91edca",
   "lastOpenFiles": [
+    "file:C:/Users/karac/Desktop/Ders/GADS404/GADS404_Midterm_Master_Guide.md",
     "HealthOrbAndDropSystem.md",
     "START_HERE_AI_CONSTITUTION.md",
     "MultiAgentSharedMemory.md",

@@ -85,6 +85,8 @@ classDiagram
     WeaponBase *-- ProceduralViewmodel
 ```
 
+- **`WeaponController.TryPlayQuickBlade()` (Karşı Hüküm):** Aktif silah Executioner Blade değilse görselini gizler, kılıç görselini 0.25 saniye (`quickBladeDuration`) gösterir ve `ExecutionerBladeWeapon.QuickSwipe()` çağırır. Bu süre boyunca ateş ve silah değişimi girdileri yok sayılır; aktif silah tick almaya devam eder. Duraklatma ve devre dışı kalmada görseller geri yüklenir. Durum `IsQuickBladeActive` ile okunur.
+
 ---
 
 ## 2. KİLİT MEKANİKLER VE DETAYLAR
@@ -127,6 +129,7 @@ namespace RetroFPS
   * **Kombo Zamanlayıcısı:** Vuruşlar arasında 0.70 saniyelik kombo hafıza penceresi bulunur. Süre aşılırsa zincir başa döner.
 - **Mermi Dilimleme (Projectile Slicing):**
   * Kılıç savrulurken oyuncunun ön konisinde bulunan düşman mermilerini (`EnemyProjectile.ActiveProjectiles`) tespit eder; mermileri ikiye bölerek hedefe geri saptırır (`Deflect`). Menzilli saldırılara karşı yakın dövüş kalkanı vazifesi görür.
+- **`QuickSwipe()` (Karşı Hüküm Hızlı Savurma):** Kombo, cooldown ve Blood Harvest durumunu değiştirmeden tek bir geri savurma vuruşu oynatır. Viewmodel geri savurma animasyonu (`TriggerMeleeBackhand`), kılıç sesi ve kılıç konisine `quickSwipeDamage = 25` hasar uygular. Mermi kesmez. Çağıran: `WeaponController.TryPlayQuickBlade()`, tetik: `PlayerParryController` (Q / MMB).
 - **Sağ Tık (Dinamik İkincil Saldırı Modları):**
   * **Zeminde / Yatay Bakışta: Cellat Hücumu (Executioner's Lunge):**
     - 8-10 metre ileriye şimşek hızında atılma (`PlayerMovement.StartLunge`, `damage = 95f`).
