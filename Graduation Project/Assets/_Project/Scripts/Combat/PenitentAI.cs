@@ -4,7 +4,8 @@ using UnityEngine;
 
 namespace RetroFPS.Combat
 {
-    /// <summary>Slow shield bearer with a fixed parryable area slam. Leave the area or parry at impact; jumping does not avoid it.</summary>
+    /// <summary>Slow shield bearer whose fixed parryable area slam launches a surviving player up and down the lane.
+    /// Leave the area or parry at impact; jumping does not avoid it.</summary>
     [RequireComponent(typeof(CharacterController))]
     public sealed class PenitentAI : MonoBehaviour, IDamageable, IAlertableEnemy, IStunnable, IStunState,
         IEncounterEnemy, IThreatCost, IEliteScalable, IGuardBreakable
@@ -52,8 +53,20 @@ namespace RetroFPS.Combat
         [SerializeField, Tooltip("Vertical tolerance above and below the area's ground plane; jumping does not avoid the slam.")]
         private float slamAreaHeight = 2.5f;
         [SerializeField, Tooltip("Parryable area damage before elite scaling.")] private float slamDamage = 35f;
-        [SerializeField, Tooltip("Slam impact hitstop duration.")] private float slamHitstopDuration = 0.05f;
-        [SerializeField, Tooltip("Slam impact hitstop time scale.")] private float slamHitstopScale = 0.04f;
+        [SerializeField, Tooltip("Upward velocity added by a landed slam; 9 m/s reaches about 1.62 m above rest at the player's 25 m/s squared gravity.")]
+        private float slamLaunchUpSpeed = 9f;
+        [SerializeField, Tooltip("Horizontal velocity added along the cached slam lane, in metres per second; unaffected by elite scaling.")]
+        private float slamLaunchPushSpeed = 5f;
+        [SerializeField, Tooltip("Heavy hitstop duration in real seconds, only when slam damage lands on the player.")]
+        private float slamPlayerHitstopDuration = 0.12f;
+        [SerializeField, Tooltip("Time scale during a landed slam's heavy hitstop.")]
+        private float slamPlayerHitstopScale = 0.03f;
+        [SerializeField, Tooltip("Additional camera shake trauma after slam damage lands.")]
+        private float slamCameraTrauma = 0.3f;
+        [SerializeField, Tooltip("Additional camera pitch and yaw punch in degrees after slam damage lands.")]
+        private Vector2 slamCameraPunch = new Vector2(5f, 0f);
+        [SerializeField, Tooltip("Additional camera field-of-view kick in degrees after slam damage lands.")]
+        private float slamCameraFovKick = 6f;
 
         [Header("Stun and feedback")]
         [SerializeField, Tooltip("Knockback speed applied to a normalized stun direction.")]
@@ -84,6 +97,8 @@ namespace RetroFPS.Combat
         private CharacterController _controller;
         private Collider[] _colliders;
         private PlayerHealth _playerHealth;
+        private PlayerMovement _playerMovement;
+        private PlayerLook _playerLook;
         private Transform _playerTransform;
         private PenitentAttackLoop _loop;
         private Coroutine _cacheRoutine;
@@ -240,8 +255,12 @@ namespace RetroFPS.Combat
         private void FindPlayer()
         {
             _playerSearchTimer = playerSearchInterval;
-            _playerHealth = FindAnyObjectByType<PlayerHealth>();
+            PlayerHealth player = FindAnyObjectByType<PlayerHealth>();
+            if (player == _playerHealth && _playerTransform != null) return;
+            _playerHealth = player;
             _playerTransform = _playerHealth != null ? _playerHealth.transform : null;
+            _playerMovement = _playerHealth != null ? _playerHealth.GetComponent<PlayerMovement>() : null;
+            _playerLook = _playerHealth != null ? _playerHealth.GetComponent<PlayerLook>() : null;
         }
 
         private bool CanSeePlayer(Vector3 toPlayer, float distance)
@@ -339,7 +358,8 @@ namespace RetroFPS.Combat
 
         private void PerformSlam()
         {
-            if (_slamImpactResolved || !HasLivingPlayer || _loop.Phase != PenitentAttackPhase.SlamStrike) return;
+            if (GamePause.IsSimulationBlocked || _slamImpactResolved || !HasLivingPlayer
+                || _loop.Phase != PenitentAttackPhase.SlamStrike) return;
             _slamImpactResolved = true;
             if (view != null)
             {
@@ -351,15 +371,34 @@ namespace RetroFPS.Combat
             if (CombatVFXManager.Instance != null)
                 CombatVFXManager.Instance.SpawnHitImpact(impact, Vector3.up, true, false);
             if (CombatAudio.Instance != null) CombatAudio.Instance.PlayBladeSlam(impact);
-            if (HitstopManager.Instance != null)
-                HitstopManager.Instance.TriggerHitstop(slamHitstopDuration, slamHitstopScale);
             Vector3 playerPosition = _playerTransform.position;
             if (!PenitentAttackLoop.IsInsideSlamArea(playerPosition, _slamAreaOrigin, _slamAreaForward,
                 slamAreaLength, slamAreaWidth, slamAreaHeight)) return;
             Vector3 towardEnemy = transform.position - playerPosition;
+            float healthBefore = _playerHealth.CurrentHealth;
             _playerHealth.TakeDamage(slamDamage, playerPosition + Vector3.up * playerTargetHeight,
                 towardEnemy.sqrMagnitude > 0.000001f ? towardEnemy.normalized : -_slamAreaForward, gameObject);
-            // TakeDamage may synchronously parry and Stun us; no further attack work follows this call.
+            // Parry and invulnerability return without reducing health; Stun alone cannot detect i-frames.
+            if (_playerHealth == null || _playerHealth.CurrentHealth >= healthBefore) return;
+            if (HitstopManager.Instance != null)
+                HitstopManager.Instance.TriggerHitstop(slamPlayerHitstopDuration, slamPlayerHitstopScale);
+            if (_playerLook != null)
+            {
+                _playerLook.AddTrauma(slamCameraTrauma);
+                _playerLook.AddViewPunch(slamCameraPunch.x, slamCameraPunch.y);
+                _playerLook.DoFovKick(slamCameraFovKick);
+            }
+            if (CombatVFXManager.Instance != null)
+                CombatVFXManager.Instance.SpawnHitImpact(playerPosition, Vector3.up, true, false);
+            // Distinct crunch from the lid's BladeSlam clip; TakeDamage already plays player hurt audio.
+            if (CombatAudio.Instance != null) CombatAudio.Instance.PlayFleshImpact(playerPosition, true);
+            if (_playerHealth.IsDead || _playerMovement == null) return;
+            if (_playerMovement.IsGrappling) _playerMovement.StopGrapple(false);
+            if (_playerMovement.IsLunging) _playerMovement.StopLunge();
+            // Mirror JudgeBossAI: these modes have no public stop API. Do not queue another slam impact.
+            if (_playerMovement.IsDashing || _playerMovement.IsGrappling || _playerMovement.IsLunging
+                || _playerMovement.IsMeteorSlamming) return;
+            _playerMovement.AddImpulse(PenitentSlamLaunch.Compute(_slamAreaForward, slamLaunchUpSpeed, slamLaunchPushSpeed));
         }
 
         private void StartCacheMaintenance()

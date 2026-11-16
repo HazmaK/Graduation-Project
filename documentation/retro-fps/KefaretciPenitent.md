@@ -52,7 +52,10 @@ tags:
 - **Tetik:** Oyuncu 5.5 m içindeyse (`slamTriggerRange`) ve Penitent'in ileri yönünün 35° yarım açısı içindeyse (`slamTriggerHalfAngle`; dar tutulur, böylece Penitent önce oyuncuya döner), görüş hattı açıksa, bekleme bittiyse ve ortak saldırı jetonu alınmışsa.
 - **Hazırlık (SlamWindup, 1.1 sn):** Penitent'in yönelmesi **kilitlenir** (dönüş 0, hareket yok) ve alan, hazırlığın başında Penitent'in konumu ve yönünden bir kez hesaplanıp dünya uzayında sabitlenir. Kalkan başın üstüne kalkar, kapak amber-kırmızıya doğru parlar ve amber ışık yanar. Zemin telgrafı ilk kareden görünür: koyu kırmızı tam dikdörtgen ve parlak kenarlık (`SlamArea_Outline`), yakın kenardan başlayıp hazırlık boyunca 0'dan tam uzunluğa büyüyen parlak kırmızı-turuncu dolgu (`SlamArea_Fill`). Dolgu uzak kenara ulaştığında vuruş iner.
 - **Alan:** Penitent merkezinin 0.4 m önünden (`slamAreaStartOffset`) başlayan 6.5 m uzunluğunda (`slamAreaLength`), 4.5 m genişliğinde (`slamAreaWidth`) dikdörtgen. Dikey tolerans ±2.5 m (`slamAreaHeight`): zıplamak kurtarmaz, 3 m üstteki balkondaki oyuncu güvendedir.
-- **Vuruş (SlamStrike, 0.2 sn):** Vuruşun başlangıç karesinde tam bir kez: oyuncu önbelleğe alınan dikdörtgenin içindeyse `PlayerHealth.TakeDamage(35, …, attacker)` çağrılır (`slamDamage`, **parry edilebilir yol**). Alan dışındaki oyuncu hasar almaz; Ghoul ve diğer düşmanlar etkilenmez. Oyuncu Counter-Verdict ile parry yaparsa `PlayerParryController.TryParryMelee` devreye girer ve Penitent `Stun(2.2 sn)` alır. Tek savunma: alandan yana çıkmak (yan dash) ya da vuruş anında parry. Geri bildirim: `SlamArea_Impact` beyaz-turuncu flaş (yaklaşık 0.25 sn sönüm), `CombatVFXManager.SpawnHitImpact`, `CombatAudio.PlayBladeSlam` ve kısa hitstop (0.05 sn, ölçek 0.04). Knock-up yoktur.
+- **Vuruş (SlamStrike, 0.2 sn):** Vuruşun başlangıç karesinde tam bir kez: oyuncu önbelleğe alınan dikdörtgenin içindeyse `PlayerHealth.TakeDamage(35, …, attacker)` çağrılır (`slamDamage`, **parry edilebilir yol**). Alan dışındaki oyuncu hasar almaz; Ghoul ve diğer düşmanlar etkilenmez. Oyuncu Counter-Verdict ile parry yaparsa `PlayerParryController.TryParryMelee` devreye girer ve Penitent `Stun(2.2 sn)` alır. Tek savunma: alandan yana çıkmak (yan dash) ya da vuruş anında parry. Vuruş anındaki geri bildirim: `SlamArea_Impact` beyaz-turuncu flaş (yaklaşık 0.25 sn sönüm), `CombatVFXManager.SpawnHitImpact` ve `CombatAudio.PlayBladeSlam`.
+  - **Fırlatma (yalnızca hasar gerçekten işlenirse):** `TakeDamage` çağrısı oyuncunun canını düşürdüyse (`CurrentHealth` azaldıysa) oyuncu havaya fırlatılır: `PlayerMovement.AddImpulse` ile yukarı 9 m/sn (`slamLaunchUpSpeed`) ve slam'ın önbelleğe alınan ileri yönünde, yani Penitent'ten uzağa, 5 m/sn (`slamLaunchPushSpeed`). Aynı vuruşta daha güçlü hitstop (0.12 sn, ölçek 0.03), kamera sarsıntısı, view punch ve FOV tekmesi, oyuncunun ayağında `SpawnHitImpact` ve `PlayFleshImpact` çalışır. Ölçülen: duruyorken apex yaklaşık +1.55 m, yatay yaklaşık 4.2 m, havada yaklaşık 0.67 sn, vuruş başına tek impuls.
+  - **Fırlatma iptali:** **Parry fırlatmayı iptal eder** (can düşmez, oyuncu yerinde kalır, Penitent stun olur). Dash i-frame, alan dışı ya da ölümcül vuruşta da fırlatma ve geri bildirim yoktur. Dash, kanca, lunge veya meteor slam sırasında impuls uygulanmaz.
+  - **Saf hesap:** Hız `PenitentSlamLaunch.Compute(areaForward, upSpeed, pushSpeed)` ile hesaplanır (yatay ileri yön normalize edilir, dejenere yön itme vermez).
 - **Kurtarma (SlamRecover, 1.1 sn):** Kalkan düşük, hareket ve dönüş yok. Bekleme 3.5 sn ±%20 olarak bu fazın başında atanır.
 - **Parry menzili:** `TryParryMelee` mesafe sınırı koymaz; alanın uzak ucunda (yaklaşık 6 m) yapılan parry de kabul edilir.
 
@@ -238,7 +241,9 @@ Değerler kod içindeki serileştirilmiş varsayılanlardan alındı. Bunlar ilk
 | `slamAreaLength` / `slamAreaWidth` / `slamAreaStartOffset` | 6.5 m / 4.5 m / 0.4 m | `PenitentAI` |
 | `slamAreaHeight` (dikey tolerans) | 2.5 m | `PenitentAI` |
 | `slamDamage` (parry edilebilir) | 35 | `PenitentAI` |
-| `slamHitstopDuration` / `slamHitstopScale` | 0.05 sn / 0.04 | `PenitentAI` |
+| `slamLaunchUpSpeed` / `slamLaunchPushSpeed` | 9 / 5 m/sn (parry ile iptal olur) | `PenitentAI` |
+| `slamPlayerHitstopDuration` / `slamPlayerHitstopScale` | 0.12 sn / 0.03 | `PenitentAI` |
+| `slamCameraTrauma` / `slamCameraPunch` / `slamCameraFovKick` | 0.3 / (5, 0) / 6 | `PenitentAI` |
 | Vizör (builder) | yarık 0.09 × 0.22 m, merkez 1.9 m, kapak ileri ofseti 0.46 m | `PenitentBuilder` |
 | Parry melee stun | 2.2 sn | `PlayerParryController` |
 | Yansıyan ağır orb kırılması | 3 sn | `EnemyProjectile` |
@@ -265,7 +270,7 @@ Değerler kod içindeki serileştirilmiş varsayılanlardan alındı. Bunlar ilk
 - **Elle oynanış:** Bu yazım anında yapılmadı. Sayılar ilk geçiştir.
 - **Ölüm klibi:** `Die` tetiklenir ama `Visual` aynı anda kapandığı için görünmez.
 
-Doğrulama sonuçları: bkz. `production/qa/evidence/` altındaki `penitent-01-silhouette.png`, `penitent-02-guard-block.png`, `penitent-03-slam-telegraph.png`, `penitent-04-slam-impact.png`, `penitent-05-guard-broken.png`, `penitent-06-mixed-wave.png`, `penitent-07-weak-point.png`.
+Doğrulama sonuçları: bkz. `production/qa/evidence/` altındaki `penitent-01-silhouette.png`, `penitent-02-guard-block.png`, `penitent-03-slam-telegraph.png`, `penitent-04-slam-impact.png`, `penitent-05-guard-broken.png`, `penitent-06-mixed-wave.png`, `penitent-07-weak-point.png`, `penitent-08-slam-launch.png`.
 
 ---
 

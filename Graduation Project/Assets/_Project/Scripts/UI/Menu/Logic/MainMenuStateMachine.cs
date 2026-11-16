@@ -5,7 +5,7 @@ namespace RetroFPS.UI.Menu
     /// <summary>The menu's mutually exclusive input contexts.</summary>
     public enum MainMenuState { FirstLoad, Root, Settings, RevertPrompt, QuitConfirm, Loading }
     /// <summary>Logical focus destinations; views map them to selectable objects.</summary>
-    public enum MenuFocusTarget { None, Start, Settings, Quit, MasterVolume, WindowMode, Resolution, Revert, No, Language }
+    public enum MenuFocusTarget { None, Start, Settings, Quit, MasterVolume, WindowMode, Resolution, Revert, No, Language, NewRun }
 
     /// <summary>Caller-driven menu logic. Accepted buttons act after their 80 ms press feedback.</summary>
     public sealed class MainMenuStateMachine

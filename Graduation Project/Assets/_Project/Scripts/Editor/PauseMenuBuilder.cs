@@ -76,6 +76,9 @@ namespace RetroFPS.Editor
             if (table.UpsertEntries(new[]
             {
                 new StringTable.Translation("pause.resume", "DEVAM", "RESUME"),
+                new StringTable.Translation("pause.new_run", "YENİ KOŞU", "NEW RUN"),
+                new StringTable.Translation("pause.new_run_prompt", "Yeni koşu başlatılsın mı? Bu koşudaki ilerleme kaybolacak.", "Start a new run? This run's progress will be lost."),
+                new StringTable.Translation("pause.new_run_load_error", "Yeni koşu başlatılamadı. Tekrar deneyin.", "Could not start a new run. Try again."),
                 new StringTable.Translation("pause.main_menu", "ANA MENÜ", "MAIN MENU"),
                 new StringTable.Translation("pause.main_menu_prompt", "Ana menüye dönülsün mü? Bu koşudaki ilerleme kaybolacak.", "Return to the main menu? This run's progress will be lost."),
                 new StringTable.Translation("pause.main_menu_load_error", "Ana menü yüklenemedi. Tekrar deneyin.", "Could not load the main menu. Try again.")
@@ -105,7 +108,12 @@ namespace RetroFPS.Editor
         {
             if (AssetDatabase.LoadAssetAtPath<GameObject>(PrefabPath) != null)
             {
-                // Existing authored styling and references are authoritative; validate without reconstructing.
+                GameObject existing = PrefabUtility.LoadPrefabContents(PrefabPath);
+                try
+                {
+                    if (UpgradeNewRunMenu(existing)) Save(existing, PrefabPath);
+                }
+                finally { PrefabUtility.UnloadPrefabContents(existing); }
                 ValidatePause(AssetDatabase.LoadAssetAtPath<GameObject>(PrefabPath));
                 return;
             }
@@ -129,14 +137,15 @@ namespace RetroFPS.Editor
                 CanvasGroup rootGroup = Group(list.gameObject);
                 RectTransform menu = Rect("MenuList", list);
                 menu.anchorMin = menu.anchorMax = menu.pivot = new Vector2(0, 0.5f);
-                menu.anchoredPosition = Vector2.zero; menu.sizeDelta = new Vector2(700, 260);
+                menu.anchoredPosition = Vector2.zero; menu.sizeDelta = new Vector2(700, 326);
                 var layout = menu.gameObject.AddComponent<UnityEngine.UI.VerticalLayoutGroup>();
                 layout.spacing = 18; layout.childControlHeight = layout.childControlWidth = false;
                 layout.childForceExpandHeight = layout.childForceExpandWidth = false;
                 var resume = Button(menu, "Resume", "pause.resume", 0, 0, 700, theme.MenuItemSize);
+                var newRun = Button(menu, "NewRun", "pause.new_run", 0, 0, 700, theme.MenuItemSize);
                 var settings = Button(menu, "Settings", "menu.settings", 0, 0, 700, theme.MenuItemSize);
                 var main = Button(menu, "MainMenu", "pause.main_menu", 0, 0, 700, theme.MenuItemSize);
-                var order = new UnityEngine.UI.Selectable[] { resume, settings, main }; Wrap(order);
+                var order = new UnityEngine.UI.Selectable[] { resume, newRun, settings, main }; Wrap(order);
                 GameObject panel = (GameObject)PrefabUtility.InstantiatePrefab(AssetDatabase.LoadAssetAtPath<GameObject>(SharedSettingsPanelBuilder.PrefabPath), safe);
                 panel.name = "SettingsPanel";
                 TMP_Text error = DynamicText("LoadError", safe, 1000, 100);
@@ -149,7 +158,10 @@ namespace RetroFPS.Editor
                 GameObject confirm = Instantiate("ConfirmDialog", dialogs); confirm.name = "ConfirmMainMenu";
                 var confirmRect = (RectTransform)confirm.transform; Centre(confirmRect); Size(confirmRect, 1040, 440);
                 TMP_Text prompt = confirm.transform.Find("Prompt").GetComponent<TMP_Text>();
-                Localize(prompt, "pause.main_menu_prompt"); Size(prompt.rectTransform, 960, 170); prompt.rectTransform.anchoredPosition = new Vector2(40, 105);
+                LocalizedText localizedPrompt = prompt.GetComponent<LocalizedText>();
+                if (localizedPrompt != null) Object.DestroyImmediate(localizedPrompt);
+                prompt.text = strings.Get("pause.main_menu_prompt", LanguageSetting.Turkish);
+                Size(prompt.rectTransform, 960, 170); prompt.rectTransform.anchoredPosition = new Vector2(40, 105);
                 prompt.textWrappingMode = TextWrappingModes.Normal;
                 prompt.enableAutoSizing = false; prompt.fontSize = Mathf.Max(24f, theme.DialogPromptSize);
                 prompt.fontSizeMin = 24f;
@@ -170,6 +182,7 @@ namespace RetroFPS.Editor
                 Set(controller, "rootGroup", rootGroup); Set(controller, "dimGroup", dimGroup); SetArray(controller, "rootItems", order);
                 Set(controller, "settingsPanel", panel.GetComponent<SettingsPanelView>());
                 Set(controller, "mainMenuDialog", confirm.GetComponent<ConfirmDialogView>()); Set(controller, "revertDialog", revert.GetComponent<ConfirmDialogView>());
+                Set(controller, "sceneLeavePrompt", prompt);
                 Set(controller, "fader", fader); Set(controller, "fadeGroup", fadeGroup); Set(controller, "safeArea", safe);
                 Set(controller, "loadError", error); Set(controller, "inputRouter", router);
                 var source = root.AddComponent<AudioSource>(); source.playOnAwake = false; source.spatialBlend = 0f; source.ignoreListenerPause = true;
@@ -189,6 +202,51 @@ namespace RetroFPS.Editor
             }
             finally { Object.DestroyImmediate(root); }
             ValidatePause(AssetDatabase.LoadAssetAtPath<GameObject>(PrefabPath));
+        }
+
+        // Upgrade in place: retain the existing dialog, three buttons, authored styling and all file IDs.
+        internal static bool UpgradeNewRunMenu(GameObject root)
+        {
+            var controller = root.GetComponent<PauseMenuController>();
+            var data = new SerializedObject(controller);
+            RectTransform menu = (RectTransform)root.transform.Find("SafeArea/Root/MenuList");
+            bool changed = false;
+            Transform newRun = menu.Find("NewRun");
+            if (newRun == null)
+            {
+                newRun = Button(menu, "NewRun", "pause.new_run", 0, 0, menu.sizeDelta.x, theme.MenuItemSize).transform;
+                changed = true;
+                var layout = menu.GetComponent<UnityEngine.UI.VerticalLayoutGroup>();
+                float requiredHeight = 0f;
+                for (int i = 0; i < menu.childCount; i++) requiredHeight += ((RectTransform)menu.GetChild(i)).sizeDelta.y;
+                requiredHeight += layout.spacing * (menu.childCount - 1) + layout.padding.vertical;
+                menu.sizeDelta = new Vector2(menu.sizeDelta.x, Mathf.Max(menu.sizeDelta.y, requiredHeight));
+            }
+            if (newRun.GetSiblingIndex() != 1) { newRun.SetSiblingIndex(1); changed = true; }
+            var order = new UnityEngine.UI.Selectable[]
+            {
+                menu.Find("Resume").GetComponent<UnityEngine.UI.Selectable>(), newRun.GetComponent<UnityEngine.UI.Selectable>(),
+                menu.Find("Settings").GetComponent<UnityEngine.UI.Selectable>(), menu.Find("MainMenu").GetComponent<UnityEngine.UI.Selectable>()
+            };
+            SerializedProperty items = data.FindProperty("rootItems");
+            bool orderChanged = items.arraySize != order.Length;
+            for (int i = 0; !orderChanged && i < order.Length; i++)
+                orderChanged = items.GetArrayElementAtIndex(i).objectReferenceValue != order[i];
+            if (orderChanged) { SetArray(controller, "rootItems", order); changed = true; }
+            for (int i = 0; i < order.Length; i++)
+            {
+                var nav = order[i].navigation;
+                if (nav.mode != UnityEngine.UI.Navigation.Mode.Explicit || nav.selectOnUp != order[(i + 3) % 4]
+                    || nav.selectOnDown != order[(i + 1) % 4])
+                { Wrap(order); changed = true; break; }
+            }
+            var dialog = (ConfirmDialogView)data.FindProperty("mainMenuDialog").objectReferenceValue;
+            TMP_Text prompt = dialog.transform.Find("Prompt").GetComponent<TMP_Text>();
+            LocalizedText localized = prompt.GetComponent<LocalizedText>();
+            if (localized != null) { Object.DestroyImmediate(localized); changed = true; }
+            if (data.FindProperty("sceneLeavePrompt").objectReferenceValue != prompt)
+            { Set(controller, "sceneLeavePrompt", prompt); changed = true; }
+            return changed;
         }
         /// <summary>Wires only the supplied prefab/player; safe for CombatHudBuilder to call after HUD creation.</summary>
         public static void EnsurePlayerPause(GameObject player)
@@ -230,9 +288,10 @@ namespace RetroFPS.Editor
         }
         private static void ValidatePrompt(TMP_Text prompt)
         {
+            foreach (string key in new[] { "pause.main_menu_prompt", "pause.new_run_prompt" })
             for (int i = 0; i < 2; i++)
             {
-                string copy = strings.Get("pause.main_menu_prompt", i == 0 ? LanguageSetting.Turkish : LanguageSetting.English);
+                string copy = strings.Get(key, i == 0 ? LanguageSetting.Turkish : LanguageSetting.English);
                 if (prompt.GetPreferredValues(copy, prompt.rectTransform.rect.width, float.PositiveInfinity).y > prompt.rectTransform.rect.height)
                     throw new InvalidOperationException("Pause confirmation copy overflows at the authored font size.");
             }
@@ -254,10 +313,25 @@ namespace RetroFPS.Editor
                 || new SerializedObject(pauseAudio).FindProperty("source").objectReferenceValue != source)
                 throw new InvalidOperationException("Pause UI audio must be a 2D, non-autoplay source driven by MenuAudioPlayer.");
             var controller = new SerializedObject(prefab.GetComponent<PauseMenuController>());
-            string[] fields = { "theme", "strings", "scrimGroup", "rootGroup", "dimGroup", "settingsPanel", "mainMenuDialog", "revertDialog", "fader", "fadeGroup", "safeArea", "loadError", "inputRouter" };
+            string[] fields = { "theme", "strings", "scrimGroup", "rootGroup", "dimGroup", "settingsPanel", "mainMenuDialog", "sceneLeavePrompt", "revertDialog", "fader", "fadeGroup", "safeArea", "loadError", "inputRouter" };
             for (int i = 0; i < fields.Length; i++)
                 if (controller.FindProperty(fields[i]).objectReferenceValue == null)
                     throw new InvalidOperationException("Missing pause reference: " + fields[i]);
+            SerializedProperty items = controller.FindProperty("rootItems");
+            string[] names = { "Resume", "NewRun", "Settings", "MainMenu" };
+            if (items.arraySize != names.Length) throw new InvalidOperationException("Pause needs four root items.");
+            for (int i = 0; i < names.Length; i++)
+            {
+                var item = (UnityEngine.UI.Selectable)items.GetArrayElementAtIndex(i).objectReferenceValue;
+                if (item == null || item.name != names[i] || item.transform.GetSiblingIndex() != i
+                    || item.navigation.mode != UnityEngine.UI.Navigation.Mode.Explicit
+                    || item.navigation.selectOnDown != items.GetArrayElementAtIndex((i + 1) % 4).objectReferenceValue
+                    || item.navigation.selectOnUp != items.GetArrayElementAtIndex((i + 3) % 4).objectReferenceValue)
+                    throw new InvalidOperationException("Pause root order/navigation is invalid.");
+            }
+            TMP_Text prompt = (TMP_Text)controller.FindProperty("sceneLeavePrompt").objectReferenceValue;
+            if (prompt.GetComponent<LocalizedText>() != null) throw new InvalidOperationException("Pause confirmation is view-owned.");
+            ValidatePrompt(prompt);
         }
         private static void ValidateSavedPlayer()
         {

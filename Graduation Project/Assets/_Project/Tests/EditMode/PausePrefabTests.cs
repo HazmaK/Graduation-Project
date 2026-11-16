@@ -165,20 +165,86 @@ namespace RetroFPS.Tests
                 Assert.That(count, Is.EqualTo(1), path);
             }
         }
+        /// <summary>Legacy migration adds one button and preserves every existing button/dialog reference on reruns.</summary>
+        [Test]
+        public void NewRunUpgradeIsIdempotentAndPreservesExistingObjects()
+        {
+            Pause();
+            GameObject root = PrefabUtility.LoadPrefabContents(PausePath);
+            StringTable table = null;
+            var flags = System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic;
+            var builder = System.Type.GetType("RetroFPS.Editor.PauseMenuBuilder, RetroFPS.Editor", true);
+            var mainBuilder = System.Type.GetType("RetroFPS.Editor.MainMenuBuilder, RetroFPS.Editor", true);
+            object oldTheme = builder.GetField("theme", flags).GetValue(null);
+            object oldMainTheme = mainBuilder.GetField("theme", flags).GetValue(null);
+            object oldMainStrings = mainBuilder.GetField("strings", flags).GetValue(null);
+            string guid = AssetDatabase.AssetPathToGUID(PausePath);
+            try
+            {
+                var controller = root.GetComponent<PauseMenuController>();
+                var data = new SerializedObject(controller);
+                var theme = (MenuTheme)data.FindProperty("theme").objectReferenceValue;
+                table = Object.Instantiate((StringTable)data.FindProperty("strings").objectReferenceValue);
+                builder.GetMethod("UpsertStrings").Invoke(null, new object[] { table });
+                builder.GetField("theme", flags).SetValue(null, theme);
+                mainBuilder.GetMethod("UseSharedPresentation", flags).Invoke(null, new object[] { theme, table });
+                Transform menu = root.transform.Find("SafeArea/Root/MenuList");
+                Object[] originals = { menu.Find("Resume").GetComponent<UnityEngine.UI.Selectable>(),
+                    menu.Find("Settings").GetComponent<UnityEngine.UI.Selectable>(), menu.Find("MainMenu").GetComponent<UnityEngine.UI.Selectable>() };
+                Object dialog = data.FindProperty("mainMenuDialog").objectReferenceValue;
+                Transform newRun = menu.Find("NewRun");
+                if (newRun != null) Object.DestroyImmediate(newRun.gameObject);
+                var items = data.FindProperty("rootItems"); items.arraySize = 3;
+                for (int i = 0; i < 3; i++) items.GetArrayElementAtIndex(i).objectReferenceValue = originals[i];
+                data.FindProperty("sceneLeavePrompt").objectReferenceValue = null;
+                data.ApplyModifiedPropertiesWithoutUndo();
+                var upgrade = builder.GetMethod("UpgradeNewRunMenu", flags);
+                Assert.That(upgrade.Invoke(null, new object[] { root }), Is.EqualTo(true));
+                Object added = menu.Find("NewRun").GetComponent<UnityEngine.UI.Selectable>();
+                Assert.That(upgrade.Invoke(null, new object[] { root }), Is.EqualTo(false));
+                data.Update(); items = data.FindProperty("rootItems");
+                Assert.That(items.arraySize, Is.EqualTo(4));
+                Assert.That(menu.childCount, Is.EqualTo(4));
+                Assert.That(items.GetArrayElementAtIndex(0).objectReferenceValue, Is.EqualTo(originals[0]));
+                Assert.That(items.GetArrayElementAtIndex(1).objectReferenceValue, Is.EqualTo(added));
+                Assert.That(items.GetArrayElementAtIndex(2).objectReferenceValue, Is.EqualTo(originals[1]));
+                Assert.That(items.GetArrayElementAtIndex(3).objectReferenceValue, Is.EqualTo(originals[2]));
+                Assert.That(data.FindProperty("mainMenuDialog").objectReferenceValue, Is.EqualTo(dialog));
+                Assert.That(AssetDatabase.AssetPathToGUID(PausePath), Is.EqualTo(guid));
+            }
+            finally
+            {
+                builder.GetField("theme", flags).SetValue(null, oldTheme);
+                mainBuilder.GetField("theme", flags).SetValue(null, oldMainTheme);
+                mainBuilder.GetField("strings", flags).SetValue(null, oldMainStrings);
+                PrefabUtility.UnloadPrefabContents(root);
+                if (table != null) Object.DestroyImmediate(table);
+            }
+        }
         [Test]
         public void ModalNavigationWrapsAndSettingsStartAtLanguage()
         {
             GameObject pause = Pause();
             var controller = new SerializedObject(pause.GetComponent<PauseMenuController>());
             SerializedProperty roots = controller.FindProperty("rootItems");
-            Assert.That(roots.arraySize, Is.EqualTo(3));
-            for (int i = 0; i < 3; i++)
+            string[] names = { "Resume", "NewRun", "Settings", "MainMenu" };
+            string[] keys = { "pause.resume", "pause.new_run", "menu.settings", "pause.main_menu" };
+            Assert.That(roots.arraySize, Is.EqualTo(4));
+            for (int i = 0; i < 4; i++)
             {
                 var item = (UnityEngine.UI.Selectable)roots.GetArrayElementAtIndex(i).objectReferenceValue;
+                Assert.That(item.name, Is.EqualTo(names[i]));
+                Assert.That(item.transform.GetSiblingIndex(), Is.EqualTo(i));
+                var localized = new SerializedObject(item.transform.Find("Label").GetComponent<LocalizedText>());
+                Assert.That(localized.FindProperty("key").stringValue, Is.EqualTo(keys[i]));
                 Assert.That(item.navigation.mode, Is.EqualTo(UnityEngine.UI.Navigation.Mode.Explicit));
-                Assert.That(item.navigation.selectOnDown, Is.EqualTo(roots.GetArrayElementAtIndex((i + 1) % 3).objectReferenceValue));
-                Assert.That(item.navigation.selectOnUp, Is.EqualTo(roots.GetArrayElementAtIndex((i + 2) % 3).objectReferenceValue));
+                Assert.That(item.navigation.selectOnDown, Is.EqualTo(roots.GetArrayElementAtIndex((i + 1) % 4).objectReferenceValue));
+                Assert.That(item.navigation.selectOnUp, Is.EqualTo(roots.GetArrayElementAtIndex((i + 3) % 4).objectReferenceValue));
             }
+            var prompt = (TMP_Text)controller.FindProperty("sceneLeavePrompt").objectReferenceValue;
+            Assert.That(prompt, Is.Not.Null);
+            Assert.That(prompt.GetComponent<LocalizedText>(), Is.Null, "Shared confirmation copy is controller-owned.");
+            Assert.That(pause.GetComponentsInChildren<ConfirmDialogView>(true).Length, Is.EqualTo(2), "Reuse the existing confirmation card.");
             foreach (ConfirmDialogView dialog in pause.GetComponentsInChildren<ConfirmDialogView>(true))
             {
                 Assert.That(dialog.Negative.navigation.selectOnDown, Is.EqualTo(dialog.Affirmative));

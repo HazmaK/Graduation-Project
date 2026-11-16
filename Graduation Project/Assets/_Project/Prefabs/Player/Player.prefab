@@ -1065,6 +1065,7 @@ MonoBehaviour:
   shotgunWeaponVisual: {fileID: 160562318173339448}
   firePoint: {fileID: 869669718657495316}
   registeredWeapons: []
+  quickBladeDuration: 0.25
 --- !u!114 &8207310616486761660
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1113,18 +1114,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e1ad13cecfc9936468e57460795920d6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RetroFPS.PlayerParryController
-  enableShield: 0
-  parryActiveWindow: 0.35
-  parryRecoveryDuration: 0.2
-  parryCooldown: 0.5
-  parryAngle: 130
+  enableCounter: 1
+  counterActiveWindow: 0.18
+  counterWhiffRecovery: 0.35
+  counterAngle: 110
   projectileCatchRadius: 4.2
   meleeStunDuration: 2.2
+  meleeFallbackRadius: 4
   reflectedSpeedMultiplier: 1.7
   reflectedDamageMultiplier: 2.5
   customParrySound: {fileID: 0}
-  customShieldModel: {fileID: 0}
-  leftHandSocket: {fileID: 0}
 --- !u!114 &188974621851040827
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1319,6 +1318,9 @@ MonoBehaviour:
   comboResetTime: 0.7
   slashRange: 3.4
   slashAngle: 85
+  quickSwipeDamage: 25
+  quickSwipeDuration: 0.18
+  quickSwipePitch: 0.95
   lungeDamage: 95
   lungeSpeed: 28
   lungeDuration: 0.22

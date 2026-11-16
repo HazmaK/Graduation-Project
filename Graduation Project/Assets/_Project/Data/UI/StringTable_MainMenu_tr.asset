@@ -133,3 +133,13 @@ MonoBehaviour:
   - key: pause.main_menu_load_error
     value: "Ana men\xFC y\xFCklenemedi. Tekrar deneyin."
     en: Could not load the main menu. Try again.
+  - key: pause.new_run
+    value: "YEN\u0130 KO\u015EU"
+    en: NEW RUN
+  - key: pause.new_run_prompt
+    value: "Yeni ko\u015Fu ba\u015Flat\u0131ls\u0131n m\u0131? Bu ko\u015Fudaki ilerleme
+      kaybolacak."
+    en: Start a new run? This run's progress will be lost.
+  - key: pause.new_run_load_error
+    value: "Yeni ko\u015Fu ba\u015Flat\u0131lamad\u0131. Tekrar deneyin."
+    en: Could not start a new run. Try again.

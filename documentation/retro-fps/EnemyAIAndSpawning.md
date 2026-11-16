@@ -91,7 +91,7 @@ stateDiagram-v2
 ### 6. `PenitentAI.cs` (Kefaretçi / Lahit Taşıyıcı)
 - **Konum:** `Assets/_Project/Scripts/Combat/PenitentAI.cs`
 - **Uyguladığı Arayüzler:** `IDamageable`, `IAlertableEnemy`, `IStunnable`, `IStunState`, `IEncounterEnemy`, `IThreatCost`, `IEliteScalable`, `IGuardBreakable`
-- **Davranış özeti (2026-11-16):** Yavaş ön kalkanlı yakın dövüşçü. Kalkan önden gelen menzilli vuruşları engeller; yüz noktası ve melee dışındaki vuruşlar kalkanı atlar. Kapak darbesi (1.1 sn hazırlık, yönelme kilitli) önündeki sabit 6.5 × 4.5 m'lik bir zemin alanına tek, parry edilebilir 35 hasarlı vuruş yapar; zıplamak kurtarmaz, yana çıkmak ya da parry kurtarır. Parry stun'ı ve yansıyan ağır orb kalkanı kırar.
+- **Davranış özeti (2026-11-16):** Yavaş ön kalkanlı yakın dövüşçü. Kalkan önden gelen menzilli vuruşları engeller; yüz noktası ve melee dışındaki vuruşlar kalkanı atlar. Kapak darbesi (1.1 sn hazırlık, yönelme kilitli) önündeki sabit 6.5 × 4.5 m'lik bir zemin alanına tek, parry edilebilir 35 hasarlı vuruş yapar; zıplamak kurtarmaz, yana çıkmak ya da parry kurtarır. Vuruş hasar verirse oyuncu havaya ve Penitent'ten uzağa fırlatılır (hitstop, kamera sarsıntısı); parry fırlatmayı iptal eder. Parry stun'ı ve yansıyan ağır orb kalkanı kırar.
 - Ayrıntı: [[KefaretciPenitent]]
 
 ---

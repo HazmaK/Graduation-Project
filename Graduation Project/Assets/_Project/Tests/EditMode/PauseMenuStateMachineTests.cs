@@ -27,6 +27,8 @@ namespace RetroFPS.Tests
             Assert.That(machine.ConfirmMainMenu(), Is.False);
             Assert.That(machine.OpenSettings(), Is.False);
             Assert.That(machine.OpenMainMenuConfirm(), Is.False);
+            Assert.That(machine.OpenNewRunConfirm(), Is.False);
+            Assert.That(machine.ConfirmNewRun(), Is.False);
             Assert.That(machine.Open(), Is.True);
             Assert.That(machine.Open(), Is.False);
             Assert.That(machine.State, Is.EqualTo(PauseMenuState.Root));
@@ -110,6 +112,7 @@ namespace RetroFPS.Tests
         [TestCase(PauseMenuState.Settings)]
         [TestCase(PauseMenuState.RevertPrompt)]
         [TestCase(PauseMenuState.ConfirmMainMenu)]
+        [TestCase(PauseMenuState.ConfirmNewRun)]
         public void StartResumesEveryOpenContextAndRevertsPreviewFirst(PauseMenuState context)
         {
             var machine = Ready(); int resolved = 0, resumed = 0;
@@ -118,6 +121,7 @@ namespace RetroFPS.Tests
             if (context == PauseMenuState.Settings || context == PauseMenuState.RevertPrompt) Settings(machine);
             if (context == PauseMenuState.RevertPrompt) machine.OpenRevertPrompt(MenuFocusTarget.WindowMode);
             if (context == PauseMenuState.ConfirmMainMenu) { machine.OpenMainMenuConfirm(); machine.Tick(0.08f); }
+            if (context == PauseMenuState.ConfirmNewRun) { machine.OpenNewRunConfirm(); machine.Tick(0.08f); }
             Assert.That(machine.ToggleResume(), Is.True);
             Assert.That(machine.State, Is.EqualTo(PauseMenuState.Closed));
             Assert.That(resumed, Is.EqualTo(1));
@@ -153,8 +157,70 @@ namespace RetroFPS.Tests
             Assert.That(machine.HasLoadError, Is.True);
             Assert.That(machine.InputLocked, Is.False);
             Assert.That(machine.FocusTarget, Is.EqualTo(MenuFocusTarget.Quit));
+            Assert.That(machine.LoadErrorKey, Is.EqualTo("pause.main_menu_load_error"));
             Assert.That(machine.ConfirmMainMenu(), Is.False);
             machine.Tick(10f); Assert.That(leaves, Is.EqualTo(1));
+        }
+        /// <summary>No and Back share the safe path, restoring the New Run opener without a load.</summary>
+        [Test]
+        public void NewRunConfirmDefaultsToNoAndCancelRestoresItsOpener()
+        {
+            var machine = Ready(); int requests = 0;
+            machine.NewRunRequested += () => requests++;
+            Assert.That(machine.ConfirmNewRun(), Is.False);
+            Assert.That(machine.OpenNewRunConfirm(), Is.True);
+            Assert.That(machine.OpenMainMenuConfirm(), Is.False);
+            machine.Tick(0.08f);
+            Assert.That(machine.State, Is.EqualTo(PauseMenuState.ConfirmNewRun));
+            Assert.That(machine.FocusTarget, Is.EqualTo(MenuFocusTarget.No));
+            Assert.That(machine.ConfirmPromptKey, Is.EqualTo("pause.new_run_prompt"));
+            Assert.That(machine.ConfirmMainMenu(), Is.False);
+            Assert.That(machine.Back(), Is.True); machine.Tick(0.08f);
+            Assert.That(machine.State, Is.EqualTo(PauseMenuState.Root));
+            Assert.That(machine.FocusTarget, Is.EqualTo(MenuFocusTarget.NewRun));
+            Assert.That(requests, Is.Zero);
+        }
+        /// <summary>Repeated Yes emits one action; failure selects matching copy and requires confirmation again.</summary>
+        [Test]
+        public void NewRunYesEmitsOnceAndFailureRestoresTheCorrectAction()
+        {
+            var machine = Ready(); int requests = 0, menus = 0;
+            machine.NewRunRequested += () => requests++;
+            machine.LeaveRequested += () => menus++;
+            machine.OpenNewRunConfirm(); machine.Tick(0.08f);
+            Assert.That(machine.ConfirmNewRun(), Is.True);
+            Assert.That(machine.ConfirmNewRun(), Is.False);
+            machine.Tick(0.08f); machine.Tick(10f);
+            Assert.That(machine.State, Is.EqualTo(PauseMenuState.Leaving));
+            Assert.That(machine.IsNewRun, Is.True);
+            Assert.That(machine.ConfirmNewRun(), Is.False);
+            Assert.That(machine.Back(), Is.False);
+            Assert.That(machine.ToggleResume(), Is.False);
+            Assert.That(requests, Is.EqualTo(1)); Assert.That(menus, Is.Zero);
+            machine.LoadFailed();
+            Assert.That(machine.State, Is.EqualTo(PauseMenuState.Root));
+            Assert.That(machine.HasLoadError, Is.True);
+            Assert.That(machine.LoadErrorKey, Is.EqualTo("pause.new_run_load_error"));
+            Assert.That(machine.FocusTarget, Is.EqualTo(MenuFocusTarget.NewRun));
+            Assert.That(machine.InputLocked, Is.False);
+            Assert.That(machine.ConfirmNewRun(), Is.False);
+            machine.OpenMainMenuConfirm(); machine.Tick(0.08f);
+            Assert.That(machine.ConfirmPromptKey, Is.EqualTo("pause.main_menu_prompt"));
+            machine.ConfirmMainMenu(); machine.Tick(0.08f); machine.LoadFailed();
+            Assert.That(machine.LoadErrorKey, Is.EqualTo("pause.main_menu_load_error"));
+            Assert.That(machine.FocusTarget, Is.EqualTo(MenuFocusTarget.Quit));
+            Assert.That(requests, Is.EqualTo(1)); Assert.That(menus, Is.EqualTo(1));
+        }
+        /// <summary>Transition or death preempts the pending fresh-run confirmation.</summary>
+        [Test]
+        public void NewRunPendingYesIsDiscardedWhenEligibilityIsLost()
+        {
+            var machine = Ready(); int requests = 0;
+            machine.NewRunRequested += () => requests++;
+            machine.OpenNewRunConfirm(); machine.Tick(0.08f); machine.ConfirmNewRun();
+            machine.Tick(0.08f, false); machine.Tick(10f);
+            Assert.That(machine.State, Is.EqualTo(PauseMenuState.Closed));
+            Assert.That(requests, Is.Zero);
         }
         [Test]
         public void LostEligibilityDiscardsDelayedWorkRatherThanQueuingIt()

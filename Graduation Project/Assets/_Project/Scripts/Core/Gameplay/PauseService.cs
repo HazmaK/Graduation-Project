@@ -123,7 +123,7 @@ namespace RetroFPS.Pause
         /// until successful unload replaces/unbinds the service or RecoverSceneLeave is called.
         /// Recovery subsequently resumes at this normal baseline, never at a cancelled hitstop scale.
         /// </summary>
-        public void CompleteSceneLeave(float normalFixedDeltaTime)
+        public void CompleteSceneLeave(float normalFixedDeltaTime, bool gameplayDestination = false)
         {
             if (!leaving || departureApplied) return;
             if (normalFixedDeltaTime <= 0f || float.IsNaN(normalFixedDeltaTime)
@@ -133,7 +133,7 @@ namespace RetroFPS.Pause
             paused = false;
             restoration = new PauseSnapshot(1f, normalFixedDeltaTime, restoration.AudioPaused,
                 restoration.CursorLockMode, restoration.CursorVisible);
-            environment.Apply(new PauseSnapshot(1f, normalFixedDeltaTime, false, 0, true));
+            environment.Apply(PauseSnapshot.SceneLeave(normalFixedDeltaTime, gameplayDestination));
             Changed?.Invoke();
         }
 

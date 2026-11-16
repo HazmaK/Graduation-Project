@@ -22,6 +22,8 @@ namespace RetroFPS.Pause
         private bool trueDeathOpen;
         private bool externalSceneLoad;
         private bool loadIssued;
+        private bool leavingForNewRun;
+        private string leaveSceneName;
         private bool cancelling;
         private bool ownsService;
         private bool hasProcessedFrame;
@@ -54,7 +56,8 @@ namespace RetroFPS.Pause
 
         private void OnEnable()
         {
-            if (GamePause.Service != null && !ReferenceEquals(GamePause.Service, service))
+            if (GamePause.Service != null && !ReferenceEquals(GamePause.Service, service)
+                && !(GamePause.Service is PauseService departing && departing.IsLeaving))
             {
                 enabled = false;
                 return;
@@ -95,8 +98,12 @@ namespace RetroFPS.Pause
             if (service.IsLeaving)
             {
                 // A disabled/destroyed player must never restore pause or hitstop into the destination.
-                if (HitstopManager.Instance != null) HitstopManager.Instance.CancelForSceneLeave();
-                service.CompleteSceneLeave(normalFixedDeltaTime);
+                // A successor can already own the environment if its OnEnable ran first.
+                if (ReferenceEquals(GamePause.Service, service))
+                {
+                    if (HitstopManager.Instance != null) HitstopManager.Instance.CancelForSceneLeave();
+                    service.CompleteSceneLeave(normalFixedDeltaTime, leavingForNewRun);
+                }
                 // Retain only the destination callback and Core departure gates until Single activation.
             }
             else
@@ -239,12 +246,17 @@ namespace RetroFPS.Pause
             HandleEligibilityChanged();
         }
 
-        /// <summary>Preflights MainMenu and latches the frozen leaving fade exactly once.</summary>
-        public bool TryPrepareSceneLeave()
+        /// <summary>Preflights the chosen destination and latches the frozen leaving fade exactly once.</summary>
+        public bool TryPrepareSceneLeave(bool newRun = false)
         {
             if (service == null || service.IsLeaving || !service.IsPaused) return false;
             if (!CanPause) { CancelForExclusiveFlow(); return false; }
-            if (!Application.CanStreamedLevelBeLoaded("MainMenu"))
+            leavingForNewRun = newRun;
+            leaveSceneName = newRun
+                ? (runDirector != null ? runDirector.TowerSceneName : SceneManager.GetActiveScene().name)
+                : "MainMenu";
+            if ((newRun && runDirector != null && !runDirector.CanRestartRunFromPause)
+                || string.IsNullOrEmpty(leaveSceneName) || !Application.CanStreamedLevelBeLoaded(leaveSceneName))
             {
                 SceneLeaveFailed?.Invoke();
                 return false;
@@ -255,26 +267,39 @@ namespace RetroFPS.Pause
         /// <summary>Called once after the UI reaches black; keeps simulation blocked through Single loading.</summary>
         public void LoadMainMenu()
         {
-            if (service == null || !service.IsLeaving || loadIssued) return;
+            if (service == null || !service.IsLeaving || loadIssued || leavingForNewRun) return;
             loadIssued = true;
-            LoadMainMenuAsync();
+            LoadDestinationAsync();
         }
 
-        private async void LoadMainMenuAsync()
+        /// <summary>Starts the prepared fresh-run load once after the pause fade reaches black.</summary>
+        public void StartNewRun()
+        {
+            if (service == null || !service.IsLeaving || loadIssued || !leavingForNewRun) return;
+            loadIssued = true;
+            LoadDestinationAsync();
+        }
+
+        private async void LoadDestinationAsync()
         {
             try
             {
-                if (runDirector != null) await runDirector.PrepareForSceneLeaveAsync();
+                if (!leavingForNewRun && runDirector != null) await runDirector.PrepareForSceneLeaveAsync();
                 // Ownership can be torn down while the additive load drains.
                 if (this == null || !ownsService) return;
-                if (!Application.CanStreamedLevelBeLoaded("MainMenu"))
+                if (!Application.CanStreamedLevelBeLoaded(leaveSceneName))
                 {
                     RecoverSceneLeave();
                     return;
                 }
                 if (HitstopManager.Instance != null) HitstopManager.Instance.CancelForSceneLeave();
-                service.CompleteSceneLeave(normalFixedDeltaTime);
-                AsyncOperation operation = SceneManager.LoadSceneAsync("MainMenu", LoadSceneMode.Single);
+                service.CompleteSceneLeave(normalFixedDeltaTime, leavingForNewRun);
+                if (leavingForNewRun && runDirector != null)
+                {
+                    if (!await runDirector.RestartRunFromPause() && this != null && ownsService) RecoverSceneLeave();
+                    return;
+                }
+                AsyncOperation operation = SceneManager.LoadSceneAsync(leaveSceneName, LoadSceneMode.Single);
                 if (operation == null) { RecoverSceneLeave(); return; }
                 await operation;
             }
@@ -352,15 +377,16 @@ namespace RetroFPS.Pause
 
         private void HandleSceneLoaded(Scene scene, LoadSceneMode mode)
         {
-            if (!ownsService)
+            if (!ownsService || !ReferenceEquals(GamePause.Service, service))
             {
                 if (mode == LoadSceneMode.Single)
                 {
-                    // Old transition OnDisable callbacks may write their own defaults during unload.
-                    // Reassert the saved destination baseline after that scene's final teardown.
+                    // Retire subscriptions even if the successor enabled before our teardown.
+                    Cleanup();
+                    // Only an unreplaced departure may reassert its destination baseline.
                     if (ReferenceEquals(GamePause.Service, service))
                     {
-                        Apply(new PauseSnapshot(1f, normalFixedDeltaTime, false, 0, true));
+                        Apply(PauseSnapshot.SceneLeave(normalFixedDeltaTime, leavingForNewRun));
                         GamePause.SetService(null);
                     }
                     SceneManager.sceneLoaded -= HandleSceneLoaded;

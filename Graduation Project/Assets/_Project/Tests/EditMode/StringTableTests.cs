@@ -297,6 +297,9 @@ namespace RetroFPS.Tests
                 new StringTable.Translation("language.tr", "Türkçe", "Türkçe"),
                 new StringTable.Translation("language.en", "English", "English"),
                 new StringTable.Translation("pause.resume", "DEVAM", "RESUME"),
+                new StringTable.Translation("pause.new_run", "YENİ KOŞU", "NEW RUN"),
+                new StringTable.Translation("pause.new_run_prompt", "Yeni koşu başlatılsın mı? Bu koşudaki ilerleme kaybolacak.", "Start a new run? This run's progress will be lost."),
+                new StringTable.Translation("pause.new_run_load_error", "Yeni koşu başlatılamadı. Tekrar deneyin.", "Could not start a new run. Try again."),
                 new StringTable.Translation("pause.main_menu", "ANA MENÜ", "MAIN MENU"),
                 new StringTable.Translation("pause.main_menu_prompt", "Ana menüye dönülsün mü? Bu koşudaki ilerleme kaybolacak.", "Return to the main menu? This run's progress will be lost."),
                 new StringTable.Translation("pause.main_menu_load_error", "Ana menü yüklenemedi. Tekrar deneyin.", "Could not load the main menu. Try again.")
@@ -351,6 +354,7 @@ namespace RetroFPS.Tests
                 new StringTable.Translation("transition.araf.escape", "KAÇIŞ", "ESCAPE"),
                 new StringTable.Translation("boss.judge.name", "YARGIÇ", "THE JUDGE")
             };
+            Assert.That(menu.Length, Is.EqualTo(43));
             AssertAssetManifest("Assets/_Project/Data/UI/StringTable_MainMenu_tr.asset", menu);
             AssertAssetManifest("Assets/_Project/Data/UI/StringTable_CombatHud_tr.asset", combat, 31); // 7 card-offer UI keys + 6 cards x 4 keys, checked by CardHudStringTests.
             var catalog = AssetDatabase.LoadAssetAtPath<LocalizationCatalog>("Assets/_Project/Resources/Localization/LocalizationCatalog.asset");

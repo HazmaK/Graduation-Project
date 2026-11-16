@@ -2200,8 +2200,13 @@ MonoBehaviour:
   slamAreaStartOffset: 0.4
   slamAreaHeight: 2.5
   slamDamage: 35
-  slamHitstopDuration: 0.05
-  slamHitstopScale: 0.04
+  slamLaunchUpSpeed: 9
+  slamLaunchPushSpeed: 5
+  slamPlayerHitstopDuration: 0.12
+  slamPlayerHitstopScale: 0.03
+  slamCameraTrauma: 0.3
+  slamCameraPunch: {x: 5, y: 0}
+  slamCameraFovKick: 6
   stunKnockbackSpeed: 3
   knockbackDecay: 8
   staggerDamageThreshold: 40

@@ -43,6 +43,27 @@ namespace RetroFPS.Tests
 
         private bool Pause() => service.TryPause(true, true, false, false, true);
 
+        /// <summary>Gameplay and menu departures share normal time/audio but have distinct cursor ownership.</summary>
+        [TestCase(true, 1, false)]
+        [TestCase(false, 0, true)]
+        public void SceneLeaveUsesDestinationCursor(bool gameplay, int cursorMode, bool visible)
+        {
+            Pause();
+            service.PrepareSceneLeave();
+            service.CompleteSceneLeave(0.017f, gameplay);
+            var expected = new PauseSnapshot(1f, 0.017f, false, cursorMode, visible);
+            AssertSnapshot(environment.Current, expected);
+            AssertSnapshot(PauseSnapshot.SceneLeave(0.017f, gameplay), expected);
+            service.CompleteSceneLeave(0.033f, !gameplay);
+            AssertSnapshot(environment.Current, expected);
+            Assert.That(service.SimulationBlocked && service.GameplayInputBlocked, Is.True);
+            service.RecoverSceneLeave();
+            Assert.That(service.IsPaused, Is.True);
+            service.Resume();
+            AssertSnapshot(environment.Current, new PauseSnapshot(1f, 0.017f,
+                initial.AudioPaused, initial.CursorLockMode, initial.CursorVisible));
+        }
+
         private static void AssertSnapshot(PauseSnapshot actual, PauseSnapshot expected)
         {
             Assert.That(actual.TimeScale, Is.EqualTo(expected.TimeScale));

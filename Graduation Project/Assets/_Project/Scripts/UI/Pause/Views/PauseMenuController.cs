@@ -18,6 +18,7 @@ namespace RetroFPS.Pause
         [SerializeField] private UnityEngine.UI.Selectable[] rootItems;
         [SerializeField] private SettingsPanelView settingsPanel;
         [SerializeField] private ConfirmDialogView mainMenuDialog;
+        [SerializeField] private TMP_Text sceneLeavePrompt;
         [SerializeField] private ConfirmDialogView revertDialog;
         [SerializeField] private ScreenFader fader;
         [SerializeField] private CanvasGroup fadeGroup;
@@ -47,6 +48,7 @@ namespace RetroFPS.Pause
         public bool CanEditSettings => !InputLocked && State == PauseMenuState.Settings;
         /// <inheritdoc/>
         public bool CanPreviewDisplay => machine != null && State == PauseMenuState.Settings && !fader.IsFading && panelTween.Complete;
+        private bool IsSceneLeaveConfirm => State == PauseMenuState.ConfirmMainMenu || State == PauseMenuState.ConfirmNewRun;
         /// <inheritdoc/>
         public UnityEngine.UI.Selectable DefaultFocus
         {
@@ -56,8 +58,9 @@ namespace RetroFPS.Pause
                 switch (machine.FocusTarget)
                 {
                     case MenuFocusTarget.Start: return rootItems[0];
-                    case MenuFocusTarget.Settings: return rootItems[1];
-                    case MenuFocusTarget.Quit: return rootItems[2];
+                    case MenuFocusTarget.NewRun: return rootItems[1];
+                    case MenuFocusTarget.Settings: return rootItems[2];
+                    case MenuFocusTarget.Quit: return rootItems[3];
                     case MenuFocusTarget.Language: return settingsItems[0];
                     case MenuFocusTarget.WindowMode: return settingsItems[6];
                     case MenuFocusTarget.Resolution: return settingsItems[7];
@@ -93,11 +96,13 @@ namespace RetroFPS.Pause
             machine.DisplayResolved += settingsPanel.ResolveDisplay;
             machine.ResumeRequested += ResumeRuntime;
             machine.LeaveRequested += BeginLeave;
+            machine.NewRunRequested += BeginLeave;
             ((UnityEngine.UI.Button)rootItems[0]).onClick.AddListener(ResumeButton);
-            ((UnityEngine.UI.Button)rootItems[1]).onClick.AddListener(OpenSettings);
-            ((UnityEngine.UI.Button)rootItems[2]).onClick.AddListener(OpenMainMenu);
+            ((UnityEngine.UI.Button)rootItems[1]).onClick.AddListener(OpenNewRun);
+            ((UnityEngine.UI.Button)rootItems[2]).onClick.AddListener(OpenSettings);
+            ((UnityEngine.UI.Button)rootItems[3]).onClick.AddListener(OpenMainMenu);
             ((UnityEngine.UI.Button)settingsItems[9]).onClick.AddListener(Back);
-            mainMenuDialog.Affirmative.onClick.AddListener(ConfirmMainMenu);
+            mainMenuDialog.Affirmative.onClick.AddListener(ConfirmSceneLeave);
             mainMenuDialog.Negative.onClick.AddListener(Back);
             revertDialog.Affirmative.onClick.AddListener(KeepDisplay);
             revertDialog.Negative.onClick.AddListener(RevertDisplay);
@@ -120,28 +125,42 @@ namespace RetroFPS.Pause
             machine.DisplayResolved -= settingsPanel.ResolveDisplay;
             machine.ResumeRequested -= ResumeRuntime;
             machine.LeaveRequested -= BeginLeave;
+            machine.NewRunRequested -= BeginLeave;
             ((UnityEngine.UI.Button)rootItems[0]).onClick.RemoveListener(ResumeButton);
-            ((UnityEngine.UI.Button)rootItems[1]).onClick.RemoveListener(OpenSettings);
-            ((UnityEngine.UI.Button)rootItems[2]).onClick.RemoveListener(OpenMainMenu);
+            ((UnityEngine.UI.Button)rootItems[1]).onClick.RemoveListener(OpenNewRun);
+            ((UnityEngine.UI.Button)rootItems[2]).onClick.RemoveListener(OpenSettings);
+            ((UnityEngine.UI.Button)rootItems[3]).onClick.RemoveListener(OpenMainMenu);
             ((UnityEngine.UI.Button)settingsItems[9]).onClick.RemoveListener(Back);
-            mainMenuDialog.Affirmative.onClick.RemoveListener(ConfirmMainMenu);
+            mainMenuDialog.Affirmative.onClick.RemoveListener(ConfirmSceneLeave);
             mainMenuDialog.Negative.onClick.RemoveListener(Back);
             revertDialog.Affirmative.onClick.RemoveListener(KeepDisplay);
             revertDialog.Negative.onClick.RemoveListener(RevertDisplay);
         }
         private void WarmError()
         {
-            loadError.vertexBufferAutoSizeReduction = false;
-            loadError.text = strings.Get("pause.main_menu_load_error", LanguageSetting.Turkish);
-            loadError.ForceMeshUpdate(true);
-            loadError.text = strings.Get("pause.main_menu_load_error", LanguageSetting.English);
-            loadError.ForceMeshUpdate(true);
+            WarmCopy(loadError, "pause.main_menu_load_error");
+            WarmCopy(loadError, "pause.new_run_load_error");
+            WarmCopy(sceneLeavePrompt, "pause.main_menu_prompt");
+            WarmCopy(sceneLeavePrompt, "pause.new_run_prompt");
             RefreshLanguage(GameSettings.Current);
+        }
+        private void WarmCopy(TMP_Text label, string key)
+        {
+            label.vertexBufferAutoSizeReduction = false;
+            label.text = strings.Get(key, LanguageSetting.Turkish);
+            label.ForceMeshUpdate(true);
+            label.text = strings.Get(key, LanguageSetting.English);
+            label.ForceMeshUpdate(true);
         }
         private void RefreshLanguage(GameSettingsData data)
         {
-            loadError.text = strings.Get("pause.main_menu_load_error", data.Language);
+            RefreshCopy(data.Language);
             if (data.ReduceMotion && fader.IsFading) fader.Fade(State == PauseMenuState.Leaving, 0.1f);
+        }
+        private void RefreshCopy(LanguageSetting language)
+        {
+            loadError.text = strings.Get(machine.LoadErrorKey, language);
+            sceneLeavePrompt.text = strings.Get(machine.ConfirmPromptKey, language);
         }
         private void BindEventSystem()
         {
@@ -167,7 +186,8 @@ namespace RetroFPS.Pause
             if (State == PauseMenuState.Leaving && !fader.IsFading && !loadIssued)
             {
                 loadIssued = true;
-                runtime.LoadMainMenu();
+                if (machine.IsNewRun) runtime.StartNewRun();
+                else runtime.LoadMainMenu();
             }
         }
         /// <inheritdoc/>
@@ -208,7 +228,7 @@ namespace RetroFPS.Pause
         private void BeginLeave()
         {
             ResolveSettings();
-            if (!runtime.TryPrepareSceneLeave())
+            if (!runtime.TryPrepareSceneLeave(machine.IsNewRun))
             {
                 if (State == PauseMenuState.Leaving && runtime.Service.IsPaused) OnSceneLeaveFailed();
                 return;
@@ -228,7 +248,11 @@ namespace RetroFPS.Pause
         private void ResumeButton() { if (!InputLocked) PressSelected(machine.RequestResume()); }
         private void OpenSettings() { if (!InputLocked) PressSelected(machine.OpenSettings()); }
         private void OpenMainMenu() { if (!InputLocked) PressSelected(machine.OpenMainMenuConfirm()); }
-        private void ConfirmMainMenu() { if (!InputLocked) PressSelected(machine.ConfirmMainMenu()); }
+        private void OpenNewRun() { if (!InputLocked) PressSelected(machine.OpenNewRunConfirm()); }
+        private void ConfirmSceneLeave()
+        {
+            if (!InputLocked) PressSelected(State == PauseMenuState.ConfirmNewRun ? machine.ConfirmNewRun() : machine.ConfirmMainMenu());
+        }
         private void KeepDisplay() { if (!InputLocked) PressSelected(machine.KeepDisplay()); }
         private void RevertDisplay() { if (!InputLocked) PressSelected(machine.RevertDisplay()); }
         private void PressSelected(bool accepted)
@@ -256,9 +280,9 @@ namespace RetroFPS.Pause
                 fadeGroup.alpha = 0f;
                 fadeGroup.blocksRaycasts = false;
             }
-            alphaTo[0] = State == PauseMenuState.Root || State == PauseMenuState.ConfirmMainMenu || State == PauseMenuState.Leaving ? 1f : 0f;
+            alphaTo[0] = State == PauseMenuState.Root || IsSceneLeaveConfirm || State == PauseMenuState.Leaving ? 1f : 0f;
             alphaTo[1] = State == PauseMenuState.Settings || State == PauseMenuState.RevertPrompt ? 1f : 0f;
-            alphaTo[2] = State == PauseMenuState.ConfirmMainMenu ? 1f : 0f;
+            alphaTo[2] = IsSceneLeaveConfirm ? 1f : 0f;
             alphaTo[3] = State == PauseMenuState.RevertPrompt ? 1f : 0f;
             alphaTo[4] = alphaTo[2] + alphaTo[3];
             for (int i = 0; i < panels.Length; i++) alphaFrom[i] = panels[i].alpha;
@@ -267,6 +291,7 @@ namespace RetroFPS.Pause
             panelTween.Start(seconds, MenuEase.EaseInOut);
             for (int i = 0; i < panels.Length; i++) panels[i].alpha = Mathf.LerpUnclamped(alphaFrom[i], alphaTo[i], panelTween.Value);
             loadError.gameObject.SetActive(machine.HasLoadError && visible);
+            RefreshCopy(GameSettings.Current.Language);
             ApplyInputGate();
             if (eventSystem != null)
             {
@@ -275,7 +300,7 @@ namespace RetroFPS.Pause
             }
             needsFocus = visible && State != PauseMenuState.Leaving;
             Focus();
-            if (State == PauseMenuState.ConfirmMainMenu || State == PauseMenuState.RevertPrompt)
+            if (IsSceneLeaveConfirm || State == PauseMenuState.RevertPrompt)
                 MenuEvents.RaiseUiAudio(UiAudioEventType.DialogOpen);
         }
         private void ApplyInputGate()
@@ -283,9 +308,9 @@ namespace RetroFPS.Pause
             bool open = !InputLocked;
             SetInput(rootGroup, open && State == PauseMenuState.Root);
             SetInput(settingsPanel.Group, open && State == PauseMenuState.Settings);
-            SetInput(mainMenuDialog.Group, open && State == PauseMenuState.ConfirmMainMenu);
+            SetInput(mainMenuDialog.Group, open && IsSceneLeaveConfirm);
             SetInput(revertDialog.Group, open && State == PauseMenuState.RevertPrompt);
-            dimGroup.blocksRaycasts = State == PauseMenuState.ConfirmMainMenu || State == PauseMenuState.RevertPrompt;
+            dimGroup.blocksRaycasts = IsSceneLeaveConfirm || State == PauseMenuState.RevertPrompt;
             if (eventSystem != null && State != PauseMenuState.Closed) eventSystem.sendNavigationEvents = open;
             if (State == PauseMenuState.Closed) fadeGroup.blocksRaycasts = false;
             else fader.BlockInput(!open);
@@ -303,7 +328,7 @@ namespace RetroFPS.Pause
         public UnityEngine.UI.Selectable FindActive(GameObject candidate)
         {
             if (candidate == null || State == PauseMenuState.Closed || State == PauseMenuState.Leaving) return null;
-            if (State == PauseMenuState.ConfirmMainMenu) return Match(mainMenuDialog, candidate);
+            if (IsSceneLeaveConfirm) return Match(mainMenuDialog, candidate);
             if (State == PauseMenuState.RevertPrompt) return Match(revertDialog, candidate);
             UnityEngine.UI.Selectable[] items = State == PauseMenuState.Settings ? settingsItems : rootItems;
             for (int i = 0; i < items.Length; i++)

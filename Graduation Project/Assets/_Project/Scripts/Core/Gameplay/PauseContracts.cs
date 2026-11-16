@@ -26,6 +26,11 @@ namespace RetroFPS.Pause
             CursorLockMode = cursorLockMode;
             CursorVisible = cursorVisible;
         }
+
+        /// <summary>Normal destination state: gameplay captures the cursor; menus release it.</summary>
+        public static PauseSnapshot SceneLeave(float normalFixedDeltaTime, bool gameplayDestination) =>
+            new PauseSnapshot(1f, normalFixedDeltaTime, false, gameplayDestination ? 1 : 0,
+                !gameplayDestination);
     }
 
     /// <summary>Engine boundary implemented only by the gameplay lifecycle adapter.</summary>

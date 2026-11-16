@@ -63,6 +63,13 @@ namespace RetroFPS.Run
 
         /// <summary>Whether Araf currently owns the player's transition presentation.</summary>
         public bool IsTransitioning => _isTransitioning;
+        /// <summary>Saved tower destination, independent of the active additive Araf scene.</summary>
+        public string TowerSceneName => towerSceneName;
+        /// <summary>Live phases may restart through pause, including a settled Araf visit.</summary>
+        public bool CanRestartRunFromPause => _state != null
+            && (_state.Phase == RunPhase.Tower || _state.Phase == RunPhase.InAraf)
+            && !_isTransitioning && !_preloadingAraf && !_restartRequested && !_sceneDeparture
+            && !string.IsNullOrEmpty(towerSceneName);
 
         /// <summary>
         /// Mevcut koşunun saf durum verisi.
@@ -190,6 +197,7 @@ namespace RetroFPS.Run
         public void RecoverSceneLeave()
         {
             _sceneDeparture = false;
+            _restartRequested = false;
             _flowCancellation?.Dispose();
             _flowCancellation = CancellationTokenSource.CreateLinkedTokenSource(destroyCancellationToken);
             PauseEligibilityChanged?.Invoke();
@@ -205,6 +213,21 @@ namespace RetroFPS.Run
             Time.timeScale = 1f;
             Time.fixedDeltaTime = _normalFixedDeltaTime;
             SceneManager.LoadScene(towerSceneName, LoadSceneMode.Single);
+        }
+
+        /// <summary>Loads one fresh tower from pause. The caller recovers scene-leave ownership on failure.</summary>
+        public async Awaitable<bool> RestartRunFromPause()
+        {
+            if (!CanRestartRunFromPause || !Application.CanStreamedLevelBeLoaded(towerSceneName)) return false;
+            _restartRequested = true;
+            await PrepareForSceneLeaveAsync();
+            if (this == null) return false;
+            Time.timeScale = 1f;
+            Time.fixedDeltaTime = _normalFixedDeltaTime;
+            AsyncOperation operation = SceneManager.LoadSceneAsync(towerSceneName, LoadSceneMode.Single);
+            if (operation == null) return false;
+            await operation;
+            return true;
         }
 
         private async Awaitable PreloadArafSceneAsync(CancellationToken ct)

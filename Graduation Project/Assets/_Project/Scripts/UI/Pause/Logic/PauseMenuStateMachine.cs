@@ -4,12 +4,12 @@ using RetroFPS.UI.Menu;
 namespace RetroFPS.Pause
 {
     /// <summary>Exclusive pause presentation contexts.</summary>
-    public enum PauseMenuState { Closed, Root, Settings, RevertPrompt, ConfirmMainMenu, Leaving }
+    public enum PauseMenuState { Closed, Root, Settings, RevertPrompt, ConfirmMainMenu, Leaving, ConfirmNewRun }
 
     /// <summary>Engine-independent pause navigation, delayed commands and display safety deadline.</summary>
     public sealed class PauseMenuStateMachine
     {
-        private enum Pending { None, Resume, Settings, MainMenu, Back, Keep, Revert, Leave }
+        private enum Pending { None, Resume, Settings, MainMenu, NewRun, Back, Keep, Revert, Leave }
         private readonly float pressSeconds;
         private readonly RevertCountdown countdown = new RevertCountdown();
         private Pending pending;
@@ -25,12 +25,20 @@ namespace RetroFPS.Pause
         public RevertCountdown Countdown => countdown;
         /// <summary>Whether to display localized scene-load recovery copy.</summary>
         public bool HasLoadError { get; private set; }
+        /// <summary>Whether the confirmed departure starts a fresh run rather than opening MainMenu.</summary>
+        public bool IsNewRun { get; private set; }
+        /// <summary>Recovery copy for the most recent departure action.</summary>
+        public string LoadErrorKey => IsNewRun ? "pause.new_run_load_error" : "pause.main_menu_load_error";
+        /// <summary>Copy for the shared scene-departure confirmation.</summary>
+        public string ConfirmPromptKey => State == PauseMenuState.ConfirmNewRun ? "pause.new_run_prompt" : "pause.main_menu_prompt";
         /// <summary>True commits the display preview; false restores its committed snapshot.</summary>
         public event Action<bool> DisplayResolved;
         /// <summary>Normal resume, after settings have been resolved.</summary>
         public event Action ResumeRequested;
         /// <summary>Single departure request after confirmation feedback.</summary>
         public event Action LeaveRequested;
+        /// <summary>Single fresh-run request after confirmation feedback.</summary>
+        public event Action NewRunRequested;
 
         /// <summary>Creates the machine without taking ownership of gameplay.</summary>
         public PauseMenuStateMachine(float pressSeconds = 0.08f) => this.pressSeconds = Math.Max(0f, pressSeconds);
@@ -40,6 +48,7 @@ namespace RetroFPS.Pause
         {
             if (State != PauseMenuState.Closed) return false;
             HasLoadError = false;
+            IsNewRun = false;
             Change(PauseMenuState.Root, MenuFocusTarget.Start);
             return true;
         }
@@ -65,17 +74,21 @@ namespace RetroFPS.Pause
                 case Pending.Resume: CloseAndResume(); break;
                 case Pending.Settings: Change(PauseMenuState.Settings, MenuFocusTarget.Language); break;
                 case Pending.MainMenu: Change(PauseMenuState.ConfirmMainMenu, MenuFocusTarget.No); break;
+                case Pending.NewRun: Change(PauseMenuState.ConfirmNewRun, MenuFocusTarget.No); break;
                 case Pending.Back:
                     if (State == PauseMenuState.Settings) Change(PauseMenuState.Root, MenuFocusTarget.Settings);
                     else if (State == PauseMenuState.ConfirmMainMenu) Change(PauseMenuState.Root, MenuFocusTarget.Quit);
+                    else if (State == PauseMenuState.ConfirmNewRun) Change(PauseMenuState.Root, MenuFocusTarget.NewRun);
                     else ResolveDisplay(false);
                     break;
                 case Pending.Keep: ResolveDisplay(true); break;
                 case Pending.Revert: ResolveDisplay(false); break;
                 case Pending.Leave:
                     HasLoadError = false;
+                    IsNewRun = State == PauseMenuState.ConfirmNewRun;
                     Change(PauseMenuState.Leaving, MenuFocusTarget.None);
-                    LeaveRequested?.Invoke();
+                    if (IsNewRun) NewRunRequested?.Invoke();
+                    else LeaveRequested?.Invoke();
                     break;
             }
         }
@@ -86,8 +99,12 @@ namespace RetroFPS.Pause
         public bool OpenSettings() => Queue(Pending.Settings, PauseMenuState.Root);
         /// <summary>Requests safe-default confirmation.</summary>
         public bool OpenMainMenuConfirm() => Queue(Pending.MainMenu, PauseMenuState.Root);
+        /// <summary>Requests fresh-run confirmation with No focused by default.</summary>
+        public bool OpenNewRunConfirm() => Queue(Pending.NewRun, PauseMenuState.Root);
         /// <summary>Confirms a single scene departure.</summary>
         public bool ConfirmMainMenu() => Queue(Pending.Leave, PauseMenuState.ConfirmMainMenu);
+        /// <summary>Confirms a single fresh-run departure.</summary>
+        public bool ConfirmNewRun() => Queue(Pending.Leave, PauseMenuState.ConfirmNewRun);
         /// <summary>Back resumes at Root and otherwise ascends one context.</summary>
         public bool Back() => State == PauseMenuState.Root ? RequestResume() : Queue(Pending.Back, State);
         /// <summary>Start resumes from any unlocked open context, reverting an unresolved preview.</summary>
@@ -126,7 +143,7 @@ namespace RetroFPS.Pause
             if (State != PauseMenuState.Leaving) return;
             pending = Pending.None;
             HasLoadError = true;
-            Change(PauseMenuState.Root, MenuFocusTarget.Quit);
+            Change(PauseMenuState.Root, IsNewRun ? MenuFocusTarget.NewRun : MenuFocusTarget.Quit);
             MenuEvents.RaiseUiAudio(UiAudioEventType.Error);
         }
         private bool Queue(Pending command, PauseMenuState required)

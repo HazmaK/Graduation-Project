@@ -7,6 +7,234 @@ namespace RetroFPS.Tests
     /// <summary>Actual runtime mapping and live run/load/death adapter coverage.</summary>
     public sealed class PauseEligibilityTests
     {
+        /// <summary>Both sceneLoaded orders retain the enabled successor and its environment after a Single load.</summary>
+        [TestCase(true, false, false)]
+        [TestCase(false, false, false)]
+        [TestCase(true, true, false)]
+        [TestCase(false, true, false)]
+        [TestCase(true, false, true)]
+        [TestCase(false, false, true)]
+        public void LeavingRuntimeHandsOffWithoutLateWrites(bool oldCallbackFirst, bool lateTeardown,
+            bool cleanupBeforeEnable)
+        {
+            using (var world = new PauseTestWorld())
+            {
+                world.Sample(1, escape: true, toggleHeld: true);
+                Assert.That(world.Runtime.Service.PrepareSceneLeave(), Is.True);
+                PauseTestWorld.Set(world.Runtime, "leavingForNewRun", true);
+                ((PauseService)world.Runtime.Service).CompleteSceneLeave(0.017f, true);
+                if (!lateTeardown) PauseTestWorld.Invoke(world.Runtime, "OnDisable");
+                if (cleanupBeforeEnable) SceneLoaded(world.Runtime);
+                var root = new UnityEngine.GameObject("Successor pause runtime");
+                root.SetActive(false);
+                var next = root.AddComponent<PauseRuntime>();
+                try
+                {
+                    PauseTestWorld.Invoke(next, "Awake");
+                    PauseTestWorld.Set(next, "runDirector", null);
+                    PauseTestWorld.Invoke(next, "OnEnable");
+                    Assert.That(next.enabled, Is.True);
+                    Assert.That(GamePause.Service, Is.SameAs(next.Service));
+                    // A scene may establish its own environment after Awake; the old owner cannot overwrite it.
+                    next.Apply(new PauseSnapshot(0.75f, 0.019f, true, 0, false));
+                    PauseSnapshot destination = next.Capture();
+                    if (lateTeardown) PauseTestWorld.Invoke(world.Runtime, "OnDisable");
+                    SceneLoaded(oldCallbackFirst ? world.Runtime : next);
+                    SceneLoaded(oldCallbackFirst ? next : world.Runtime);
+                    PauseTestWorld.Invoke(world.Runtime, "OnDestroy");
+                    Assert.That(next.enabled, Is.True);
+                    Assert.That(PauseTestWorld.Read<bool>(next, "ownsService"), Is.True);
+                    Assert.That(GamePause.Service, Is.SameAs(next.Service));
+                    Assert.That(next.Capture(), Is.EqualTo(destination));
+                    Assert.That(GamePause.IsSimulationBlocked, Is.False);
+                    next.Bind(world.Health, null);
+                    PauseTestWorld.Set(next, "runDirector", null);
+                    PauseTestWorld.Set(next, "gameplayScene", true);
+                    Assert.That(next.TryPause(), Is.True, "Fresh run must accept pause again.");
+                }
+                finally
+                {
+                    PauseTestWorld.Invoke(next, "OnDisable");
+                    UnityEngine.Object.DestroyImmediate(root);
+                }
+            }
+        }
+
+        /// <summary>Cleanup before successor creation uses the requested destination, then releases the service.</summary>
+        [TestCase(true)]
+        [TestCase(false)]
+        public void DepartureCleanupBeforeSuccessorUsesDestinationBaseline(bool newRun)
+        {
+            using (var world = new PauseTestWorld())
+            {
+                world.Sample(1, escape: true, toggleHeld: true);
+                world.Runtime.Service.PrepareSceneLeave();
+                PauseTestWorld.Set(world.Runtime, "leavingForNewRun", newRun);
+                PauseTestWorld.Set(world.Runtime, "normalFixedDeltaTime", 0.017f);
+                PauseTestWorld.Invoke(world.Runtime, "OnDisable");
+                // Simulate an unload callback changing the global environment after OnDisable.
+                world.Runtime.Apply(new PauseSnapshot(0.5f, 0.009f, true, 0, true));
+                SceneLoaded(world.Runtime);
+                Assert.That(GamePause.Service, Is.Null);
+                Assert.That(world.Runtime.Capture(), Is.EqualTo(PauseSnapshot.SceneLeave(0.017f, newRun)));
+            }
+        }
+
+        /// <summary>True-death restart uses ordinary teardown, leaving no retained service to reject the next player.</summary>
+        [TestCase(true)]
+        [TestCase(false)]
+        public void TrueDeathTeardownAllowsFreshRuntime(bool oldCallbackFirst)
+        {
+            using (var world = new PauseTestWorld())
+            {
+                RunEvents.RaiseTrueDeath();
+                world.Runtime.SetSceneLoadInProgress(true);
+                PauseTestWorld.Invoke(world.Runtime, "OnDisable");
+                Assert.That(GamePause.Service, Is.Null);
+                var root = new UnityEngine.GameObject("Restart pause runtime");
+                root.SetActive(false);
+                var next = root.AddComponent<PauseRuntime>();
+                try
+                {
+                    RunEvents.SetCurrentRun(new RunState(42));
+                    PauseTestWorld.Invoke(next, "Awake");
+                    PauseTestWorld.Set(next, "runDirector", null);
+                    PauseTestWorld.Invoke(next, "OnEnable");
+                    SceneLoaded(oldCallbackFirst ? world.Runtime : next);
+                    SceneLoaded(oldCallbackFirst ? next : world.Runtime);
+                    Assert.That(next.enabled, Is.True);
+                    Assert.That(PauseTestWorld.Read<bool>(next, "ownsService"), Is.True);
+                    Assert.That(GamePause.Service, Is.SameAs(next.Service));
+                    next.Bind(world.Health, null);
+                    PauseTestWorld.Set(next, "runDirector", null);
+                    PauseTestWorld.Set(next, "gameplayScene", true);
+                    Assert.That(next.TryPause(), Is.True);
+                }
+                finally
+                {
+                    PauseTestWorld.Invoke(next, "OnDisable");
+                    UnityEngine.Object.DestroyImmediate(root);
+                }
+            }
+        }
+
+        private static void SceneLoaded(PauseRuntime runtime) => PauseTestWorld.Invoke(runtime,
+            "HandleSceneLoaded", default(UnityEngine.SceneManagement.Scene),
+            UnityEngine.SceneManagement.LoadSceneMode.Single);
+
+        /// <summary>A live owner still rejects duplicate players; only departing ownership can be replaced.</summary>
+        [Test]
+        public void NonLeavingOwnerStillRejectsDuplicateRuntime()
+        {
+            using (var world = new PauseTestWorld())
+            {
+                var root = new UnityEngine.GameObject("Duplicate pause runtime");
+                root.SetActive(false);
+                var duplicate = root.AddComponent<PauseRuntime>();
+                try
+                {
+                    PauseTestWorld.Invoke(duplicate, "Awake");
+                    PauseTestWorld.Invoke(duplicate, "OnEnable");
+                    Assert.That(duplicate.enabled, Is.False);
+                    Assert.That(PauseTestWorld.Read<bool>(duplicate, "ownsService"), Is.False);
+                    Assert.That(GamePause.Service, Is.SameAs(world.Runtime.Service));
+                }
+                finally { UnityEngine.Object.DestroyImmediate(root); }
+            }
+        }
+
+        /// <summary>Pause restart keeps the saved tower target and admits only settled live phases.</summary>
+        [TestCase(RunPhase.Tower, true)]
+        [TestCase(RunPhase.InAraf, true)]
+        [TestCase(RunPhase.FallingToAraf, false)]
+        [TestCase(RunPhase.EscapingAraf, false)]
+        [TestCase(RunPhase.TrueDeath, false)]
+        public void PauseRestartUsesSavedTowerAndLivePhaseGuards(RunPhase phase, bool allowed)
+        {
+            using (var world = new PauseTestWorld())
+            {
+                var director = world.Root.AddComponent<RunDirector>();
+                var run = new RunState(51); run.SetPhase(phase);
+                PauseTestWorld.Set(director, "_state", run);
+                PauseTestWorld.Set(director, "towerSceneName", "SavedTower");
+                PauseTestWorld.Set(world.Runtime, "runDirector", director);
+                RunEvents.SetCurrentRun(run);
+                world.Sample(1, escape: true, toggleHeld: true);
+                Assert.That(GamePause.IsPaused, Is.EqualTo(allowed));
+                Assert.That(director.TowerSceneName, Is.EqualTo("SavedTower"));
+                Assert.That(director.CanRestartRunFromPause, Is.EqualTo(allowed));
+                PauseTestWorld.Set(director, "towerSceneName", "");
+                Assert.That(director.CanRestartRunFromPause, Is.False);
+            }
+        }
+
+        /// <summary>Every load/transition latch independently blocks a second restart.</summary>
+        [TestCase("_isTransitioning")]
+        [TestCase("_preloadingAraf")]
+        [TestCase("_restartRequested")]
+        [TestCase("_sceneDeparture")]
+        public void PauseRestartRejectsBusyDirector(string guard)
+        {
+            using (var world = new PauseTestWorld())
+            {
+                var director = world.Root.AddComponent<RunDirector>();
+                PauseTestWorld.Set(director, "_state", new RunState(52));
+                PauseTestWorld.Set(director, "towerSceneName", "SavedTower");
+                Assert.That(director.CanRestartRunFromPause, Is.True);
+                PauseTestWorld.Set(director, guard, true);
+                Assert.That(director.CanRestartRunFromPause, Is.False);
+                PauseTestWorld.Set(director, guard, false);
+                Assert.That(director.CanRestartRunFromPause, Is.True);
+            }
+        }
+
+        /// <summary>No director means reload the active test scene; preflight itself never issues a load.</summary>
+        [Test]
+        public void StandaloneNewRunPreflightsTheActiveSceneAndRequiresPreparedDeparture()
+        {
+            using (var world = new PauseTestWorld())
+            {
+                world.Runtime.StartNewRun();
+                Assert.That(PauseTestWorld.Read<bool>(world.Runtime, "loadIssued"), Is.False);
+                world.Sample(1, escape: true, toggleHeld: true);
+                world.Runtime.StartNewRun();
+                Assert.That(PauseTestWorld.Read<bool>(world.Runtime, "loadIssued"), Is.False);
+                world.Runtime.TryPrepareSceneLeave(true);
+                Assert.That(PauseTestWorld.Read<string>(world.Runtime, "leaveSceneName"),
+                    Is.EqualTo(UnityEngine.SceneManagement.SceneManager.GetActiveScene().name));
+                Assert.That(PauseTestWorld.Read<bool>(world.Runtime, "loadIssued"), Is.False);
+            }
+        }
+
+        /// <summary>A failed asynchronous-path preflight restores visible pause and emits one recovery event.</summary>
+        [Test]
+        public void FailedNewRunLoadRecoversPauseAndBusyLatchRejectsDuplicateCalls()
+        {
+            using (var world = new PauseTestWorld())
+            {
+                world.Sample(1, escape: true, toggleHeld: true);
+                var service = (PauseService)world.Runtime.Service;
+                Assert.That(service.PrepareSceneLeave(), Is.True);
+                PauseTestWorld.Set(world.Runtime, "leavingForNewRun", true);
+                PauseTestWorld.Set(world.Runtime, "leaveSceneName", "__MissingPauseRestartScene__");
+                int failures = 0; world.Runtime.SceneLeaveFailed += () => failures++;
+                PauseTestWorld.Set(world.Runtime, "loadIssued", true);
+                world.Runtime.StartNewRun(); world.Runtime.StartNewRun(); world.Runtime.LoadMainMenu();
+                Assert.That(failures, Is.Zero, "An issued operation cannot be issued again.");
+                Assert.That(service.IsLeaving, Is.True);
+                PauseTestWorld.Set(world.Runtime, "loadIssued", false);
+                world.Runtime.LoadMainMenu();
+                Assert.That(failures, Is.Zero, "The other destination cannot consume this confirmation.");
+                world.Runtime.StartNewRun(); world.Runtime.StartNewRun();
+                Assert.That(failures, Is.EqualTo(1));
+                Assert.That(service.IsLeaving, Is.False);
+                Assert.That(service.IsPaused, Is.True);
+                Assert.That(PauseTestWorld.Read<bool>(world.Runtime, "loadIssued"), Is.False);
+                Assert.That(UnityEngine.Time.timeScale, Is.Zero);
+                Assert.That(UnityEngine.AudioListener.pause, Is.True);
+            }
+        }
+
         /// <summary>Only Tower and InAraf permit a pause when a run exists.</summary>
         [TestCase(RunPhase.Tower, true)]
         [TestCase(RunPhase.InAraf, true)]

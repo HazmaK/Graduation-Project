@@ -421,14 +421,18 @@ namespace RetroFPS.Tests.EditMode
             Assert.That(Get<Vector3>(_ai, "_velocity"), Is.EqualTo(Vector3.zero));
         }
 
-        /// <summary>Elite scaling applies to the single area damage value and resets on respawn.</summary>
+        /// <summary>Elite scaling affects area damage while preserving launch speeds, including after respawn.</summary>
         [Test]
         public void Elite_ScalesAreaDamageAndResets()
         {
             _ai.ApplyEliteScaling(2f, 1.5f, 2f);
             Assert.That(Get<float>(_ai, "slamDamage"), Is.EqualTo(70f));
+            Assert.That(Get<float>(_ai, "slamLaunchUpSpeed"), Is.EqualTo(9f));
+            Assert.That(Get<float>(_ai, "slamLaunchPushSpeed"), Is.EqualTo(5f));
             _ai.Respawn();
             Assert.That(Get<float>(_ai, "slamDamage"), Is.EqualTo(35f));
+            Assert.That(Get<float>(_ai, "slamLaunchUpSpeed"), Is.EqualTo(9f));
+            Assert.That(Get<float>(_ai, "slamLaunchPushSpeed"), Is.EqualTo(5f));
         }
 
         /// <summary>The cached rectangle survives root rotation and delivers damage only once at impact.</summary>
@@ -446,8 +450,11 @@ namespace RetroFPS.Tests.EditMode
             try
             {
                 PlayerHealth health = player.AddComponent<PlayerHealth>();
+                PlayerMovement movement = player.GetComponent<PlayerMovement>();
                 Set(health, "_currentHealth", 100f);
+                Set(health, "_movement", movement);
                 Set(_ai, "_playerHealth", health);
+                Set(_ai, "_playerMovement", movement);
                 Set(_ai, "_playerTransform", player.transform);
                 _loop.TryBeginSlam(1f, true, true, 0f);
                 typeof(PenitentAI).GetMethod("OnPhaseChanged", PrivateInstance).Invoke(_ai, null);
@@ -458,6 +465,88 @@ namespace RetroFPS.Tests.EditMode
                 impact.Invoke(_ai, null);
                 impact.Invoke(_ai, null);
                 Assert.That(health.CurrentHealth, Is.EqualTo(hit ? 65f : 100f));
+                Assert.That(movement.Velocity, Is.EqualTo(hit ? new Vector3(0f, 9f, 5f) : Vector3.zero));
+            }
+            finally
+            {
+                GamePause.SetService(previousPause);
+                Object.DestroyImmediate(player);
+            }
+        }
+
+        /// <summary>Invulnerability and zero damage cannot launch; lethal damage also leaves movement untouched.</summary>
+        [TestCase(true, 35f, 100f, 100f)]
+        [TestCase(false, 0f, 100f, 100f)]
+        [TestCase(false, 35f, 20f, 0f)]
+        public void AreaImpact_RejectsLaunchWithoutSurvivingDamage(bool invincible, float damage,
+            float initialHealth, float expectedHealth)
+        {
+            GameObject player = new GameObject("SlamDamageGate");
+            player.SetActive(false);
+            CursorLockMode previousCursorLock = Cursor.lockState;
+            bool previousCursorVisible = Cursor.visible;
+            IPauseService previousPause = GamePause.Service;
+            GamePause.SetService(null);
+            try
+            {
+                PlayerHealth health = player.AddComponent<PlayerHealth>();
+                PlayerMovement movement = player.GetComponent<PlayerMovement>();
+                Set(health, "_currentHealth", initialHealth);
+                Set(health, "_movement", movement);
+                Set(movement, "_isInvincible", invincible);
+                Set(_ai, "_playerHealth", health);
+                Set(_ai, "_playerTransform", player.transform);
+                Set(_ai, "_playerMovement", movement);
+                Set(_ai, "slamDamage", damage);
+                player.transform.position = Vector3.forward * 3f;
+                _loop.TryBeginSlam(1f, true, true, 0f);
+                typeof(PenitentAI).GetMethod("OnPhaseChanged", PrivateInstance).Invoke(_ai, null);
+                _loop.Tick(2f, 1f, true, true, 0f);
+                typeof(PenitentAI).GetMethod("PerformSlam", PrivateInstance).Invoke(_ai, null);
+                Assert.That(health.CurrentHealth, Is.EqualTo(expectedHealth));
+                Assert.That(movement.Velocity, Is.EqualTo(Vector3.zero));
+            }
+            finally
+            {
+                GamePause.SetService(previousPause);
+                Cursor.lockState = previousCursorLock;
+                Cursor.visible = previousCursorVisible;
+                Object.DestroyImmediate(player);
+            }
+        }
+
+        /// <summary>Grapple is stopped before the impulse; dash and meteor slam keep their movement ownership.</summary>
+        [TestCase(true, false, false, true)]
+        [TestCase(false, true, false, false)]
+        [TestCase(false, false, true, false)]
+        public void AreaImpact_MirrorsBossMovementGuards(bool grappling, bool dashing, bool meteor, bool launches)
+        {
+            GameObject player = new GameObject("SlamMovementGate");
+            player.SetActive(false);
+            IPauseService previousPause = GamePause.Service;
+            GamePause.SetService(null);
+            try
+            {
+                PlayerHealth health = player.AddComponent<PlayerHealth>();
+                PlayerMovement movement = player.GetComponent<PlayerMovement>();
+                Set(health, "_currentHealth", 100f);
+                Set(health, "_movement", movement);
+                Set(movement, "_isGrappling", grappling);
+                Set(movement, "_isDashing", dashing);
+                Set(movement, "_isMeteorSlamming", meteor);
+                Set(_ai, "_playerHealth", health);
+                Set(_ai, "_playerTransform", player.transform);
+                Set(_ai, "_playerMovement", movement);
+                player.transform.position = Vector3.forward * 3f;
+                _loop.TryBeginSlam(1f, true, true, 0f);
+                typeof(PenitentAI).GetMethod("OnPhaseChanged", PrivateInstance).Invoke(_ai, null);
+                _loop.Tick(2f, 1f, true, true, 0f);
+                MethodInfo impact = typeof(PenitentAI).GetMethod("PerformSlam", PrivateInstance);
+                impact.Invoke(_ai, null);
+                impact.Invoke(_ai, null);
+                Assert.That(health.CurrentHealth, Is.EqualTo(65f));
+                Assert.That(movement.IsGrappling, Is.False);
+                Assert.That(movement.Velocity, Is.EqualTo(launches ? new Vector3(0f, 9f, 5f) : Vector3.zero));
             }
             finally
             {
@@ -471,5 +560,42 @@ namespace RetroFPS.Tests.EditMode
 
         private static T Get<T>(object target, string name) =>
             (T)target.GetType().GetField(name, PrivateInstance).GetValue(target);
+    }
+
+    /// <summary>Pure launch-vector coverage without player, scene, physics or time dependencies.</summary>
+    public sealed class PenitentSlamLaunchTests
+    {
+        /// <summary>Forward magnitude and tilt never change horizontal speed or contaminate the vertical launch.</summary>
+        [TestCase(0f, 0f, 1f, 0f, 5f)]
+        [TestCase(3f, 12f, 4f, 3f, 4f)]
+        [TestCase(-6f, -7f, -8f, -3f, -4f)]
+        [TestCase(2f, 9f, 0f, 5f, 0f)]
+        public void Compute_FlattensNormalizesAndFollowsLane(float x, float y, float z, float expectedX, float expectedZ)
+        {
+            Vector3 velocity = PenitentSlamLaunch.Compute(new Vector3(x, y, z), 9f, 5f);
+            Assert.That(velocity.x, Is.EqualTo(expectedX).Within(0.0001f));
+            Assert.That(velocity.y, Is.EqualTo(9f));
+            Assert.That(velocity.z, Is.EqualTo(expectedZ).Within(0.0001f));
+        }
+
+        /// <summary>Zero, vertical and near-zero lane directions produce only the upward contribution.</summary>
+        [TestCase(0f, 0f, 0f)]
+        [TestCase(0f, 10f, 0f)]
+        [TestCase(0.00001f, -2f, -0.00001f)]
+        public void Compute_DegenerateLaneHasNoHorizontalPush(float x, float y, float z)
+        {
+            Assert.That(PenitentSlamLaunch.Compute(new Vector3(x, y, z), 9f, 5f), Is.EqualTo(Vector3.up * 9f));
+        }
+
+        /// <summary>Both speed inputs are independent, including disabling either or both contributions.</summary>
+        [TestCase(0f, 5f)]
+        [TestCase(9f, 0f)]
+        [TestCase(0f, 0f)]
+        [TestCase(4f, 2f)]
+        public void Compute_UsesSuppliedSpeeds(float upSpeed, float pushSpeed)
+        {
+            Assert.That(PenitentSlamLaunch.Compute(Vector3.right * 3f, upSpeed, pushSpeed),
+                Is.EqualTo(new Vector3(pushSpeed, upSpeed, 0f)));
+        }
     }
 }

@@ -20,9 +20,9 @@ namespace RetroFPS.Tests
         {
             StringTable table = AssetDatabase.LoadAssetAtPath<StringTable>("Assets/_Project/Data/UI/StringTable_MainMenu_tr.asset");
             Assert.That(table, Is.Not.Null);
-            string[] keys = { "pause.resume", "pause.main_menu", "pause.main_menu_prompt", "pause.main_menu_load_error" };
-            string[] tr = { "DEVAM", "ANA MENÜ", "Ana menüye dönülsün mü? Bu koşudaki ilerleme kaybolacak.", "Ana menü yüklenemedi. Tekrar deneyin." };
-            string[] en = { "RESUME", "MAIN MENU", "Return to the main menu? This run's progress will be lost.", "Could not load the main menu. Try again." };
+            string[] keys = { "pause.resume", "pause.main_menu", "pause.main_menu_prompt", "pause.main_menu_load_error", "pause.new_run", "pause.new_run_prompt", "pause.new_run_load_error" };
+            string[] tr = { "DEVAM", "ANA MENÜ", "Ana menüye dönülsün mü? Bu koşudaki ilerleme kaybolacak.", "Ana menü yüklenemedi. Tekrar deneyin.", "YENİ KOŞU", "Yeni koşu başlatılsın mı? Bu koşudaki ilerleme kaybolacak.", "Yeni koşu başlatılamadı. Tekrar deneyin." };
+            string[] en = { "RESUME", "MAIN MENU", "Return to the main menu? This run's progress will be lost.", "Could not load the main menu. Try again.", "NEW RUN", "Start a new run? This run's progress will be lost.", "Could not start a new run. Try again." };
             table.ValidateEntries();
             for (int i = 0; i < keys.Length; i++)
             {
@@ -40,10 +40,11 @@ namespace RetroFPS.Tests
                 table.PopulateBilingualDefaults(); int original = table.Count;
                 Upsert(table); Upsert(table);
                 table.ValidateEntries();
-                Assert.That(table.Count, Is.EqualTo(original + 4));
-                string[] keys = { "pause.resume", "pause.main_menu", "pause.main_menu_prompt", "pause.main_menu_load_error" };
-                string[] tr = { "DEVAM", "ANA MENÜ", "Ana menüye dönülsün mü? Bu koşudaki ilerleme kaybolacak.", "Ana menü yüklenemedi. Tekrar deneyin." };
-                string[] en = { "RESUME", "MAIN MENU", "Return to the main menu? This run's progress will be lost.", "Could not load the main menu. Try again." };
+                Assert.That(table.Count, Is.EqualTo(original + 7));
+                Assert.That(table.Count, Is.EqualTo(43));
+                string[] keys = { "pause.resume", "pause.main_menu", "pause.main_menu_prompt", "pause.main_menu_load_error", "pause.new_run", "pause.new_run_prompt", "pause.new_run_load_error" };
+                string[] tr = { "DEVAM", "ANA MENÜ", "Ana menüye dönülsün mü? Bu koşudaki ilerleme kaybolacak.", "Ana menü yüklenemedi. Tekrar deneyin.", "YENİ KOŞU", "Yeni koşu başlatılsın mı? Bu koşudaki ilerleme kaybolacak.", "Yeni koşu başlatılamadı. Tekrar deneyin." };
+                string[] en = { "RESUME", "MAIN MENU", "Return to the main menu? This run's progress will be lost.", "Could not load the main menu. Try again.", "NEW RUN", "Start a new run? This run's progress will be lost.", "Could not start a new run. Try again." };
                 for (int i = 0; i < keys.Length; i++)
                 {
                     Assert.That(table.Get(keys[i], LanguageSetting.Turkish), Is.EqualTo(tr[i]));
