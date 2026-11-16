@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using UnityEngine;
 using RetroFPS.Combat;
 using RetroFPS.Stats;
@@ -6,522 +5,635 @@ using RetroFPS.UI;
 
 namespace RetroFPS.Weapons
 {
-    /// <summary>
-    /// Slot 2: Cellat Kılıcı 2.0 (Executioner Blade Overhaul).
-    /// - Birincil Saldırı (Sol Tık): 3 Aşamalı Ritmik Kombo Zinciri (Yatay Kesiş -> Ters Kesiş -> Ağır Ezici Finisher).
-    /// - İkincil Saldırı (Sağ Tık): 
-    ///     * Yerde/Düz: Cellat İnfaz Hücumu (Executioner's Lunge) — 8-10m ileri atılma, biçme, düşman öldüğünde veya sersemken vurulduğunda +25 HP can sömürüsü ve Adrenalin Hız Patlaması!
-    ///     * Havada Aşağı Bakarken: Meteor Çakılması (Meteor Slam) — Yere sert iniş, 5.5m çapında şok dalgası, alan hasarı ve Ghoul'ları yere seren sersemletme (Stun).
-    /// - Mermi Kesme (Blade Deflection): Savurma menziline giren düşman plazma mermilerini havada kesip geri yansıtır.
-    /// Sıfır GC tahsisi, non-alloc fizik tamponları ve yüksek tokluklu kinetik geri bildirim (Juice).
-    /// </summary>
+    /// <summary>Slot 2 melee driver: buffered combo, projectile cutting, execution lunge and height-scaled slam.</summary>
     public class ExecutionerBladeWeapon : WeaponBase
     {
-        [Header("3 Vuruşlu Kombo Sistemi (Combo Chain)")]
-        [SerializeField] private float combo1Damage = 45f;
-        [SerializeField] private float combo2Damage = 55f;
-        [SerializeField] private float combo3Damage = 95f;
+        [Header("Combo")]
+        [SerializeField] private float lightSlashDamage = 34f;
+        [SerializeField] private float backhandSlashDamage = 42f;
+        [SerializeField] private float overheadBaseDamage = 71.11f;
         [SerializeField] private float comboResetTime = 0.70f;
         [SerializeField] private float slashRange = 3.4f;
         [SerializeField] private float slashAngle = 85f;
+        [SerializeField] private float lightSlashCooldown = 0.22f;
+        [SerializeField] private float backhandSlashCooldown = 0.22f;
+        [SerializeField] private float overheadCooldown = 0.44f;
+        [SerializeField] private float overheadWindup = 0.10f;
+        [SerializeField] private float primaryBufferWindow = 0.15f;
+        [SerializeField] private float criticalMultiplier = 1.35f;
+        [SerializeField] private float finisherRangeMultiplier = 1.15f;
+        [SerializeField] private float finisherAngleMultiplier = 0.75f;
+        [SerializeField] private float finisherStunSeconds = 1f;
+        [SerializeField] private float finisherKnockback = 12f;
+        [SerializeField] private float stepInDistance = 1.6f;
+        [SerializeField] private float stepInImpulse = 2.5f;
+        [SerializeField] private float guardBounceRecovery = 0.30f;
+        [SerializeField] private float guardBouncePunch = 2f;
+        [SerializeField] private float sunderDuration = 4f;
+        [SerializeField] private float sunderMultiplier = 1.25f;
+
+        [Header("Speed Edge")]
+        [SerializeField] private float speedEdgeMinSpeed = 8f;
+        [SerializeField] private float speedEdgeMaxSpeed = 13f;
+        [SerializeField] private float speedEdgeMaxBonus = 0.35f;
+        [SerializeField] private float speedEdgePitchThreshold = 1.2f;
+        [SerializeField] private float speedEdgePitchMultiplier = 1.08f;
+
+        [Header("Combo feedback")]
+        [SerializeField] private float lightHitstopDuration = 0.035f;
+        [SerializeField] private float lightHitstopScale = 0.05f;
+        [SerializeField] private float overheadHitstopDuration = 0.10f;
+        [SerializeField] private float overheadHitstopScale = 0.02f;
+        [SerializeField] private float lightPitchPunch = -1.1f;
+        [SerializeField] private float overheadPitchPunch = -3f;
+        [SerializeField] private float slashYawPunch = 1.2f;
+        [SerializeField] private float lightTrauma = 0.14f;
+        [SerializeField] private float backhandTrauma = 0.16f;
+        [SerializeField] private float overheadTrauma = 0.32f;
+        [SerializeField] private float whiffTraumaMultiplier = 0.5f;
+        [SerializeField] private float lightSwingPitch = 1.05f;
+        [SerializeField] private float backhandSwingPitch = 0.95f;
+        [SerializeField] private float overheadAnimationDuration = 0.28f;
+        [SerializeField] private float lightBloom = 10f;
+        [SerializeField] private float backhandBloom = 12f;
+        [SerializeField] private float overheadBloom = 18f;
+        [SerializeField] private int finisherGibCount = 2;
 
         [Header("Counter-Verdict Quick Swipe")]
         [SerializeField] private float quickSwipeDamage = 25f;
         [SerializeField, Min(0f)] private float quickSwipeDuration = 0.18f;
         [SerializeField] private float quickSwipePitch = 0.95f;
 
-        [Header("Sağ Tık: İnfaz Hücumu (Executioner's Lunge)")]
+        [Header("Executioner's Lunge")]
         [SerializeField] private float lungeDamage = 95f;
         [SerializeField] private float lungeSpeed = 28f;
         [SerializeField] private float lungeDuration = 0.22f;
-        [SerializeField] private float lungeCooldown = 0.95f;
-        [SerializeField] private float lungeHealAmount = 25f;
+        [SerializeField] private float executionLungeCooldown = 2.2f;
+        [SerializeField] private float stunnedHarvestHeal = 20f;
         [SerializeField] private float adrenalineDuration = 1.5f;
         [SerializeField, Min(1)] private int harvestTargetCapacity = 512;
+        [SerializeField] private float lungeSweepDistance = 7.5f;
+        [SerializeField] private float lungeSweepRadius = 0.75f;
+        [SerializeField] private float lungeDirectionMinSqrMagnitude = 0.01f;
+        [SerializeField] private float lungePrimaryRecovery = 0.35f;
+        [SerializeField] private float lungeAnimationDuration = 0.28f;
+        [SerializeField] private float lungeBloom = 24f;
+        [SerializeField] private float chainResetCooldown = 0.10f;
+        [SerializeField] private float chainResetHitstopDuration = 0.06f;
+        [SerializeField] private float chainResetHitstopScale = 0.03f;
+        [SerializeField] private float chainResetFovKick = 6f;
+        [SerializeField] private float harvestOverhealCap = 125f;
+        [SerializeField] private float adrenalineMultiplier = 1.35f;
+        [SerializeField] private float harvestHitstopDuration = 0.08f;
+        [SerializeField] private float harvestHitstopScale = 0.02f;
+        [SerializeField] private int harvestGibCount = 3;
 
-        [Header("Havada Sağ Tık: Meteor Çakılması (Meteor Slam)")]
+        [Header("Meteor Slam")]
         [SerializeField] private float slamDownwardSpeed = 34f;
-        [SerializeField] private float slamDamage = 80f;
-        [SerializeField] private float slamRadius = 5.5f;
-        [SerializeField] private float slamStunDuration = 2.2f;
         [SerializeField] private float slamCooldown = 1.25f;
+        [SerializeField] private float slamLandingCooldown = 1f;
+        [SerializeField] private float slamMinHeight = 1f;
+        [SerializeField] private float slamMaxHeight = 6f;
+        /// <summary>Maximum height credit for a slam following a lunge in the same airtime; set very high to disable.</summary>
+        [SerializeField, Min(0f)] private float lungeSlamMaxHeight = 4f;
+        [SerializeField] private float slamLightDamage = 45f;
+        [SerializeField] private float slamHeavyDamage = 120f;
+        [SerializeField] private float slamLightRadius = 3f;
+        [SerializeField] private float slamRadius = 5.5f;
+        [SerializeField] private float slamLightStun = 0.5f;
+        [SerializeField] private float slamHeavyStun = 1.8f;
+        [SerializeField] private float slamGuardBreakHeight = 3.5f;
+        [SerializeField] private float slamGuardBreakDuration = 2f;
+        [SerializeField] private float slamSightHeight = 0.5f;
+        [SerializeField] private float slamLightTrauma = 0.22f;
+        [SerializeField] private float slamHeavyTrauma = 0.5f;
+        [SerializeField] private float slamLightHitstop = 0.05f;
+        [SerializeField] private float slamHeavyHitstop = 0.12f;
+        [SerializeField] private float slamHitstopScale = 0.02f;
+        [SerializeField] private float slamLookDownThreshold = -0.42f;
+        [SerializeField] private float slamPrimaryRecovery = 0.5f;
+        [SerializeField] private float slamAnimationDuration = 0.35f;
+        [SerializeField] private float slamBloom = 26f;
+        [SerializeField] private float slamPitchPunch = -3f;
+        [SerializeField] private float slamBurstHeight = 0.2f;
+        [SerializeField] private float slamKnockbackUp = 0.35f;
+        [SerializeField] private float slamKnockbackSpeed = 4.5f;
+        [SerializeField] private int slamGibCount = 3;
 
-        [Header("Mermi Kesme (Projectile Slicing)")]
+        [Header("Projectile cutting")]
         [SerializeField] private bool enableProjectileSlice = true;
         [SerializeField] private float projectileSliceRadius = 2.8f;
+        [SerializeField] private float projectileSliceHalfAngle = 75f;
+        [SerializeField] private float lungeSliceRadius = 1.8f;
+        [SerializeField] private float lungeSliceHalfAngle = 90f;
+        [SerializeField] private float projectileCutHitstopDuration = 0.04f;
+        [SerializeField] private float projectileCutHitstopScale = 0.05f;
 
-        private float _primaryCooldownTimer = 0f;
-        private float _altCooldownTimer = 0f;
-
-        // Kombo durumu
-        private int _comboIndex = 0;
-        private float _lastSlashTime = -10f;
-
-        // Sıfır GC önbellek tamponları
         private readonly Collider[] _overlapBuffer = new Collider[32];
-        private readonly RaycastHit[] _lungeHitsBuffer = new RaycastHit[16];
-        private readonly List<IDamageable> _hitEntitiesBuffer = new List<IDamageable>(32);
-
-        // Önbelleğe alınmış bileşenler
+        private readonly RaycastHit[] _lungeHitsBuffer = new RaycastHit[32];
         private readonly RaycastHit[] _visibilityHits = new RaycastHit[32];
+        private readonly IDamageable[] _hitEntitiesBuffer = new IDamageable[32];
+        private int _hitEntityCount;
+        private BladeAltState _altState;
+        private float _slamStartY;
+        private bool _bladeLungeActive;
         private System.Action _slamLandedCallback;
         private PlayerMovement _movement;
         private PlayerHealth _playerHealth;
         private CrosshairHUD _crosshairHUD;
         private BloodHarvestTracker _harvestTracker;
+        private BladeComboState _combo;
 
+        /// <inheritdoc />
         public override WeaponSlot Slot => WeaponSlot.ExecutionerBlade;
+        /// <inheritdoc />
         public override bool IsFullAuto => false;
-        public override bool CanFirePrimary => _primaryCooldownTimer <= 0f;
-        public override bool CanFireAlt => _altCooldownTimer <= 0f;
-        public int CurrentComboStep => _comboIndex + 1;
+        /// <summary>Allows fresh presses through the controller during the combo input-buffer window.</summary>
+        public override bool CanFirePrimary => _combo != null && _combo.CanAcceptPress;
+        /// <inheritdoc />
+        public override bool CanFireAlt => _altState != null && _movement != null && PlayerCamera != null
+            && _altState.CanFire(_movement.IsGrounded, PlayerCamera.transform.forward.y, slamLookDownThreshold);
+        /// <summary>One-based next step, retained for HUD and controller consumers.</summary>
+        public int CurrentComboStep => _combo != null ? _combo.NextStep : 1;
+        private Vector3 AttackerPosition => _movement != null ? _movement.transform.position : transform.root.position;
 
         private void Awake()
         {
-            _harvestTracker = new BloodHarvestTracker(harvestTargetCapacity);
-            _slamLandedCallback = OnMeteorSlamLanded;
+            InitializeState();
             if (string.IsNullOrEmpty(weaponDisplayName) || weaponDisplayName == "Weapon")
-            {
                 weaponDisplayName = "Executioner Blade";
-            }
+        }
+
+        /// <inheritdoc />
+        public override void Initialize(PlayerLook look, Camera playerCamera)
+        {
+            // Registered holstered visuals can still be inactive, so their Awake may not have run yet.
+            InitializeState();
+            base.Initialize(look, playerCamera);
+            ResolvePlayer();
         }
 
         protected override void Start()
         {
             base.Start();
-            ResolveMovement();
-            ResolvePlayerHealth();
-            _crosshairHUD = FindAnyObjectByType<CrosshairHUD>();
+            ResolvePlayer();
         }
 
-        private void ResolveMovement()
+        private void InitializeState()
         {
-            if (_movement != null) return;
-            _movement = GetComponentInParent<PlayerMovement>()
-                     ?? FindAnyObjectByType<PlayerMovement>();
+            if (_altState == null) _altState = new BladeAltState();
+            if (_combo == null)
+                _combo = new BladeComboState(lightSlashCooldown, backhandSlashCooldown, overheadCooldown,
+                    comboResetTime, primaryBufferWindow, overheadWindup);
+            if (_harvestTracker == null) _harvestTracker = new BloodHarvestTracker(harvestTargetCapacity);
+            if (_slamLandedCallback == null) _slamLandedCallback = OnMeteorSlamLanded;
         }
 
-        private void ResolvePlayerHealth()
+        private void ResolvePlayer()
         {
-            if (_playerHealth != null) return;
-            _playerHealth = GetComponentInParent<PlayerHealth>()
-                         ?? FindAnyObjectByType<PlayerHealth>();
+            if (_movement == null)
+                _movement = GetComponentInParent<PlayerMovement>() ?? FindAnyObjectByType<PlayerMovement>();
+            if (_playerHealth == null)
+                _playerHealth = GetComponentInParent<PlayerHealth>() ?? FindAnyObjectByType<PlayerHealth>();
+            if (_crosshairHUD == null) _crosshairHUD = FindAnyObjectByType<CrosshairHUD>();
         }
 
+        /// <inheritdoc />
         public override void Tick(float deltaTime)
         {
-            if (_primaryCooldownTimer > 0f) _primaryCooldownTimer -= deltaTime;
-            if (_altCooldownTimer > 0f) _altCooldownTimer -= deltaTime;
-
-            // Kombo zaman aşımı kontrolü (beklenirse başa sarar)
-            if (_comboIndex > 0 && (Time.time - _lastSlashTime > comboResetTime))
+            AdvanceCooldowns(deltaTime);
+            Camera cam = PlayerCamera;
+            if (cam == null) { _combo.CancelPending(); return; }
+            if (_combo.TryResolveFinisher()) ResolveComboSwing(cam, 3);
+            if (_combo.TryStartBuffered(out int step)) StartComboSwing(cam, step);
+            if (_bladeLungeActive)
             {
-                _comboIndex = 0;
+                _bladeLungeActive = _movement != null && _movement.IsLunging;
+                if (_bladeLungeActive && enableProjectileSlice)
+                    SliceNearbyProjectiles(cam.transform.position, cam.transform.forward, lungeSliceRadius, lungeSliceHalfAngle);
             }
         }
 
-        /// <summary>Plays one immediate backhand cone hit without changing combo, cooldowns or harvest state.</summary>
+        /// <summary>Advances recovery while holstered, cancelling delayed hits and input without attacks.</summary>
+        public override void TickHolstered(float deltaTime)
+        {
+            _combo.CancelPending();
+            AdvanceCooldowns(deltaTime);
+        }
+
+        private void AdvanceCooldowns(float deltaTime)
+        {
+            _combo.Advance(deltaTime);
+            // A grounded lunge start is still "grounded" for its first frames; do not clear the airtime marker mid-lunge.
+            _altState.Advance(deltaTime, _movement != null && _movement.IsGrounded && !_movement.IsLunging);
+        }
+
+        /// <inheritdoc />
+        public override void OnUnequip()
+        {
+            CancelPendingActions();
+            base.OnUnequip();
+        }
+
+        private void OnDisable()
+        {
+            CancelPendingActions();
+        }
+
+        /// <summary>Cancels buffered swings, finisher wind-up and lunge projectile cutting.</summary>
+        public override void CancelPendingActions()
+        {
+            _combo?.CancelPending();
+            _bladeLungeActive = false;
+        }
+
+        /// <summary>Immediate 25-damage backhand; does not consume combo input, cooldown or Speed Edge.</summary>
         public void QuickSwipe()
         {
             if (Pause.GamePause.IsGameplayInputBlocked) return;
             if (Viewmodel != null) Viewmodel.TriggerMeleeBackhand(quickSwipeDuration);
             if (CombatAudio.Instance != null) CombatAudio.Instance.PlayBladeSwing(quickSwipePitch);
             Camera cam = PlayerCamera;
-            if (cam != null) ExecuteSlashCone(cam, quickSwipeDamage, false);
+            if (cam != null) ExecuteSlashCone(cam, quickSwipeDamage, 0);
         }
 
-        #region Sol Tık (Birincil Kombo Saldırısı)
+        /// <inheritdoc />
         public override void FirePrimary()
         {
             Camera cam = PlayerCamera;
-            if (!CanFirePrimary || cam == null) return;
-
-            // Kombo zaman aşımı kontrolü
-            if (Time.time - _lastSlashTime > comboResetTime)
-            {
-                _comboIndex = 0;
-            }
-
-            int currentCombo = _comboIndex;
-            _lastSlashTime = Time.time;
-
-            float damage = combo1Damage;
-            float cooldown = 0.20f;
-            float trauma = 0.12f;
-            float bloom = 10f;
-
-            switch (currentCombo)
-            {
-                case 0:
-                    damage = combo1Damage;
-                    cooldown = 0.20f;
-                    trauma = 0.12f;
-                    bloom = 10f;
-                    if (Viewmodel != null) Viewmodel.TriggerMeleeSlash(0.20f);
-                    if (CombatAudio.Instance != null) CombatAudio.Instance.PlayBladeSwing(1.05f);
-                    break;
-
-                case 1:
-                    damage = combo2Damage;
-                    cooldown = 0.20f;
-                    trauma = 0.14f;
-                    bloom = 12f;
-                    if (Viewmodel != null) Viewmodel.TriggerMeleeBackhand(0.20f);
-                    if (CombatAudio.Instance != null) CombatAudio.Instance.PlayBladeSwing(0.95f);
-                    break;
-
-                case 2:
-                    damage = combo3Damage;
-                    cooldown = 0.38f; // Ağır bitirici toparlanması
-                    trauma = 0.26f;
-                    bloom = 18f;
-                    if (Viewmodel != null) Viewmodel.TriggerMeleeOverhead(0.28f);
-                    if (CombatAudio.Instance != null) CombatAudio.Instance.PlayBladeFinisher();
-                    break;
-            }
-
-            // Bir sonraki komboya ilerle
-            _comboIndex = (_comboIndex + 1) % 3;
-            _primaryCooldownTimer = cooldown;
-
-            if (_look != null)
-            {
-                _look.AddTrauma(trauma);
-                _look.AddViewPunch(currentCombo == 2 ? -2.2f : -0.6f,
-                    currentCombo == 2 ? 0f : (currentCombo == 0 ? -1.2f : 1.2f));
-            }
-            if (_crosshairHUD != null) _crosshairHUD.TriggerRecoilBloom(bloom);
-
-            // 1. Mermileri Kesme ve Geri Yansıtma
-            if (enableProjectileSlice)
-            {
-                SliceNearbyProjectiles(cam.transform.position, cam.transform.forward, projectileSliceRadius);
-            }
-
-            // 2. Koni Alan Hasarı
-            ExecuteSlashCone(cam, damage, currentCombo == 2);
+            if (Pause.GamePause.IsGameplayInputBlocked || cam == null) return;
+            if (_combo.Press(out int step)) StartComboSwing(cam, step);
         }
 
-        private void SliceNearbyProjectiles(Vector3 origin, Vector3 forward, float radius)
+        private float SpeedEdgeMultiplier()
+            => BladeSpeedEdge.Multiplier(_movement != null ? _movement.CurrentHorizontalSpeed : 0f,
+                speedEdgeMinSpeed, speedEdgeMaxSpeed, speedEdgeMaxBonus);
+
+        private void StartComboSwing(Camera cam, int step)
+        {
+            if (Viewmodel != null)
+            {
+                if (step == 1) Viewmodel.TriggerMeleeSlash(lightSlashCooldown);
+                else if (step == 2) Viewmodel.TriggerMeleeBackhand(backhandSlashCooldown);
+                else Viewmodel.TriggerMeleeOverhead(overheadAnimationDuration);
+            }
+            if (CombatAudio.Instance != null)
+            {
+                if (step == 3) CombatAudio.Instance.PlayBladeFinisher();
+                else PlaySwingSound(step, SpeedEdgeMultiplier());
+            }
+            if (_look != null)
+                _look.AddViewPunch(step == 3 ? overheadPitchPunch : lightPitchPunch,
+                    step == 3 ? 0f : step == 1 ? -slashYawPunch : slashYawPunch);
+            if (_crosshairHUD != null)
+                _crosshairHUD.TriggerRecoilBloom(step == 1 ? lightBloom : step == 2 ? backhandBloom : overheadBloom);
+            if (step != 3) ResolveComboSwing(cam, step);
+        }
+
+        private void PlaySwingSound(int step, float multiplier)
+        {
+            float pitch = step == 2 ? backhandSwingPitch : lightSwingPitch;
+            if (multiplier >= speedEdgePitchThreshold) pitch *= speedEdgePitchMultiplier;
+            CombatAudio.Instance.PlayBladeSwing(pitch);
+        }
+
+        private void ResolveComboSwing(Camera cam, int step)
+        {
+            float speedMultiplier = SpeedEdgeMultiplier();
+            if (step == 3 && speedMultiplier >= speedEdgePitchThreshold && CombatAudio.Instance != null)
+                PlaySwingSound(step, speedMultiplier);
+            if (enableProjectileSlice)
+                SliceNearbyProjectiles(cam.transform.position, cam.transform.forward, projectileSliceRadius, projectileSliceHalfAngle);
+            float damage = step == 1 ? lightSlashDamage : step == 2 ? backhandSlashDamage : overheadBaseDamage;
+            ExecuteSlashCone(cam, damage * speedMultiplier, step);
+        }
+
+        private void SliceNearbyProjectiles(Vector3 origin, Vector3 forward, float radius, float halfAngle)
         {
             var projectiles = EnemyProjectile.ActiveProjectiles;
             for (int i = projectiles.Count - 1; i >= 0; i--)
             {
                 if (i >= projectiles.Count) continue;
-                EnemyProjectile proj = projectiles[i];
-                if (proj == null || proj.IsDeflected) continue;
-
-                Vector3 toProj = proj.transform.position - origin;
-                if (toProj.sqrMagnitude <= radius * radius)
-                {
-                    float angle = Vector3.Angle(forward, toProj.normalized);
-                    if (angle <= 75f)
-                    {
-                        // Mermiyi oyuncunun baktığı yöne ölümcül hızla yansıt
-                        proj.Deflect(forward, 2.0f, 3.0f);
-
-                        if (CombatVFXManager.Instance != null)
-                        {
-                            CombatVFXManager.Instance.SpawnOccultEnergyBurst(proj.transform.position, true);
-                        }
-
-                        if (HitstopManager.Instance != null)
-                        {
-                            HitstopManager.Instance.TriggerHitstop(0.06f, 0.02f);
-                        }
-
-                        if (CombatAudio.Instance != null)
-                        {
-                            CombatAudio.Instance.PlayCritCrunch();
-                        }
-                    }
-                }
+                EnemyProjectile projectile = projectiles[i];
+                if (projectile == null || projectile.IsDeflected) continue;
+                Vector3 point = projectile.transform.position;
+                Vector3 toProjectile = point - origin;
+                if (toProjectile.sqrMagnitude > radius * radius || Vector3.Angle(forward, toProjectile) > halfAngle) continue;
+                projectile.Cut();
+                if (CombatVFXManager.Instance != null) CombatVFXManager.Instance.SpawnOccultEnergyBurst(point, true);
+                if (HitstopManager.Instance != null)
+                    HitstopManager.Instance.TriggerHitstop(projectileCutHitstopDuration, projectileCutHitstopScale);
+                if (CombatAudio.Instance != null) CombatAudio.Instance.PlayCritCrunch();
             }
         }
 
-        private void ExecuteSlashCone(Camera cam, float damage, bool isFinisher)
+        private void ExecuteSlashCone(Camera cam, float damage, int comboStep)
         {
-            damage *= PlayerStats.Get(StatId.DamageDealt, 1f) * PlayerStats.Get(StatId.MeleeDamage, 1f);
-            float range = isFinisher ? (slashRange * 1.15f) : slashRange;
-            float angleLimit = isFinisher ? (slashAngle * 0.75f) : slashAngle;
-
-            int hitCount = Physics.OverlapSphereNonAlloc(
-                cam.transform.position,
-                range,
-                _overlapBuffer,
-                GameLayers.PlayerAttackMask,
-                QueryTriggerInteraction.Ignore
-            );
-
-            _hitEntitiesBuffer.Clear();
-
-            for (int i = 0; i < hitCount; i++)
+            bool finisher = comboStep == 3;
+            damage *= DamageMultiplier();
+            float range = finisher ? slashRange * finisherRangeMultiplier : slashRange;
+            float angle = (finisher ? slashAngle * finisherAngleMultiplier : slashAngle) * 0.5f;
+            int count = Physics.OverlapSphereNonAlloc(cam.transform.position, range, _overlapBuffer,
+                GameLayers.PlayerAttackMask, QueryTriggerInteraction.Ignore);
+            BeginTargets();
+            int damaged = 0;
+            bool blocked = false;
+            bool damagedEnemy = false;
+            float nearestDistance = float.PositiveInfinity;
+            Vector3 nearestEnemy = Vector3.zero;
+            for (int i = 0; i < count; i++)
             {
                 Collider col = _overlapBuffer[i];
-                if (col == null || col.transform.IsChildOf(transform.root)) continue;
-
-                Vector3 targetPos = col.bounds.center;
-                Vector3 dirToTarget = (targetPos - cam.transform.position).normalized;
-                float angle = Vector3.Angle(cam.transform.forward, dirToTarget);
-
-                if (angle <= angleLimit * 0.5f)
+                if (IsSelf(col)) continue;
+                Vector3 point = col.bounds.center;
+                Vector3 toTarget = point - cam.transform.position;
+                if (Vector3.Angle(cam.transform.forward, toTarget) > angle || !HasWorldVisibility(cam.transform.position, point)) continue;
+                CombatTargetLookup.Binding binding = CombatTargetLookup.Get(col);
+                IDamageable target = ResolveDamageOwner(binding.Entity);
+                if (!AcceptTarget(target, binding.Enemy)) continue;
+                bool crit = finisher;
+                float finalDamage = crit ? damage * criticalMultiplier : damage;
+                if (!DealBladeDamage(target, point, finalDamage, crit)) { blocked = true; continue; }
+                damaged++;
+                IEncounterEnemy enemy = target as IEncounterEnemy ?? binding.Enemy;
+                if (enemy != null)
                 {
-                    // Duvar arkasına vurulmasını engelle
-                    if (CombatRaycast.Nearest(cam.transform.position, dirToTarget, Vector3.Distance(cam.transform.position, targetPos), GameLayers.PlayerAttackMask, _visibilityHits, out RaycastHit wallHit))
-                    {
-                        if (wallHit.collider != col && !wallHit.collider.transform.IsChildOf(col.transform.root))
-                        {
-                            continue;
-                        }
-                    }
-
-                    CombatTargetLookup.Binding binding = CombatTargetLookup.Get(col);
-                Hitbox hitbox = binding.Hitbox;
-                    IDamageable rootTarget = hitbox != null && hitbox.Target != null 
-                        ? hitbox.Target 
-                        : binding.Entity;
-
-                    if (rootTarget != null && !(rootTarget is PlayerHealth) && !_hitEntitiesBuffer.Contains(rootTarget))
-                    {
-                        _hitEntitiesBuffer.Add(rootTarget);
-
-                        bool isCrit = isFinisher || (hitbox != null && hitbox.IsCriticalZone);
-                        float finalDamage = isCrit ? damage * 1.35f : damage;
-
-                        MeleeDamageScope.Begin();
-                        try { rootTarget.TakeDamage(finalDamage, targetPos, -dirToTarget, isCrit); }
-                        finally { MeleeDamageScope.End(); }
-                        NotifyHit(isCrit);
-
-                        // Combat Juice: Kan, hasar sayısı, tok kesme sesi
-                        if (CombatVFXManager.Instance != null)
-                        {
-                            Vector3 slashDir = isFinisher ? Vector3.down : cam.transform.right;
-                            CombatVFXManager.Instance.SpawnBladeSlashImpact(targetPos, slashDir, isCrit);
-                        }
-
-                        if (DamageNumberSystem.Instance != null)
-                            DamageNumberSystem.Instance.SpawnDamageNumber(targetPos, finalDamage, isCrit);
-
-
-                        // Finisher darbesi mikro hitstop ve ekstra kan saçar
-                        if (isFinisher)
-                        {
-                            if (binding.Stunnable != null)
-                                binding.Stunnable.Stun(1.2f, cam.transform.forward * 12f);
-                            if (HitstopManager.Instance != null)
-                                HitstopManager.Instance.TriggerHitstop(0.08f, 0.02f);
-
-                            if (CombatVFXManager.Instance != null)
-                            {
-                                CombatVFXManager.Instance.SpawnFleshGibs(targetPos, cam.transform.forward, 2);
-                            }
-                        }
-                    }
+                    damagedEnemy = true;
+                    Vector3 enemyPosition = enemy.EnemyTransform != null ? enemy.EnemyTransform.position : point;
+                    float distance = (enemyPosition - AttackerPosition).sqrMagnitude;
+                    if (distance < nearestDistance) { nearestDistance = distance; nearestEnemy = enemyPosition; }
                 }
+                if (finisher && (enemy == null || enemy.IsAlive))
+                {
+                    Transform anchor = target is Component owner && owner != null ? owner.transform
+                        : enemy != null ? enemy.EnemyTransform : col.transform;
+                    SunderMarks.Apply(target, anchor, sunderDuration, sunderMultiplier);
+                }
+                if (CombatVFXManager.Instance != null)
+                {
+                    CombatVFXManager.Instance.SpawnBladeSlashImpact(point, finisher ? Vector3.down : cam.transform.right, crit);
+                    if (finisher) CombatVFXManager.Instance.SpawnFleshGibs(point, cam.transform.forward, finisherGibCount);
+                }
+                if (finisher && target is IStunnable stunnable)
+                    stunnable.Stun(finisherStunSeconds, cam.transform.forward * finisherKnockback);
+            }
+            if (comboStep == 0) return;
+            if (damagedEnemy && HitstopManager.Instance != null)
+                HitstopManager.Instance.TriggerHitstop(finisher ? overheadHitstopDuration : lightHitstopDuration,
+                    finisher ? overheadHitstopScale : lightHitstopScale);
+            if (_look != null)
+            {
+                float trauma = comboStep == 1 ? lightTrauma : comboStep == 2 ? backhandTrauma : overheadTrauma;
+                _look.AddTrauma(damaged > 0 ? trauma : trauma * whiffTraumaMultiplier);
+            }
+            if (damaged == 0 && blocked)
+            {
+                _combo.GuardBounce(guardBounceRecovery);
+                if (_look != null) _look.AddViewPunch(guardBouncePunch, 0f);
+            }
+            if (!finisher && damagedEnemy && _movement != null && _movement.IsGrounded
+                && stepInImpulse > 0f && nearestDistance > stepInDistance * stepInDistance)
+            {
+                Vector3 direction = nearestEnemy - AttackerPosition;
+                direction.y = 0f;
+                _movement.AddImpulse(direction.normalized * stepInImpulse);
             }
         }
-        #endregion
 
-        #region Sağ Tık (İnfaz Hücumu & Meteor Çakılması)
+        /// <inheritdoc />
         public override void FireAlt()
         {
             Camera cam = PlayerCamera;
-            if (!CanFireAlt || cam == null) return;
-
-            if (_movement == null) return;
-
-            bool isLookingDown = cam.transform.forward.y < -0.42f;
-            bool isAirborne = !_movement.IsGrounded;
-
-            // Havada aşağıya bakılıyorsa: Meteor Çakılması (Meteor Slam)
-            if (isAirborne && isLookingDown)
-            {
-                ExecuteMeteorSlamAction(cam);
-            }
-            // Yerde veya düz/yukarı bakılıyorsa: Cellat İnfaz Hücumu (Executioner's Lunge)
-            else
-            {
-                ExecuteLungeAction(cam);
-            }
+            if (Pause.GamePause.IsGameplayInputBlocked || !CanFireAlt || cam == null || _movement == null) return;
+            if (BladeAltState.WantsSlam(_movement.IsGrounded, cam.transform.forward.y, slamLookDownThreshold)) ExecuteMeteorSlamAction();
+            else ExecuteLungeAction(cam);
         }
 
         private void ExecuteLungeAction(Camera cam)
         {
-            _altCooldownTimer = lungeCooldown;
-            _primaryCooldownTimer = 0.35f;
-
-            if (Viewmodel != null) Viewmodel.TriggerMeleeLunge(0.28f);
+            _altState.StartLunge(executionLungeCooldown);
+            _combo.DelayPrimary(lungePrimaryRecovery);
+            if (Viewmodel != null) Viewmodel.TriggerMeleeLunge(lungeAnimationDuration);
             if (CombatAudio.Instance != null) CombatAudio.Instance.PlayBladeLunge();
-            if (_crosshairHUD != null) _crosshairHUD.TriggerRecoilBloom(24f);
-
-            Vector3 lungeDir = cam.transform.forward;
-            // Yerdeyken zemine takılmaması için dikey bileşeni düzelt
-            if (_movement.IsGrounded && lungeDir.y < 0f)
+            if (_crosshairHUD != null) _crosshairHUD.TriggerRecoilBloom(lungeBloom);
+            Vector3 direction = cam.transform.forward;
+            if (_movement.IsGrounded && direction.y < 0f)
             {
-                lungeDir.y = 0f;
-                lungeDir.Normalize();
+                direction.y = 0f;
+                if (direction.sqrMagnitude <= lungeDirectionMinSqrMagnitude)
+                {
+                    direction = _movement.transform.forward;
+                    direction.y = 0f;
+                }
+                direction.Normalize();
             }
+            _movement.StartLunge(direction, lungeSpeed, lungeDuration, null, false);
+            _bladeLungeActive = true;
+            if (enableProjectileSlice)
+                SliceNearbyProjectiles(cam.transform.position, cam.transform.forward, lungeSliceRadius, lungeSliceHalfAngle);
 
-            // Hızlı 28 m/s atılma (~7 metre)
-            _movement.StartLunge(lungeDir, lungeSpeed, lungeDuration, null);
+            Vector3 origin = cam.transform.position;
+            // Initial sphere overlaps (including the floor) must not set the wall limit.
+            int wallCount = Physics.RaycastNonAlloc(origin, direction, _visibilityHits, lungeSweepDistance,
+                GameLayers.PlayerAttackMask, QueryTriggerInteraction.Ignore);
+            if (wallCount == _visibilityHits.Length) return;
+            float clipDistance = lungeSweepDistance;
+            for (int i = 0; i < wallCount; i++)
+                if (IsWorldGeometry(_visibilityHits[i].collider))
+                    clipDistance = Mathf.Min(clipDistance, _visibilityHits[i].distance);
 
-            // Atılma güzergahındaki düşmanları biç
-            Ray ray = new Ray(cam.transform.position, lungeDir);
-            float sweepDist = 7.5f;
-
-            int hitCount = Physics.SphereCastNonAlloc(ray, 0.75f, _lungeHitsBuffer, sweepDist, GameLayers.PlayerAttackMask, QueryTriggerInteraction.Ignore);
-            _hitEntitiesBuffer.Clear();
-
-            bool triggeredHarvest = false;
-
-            for (int i = 0; i < hitCount; i++)
+            int count = Physics.SphereCastNonAlloc(origin, lungeSweepRadius, direction,
+                _lungeHitsBuffer, lungeSweepDistance, GameLayers.PlayerAttackMask, QueryTriggerInteraction.Ignore);
+            // NonAlloc queries are unordered; resolve enemies from nearest to farthest.
+            SortLungeHits(count);
+            BeginTargets();
+            bool harvested = false;
+            bool killed = false;
+            // A saturated result set is incomplete, so fail closed.
+            if (count == _lungeHitsBuffer.Length) return;
+            for (int i = 0; i < count; i++)
             {
                 RaycastHit hit = _lungeHitsBuffer[i];
                 Collider col = hit.collider;
-                if (col == null || col.transform.IsChildOf(transform.root)) continue;
-
+                if (IsSelf(col) || IsWorldGeometry(col) || hit.distance > clipDistance + lungeSweepRadius) continue;
                 CombatTargetLookup.Binding binding = CombatTargetLookup.Get(col);
-                Hitbox hitbox = binding.Hitbox;
-                IDamageable target = hitbox != null && hitbox.Target != null 
-                    ? hitbox.Target 
-                    : binding.Entity;
-
-                if (target != null && !(target is PlayerHealth) && !_hitEntitiesBuffer.Contains(target))
+                IDamageable target = ResolveDamageOwner(binding.Entity);
+                if (!AcceptTarget(target, binding.Enemy)) continue;
+                IEncounterEnemy enemy = target as IEncounterEnemy ?? binding.Enemy;
+                IStunState stun = target as IStunState;
+                bool wasAlive = enemy != null && enemy.IsAlive;
+                bool wasStunned = stun != null && stun.IsStunned;
+                uint sequence = stun != null ? stun.StunSequence : 0;
+                float damage = lungeDamage * DamageMultiplier();
+                Vector3 point = hit.point == Vector3.zero ? col.ClosestPoint(origin) : hit.point;
+                if (point == Vector3.zero) point = col.bounds.center;
+                if (!DealBladeDamage(target, point, damage, true)) continue;
+                if (wasAlive && !enemy.IsAlive) killed = true;
+                if (!harvested && _harvestTracker.TryHarvest(target, wasAlive,
+                    enemy != null && enemy.IsAlive, wasStunned, sequence))
                 {
-                    _hitEntitiesBuffer.Add(target);
-
-                    IEncounterEnemy enemy = target as IEncounterEnemy;
-                    IStunState stun = target as IStunState;
-                    bool wasAlive = enemy != null && enemy.IsAlive;
-                    bool wasStunned = stun != null && stun.IsStunned;
-                    uint stunSequence = stun != null ? stun.StunSequence : 0;
-                    float finalDamage = lungeDamage * PlayerStats.Get(StatId.DamageDealt, 1f) * PlayerStats.Get(StatId.MeleeDamage, 1f);
-                    MeleeDamageScope.Begin();
-                    try { target.TakeDamage(finalDamage, hit.point, hit.normal, true); }
-                    finally { MeleeDamageScope.End(); }
-                    NotifyHit(true);
-
-                    if (DamageNumberSystem.Instance != null)
-                    {
-                        DamageNumberSystem.Instance.SpawnDamageNumber(hit.point, finalDamage, true);
-                    }
-
-                    // İNFAZ SÖMÜRÜSÜ (Blood Harvest): İlk isabette oyuncuyu ödüllendir
-                    if (!triggeredHarvest && _harvestTracker.TryHarvest(target, wasAlive,
-                        enemy != null && enemy.IsAlive, wasStunned, stunSequence))
-                    {
-                        triggeredHarvest = true;
-                        TriggerBloodHarvest(hit.point);
-                    }
+                    harvested = true;
+                    TriggerBloodHarvest(point);
                 }
             }
+            if (killed)
+            {
+                _altState.ResetLungeCooldown(chainResetCooldown);
+                if (HitstopManager.Instance != null)
+                    HitstopManager.Instance.TriggerHitstop(chainResetHitstopDuration, chainResetHitstopScale);
+                if (_look != null) _look.DoFovKick(_movement.LungeFov + chainResetFovKick);
+            }
         }
 
-        private void TriggerBloodHarvest(Vector3 impactPoint)
+        private void SortLungeHits(int count)
         {
-            // 1. Oyuncuya +25 HP Can Sömürüsü (Vampiric Leech)
+            for (int i = 1; i < count; i++)
+            {
+                RaycastHit hit = _lungeHitsBuffer[i];
+                int j = i - 1;
+                while (j >= 0 && _lungeHitsBuffer[j].distance > hit.distance)
+                {
+                    _lungeHitsBuffer[j + 1] = _lungeHitsBuffer[j];
+                    j--;
+                }
+                _lungeHitsBuffer[j + 1] = hit;
+            }
+        }
+
+        private void TriggerBloodHarvest(Vector3 point)
+        {
             if (_playerHealth != null)
-            {
-                _playerHealth.Heal(PlayerStats.Get(StatId.HarvestHeal, lungeHealAmount), true, 125f);
-            }
-
-            // 2. 1.5 saniyelik Adrenalin Hız Patlaması (%35)
-            if (_movement != null)
-            {
-                _movement.ApplySpeedBoost(1.35f, adrenalineDuration);
-            }
-
-            // 3. Tok Hitstop & Ses
+                _playerHealth.Heal(PlayerStats.Get(StatId.HarvestHeal, stunnedHarvestHeal), true, harvestOverhealCap);
+            if (_movement != null) _movement.ApplySpeedBoost(adrenalineMultiplier, adrenalineDuration);
             if (HitstopManager.Instance != null)
-            {
-                HitstopManager.Instance.TriggerHitstop(0.08f, 0.02f);
-            }
-
-            if (CombatAudio.Instance != null)
-            {
-                CombatAudio.Instance.PlayCritCrunch();
-            }
-
+                HitstopManager.Instance.TriggerHitstop(harvestHitstopDuration, harvestHitstopScale);
+            if (CombatAudio.Instance != null) CombatAudio.Instance.PlayCritCrunch();
             if (CombatVFXManager.Instance != null)
-            {
-                CombatVFXManager.Instance.SpawnFleshGibs(impactPoint, transform.forward, 3);
-            }
+                CombatVFXManager.Instance.SpawnFleshGibs(point, transform.forward, harvestGibCount);
         }
 
-        private void ExecuteMeteorSlamAction(Camera cam)
+        private void ExecuteMeteorSlamAction()
         {
-            _altCooldownTimer = slamCooldown;
-            _primaryCooldownTimer = 0.5f;
-
-            if (Viewmodel != null) Viewmodel.TriggerMeleeSlam(0.35f);
+            _altState.StartSlam(slamCooldown, _bladeLungeActive && _movement.IsLunging);
+            _combo.DelayPrimary(slamPrimaryRecovery);
+            _bladeLungeActive = false;
+            _slamStartY = _movement.transform.position.y;
+            if (Viewmodel != null) Viewmodel.TriggerMeleeSlam(slamAnimationDuration);
             if (CombatAudio.Instance != null) CombatAudio.Instance.PlayBladeLunge();
-            if (_crosshairHUD != null) _crosshairHUD.TriggerRecoilBloom(26f);
-
+            if (_crosshairHUD != null) _crosshairHUD.TriggerRecoilBloom(slamBloom);
             _movement.StartMeteorSlam(slamDownwardSpeed, _slamLandedCallback);
         }
 
         private void OnMeteorSlamLanded()
         {
-            if (_look != null) _look.AddViewPunch(-3f, 0f);
-            Vector3 center = transform.position;
-
-            // Ses & VFX
+            // Slam is committed: landing still resolves while this blade is holstered/inactive, without viewmodel calls.
+            if (this == null || _movement == null) return;
+            _altState.SetSlamCooldown(slamLandingCooldown);
+            Vector3 center = AttackerPosition;
+            var impact = new SlamImpactScaling(_slamStartY, center.y, slamMinHeight, slamMaxHeight,
+                slamLightDamage, slamHeavyDamage, slamLightRadius, slamRadius, slamLightStun, slamHeavyStun,
+                _altState.SlamHeightLimit(lungeSlamMaxHeight));
+            if (_look != null)
+            {
+                _look.AddViewPunch(slamPitchPunch, 0f);
+                _look.AddTrauma(Mathf.Lerp(slamLightTrauma, slamHeavyTrauma, impact.T));
+            }
             if (CombatAudio.Instance != null) CombatAudio.Instance.PlayBladeSlam(center);
             if (CombatVFXManager.Instance != null)
             {
-                CombatVFXManager.Instance.SpawnOccultEnergyBurst(center + Vector3.up * 0.2f, false);
-                CombatVFXManager.Instance.SpawnFleshGibs(center, Vector3.up, 3);
+                CombatVFXManager.Instance.SpawnOccultEnergyBurst(center + Vector3.up * slamBurstHeight, false);
+                CombatVFXManager.Instance.SpawnFleshGibs(center, Vector3.up, slamGibCount);
             }
-
             if (HitstopManager.Instance != null)
-            {
-                HitstopManager.Instance.TriggerHitstop(0.10f, 0.02f);
-            }
-
-            // Çevredeki tüm düşmanları yere ser (Stun) ve 80 alan hasarı vur
-            int hitCount = Physics.OverlapSphereNonAlloc(center, slamRadius, _overlapBuffer, GameLayers.PlayerAttackMask, QueryTriggerInteraction.Ignore);
-            _hitEntitiesBuffer.Clear();
-
-            for (int i = 0; i < hitCount; i++)
+                HitstopManager.Instance.TriggerHitstop(Mathf.Lerp(slamLightHitstop, slamHeavyHitstop, impact.T), slamHitstopScale);
+            int count = Physics.OverlapSphereNonAlloc(center, impact.Radius, _overlapBuffer,
+                GameLayers.PlayerAttackMask, QueryTriggerInteraction.Ignore);
+            BeginTargets();
+            for (int i = 0; i < count; i++)
             {
                 Collider col = _overlapBuffer[i];
-                if (col == null || col.transform.IsChildOf(transform.root)) continue;
-
+                if (IsSelf(col)) continue;
+                Vector3 point = col.bounds.center;
+                if (!HasWorldVisibility(center + Vector3.up * slamSightHeight, point)) continue;
                 CombatTargetLookup.Binding binding = CombatTargetLookup.Get(col);
-                Hitbox hitbox = binding.Hitbox;
-                IDamageable target = hitbox != null && hitbox.Target != null 
-                    ? hitbox.Target 
-                    : binding.Entity;
-
-                if (target != null && !(target is PlayerHealth) && !_hitEntitiesBuffer.Contains(target))
-                {
-                    _hitEntitiesBuffer.Add(target);
-
-                    Vector3 hitPos = col.bounds.center;
-                    Vector3 knockDir = (hitPos - center).normalized;
-                    knockDir.y = 0.35f;
-
-                    // Düşmanı sersemlet ve savur
-                    IStunnable stunnable = binding.Stunnable;
-                    if (stunnable != null)
-                    {
-                        stunnable.Stun(slamStunDuration, knockDir * 4.5f);
-                    }
-
-                    float damage = slamDamage * PlayerStats.Get(StatId.DamageDealt, 1f) * PlayerStats.Get(StatId.MeleeDamage, 1f);
-                    MeleeDamageScope.Begin();
-                    try { target.TakeDamage(damage, hitPos, -knockDir, true); }
-                    finally { MeleeDamageScope.End(); }
-                    NotifyHit(true);
-
-                    if (DamageNumberSystem.Instance != null)
-                    {
-                        DamageNumberSystem.Instance.SpawnDamageNumber(hitPos, damage, true);
-                    }
-                }
+                IDamageable target = ResolveDamageOwner(binding.Entity);
+                if (!AcceptTarget(target, binding.Enemy)) continue;
+                if (impact.Height >= slamGuardBreakHeight && target is IGuardBreakable guard)
+                    guard.BreakGuard(slamGuardBreakDuration);
+                // Evaluate guard before stun: a low slam must not open the guard before checking it.
+                if (!DealBladeDamage(target, point, impact.Damage * DamageMultiplier(), true)) continue;
+                Vector3 knockback = (point - center).normalized;
+                knockback.y = slamKnockbackUp;
+                if (target is IStunnable stunnable) stunnable.Stun(impact.StunDuration, knockback * slamKnockbackSpeed);
             }
         }
-        #endregion
+
+        private static float DamageMultiplier()
+            => PlayerStats.Get(StatId.DamageDealt, 1f) * PlayerStats.Get(StatId.MeleeDamage, 1f);
+
+        private bool DealBladeDamage(IDamageable target, Vector3 point, float damage, bool crit)
+        {
+            bool blocked = target is IMeleeGuard guard && guard.BlocksMeleeFrom(AttackerPosition);
+            // Match IMeleeGuard's attacker direction rather than a spherecast surface normal.
+            Vector3 targetPosition = target is Component component && component != null ? component.transform.position : point;
+            Vector3 normal = (AttackerPosition - targetPosition).normalized;
+            MeleeDamageScope.Begin();
+            try { target.TakeDamage(damage, point, normal, crit); }
+            finally { MeleeDamageScope.End(); }
+            if (blocked)
+            {
+                if (CombatVFXManager.Instance != null)
+                    CombatVFXManager.Instance.SpawnHitImpact(point, normal, false, isFlesh: false);
+                return false;
+            }
+            NotifyHit(crit);
+            if (DamageNumberSystem.Instance != null)
+                DamageNumberSystem.Instance.SpawnDamageNumber(point, damage, crit);
+            return true;
+        }
+
+        private bool IsSelf(Collider col)
+            => col == null || col.transform.IsChildOf(transform.root);
+
+        private void BeginTargets()
+        {
+            for (int i = 0; i < _hitEntityCount; i++) _hitEntitiesBuffer[i] = null;
+            _hitEntityCount = 0;
+        }
+
+        private static IDamageable ResolveDamageOwner(IDamageable target)
+            => target is IDamageProxy proxy ? proxy.DamageOwner : target;
+
+        private bool AcceptTarget(IDamageable target, IEncounterEnemy boundEnemy)
+        {
+            if (target == null || target is PlayerHealth || (target is Object obj && obj == null)) return false;
+            IEncounterEnemy enemy = target as IEncounterEnemy ?? boundEnemy;
+            if (enemy != null && !enemy.IsAlive) return false;
+            for (int i = 0; i < _hitEntityCount; i++)
+                if (ReferenceEquals(_hitEntitiesBuffer[i], target)) return false;
+            if (_hitEntityCount == _hitEntitiesBuffer.Length) return false;
+            _hitEntitiesBuffer[_hitEntityCount++] = target;
+            return true;
+        }
+
+        private bool IsWorldGeometry(Collider col)
+        {
+            if (IsSelf(col) || col.gameObject.layer == GameLayers.Projectile) return false;
+            CombatTargetLookup.Binding binding = CombatTargetLookup.Get(col);
+            return binding.Entity == null && binding.Enemy == null;
+        }
+
+        private bool HasWorldVisibility(Vector3 origin, Vector3 point)
+        {
+            Vector3 direction = point - origin;
+            float distance = direction.magnitude;
+            if (distance <= Mathf.Epsilon) return true;
+            int count = Physics.RaycastNonAlloc(origin, direction / distance, _visibilityHits, distance,
+                GameLayers.PlayerAttackMask, QueryTriggerInteraction.Ignore);
+            if (count == _visibilityHits.Length) return false;
+            for (int i = 0; i < count; i++)
+                if (IsWorldGeometry(_visibilityHits[i].collider)) return false;
+            return true;
+        }
     }
 }

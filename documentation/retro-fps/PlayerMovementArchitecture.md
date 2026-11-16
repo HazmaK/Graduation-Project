@@ -40,7 +40,7 @@ flowchart TD
         SlideJump["Slide-Jump: Slide'ı Bitirir + 1.5f Yatay Bonus"]
         Dash["Dash: 30f Hız Patlaması, 0.25s I-Frames"]
         Hook["Meat Hook: Düşmana Kilitlenme & 29f Çekilme"]
-        Lunge["Cellat Lunge: 28f İnfaz Atılması & I-Frames"]
+        Lunge["Cellat Lunge: 28f İnfaz Atılması (i-frame yok)"]
         Slam["Meteor Slam: 34f Dikey Çakılma & Alan Stun"]
     end
     
@@ -101,14 +101,14 @@ flowchart TD
 
 ### 6. Cellat Kılıcı Hareket Entegrasyonu (Lunge & Meteor Slam)
 - **İnfaz Hücumu (Executioner's Lunge):**
-  * `PlayerMovement.StartLunge(direction, speed=28f, duration=0.22f)`: İleriye doğru şimşek hızında fırlatır, 0.22 saniye boyunca I-Frames (hasar almama) sağlar ve FOV Kick (14°) uygular.
+  * `PlayerMovement.StartLunge(direction, speed=28f, duration=0.22f, bool invulnerable = true)`: İleriye doğru şimşek hızında fırlatır ve FOV Kick (14°) uygular. Kılıç `invulnerable: false` geçirir (dokunulmazlık / i-frame yoktur).
   * Tamamlandığında oyuncunun hızını yumuşakça koşu hızının 1.35x katına aktararak momentum kaybını önler.
 - **Meteor Çakılması (Meteor Slam):**
-  * `PlayerMovement.StartMeteorSlam(downwardSpeed=34f)`: Oyuncu havadayken aşağı daldığında dikey hızı -34f'e kilitler, yatay sapmaları sönümler.
+  * `PlayerMovement.StartMeteorSlam(downwardSpeed=34f)`: Oyuncu havadayken aşağı daldığında dikey hızı -34f'e kilitler, yatay sapmaları sönümler. Dash → Slam geçişi artık oyuncuyu dokunulmaz bırakmaz.
   * Zemine temas anında `_isGrounded` ile inişi yakalar; yatay hızı sıfırlayıp `PlayerLook.AddTrauma(0.42f)` ağır iniş sarsıntısı ve kılıcın alan hasarı/sersemletme callback'ini tetikler.
 
 ### 7. Adrenalin Hız Bonusu (`ApplySpeedBoost`)
-- **Tetiklenme:** Kılıçla sersemlemiş düşmanı infaz etme veya öldürme anında (`TriggerBloodHarvest`).
+- **Tetiklenme:** Kılıç hücumuyla halihazırda sersemlemiş düşmana vurulduğunda (`TriggerBloodHarvest`, `+20 HP`). Düz hücum öldürmesi artık iyileştirmez.
 - **Etki:** 1.5 saniye boyunca hem yürüme hızını hem de Quake bunny-hop hava hız tavanını (`maxAirSpeed`) 1.35x (%35) çarparak hız zincirlemesine olanak tanır.
 
 ---

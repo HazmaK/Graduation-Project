@@ -280,6 +280,7 @@ namespace RetroFPS.Weapons
         {
             damage *= PlayerStats.Get(StatId.DamageDealt, 1f);
             CombatTargetLookup.Binding binding = CombatTargetLookup.Get(hit.collider);
+            damage = ApplySunderDamage(binding.Entity, damage);
             Hitbox hitbox = binding.Hitbox;
             if (hitbox != null)
             {

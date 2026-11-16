@@ -18,13 +18,10 @@ namespace RetroFPS.Weapons
         /// <summary>Allocates bookkeeping once when the weapon initializes.</summary>
         public BloodHarvestTracker(int capacity) => _entries = new Entry[Math.Max(1, capacity)];
 
-        /// <summary>Grants a living target once per accepted stun, or a kill on its alive-to-dead edge.</summary>
+        /// <summary>Grants an already-stunned, previously living target once per accepted stun, even on a killing hit.</summary>
         public bool TryHarvest(object target, bool wasAlive, bool isAlive, bool wasStunned, uint stunSequence)
         {
-            if (target == null || !wasAlive) return false;
-            // An actual kill is observable only once; subsequent hits snapshot wasAlive=false.
-            if (!isAlive) return true;
-            if (!wasStunned) return false;
+            if (target == null || !wasAlive || !wasStunned) return false;
             int slot = 0;
             for (; slot < _count; slot++)
                 if (ReferenceEquals(_entries[slot].Target, target)) break;

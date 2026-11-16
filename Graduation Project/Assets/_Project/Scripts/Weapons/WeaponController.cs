@@ -40,6 +40,7 @@ namespace RetroFPS.Weapons
         private PlayerLook _look;
         private Camera _cam;
         private readonly Dictionary<WeaponSlot, WeaponBase> _weaponMap = new Dictionary<WeaponSlot, WeaponBase>();
+        private readonly List<WeaponBase> _tickWeapons = new List<WeaponBase>(3);
         private WeaponBase _activeWeapon;
         private bool _requireFreshFire;
         private float _quickBladeTimer;
@@ -122,6 +123,7 @@ namespace RetroFPS.Weapons
         private void InitializeWeapons()
         {
             _weaponMap.Clear();
+            _tickWeapons.Clear();
 
             // 1. Slot 1: Menzilli Arbalest'i kesin olarak bağla
             RepeaterArbalestWeapon rangedWep = null;
@@ -187,6 +189,7 @@ namespace RetroFPS.Weapons
             weapon.OnHitFeedback -= HandleTargetHit;
             weapon.OnHitFeedback += HandleTargetHit;
             _weaponMap[slot] = weapon;
+            _tickWeapons.Add(weapon);
         }
 
         private void HandleTargetHit(bool isCrit)
@@ -202,19 +205,20 @@ namespace RetroFPS.Weapons
                 _requireFreshFire = true;
                 return;
             }
+            float deltaTime = Time.deltaTime;
+            if (_activeWeapon != null) _activeWeapon.Tick(deltaTime);
+            for (int i = 0; i < _tickWeapons.Count; i++)
+            {
+                WeaponBase weapon = _tickWeapons[i];
+                if (weapon != null && weapon != _activeWeapon) weapon.TickHolstered(deltaTime);
+            }
             if (_isQuickBladeActive)
             {
-                if (_activeWeapon != null) _activeWeapon.Tick(Time.deltaTime);
                 if (Time.frameCount != _quickBladeStartFrame)
-                    _quickBladeTimer = Mathf.Max(0f, _quickBladeTimer - Time.deltaTime);
+                    _quickBladeTimer = Mathf.Max(0f, _quickBladeTimer - deltaTime);
                 if (_quickBladeTimer <= 0f) RestoreQuickBlade();
                 return;
             }
-            if (_activeWeapon != null)
-            {
-                _activeWeapon.Tick(Time.deltaTime);
-            }
-
             HandleWeaponSwitchInput();
             HandleFireInput();
         }
@@ -222,6 +226,11 @@ namespace RetroFPS.Weapons
         private void OnDisable()
         {
             RestoreQuickBlade();
+            for (int i = 0; i < _tickWeapons.Count; i++)
+            {
+                WeaponBase weapon = _tickWeapons[i];
+                if (weapon != null) weapon.CancelPendingActions();
+            }
             _requireFreshFire = true;
         }
 

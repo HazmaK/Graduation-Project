@@ -84,6 +84,13 @@ namespace RetroFPS.Combat
 }
 ```
 
+---
+
+## 4. `IMeleeGuard` ve `IDamageProxy` Arayüzleri (Yakın Dövüş Kalkanı & Hasar Vekili)
+- **Namespace:** `RetroFPS.Combat`
+- **`IMeleeGuard`:** `bool BlocksMeleeFrom(Vector3 attackerPosition)` — Önden gelen yakın dövüş savurmalarını bloke eden düşmanlar (`PenitentAI`, `ShieldPlate` ve `PenitentWeakPoint` üzerinden yönlendirilir) tarafından uygulanır. Savurma yalnızca bloke eden bir hedefle karşılaşırsa `0` hasar verir, kıvılcım gösterir, komboyu 1. adıma sıfırlar ve `+0.30 s` bekleme süresi ekler.
+- **`IDamageProxy`:** `IDamageable DamageOwner` — `ShieldPlate` ve `PenitentWeakPoint` gibi alt hitbox'ların sahip oldukları `PenitentAI` varlığına işaret etmesini sağlar; böylece bir kılıç saldırısı her düşmana sahibi üzerinden yalnızca bir kez hasar uygular.
+
 ### Kurallar:
 - `WaveSpawnDirector` bir düşmanı doğururken ve dalga takibini yürütürken bu arayüzü kullanır.
 - Sıfır GC tahsisi için `OnEnemyDeath` olay delegesi düşman ölünce tetiklenir ve direktör kalan düşman sayısını günceller.

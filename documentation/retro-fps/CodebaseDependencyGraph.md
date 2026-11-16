@@ -48,6 +48,8 @@ flowchart TD
     subgraph COMBAT_CORE["🩸 Dövüş & Geri Bildirim Çekirdeği"]
         IDamage["IDamageable Interface"]
         IStun["IStunnable Interface"]
+        IMGuard["IMeleeGuard Interface"]
+        IDProxy["IDamageProxy Interface"]
         IEncounter["IEncounterEnemy Interface"]
         IReflect["IReflectPunishable Interface"]
         IAlert["IAlertableEnemy Interface"]
@@ -179,7 +181,7 @@ flowchart TD
 | Modül | Scriptler | Dışa Bağımlılıklar (Çağırdığı) | Olaylar (Events) & Yayınlar |
 | :--- | :--- | :--- | :--- |
 | **Player** | `PlayerMovement`, `PlayerLook`, `PlayerHealth`, `PlayerParryController`, `PlayerDamageFeedback`, `Feel/PlayerCameraFeel`, `Feel/Spring` | `UnityEngine.InputSystem`, `IDamageable`, `IStunnable`, `CombatAudio` | `OnDamageTaken`, `OnDied`, `OnParrySuccess`, `OnGrappleEnded`, `OnJumped`, `OnLanded(impact)`, `OnDashStarted`, `OnSlideStarted`, `OnSlideEnded` |
-| **Weapons** | `WeaponBase` (+ `CombatTargetLookup`, `CombatRaycast`), `WeaponController`, `ProceduralViewmodel`, `RepeaterArbalestWeapon`, `ExecutionerBladeWeapon`, `GothicShotgunWeapon`, `PlayerAmmoInventory` | `PlayerLook`, `PlayerMovement`, `Hitbox`, `IDamageable`, `IStunnable`, `CombatAudio`, `CombatVFXManager`, `HitstopManager`, `DamageNumberSystem` | `OnWeaponHit(isCrit)`, `OnWeaponSwitched(slot)`, `OnAmmoChanged(type, cur, max)` |
+| **Weapons** | `WeaponBase` (+ `CombatTargetLookup`, `CombatRaycast`), `WeaponController`, `ProceduralViewmodel`, `RepeaterArbalestWeapon`, `ExecutionerBladeWeapon` (+ `BladeComboState`, `BladeSpeedEdge`, `SlamImpactScaling`, `BloodHarvestTracker`, `SunderTracker`, `SunderMarks`, `SunderMarkView`), `GothicShotgunWeapon`, `PlayerAmmoInventory` | `PlayerLook`, `PlayerMovement`, `Hitbox`, `IDamageable`, `IStunnable`, `IMeleeGuard`, `IDamageProxy`, `CombatAudio`, `CombatVFXManager`, `HitstopManager`, `DamageNumberSystem` | `OnWeaponHit(isCrit)`, `OnWeaponSwitched(slot)`, `OnAmmoChanged(type, cur, max)` |
 | **Enemies** | `BasicEnemyAI`, `FlyingEyeAI`, `FlyingEyeView`, `EyeProjectilePool`, `EnemyAlertHub`, `EnemyProjectile`, `CombatDummy` | `IDamageable`, `IStunnable`, `IEncounterEnemy`, `IReflectPunishable`, `PlayerHealth`, `CombatVFXManager`, `CombatAudio`, `HitstopManager`, `BloodDecalManager`, `CombatTargetLookup` | `OnEnemyDeath`, `CombatEvents.OnEnemyKilled`, `OnAlertTriggered` |
 | **Encounter** | `WaveSpawnDirector`, `EncounterArea`, `EncounterTriggerVolume`, `EncounterSpawnPoint`, `OccultSpawnTelegraph` | `IEncounterEnemy`, `CombatAudio` | `OnWaveStarted`, `OnWaveCompleted`, `OnEncounterCleared` |
 | **Feedback/VFX**| `CombatVFXManager`, `BloodDecalManager`, `HitstopManager`, `DamageNumberSystem`, `CombatAudio`, `ParryVFX` | Yok (Statik Tekil Yönetici / Olay Temelli Dinleyici) | Bağımsız havuzlanmış parçacık ve ses üretimi |

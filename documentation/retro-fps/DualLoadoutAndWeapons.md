@@ -24,7 +24,7 @@ tags:
 flowchart LR
     subgraph ANA_SILAHLAR["Sağ El Ana Silahları (Loot & Swap)"]
         W1["Repeater Arbalest\nSeri Delici Cıvata (Menzilli)"]
-        W2["Executioner Blade 2.0\n3'lü Kombo / Lunge / Meteor Slam / Deflect"]
+        W2["Executioner Blade\n3'lü Kombo / Lunge / Meteor Slam / Sunder"]
         W3["Gothic Shotgun\nÇifte Saçma & Meat Hook"]
     end
     
@@ -50,18 +50,18 @@ flowchart LR
   * Oyuncu parmağını tetikten çektiğinde 0.15 saniye içinde başlangıç hassasiyetine geri döner.
 - **Vuruş Geri Bildirimi:** Hedefe çarptığında anlık kıvılcım ve kan damlası saçar; nişangaha hitmarker çizer.
 
-### 2. `Executioner Blade` (Cellat Kılıcı 2.0 - Slot 2)
-- **Silah Rolü:** Yakın dövüş infazı, mermi kesme, agresif hücum ve alan sersemletme.
-- **Birincil Saldırı (Sol Tık - 3'lü Akıcı Kombo):**
-  * **Hit 1 (Yatay Kesik):** Hızlı sağdan sola darbe (`damage = 45f`, `range = 3.4m`).
-  * **Hit 2 (Ters Açı Kesik):** Hızlı soldan sağa geri savurma (`damage = 55f`, `range = 3.4m`).
-  * **Hit 3 (Ağır Finisher):** Yukarıdan aşağı infaz darbesi (`damage = 95f`, `range = 3.4m`, `knockback = 12m/s`). İsabet ettiği düşmanı 1.2 saniye sersemletir (`IStunnable.Stun`).
-  * **Kombo Hafızası:** Vuruşlar arası 0.70s tolerans süresi bulunur.
-- **Mermi Dilimleme (Projectile Slicing):**
-  * Savurma açısına giren düşman plazma mermilerini (`EnemyProjectile`) havada keser ve crosshair hedefine geri saptırır (`Deflect`).
+### 2. `Executioner Blade` (Cellat Kılıcı - Slot 2)
+- **Silah Rolü:** Tempo/infaz odaklı yakın dövüş, mermi kesme, zincir hücum ve ateşli silahlar için Sunder hazırlığı.
+- **Birincil Saldırı (Sol Tık - 3'lü Kombo, her savurmada yeni basış, 0.15 s girdi tamponu):**
+  * **Adım 1 (Slash):** `34` hasar, `0.22 s` bekleme süresi (`3.4 m / 85°`).
+  * **Adım 2 (Backhand):** `42` hasar, `0.22 s` bekleme süresi (`3.4 m / 85°`).
+  * **Adım 3 (Finisher):** `71.11 × 1.35` garantili kritik = `96` hasar, `0.10 s` kurma (wind-up), `0.44 s` bekleme süresi, `1.0 s` sersemletme (`3.91 m / 63.75°`). Hayatta kalan hedeflere `4 s` **Sunder (Yarık)** uygular (yalnızca ateşli silah hasarını `×1.25` artırır).
+  * **Kombo Hafızası & Hız Keskinliği:** `0.70 s` hareketsizlikte sıfırlanır. Yatay hız `≤8 m/s` → `×1.00`, `≥13 m/s` → `×1.35` kombo hasarı. Kalkanlı hedefe (`IMeleeGuard`) tek başına vurursa seker (`0` hasar, 1. adıma sıfırlama, `+0.30 s` bekleme).
+- **Mermi Kesme:**
+  * Savurmalar ön konideki düşman mermilerini (`2.8 m`, `±75°`) kesip yok eder (`EnemyProjectile.Cut()`); yansıtmaz (yansıtma yalnızca Counter-Verdict'tedir).
 - **İkincil Saldırı (Sağ Tık - Çift Fonksiyonlu Hareket Darbesi):**
-  * **Düz / Yerde (Executioner's Lunge):** 8-10 metre ileriye şimşek hızında atılma (`damage = 95f`, `lungeSpeed = 28f`, I-Frames). Vuruştan önce gerçekten sersemlemiş yaşayan hedefte **kabul edilen stun başına bir kez** veya canlı → ölü geçişini sağlayan öldürmede bir kez **Blood Harvest** tetiklenir; bir lunge en fazla bir ödül verir. Aynı yaşayan hedef için yeni hasat yeni bir stun gerektirir; 0,95 sn lunge bekleme süresinin dolması bu hakkı yenilemez. Judge Idle/Recover, Transition ve Kneeling stun sayılmaz; reddedilen silah stun'ı hak açmaz, kneel bitiricisi öldürme sayılır. Ödül **+25 HP Can Sömürüsü** ve 1.5s boyunca **+%35 Adrenalin Hız Bonusu**dur.
-  * **Havada Aşağı Bakarken (Meteor Slam):** Oyuncu havadayken yere doğru -34f hızla çakılır. Yere indiğinde 5.5 metre çapında 80 alan hasarı vurur ve tüm düşmanları 2.2 saniye sersemletir (`IStunnable.Stun`).
+  * **Düz / Yerde (Executioner's Lunge):** `95` hasar, `28 m/s` hızla `0.22 s` (`≈6.2 m`), **dokunulmazlık (i-frame) yok**, yolundaki mermileri (`1.8 m`, `±90°`) her karede keser. Bekleme `2.2 s`; en az bir öldürmede `0.10 s` (**infaz zinciri / chain reset**). **Blood Harvest** yalnızca halihazırda sersemlemiş hedefe vuruşta `+20 HP` + `1.5 s` `×1.35` hız verir (sersemleme sekansı başına bir kez, hücum başına bir ödül; düz hücum öldürmesi iyileştirmez).
+  * **Havada Aşağı Bakarken (Meteor Slam):** Düşme yüksekliği `h` (`1 m → 6 m`) ile ölçeklenir: `45 → 120` hasar, `3.0 → 5.5 m` yarıçap, `0.5 → 1.8 s` sersemletme; `h ≥ 3.5 m` guard break (`2 s`) uygular. İnişten sonra `1.0 s` bekleme süresi.
 - **Görsel Sunum ve Vuruş Kinematiği:** Prosedürel viewmodel savurma, lunge saplama ve çakılma animasyonları, hitstop mikro dondurması ve dinamik pitch/çan sesleri.
 
 ### 3. `Gothic Shotgun` (Gotik Pompalı & Meat Hook - Slot 3)
@@ -85,7 +85,7 @@ flowchart LR
 ---
 
 ## 3. BAŞKA BİR AI İÇİN DENGELEME KURALLARI
-1. Yeni bir silah dengelenirken Arbalest'in DPS'i (saniyede ~238 hasar) ve Kılıcın en ağır tek vuruşları (Finisher ve Lunge: 95 hasar) referans alınmalıdır.
+1. Yeni bir silah dengelenirken Arbalest'in DPS'i (saniyede ~238 hasar) ve Kılıcın en ağır tek vuruşları (Finisher: 96, Lunge: 95 hasar) referans alınmalıdır.
 2. Yakın dövüş silahlarında mutlaka `HashSet<IDamageable>` ile çoklu darbe koruması uygulanmalıdır.
 
 ---

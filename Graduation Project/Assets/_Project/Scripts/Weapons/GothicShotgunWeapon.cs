@@ -20,6 +20,7 @@ namespace RetroFPS.Weapons
         [SerializeField] private float hookRange = 32f;
         [SerializeField] private float hookPullSpeed = 29f;
         [SerializeField] private float hookCooldown = 0.85f;
+        [SerializeField] private float hookImpactDamage = 10f;
         [SerializeField] private Transform hookFirePoint;
 
         private float _primaryCooldownTimer;
@@ -188,6 +189,7 @@ namespace RetroFPS.Weapons
                 return;
             }
             bool crit = binding.Hitbox != null && binding.Hitbox.IsCriticalZone;
+            damage = ApplySunderDamage(binding.Entity, damage);
             float displayDamage = binding.Hitbox != null ? damage * binding.Hitbox.DamageMultiplier : damage;
             _blastHit = true;
             _blastAnyCrit |= crit;
@@ -240,7 +242,7 @@ namespace RetroFPS.Weapons
                 if (stunnable != null) stunnable.Stun(1.5f, Vector3.zero);
                 if (damageable != null)
                 {
-                    float hookDamage = 10f * PlayerStats.Get(StatId.DamageDealt, 1f);
+                    float hookDamage = ApplySunderDamage(damageable, hookImpactDamage * PlayerStats.Get(StatId.DamageDealt, 1f));
                     damageable.TakeDamage(hookDamage, hit.point, hit.normal, false);
                     NotifyHit(false);
                     if (DamageNumberSystem.Instance != null)

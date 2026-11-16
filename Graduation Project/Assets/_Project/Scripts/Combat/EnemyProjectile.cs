@@ -409,6 +409,16 @@ namespace RetroFPS
             Release();
         }
 
+        /// <summary>Cuts this projectile without damage or reflection, returning pooled launches to their pool.</summary>
+        public void Cut()
+        {
+            if (_hasImpacted) return;
+            _hasImpacted = true;
+            // Legacy Destroy is deferred until frame end; stop exposing a cut projectile immediately.
+            _activeProjectiles.Remove(this);
+            Release();
+        }
+
         private void Release()
         {
             if (_isPooled) gameObject.SetActive(false);

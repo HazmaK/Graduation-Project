@@ -45,6 +45,9 @@ namespace RetroFPS
         [SerializeField] private int maxDashCharges = 3;
         [SerializeField] private float dashRechargeTime = 1.2f;
 
+        [Header("Lunge feedback")]
+        [SerializeField] private float lungeFov = 14f;
+
         [Header("Referanslar")]
         [SerializeField] private Transform cameraHolder;
 
@@ -128,6 +131,8 @@ namespace RetroFPS
         public bool IsDashing => _isDashing;
         public bool IsGrappling => _isGrappling;
         public bool IsLunging => _isLunging;
+        /// <summary>Base FOV kick shared by lunge and its additional chain-reset feedback.</summary>
+        public float LungeFov => lungeFov;
         public bool IsMeteorSlamming => _isMeteorSlamming;
         public bool IsInvincible => _isInvincible;
         public int CurrentDashCharges => _currentDashCharges;
@@ -178,6 +183,13 @@ namespace RetroFPS
         {
             // Sahne başlangıcında göz hizasını kesin olarak garantiye al
             ApplyCameraHeight(normalCameraY);
+        }
+
+        private void OnDisable()
+        {
+            // Player death disables movement; never retain a landing callback across revival.
+            _isMeteorSlamming = false;
+            _onMeteorLanded = null;
         }
 
         private void ResolveCameraHolder()
@@ -692,6 +704,8 @@ namespace RetroFPS
         /// </summary>
         public void StartGrapple(Vector3 targetPoint, float speed = 28f, Transform targetTransform = null)
         {
+            _isMeteorSlamming = false;
+            _onMeteorLanded = null;
             _isGrappling = true;
             _grappleTargetPoint = targetPoint;
             _grappleTargetTransform = targetTransform;
@@ -772,10 +786,11 @@ namespace RetroFPS
         /// <summary>
         /// Kılıçla ileriye doğru sert ve ivmeli bir infaz atılması (Lunge) gerçekleştirir.
         /// </summary>
-        public void StartLunge(Vector3 direction, float speed = 28f, float duration = 0.22f, System.Action onFinished = null)
+        public void StartLunge(Vector3 direction, float speed = 28f, float duration = 0.22f,
+            System.Action onFinished = null, bool invulnerable = true)
         {
             _isLunging = true;
-            _isInvincible = true;
+            _isInvincible = invulnerable;
             _lungeDirection = direction.sqrMagnitude > 0.01f ? direction.normalized : transform.forward;
             _lungeSpeed = speed;
             _lungeTimer = duration;
@@ -785,12 +800,13 @@ namespace RetroFPS
             _isDashing = false;
             _isGrappling = false;
             _isMeteorSlamming = false;
+            _onMeteorLanded = null;
 
             _velocity = _lungeDirection * _lungeSpeed;
 
             if (_look != null)
             {
-                _look.DoFovKick(14f);
+                _look.DoFovKick(lungeFov);
             }
         }
 
@@ -829,6 +845,8 @@ namespace RetroFPS
             _isDashing = false;
             _isGrappling = false;
             _isLunging = false;
+            _isInvincible = false;
+            _onLungeFinished = null;
 
             _velocity = new Vector3(_velocity.x * 0.25f, -_meteorSlamSpeed, _velocity.z * 0.25f);
 
@@ -850,7 +868,8 @@ namespace RetroFPS
                 _onMeteorLanded = null;
                 cb?.Invoke();
 
-                if (_look != null)
+                // The blade supplies height-scaled landing feedback when it owns the slam.
+                if (_look != null && cb == null)
                 {
                     _look.AddTrauma(0.42f);
                 }

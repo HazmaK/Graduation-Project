@@ -148,6 +148,7 @@ namespace RetroFPS.Tests.EditMode
                 Assert.That(piece.GetComponentInParent<IDamageable>(true), Is.SameAs(shield.GetComponent<ShieldPlate>()));
             ShieldPlate plate = shield.GetComponent<ShieldPlate>();
             Assert.That(plate, Is.Not.Null);
+            Assert.That(((IDamageProxy)plate).DamageOwner, Is.SameAs(_prefab.GetComponent<PenitentAI>()));
             Assert.That(Reference(new SerializedObject(plate), "owner"), Is.SameAs(_prefab.GetComponent<PenitentAI>()));
             SocketFollow follow = shield.GetComponent<SocketFollow>();
             Assert.That(follow, Is.Not.Null);
@@ -168,6 +169,7 @@ namespace RetroFPS.Tests.EditMode
             Transform face = Required("Hitboxes/Hitbox_Face");
             PenitentWeakPoint weakPoint = face.GetComponent<PenitentWeakPoint>();
             Assert.That(weakPoint, Is.Not.Null);
+            Assert.That(((IDamageProxy)weakPoint).DamageOwner, Is.SameAs(_prefab.GetComponent<PenitentAI>()));
             Assert.That(Reference(new SerializedObject(weakPoint), "owner"), Is.SameAs(_prefab.GetComponent<PenitentAI>()));
             SphereCollider sphere = face.GetComponent<SphereCollider>();
             Assert.That(sphere, Is.Not.Null);

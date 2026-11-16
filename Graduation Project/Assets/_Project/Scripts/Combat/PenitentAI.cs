@@ -8,7 +8,7 @@ namespace RetroFPS.Combat
     /// Leave the area or parry at impact; jumping does not avoid it.</summary>
     [RequireComponent(typeof(CharacterController))]
     public sealed class PenitentAI : MonoBehaviour, IDamageable, IAlertableEnemy, IStunnable, IStunState,
-        IEncounterEnemy, IThreatCost, IEliteScalable, IGuardBreakable
+        IEncounterEnemy, IThreatCost, IEliteScalable, IGuardBreakable, IMeleeGuard
     {
         [Header("References")]
         [SerializeField, Tooltip("Optional presentation driver.")] private PenitentView view;
@@ -465,11 +465,18 @@ namespace RetroFPS.Combat
         }
 
         /// <inheritdoc />
+        public bool BlocksMeleeFrom(Vector3 attackerPosition)
+            => BlocksMeleeDirection(attackerPosition - transform.position);
+
+        private bool BlocksMeleeDirection(Vector3 attackerDirection)
+            => PenitentGuard.IsBlocked(transform.forward, attackerDirection, guardHalfAngle, IsGuardUp);
+
+        /// <inheritdoc />
         public void TakeDamage(float amount, Vector3 hitPoint, Vector3 hitNormal, bool isCritical = false)
         {
             if (!_alive) return;
             bool blocked = MeleeDamageScope.IsActive
-                ? PenitentGuard.IsBlocked(transform.forward, hitNormal, guardHalfAngle, IsGuardUp)
+                ? BlocksMeleeDirection(hitNormal)
                 : PenitentGuard.IsBlocked(transform.forward, transform.position, hitPoint, hitNormal, guardHalfAngle, IsGuardUp);
             if (blocked)
             {

@@ -122,6 +122,22 @@ namespace RetroFPS.Weapons
         }
 
         public abstract void Tick(float deltaTime);
+
+        /// <summary>Advances background state while this weapon is not the active weapon.</summary>
+        public virtual void TickHolstered(float deltaTime) { }
+
+        /// <summary>Cancels delayed attacks and buffered input when weapon control is disabled.</summary>
+        public virtual void CancelPendingActions() { }
+
+        /// <summary>Applies firearm-only Sunder amplification using the root damage target.</summary>
+        protected static float ApplySunderDamage(IDamageable target, float damage)
+        {
+            IDamageable rootTarget = target is Hitbox hitbox ? hitbox.Target : target;
+            // Weak points / shield plates carry no mark of their own: the mark lives on their owner.
+            if (rootTarget is IDamageProxy proxy) rootTarget = proxy.DamageOwner;
+            return damage * SunderMarks.GetMultiplier(rootTarget);
+        }
+
         public abstract void FirePrimary();
         public abstract void FireAlt();
 
