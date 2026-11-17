@@ -99,6 +99,7 @@ flowchart LR
 ### 4. `PlayerDamageFeedback.cs` (Hasar ve Darbe Algısı)
 - **Konum:** `Assets/_Project/Scripts/Player/PlayerDamageFeedback.cs`
 - **Kırmızı Vinyet Parlaması:** Darbe anında ekran kenarlarında anlık kan kırmızısı parlama oluşturur. URP Volume/Vignette **kullanılmaz**; runtime üretilen vinyet dokusu `OnGUI` (IMGUI) ile çizilir (ortam karartması ve düşük can nabzı da aynı yoldan).
+- **PostFx Entegrasyonu:** `OnGUI` vinyetleri olduğu gibi kalır; buna ek olarak hasar, parry, dash, düşük can ve ölüm durumları için URP Volume tabanlı tepkiler [[PostFxArchitecture]] üzerinden uygulanır.
 - **Zümrüt Yeşili İyileşme Parlaması:** `TriggerHealFlash` ile can küresi toplandığında ekran kenarlarında ferahlatıcı yeşil parlama oluşturur.
 - **Darbe Yönü Sarsıntısı:** Hasarın geldiği yönün tersine doğru kameraya küçük bir geri itme darbesi uygular.
 

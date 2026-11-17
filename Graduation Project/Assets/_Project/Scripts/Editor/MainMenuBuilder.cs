@@ -236,7 +236,7 @@ namespace RetroFPS.Editor
                     {
                         ValidateTextFit(label, "%100"); ValidateTextFit(label, "100%");
                     }
-                    else if (row == "Cycle0" || row == "Cycle2")
+                    else if (row == "Cycle0" || row == "Cycle2" || row == "Cycle3")
                     {
                         string[] keys = row == "Cycle0" ? new[] { "settings.window_mode.fullscreen",
                             "settings.window_mode.borderless", "settings.window_mode.windowed" }
@@ -527,12 +527,8 @@ namespace RetroFPS.Editor
             string[] names = { "Start", "Settings", "Quit" };
             for (int i = 0; i < roots.Length; i++) roots[i] = ui.Find("SafeArea/Root/MenuList/" + names[i]).GetComponent<UnityEngine.UI.Button>();
             SetArray(controller, "rootItems", roots);
-            Transform content = ui.Find("SafeArea/SettingsPanel/Content");
-            var rows = new UnityEngine.UI.Selectable[10];
-            rows[0] = content.Find("Language").GetComponent<MenuCycleRow>();
-            for (int i = 0; i < 5; i++) rows[1 + i] = content.Find("Slider" + i).GetComponent<MenuSlider>();
-            for (int i = 0; i < 3; i++) rows[6 + i] = content.Find("Cycle" + i).GetComponent<MenuCycleRow>();
-            rows[9] = content.Find("Back").GetComponent<UnityEngine.UI.Button>(); SetArray(controller, "settingsItems", rows);
+            SettingsPanelView sharedSettings = ui.Find("SafeArea/SettingsPanel").GetComponent<SettingsPanelView>();
+            SetArray(controller, "settingsItems", sharedSettings.OrderedSelectables);
             Set(systems.GetComponent<MenuInputRouter>(), "eventSystem", eventSystem);
             eventSystem.firstSelectedGameObject = roots[0].gameObject;
             PrefabUtility.RecordPrefabInstancePropertyModifications(controller);

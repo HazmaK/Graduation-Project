@@ -5,7 +5,7 @@ using UnityEngine;
 
 namespace RetroFPS.UI.Menu
 {
-    /// <summary>Binds language, five sliders and display/accessibility cycles to live settings.</summary>
+    /// <summary>Binds the shared language, audio, display and accessibility rows to live settings.</summary>
     public sealed class SettingsPanelView : MonoBehaviour
     {
         [SerializeField] private StringTable strings;
@@ -21,6 +21,11 @@ namespace RetroFPS.UI.Menu
         [SerializeField] private MenuCycleRow windowMode;
         [SerializeField] private MenuCycleRow resolution;
         [SerializeField] private MenuCycleRow reduceMotion;
+        [SerializeField] private MenuCycleRow postProcessing;
+        [SerializeField] private MenuSlider brightness;
+        [SerializeField] private TMP_Text brightnessValue;
+        [SerializeField] private MenuSlider screenEffects;
+        [SerializeField] private TMP_Text screenEffectsValue;
         private ISettingsPanelHost controller;
         private ISettingsService service;
         private ResolutionOption[] resolutions;
@@ -28,6 +33,8 @@ namespace RetroFPS.UI.Menu
         private readonly string[][] localePercent = new string[2][];
         private readonly string[][] localeModes = new string[2][];
         private readonly string[][] localeMotion = new string[2][];
+        private readonly string[][] localeBrightness = new string[2][];
+        private string[] brightnessStrings;
         private string[] resolutionStrings;
         private string[] modeStrings;
         private string[] motionStrings;
@@ -54,6 +61,9 @@ namespace RetroFPS.UI.Menu
             windowMode.Changed += ModeChanged;
             resolution.Changed += ResolutionChanged;
             reduceMotion.Changed += MotionChanged;
+            if (postProcessing != null) postProcessing.Changed += PostProcessingChanged;
+            if (brightness != null) brightness.onValueChanged.AddListener(BrightnessChanged);
+            if (screenEffects != null) screenEffects.onValueChanged.AddListener(ScreenEffectsChanged);
         }
 
         private void PrewarmLanguageCaches()
@@ -69,9 +79,15 @@ namespace RetroFPS.UI.Menu
                 localeModes[locale] = new[] { strings.Get("settings.window_mode.fullscreen", selected),
                     strings.Get("settings.window_mode.borderless", selected), strings.Get("settings.window_mode.windowed", selected) };
                 localeMotion[locale] = new[] { strings.Get("settings.off", selected), strings.Get("settings.on", selected) };
+                var adjustments = new string[21];
+                for (int i = 0; i < adjustments.Length; i++) adjustments[i] = (i * 5 - 50).ToString("+0;-0;0", culture);
+                localeBrightness[locale] = adjustments;
                 for (int i = 0; i < percentages.Length; i++) Warm(percentages[i], percents);
                 WarmValue(windowMode, localeModes[locale]);
                 WarmValue(reduceMotion, localeMotion[locale]);
+                if (postProcessing != null) WarmValue(postProcessing, localeMotion[locale]);
+                if (brightnessValue != null) Warm(brightnessValue, adjustments);
+                if (screenEffectsValue != null) Warm(screenEffectsValue, percents);
             }
             WarmValue(language, languageStrings);
         }
@@ -92,8 +108,10 @@ namespace RetroFPS.UI.Menu
             percentStrings = localePercent[locale];
             modeStrings = localeModes[locale];
             motionStrings = localeMotion[locale];
+            brightnessStrings = localeBrightness[locale];
             windowMode.SetOptions(modeStrings);
             reduceMotion.SetOptions(motionStrings);
+            if (postProcessing != null) postProcessing.SetOptions(motionStrings);
         }
 
         private void OnEnable()
@@ -119,6 +137,9 @@ namespace RetroFPS.UI.Menu
             windowMode.Changed -= ModeChanged;
             resolution.Changed -= ResolutionChanged;
             reduceMotion.Changed -= MotionChanged;
+            if (postProcessing != null) postProcessing.Changed -= PostProcessingChanged;
+            if (brightness != null) brightness.onValueChanged.RemoveListener(BrightnessChanged);
+            if (screenEffects != null) screenEffects.onValueChanged.RemoveListener(ScreenEffectsChanged);
         }
 
         /// <summary>Injects the controller gate without coupling the settings service to UI.</summary>
@@ -166,6 +187,13 @@ namespace RetroFPS.UI.Menu
             if (resolutions != null)
                 resolution.SetIndex(ResolutionOptions.FindNearestIndex(resolutions, data.ResolutionWidth, data.ResolutionHeight));
             reduceMotion.SetIndex(data.ReduceMotion ? 1 : 0);
+            if (postProcessing != null) postProcessing.SetIndex(data.PostProcessing ? 1 : 0);
+            int adjustment = Mathf.Clamp(Mathf.RoundToInt((data.Brightness + 1f) * 10f), 0, 20);
+            if (brightness != null) brightness.SetValueWithoutNotify(adjustment);
+            if (brightnessValue != null) brightnessValue.text = brightnessStrings[adjustment];
+            int intensity = Mathf.Clamp(Mathf.RoundToInt(data.ScreenEffects * 10f), 0, 10);
+            if (screenEffects != null) screenEffects.SetValueWithoutNotify(intensity);
+            if (screenEffectsValue != null) screenEffectsValue.text = percentStrings[intensity * 2];
         }
 
         private void SetSlider(int index, float normalized)
@@ -218,6 +246,24 @@ namespace RetroFPS.UI.Menu
         {
             if (CanEdit) service.SetReduceMotion(index != 0);
             else Refresh(service.Current);
+        }
+
+        private void PostProcessingChanged(int index)
+        {
+            if (CanEdit) service.SetPostProcessing(index != 0);
+            else Refresh(service.Current);
+        }
+        private void BrightnessChanged(float value)
+        {
+            if (!CanEdit) { Refresh(service.Current); return; }
+            service.SetBrightness(value * 0.1f - 1f);
+            MenuEvents.RaiseUiAudio(UiAudioEventType.SliderStep);
+        }
+        private void ScreenEffectsChanged(float value)
+        {
+            if (!CanEdit) { Refresh(service.Current); return; }
+            service.SetScreenEffects(value * 0.1f);
+            MenuEvents.RaiseUiAudio(UiAudioEventType.SliderStep);
         }
     }
 }

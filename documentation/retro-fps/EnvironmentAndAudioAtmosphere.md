@@ -62,9 +62,11 @@ flowchart TD
 - **Karşılaşma Entegrasyonu:** `EncounterArea` ve `EncounterSpawnPoint` yerleşimleri için optimize edilmiş net görüş hatları ve Quake strafe-jumping koridorları sunar.
 
 ### 3. Retro Çözünürlük ve Render Yöneticisi (`GameResolutionManager`)
+- **Not (2026-11-17):** Kod tabanında `GameResolutionManager` adında bir sınıf şu an bulunmamaktadır; pikselleştirme/düşük çözünürlük geçişi mevcut değildir.
 - **Konum:** `Assets/_Project/Scripts/Core/GameResolutionManager.cs`
 - **Özellik:** Modern yüksek çözünürlüklü ekranlarda klasik 90'lar yazılım render hissini (320x240, 480x360 veya 640x480) pikselleştirme ve render texture ölçeklemesiyle simüle eder.
 - **Point Filtering:** Düşük çözünürlüklü dokularda ve render çıktısında piksel yumuşatmayı (bilinear filtering) kapatarak keskin pikseller sağlar.
+- **Post-Processing:** "İs ve Kor" renk derecelendirmesi, alan/durum karışımları ve anlık darbe tepkileri için URP Volume tabanlı [[PostFxArchitecture]] sistemi kullanılır.
 
 ### 4. Dinamik Nişangah Arayüzü (`CrosshairHUD`)
 - **Konum:** `Assets/_Project/Scripts/UI/CrosshairHUD.cs`

@@ -64,16 +64,16 @@ namespace RetroFPS.Tests
         [TestCase(LanguageSetting.Turkish)]
         public void PlayerPrefsRoundTripsBothLanguages(LanguageSetting language)
         {
-            string[] floats = { "masterVolume", "musicVolume", "sfxVolume", "uiVolume", "mouseSensitivity" };
-            string[] ints = { "windowMode", "reduceMotion" };
+            string[] floats = { "masterVolume", "musicVolume", "sfxVolume", "uiVolume", "mouseSensitivity", "brightness", "screenEffects" };
+            string[] ints = { "windowMode", "reduceMotion", "postProcessing" };
             string[] strings = { "resolution", "language" };
-            var existed = new bool[9];
-            var floatValues = new float[5];
-            var intValues = new int[2];
+            var existed = new bool[12];
+            var floatValues = new float[7];
+            var intValues = new int[3];
             var stringValues = new string[2];
             for (int i = 0; i < floats.Length; i++) { existed[i] = PlayerPrefs.HasKey(floats[i]); floatValues[i] = PlayerPrefs.GetFloat(floats[i]); }
-            for (int i = 0; i < ints.Length; i++) { existed[i + 5] = PlayerPrefs.HasKey(ints[i]); intValues[i] = PlayerPrefs.GetInt(ints[i]); }
-            for (int i = 0; i < strings.Length; i++) { existed[i + 7] = PlayerPrefs.HasKey(strings[i]); stringValues[i] = PlayerPrefs.GetString(strings[i]); }
+            for (int i = 0; i < ints.Length; i++) { existed[i + 7] = PlayerPrefs.HasKey(ints[i]); intValues[i] = PlayerPrefs.GetInt(ints[i]); }
+            for (int i = 0; i < strings.Length; i++) { existed[i + 10] = PlayerPrefs.HasKey(strings[i]); stringValues[i] = PlayerPrefs.GetString(strings[i]); }
             try
             {
                 var store = new PlayerPrefsSettingsStore();
@@ -88,9 +88,9 @@ namespace RetroFPS.Tests
                 for (int i = 0; i < floats.Length; i++)
                     if (existed[i]) PlayerPrefs.SetFloat(floats[i], floatValues[i]); else PlayerPrefs.DeleteKey(floats[i]);
                 for (int i = 0; i < ints.Length; i++)
-                    if (existed[i + 5]) PlayerPrefs.SetInt(ints[i], intValues[i]); else PlayerPrefs.DeleteKey(ints[i]);
+                    if (existed[i + 7]) PlayerPrefs.SetInt(ints[i], intValues[i]); else PlayerPrefs.DeleteKey(ints[i]);
                 for (int i = 0; i < strings.Length; i++)
-                    if (existed[i + 7]) PlayerPrefs.SetString(strings[i], stringValues[i]); else PlayerPrefs.DeleteKey(strings[i]);
+                    if (existed[i + 10]) PlayerPrefs.SetString(strings[i], stringValues[i]); else PlayerPrefs.DeleteKey(strings[i]);
                 PlayerPrefs.Save();
             }
         }

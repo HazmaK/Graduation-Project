@@ -37,6 +37,16 @@ MonoBehaviour:
       spawnPattern: 1
       runInParallel: 0
       threatCostOverride: 0
+    - enemyPrefab: {fileID: 7637322481129231680, guid: a88eba293ab871d4ba7c37b1af78554f, type: 3}
+      count: 2
+      spawnInterval: 0.9
+      isAirEnemy: 0
+      targetZoneTag: 
+      delayFromWaveStart: 0
+      batchSize: 1
+      spawnPattern: 1
+      runInParallel: 0
+      threatCostOverride: 0
   - waveName: "Faz 2: S\xFCr\xFC"
     preWaveDelay: 0.8
     maxConcurrentEnemies: 6

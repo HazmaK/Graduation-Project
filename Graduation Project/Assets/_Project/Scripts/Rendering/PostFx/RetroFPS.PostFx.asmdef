@@ -1,0 +1,11 @@
+{
+    "name": "RetroFPS.PostFx",
+    "rootNamespace": "RetroFPS.Rendering.PostFx",
+    "references": [
+        "RetroFPS.Core",
+        "RetroFPS.Gameplay",
+        "Unity.RenderPipelines.Core.Runtime",
+        "Unity.RenderPipelines.Universal.Runtime"
+    ],
+    "autoReferenced": true
+}

@@ -69,7 +69,7 @@ namespace RetroFPS.UI.Menu
             if (rootGroup != null)
             {
                 SettingsPanelView shared = rootGroup.transform.parent.GetComponentInChildren<SettingsPanelView>(true);
-                if (shared != null && shared.Group != null && shared.OrderedSelectables != null && shared.OrderedSelectables.Length == 10)
+                if (shared != null && shared.Group != null && shared.OrderedSelectables != null && shared.OrderedSelectables.Length >= 10)
                 {
                     settingsPanel = shared;
                     settingsGroup = shared.Group;
@@ -90,7 +90,7 @@ namespace RetroFPS.UI.Menu
             rootItems[0].GetComponent<UnityEngine.UI.Button>().onClick.AddListener(StartRun);
             rootItems[1].GetComponent<UnityEngine.UI.Button>().onClick.AddListener(OpenSettings);
             rootItems[2].GetComponent<UnityEngine.UI.Button>().onClick.AddListener(OpenQuit);
-            settingsItems[9].GetComponent<UnityEngine.UI.Button>().onClick.AddListener(Back);
+            settingsItems[settingsItems.Length - 1].GetComponent<UnityEngine.UI.Button>().onClick.AddListener(Back);
             quitDialog.Affirmative.onClick.AddListener(ConfirmQuit);
             quitDialog.Negative.onClick.AddListener(Back);
             revertDialog.Affirmative.onClick.AddListener(KeepDisplay);

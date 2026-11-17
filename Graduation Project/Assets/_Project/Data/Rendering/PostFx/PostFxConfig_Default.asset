@@ -1,0 +1,44 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3b9edef472ab8314689013252e8e4893, type: 3}
+  m_Name: PostFxConfig_Default
+  m_EditorClassIdentifier: RetroFPS.PostFx::RetroFPS.Rendering.PostFx.PostFxConfig
+  areaBlendSpeed: 1.5
+  lowHealthBlendSpeed: 3
+  deathBlendSpeed: 1.6
+  deathReleaseSpeed: 4
+  lowHealthStart: 0.3
+  lowHealthFull: 0.12
+  arafChromaticAberration: 0.1
+  bossPhase2ChromaticAberration: 0.07
+  arafLensDistortion: -0.05
+  damageCaMinimum: 0.25
+  damageCaMaximum: 0.75
+  damageForMaximumCa: 40
+  damageDecaySeconds: 0.3
+  hitstopCaFloor: 0.22
+  parryCa: 0.35
+  parryCaDecaySeconds: 0.18
+  parryExposure: 0.25
+  parryExposureDecaySeconds: 0.14
+  dashDistortion: -0.16
+  dashDecaySeconds: 0.28
+  minPulseInterval: 0.35
+  chromaticAberrationCap: 0.9
+  lensDistortionMinimum: -0.3
+  exposureMinimum: -2
+  exposureMaximum: 2
+  brightnessEvRange: 1
+  deathExposure: -0.6
+  baseExposure: 0.45
+  arafExposure: 0.6
+  bossExposure: 0.15

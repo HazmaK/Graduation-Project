@@ -24,6 +24,11 @@ namespace RetroFPS.Editor
             theme = AssetDatabase.LoadAssetAtPath<MenuTheme>("Assets/_Project/Data/UI/MenuTheme_KanVeKemik.asset");
             strings = AssetDatabase.LoadAssetAtPath<StringTable>("Assets/_Project/Data/UI/StringTable_MainMenu_tr.asset");
             if (theme == null || strings == null) throw new InvalidOperationException("Main-menu theme and strings must exist before settings extraction.");
+            if (strings.PopulateBilingualDefaults())
+            {
+                EditorUtility.SetDirty(strings);
+                AssetDatabase.SaveAssetIfDirty(strings);
+            }
             UseSharedPresentation(theme, strings);
             if (!AssetDatabase.IsValidFolder("Assets/_Project/Prefabs/UI/Shared"))
                 AssetDatabase.CreateFolder("Assets/_Project/Prefabs/UI", "Shared");
@@ -42,8 +47,11 @@ namespace RetroFPS.Editor
                 }
                 root.SetActive(false);
                 SettingsPanelView view = root.GetComponent<SettingsPanelView>();
+                UpgradePostFxRows(root);
                 Set(view, "group", root.GetComponent<CanvasGroup>());
-                SetArray(view, "orderedSelectables", Ordered(root.transform));
+                var order = Ordered(root.transform);
+                Wrap(order);
+                SetArray(view, "orderedSelectables", order);
                 ValidateSettingsLayout((RectTransform)root.transform);
                 root.SetActive(true);
                 Save(root, PrefabPath);
@@ -88,7 +96,7 @@ namespace RetroFPS.Editor
         }
         private static UnityEngine.UI.Selectable[] Ordered(Transform panel)
         {
-            string[] names = { "Language", "Slider0", "Slider1", "Slider2", "Slider3", "Slider4", "Cycle0", "Cycle1", "Cycle2", "Back" };
+            string[] names = { "Language", "Slider0", "Slider1", "Slider2", "Slider3", "Slider4", "Cycle0", "Cycle1", "Cycle2", "Cycle3", "Slider5", "Slider6", "Back" };
             var order = new UnityEngine.UI.Selectable[names.Length];
             for (int i = 0; i < order.Length; i++)
                 order[i] = panel.Find("Content/" + names[i]).GetComponent<UnityEngine.UI.Selectable>();
@@ -101,6 +109,67 @@ namespace RetroFPS.Editor
                     PrefabUtility.RecordPrefabInstancePropertyModifications(component);
             PrefabUtility.SaveAsPrefabAsset(root, path, out bool success);
             if (!success) throw new InvalidOperationException("Cannot save shared settings: " + path);
+        }
+
+        private static void UpgradePostFxRows(GameObject root)
+        {
+            Transform content = root.transform.Find("Content");
+            SettingsPanelView view = root.GetComponent<SettingsPanelView>();
+            MenuCycleRow postProcessing = EnsureRow(content, "Cycle3", "MenuCycleRow", "settings.post_processing").GetComponent<MenuCycleRow>();
+            MenuSlider brightness = EnsureRow(content, "Slider5", "MenuSliderRow", "settings.brightness").GetComponent<MenuSlider>();
+            MenuSlider screenEffects = EnsureRow(content, "Slider6", "MenuSliderRow", "settings.screen_effects").GetComponent<MenuSlider>();
+            brightness.minValue = 0; brightness.maxValue = 20; brightness.wholeNumbers = true;
+            screenEffects.minValue = 0; screenEffects.maxValue = 10; screenEffects.wholeNumbers = true;
+            Set(view, "postProcessing", postProcessing);
+            Set(view, "brightness", brightness); Set(view, "brightnessValue", brightness.transform.Find("Value").GetComponent<TMP_Text>());
+            Set(view, "screenEffects", screenEffects); Set(view, "screenEffectsValue", screenEffects.transform.Find("Value").GetComponent<TMP_Text>());
+
+            // Retain the 900-unit panel and 36-unit minimum fonts. 48-unit rows still
+            // provide 32 screen pixels at 720p; the final button ends at 866 of 876 units.
+            RectTransform contentRect = (RectTransform)content;
+            contentRect.offsetMin = new Vector2(contentRect.offsetMin.x, 12);
+            contentRect.offsetMax = new Vector2(contentRect.offsetMax.x, -12);
+            PositionGroup(content, "General", 76);
+            PositionGroup(content, "Audio", 168);
+            PositionGroup(content, "Controls", 404);
+            PositionGroup(content, "Display", 496);
+            var order = Ordered(root.transform);
+            float[] centers = { 122, 214, 262, 310, 358, 450, 542, 590, 638, 686, 734, 782, 838 };
+            for (int i = 0; i < order.Length; i++)
+            {
+                Transform row = order[i].transform;
+                float height = i == order.Length - 1 ? 56 : 48;
+                RectTransform rect = (RectTransform)row;
+                Top(rect, centers[i]);
+                rect.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, height);
+                // Arrow hit boxes and text boxes must not overlap the adjacent row.
+                foreach (RectTransform child in row.GetComponentsInChildren<RectTransform>(true))
+                    if (child != rect && child.anchorMin.y == child.anchorMax.y && child.sizeDelta.y > height)
+                        child.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, height);
+            }
+            int sibling = content.Find("Cycle2").GetSiblingIndex() + 1;
+            postProcessing.transform.SetSiblingIndex(sibling);
+            brightness.transform.SetSiblingIndex(sibling + 1);
+            screenEffects.transform.SetSiblingIndex(sibling + 2);
+            Wrap(order);
+            SetArray(view, "orderedSelectables", order);
+        }
+
+        private static GameObject EnsureRow(Transform content, string name, string prefab, string key)
+        {
+            Transform existing = content.Find(name);
+            if (existing != null) return existing.gameObject;
+            GameObject row = Instantiate(prefab, content);
+            row.name = name;
+            Localize(row.transform.Find("Label").GetComponent<TMP_Text>(), key);
+            row.transform.Find("Value").GetComponent<TMP_Text>().text = string.Empty;
+            return row;
+        }
+
+        private static void PositionGroup(Transform content, string name, float center)
+        {
+            Top((RectTransform)content.Find(name + "Group"), center);
+            Top((RectTransform)content.Find(name + "Divider"), center + 20);
         }
         private static GameObject AuthorPanel()
         {
@@ -163,6 +232,7 @@ namespace RetroFPS.Editor
             Set(view, "language", language);
             Set(view, "windowMode", cycles[0]); Set(view, "resolution", cycles[1]); Set(view, "reduceMotion", cycles[2]);
             Set(view, "group", panelGroup); SetArray(view, "orderedSelectables", order);
+            UpgradePostFxRows(panel.gameObject);
             ValidateSettingsLayout(panel);
             return panel.gameObject;
 

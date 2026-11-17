@@ -14,15 +14,43 @@ namespace RetroFPS.Settings
     /// <summary>PlayerPrefs persistence using the exact UX keys.</summary>
     public sealed class PlayerPrefsSettingsStore : ISettingsStore
     {
+        private sealed class UnityPreferences : ISettingsPreferences
+        {
+            /// <inheritdoc/>
+            public float GetFloat(string key, float fallback) => PlayerPrefs.GetFloat(key, fallback);
+            /// <inheritdoc/>
+            public int GetInt(string key, int fallback) => PlayerPrefs.GetInt(key, fallback);
+            /// <inheritdoc/>
+            public string GetString(string key, string fallback) => PlayerPrefs.GetString(key, fallback);
+            /// <inheritdoc/>
+            public void SetFloat(string key, float value) => PlayerPrefs.SetFloat(key, value);
+            /// <inheritdoc/>
+            public void SetInt(string key, int value) => PlayerPrefs.SetInt(key, value);
+            /// <inheritdoc/>
+            public void SetString(string key, string value) => PlayerPrefs.SetString(key, value);
+            /// <inheritdoc/>
+            public void Save() => PlayerPrefs.Save();
+        }
+
+        private readonly ISettingsPreferences preferences;
         private string cachedResolution;
         private int cachedWidth;
         private int cachedHeight;
         private bool resolutionWritten;
+        /// <summary>Creates the Unity PlayerPrefs adapter.</summary>
+        public PlayerPrefsSettingsStore() : this(new UnityPreferences()) { }
+
+        /// <summary>Creates a preference store with an injectable typed backend.</summary>
+        public PlayerPrefsSettingsStore(ISettingsPreferences preferences)
+        {
+            this.preferences = preferences ?? throw new System.ArgumentNullException(nameof(preferences));
+        }
+
         /// <inheritdoc/>
         public GameSettingsData Load(GameSettingsData defaults)
         {
             int width = defaults.ResolutionWidth, height = defaults.ResolutionHeight;
-            string resolution = PlayerPrefs.GetString("resolution", string.Empty);
+            string resolution = preferences.GetString("resolution", string.Empty);
             int separator = resolution.IndexOf('x');
             if (separator > 0 &&
                 int.TryParse(resolution.Substring(0, separator), NumberStyles.None,
@@ -39,27 +67,31 @@ namespace RetroFPS.Settings
             cachedHeight = height;
             cachedResolution = resolutionWritten ? resolution
                 : width.ToString(CultureInfo.InvariantCulture) + "x" + height.ToString(CultureInfo.InvariantCulture);
-            int motion = PlayerPrefs.GetInt("reduceMotion", defaults.ReduceMotion ? 1 : 0);
+            int motion = preferences.GetInt("reduceMotion", defaults.ReduceMotion ? 1 : 0);
+            int postProcessing = preferences.GetInt("postProcessing", defaults.PostProcessing ? 1 : 0);
             return new GameSettingsData(
-                PlayerPrefs.GetFloat("masterVolume", defaults.MasterVolume),
-                PlayerPrefs.GetFloat("musicVolume", defaults.MusicVolume),
-                PlayerPrefs.GetFloat("sfxVolume", defaults.SfxVolume),
-                PlayerPrefs.GetFloat("uiVolume", defaults.UiVolume),
-                PlayerPrefs.GetFloat("mouseSensitivity", defaults.MouseSensitivity),
-                (WindowModeSetting)PlayerPrefs.GetInt("windowMode", (int)defaults.WindowMode),
+                preferences.GetFloat("masterVolume", defaults.MasterVolume),
+                preferences.GetFloat("musicVolume", defaults.MusicVolume),
+                preferences.GetFloat("sfxVolume", defaults.SfxVolume),
+                preferences.GetFloat("uiVolume", defaults.UiVolume),
+                preferences.GetFloat("mouseSensitivity", defaults.MouseSensitivity),
+                (WindowModeSetting)preferences.GetInt("windowMode", (int)defaults.WindowMode),
                 width, height, motion == 0 ? false : motion == 1 ? true : defaults.ReduceMotion,
-                LanguageDefaults.FromCode(PlayerPrefs.GetString("language", string.Empty), defaults.Language));
+                LanguageDefaults.FromCode(preferences.GetString("language", string.Empty), defaults.Language),
+                postProcessing == 0 ? false : postProcessing == 1 ? true : defaults.PostProcessing,
+                preferences.GetFloat("brightness", defaults.Brightness),
+                preferences.GetFloat("screenEffects", defaults.ScreenEffects));
         }
 
         /// <inheritdoc/>
         public void Write(GameSettingsData data)
         {
-            PlayerPrefs.SetFloat("masterVolume", data.MasterVolume);
-            PlayerPrefs.SetFloat("musicVolume", data.MusicVolume);
-            PlayerPrefs.SetFloat("sfxVolume", data.SfxVolume);
-            PlayerPrefs.SetFloat("uiVolume", data.UiVolume);
-            PlayerPrefs.SetFloat("mouseSensitivity", data.MouseSensitivity);
-            PlayerPrefs.SetInt("windowMode", (int)data.WindowMode);
+            preferences.SetFloat("masterVolume", data.MasterVolume);
+            preferences.SetFloat("musicVolume", data.MusicVolume);
+            preferences.SetFloat("sfxVolume", data.SfxVolume);
+            preferences.SetFloat("uiVolume", data.UiVolume);
+            preferences.SetFloat("mouseSensitivity", data.MouseSensitivity);
+            preferences.SetInt("windowMode", (int)data.WindowMode);
             if (cachedResolution == null || cachedWidth != data.ResolutionWidth || cachedHeight != data.ResolutionHeight)
             {
                 cachedWidth = data.ResolutionWidth;
@@ -70,15 +102,18 @@ namespace RetroFPS.Settings
             }
             if (!resolutionWritten)
             {
-                PlayerPrefs.SetString("resolution", cachedResolution);
+                preferences.SetString("resolution", cachedResolution);
                 resolutionWritten = true;
             }
-            PlayerPrefs.SetInt("reduceMotion", data.ReduceMotion ? 1 : 0);
-            PlayerPrefs.SetString("language", LanguageDefaults.ToCode(data.Language));
+            preferences.SetInt("reduceMotion", data.ReduceMotion ? 1 : 0);
+            preferences.SetInt("postProcessing", data.PostProcessing ? 1 : 0);
+            preferences.SetFloat("brightness", data.Brightness);
+            preferences.SetFloat("screenEffects", data.ScreenEffects);
+            preferences.SetString("language", LanguageDefaults.ToCode(data.Language));
         }
 
         /// <inheritdoc/>
-        public void Save() => PlayerPrefs.Save();
+        public void Save() => preferences.Save();
     }
 
     /// <summary>Unity display application and supported-size discovery.</summary>

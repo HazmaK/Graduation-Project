@@ -33,6 +33,9 @@ namespace RetroFPS.Tests
             "settings.window_mode.windowed",
             "settings.resolution",
             "settings.reduce_motion",
+            "settings.post_processing",
+            "settings.brightness",
+            "settings.screen_effects",
             "settings.on",
             "settings.off",
             "settings.back",
@@ -107,7 +110,7 @@ namespace RetroFPS.Tests
                 Assert.That(table.PopulateBilingualDefaults(), Is.True);
                 Assert.That(table.PopulateBilingualDefaults(), Is.False);
                 table.ValidateEntries();
-                Assert.That(table.Count, Is.EqualTo(36));
+                Assert.That(table.Count, Is.EqualTo(39));
                 var expected = new[]
                 {
                 new StringTable.Translation("menu.title", "PURGATOR", "PURGATOR"),
@@ -131,6 +134,9 @@ namespace RetroFPS.Tests
                 new StringTable.Translation("settings.window_mode.windowed", "Pencere", "Windowed"),
                 new StringTable.Translation("settings.resolution", "Çözünürlük", "Resolution"),
                 new StringTable.Translation("settings.reduce_motion", "Hareketi Azalt", "Reduce Motion"),
+                new StringTable.Translation("settings.post_processing", "Görüntü İşleme", "Post-Processing"),
+                new StringTable.Translation("settings.brightness", "Parlaklık", "Brightness"),
+                new StringTable.Translation("settings.screen_effects", "Ekran Efektleri", "Screen Effects"),
                 new StringTable.Translation("settings.on", "AÇIK", "ON"),
                 new StringTable.Translation("settings.off", "KAPALI", "OFF"),
                 new StringTable.Translation("settings.back", "GERİ", "BACK"),
@@ -281,6 +287,9 @@ namespace RetroFPS.Tests
                 new StringTable.Translation("settings.window_mode.windowed", "Pencere", "Windowed"),
                 new StringTable.Translation("settings.resolution", "Çözünürlük", "Resolution"),
                 new StringTable.Translation("settings.reduce_motion", "Hareketi Azalt", "Reduce Motion"),
+                new StringTable.Translation("settings.post_processing", "Görüntü İşleme", "Post-Processing"),
+                new StringTable.Translation("settings.brightness", "Parlaklık", "Brightness"),
+                new StringTable.Translation("settings.screen_effects", "Ekran Efektleri", "Screen Effects"),
                 new StringTable.Translation("settings.on", "AÇIK", "ON"),
                 new StringTable.Translation("settings.off", "KAPALI", "OFF"),
                 new StringTable.Translation("settings.back", "GERİ", "BACK"),
@@ -354,7 +363,7 @@ namespace RetroFPS.Tests
                 new StringTable.Translation("transition.araf.escape", "KAÇIŞ", "ESCAPE"),
                 new StringTable.Translation("boss.judge.name", "YARGIÇ", "THE JUDGE")
             };
-            Assert.That(menu.Length, Is.EqualTo(43));
+            Assert.That(menu.Length, Is.EqualTo(46));
             AssertAssetManifest("Assets/_Project/Data/UI/StringTable_MainMenu_tr.asset", menu);
             AssertAssetManifest("Assets/_Project/Data/UI/StringTable_CombatHud_tr.asset", combat, 31); // 7 card-offer UI keys + 6 cards x 4 keys, checked by CardHudStringTests.
             var catalog = AssetDatabase.LoadAssetAtPath<LocalizationCatalog>("Assets/_Project/Resources/Localization/LocalizationCatalog.asset");

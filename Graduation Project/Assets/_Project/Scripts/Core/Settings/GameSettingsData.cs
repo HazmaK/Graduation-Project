@@ -27,6 +27,9 @@ namespace RetroFPS.Settings
         [SerializeField] private int resolutionWidth;
         [SerializeField] private int resolutionHeight;
         [SerializeField] private bool reduceMotion;
+        [SerializeField] private bool postProcessing;
+        [SerializeField] private float brightness;
+        [SerializeField] private float screenEffects;
         [SerializeField] private LanguageSetting language;
 
         /// <summary>Global audio gain.</summary>
@@ -47,6 +50,12 @@ namespace RetroFPS.Settings
         public int ResolutionHeight => resolutionHeight;
         /// <summary>Whether optional motion should be suppressed.</summary>
         public bool ReduceMotion => reduceMotion;
+        /// <summary>Whether camera post-processing is enabled.</summary>
+        public bool PostProcessing => postProcessing;
+        /// <summary>Brightness adjustment in the range -1 to 1.</summary>
+        public float Brightness => brightness;
+        /// <summary>Screen effect intensity in the range 0 to 1.</summary>
+        public float ScreenEffects => screenEffects;
         /// <summary>Current language authority.</summary>
         public LanguageSetting Language => language;
 
@@ -60,7 +69,8 @@ namespace RetroFPS.Settings
         /// <summary>Creates a settings snapshot including its language.</summary>
         public GameSettingsData(float masterVolume, float musicVolume, float sfxVolume,
             float uiVolume, float mouseSensitivity, WindowModeSetting windowMode,
-            int resolutionWidth, int resolutionHeight, bool reduceMotion, LanguageSetting language)
+            int resolutionWidth, int resolutionHeight, bool reduceMotion, LanguageSetting language,
+            bool postProcessing = true, float brightness = 0f, float screenEffects = 1f)
         {
             this.masterVolume = masterVolume;
             this.musicVolume = musicVolume;
@@ -71,6 +81,9 @@ namespace RetroFPS.Settings
             this.resolutionWidth = resolutionWidth;
             this.resolutionHeight = resolutionHeight;
             this.reduceMotion = reduceMotion;
+            this.postProcessing = postProcessing;
+            this.brightness = brightness;
+            this.screenEffects = screenEffects;
             this.language = language;
         }
 
@@ -96,7 +109,8 @@ namespace RetroFPS.Settings
                 ValidMode(windowMode) ? windowMode : defaults.WindowMode,
                 resolutionWidth > 0 && resolutionHeight > 0 ? resolutionWidth : defaults.ResolutionWidth,
                 resolutionWidth > 0 && resolutionHeight > 0 ? resolutionHeight : defaults.ResolutionHeight,
-                reduceMotion, LanguageDefaults.IsValid(language) ? language : defaults.Language);
+                reduceMotion, LanguageDefaults.IsValid(language) ? language : defaults.Language,
+                postProcessing, SignedUnit(brightness, defaults.Brightness), Unit(screenEffects, defaults.ScreenEffects));
         }
 
         internal static float Unit(float value, float fallback)
@@ -110,10 +124,23 @@ namespace RetroFPS.Settings
             return mode >= WindowModeSetting.Fullscreen && mode <= WindowModeSetting.Windowed;
         }
 
+        internal static float SignedUnit(float value, float fallback)
+        {
+            if (float.IsNaN(value) || float.IsInfinity(value)) return fallback;
+            return value < -1f ? -1f : value > 1f ? 1f : value;
+        }
+
+        internal GameSettingsData WithPostFx(bool enabled, float adjustment, float intensity)
+        {
+            return new GameSettingsData(masterVolume, musicVolume, sfxVolume, uiVolume,
+                mouseSensitivity, windowMode, resolutionWidth, resolutionHeight, reduceMotion, language,
+                enabled, adjustment, intensity);
+        }
+
         internal GameSettingsData WithDisplay(WindowModeSetting mode, int width, int height)
         {
             return new GameSettingsData(masterVolume, musicVolume, sfxVolume, uiVolume,
-                mouseSensitivity, mode, width, height, reduceMotion, language);
+                mouseSensitivity, mode, width, height, reduceMotion, language, postProcessing, brightness, screenEffects);
         }
     }
 }

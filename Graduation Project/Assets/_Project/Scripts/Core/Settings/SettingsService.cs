@@ -59,7 +59,7 @@ namespace RetroFPS.Settings
                 default: throw new ArgumentException("Unknown volume key.", nameof(key));
             }
             current = new GameSettingsData(master, music, sfx, ui, current.MouseSensitivity,
-                current.WindowMode, current.ResolutionWidth, current.ResolutionHeight, current.ReduceMotion, current.Language);
+                current.WindowMode, current.ResolutionWidth, current.ResolutionHeight, current.ReduceMotion, current.Language, current.PostProcessing, current.Brightness, current.ScreenEffects);
             audio.Apply(current);
             PersistNonDisplay();
         }
@@ -69,7 +69,7 @@ namespace RetroFPS.Settings
         {
             current = new GameSettingsData(current.MasterVolume, current.MusicVolume,
                 current.SfxVolume, current.UiVolume, GameSettingsData.Unit(value, defaults.MouseSensitivity),
-                current.WindowMode, current.ResolutionWidth, current.ResolutionHeight, current.ReduceMotion, current.Language);
+                current.WindowMode, current.ResolutionWidth, current.ResolutionHeight, current.ReduceMotion, current.Language, current.PostProcessing, current.Brightness, current.ScreenEffects);
             PersistNonDisplay();
         }
 
@@ -78,7 +78,30 @@ namespace RetroFPS.Settings
         {
             current = new GameSettingsData(current.MasterVolume, current.MusicVolume,
                 current.SfxVolume, current.UiVolume, current.MouseSensitivity,
-                current.WindowMode, current.ResolutionWidth, current.ResolutionHeight, value, current.Language);
+                current.WindowMode, current.ResolutionWidth, current.ResolutionHeight, value, current.Language, current.PostProcessing, current.Brightness, current.ScreenEffects);
+            PersistNonDisplay();
+        }
+
+        /// <inheritdoc/>
+        public void SetPostProcessing(bool value)
+        {
+            current = current.WithPostFx(value, current.Brightness, current.ScreenEffects);
+            PersistNonDisplay();
+        }
+
+        /// <inheritdoc/>
+        public void SetBrightness(float value)
+        {
+            current = current.WithPostFx(current.PostProcessing,
+                GameSettingsData.SignedUnit(value, defaults.Brightness), current.ScreenEffects);
+            PersistNonDisplay();
+        }
+
+        /// <inheritdoc/>
+        public void SetScreenEffects(float value)
+        {
+            current = current.WithPostFx(current.PostProcessing, current.Brightness,
+                GameSettingsData.Unit(value, defaults.ScreenEffects));
             PersistNonDisplay();
         }
 
@@ -90,7 +113,7 @@ namespace RetroFPS.Settings
             current = new GameSettingsData(current.MasterVolume, current.MusicVolume,
                 current.SfxVolume, current.UiVolume, current.MouseSensitivity,
                 current.WindowMode, current.ResolutionWidth, current.ResolutionHeight,
-                current.ReduceMotion, language);
+                current.ReduceMotion, language, current.PostProcessing, current.Brightness, current.ScreenEffects);
             PersistNonDisplay();
         }
 

@@ -135,3 +135,15 @@ flowchart LR
 - [[HitstopAndAudioFeedback]] ➔ `receives_sfx_volume`
 - ⬅️ [[ProjectOverview]] ➔ `features_ui` *(gelen)*
 - [[CombatHudArchitecture]] ➔ `shares_theme_and_strings`
+
+## P2 video/accessibility settings (2026-11-17)
+
+`GameSettingsData` exposes `PostProcessing` (default true), `Brightness` (-1..1, default 0), and `ScreenEffects` (0..1, default 1) through serialized private fields and read-only getters. `SettingsService` clamps the float settings, preserves them across existing setters and display transactions, stages committed persistence, and publishes `Changed`. Runtime consumers use `GameSettings.Current` and `GameSettings.Changed`.
+
+PlayerPrefs keys are `postProcessing`, `brightness`, and `screenEffects`. Missing keys use the supplied defaults explicitly. `PlayerPrefsSettingsStore` accepts an optional `ISettingsPreferences` backend for deterministic adapter tests; its parameterless constructor uses Unity PlayerPrefs.
+
+`SharedSettingsPanelBuilder.Build()` upserts bilingual strings and upgrades an existing shared prefab in place; `AuthorPanel()` uses the same upgrade helper. After Reduce Motion the shared navigation order is Post-Processing, Brightness, Screen Effects, Back (13 controls total). Both menu hosts resolve Back from the final control rather than a fixed index. Old prefabs without the new serialized row references remain supported by `SettingsPanelView`.
+
+The panel retains its 1040x900 size and 36-unit minimum font size. Vertical content margins become 12 units, controls use 48-unit rows (32 pixels at 720p), and Back uses 56 units. The final button ends at content coordinate 866 within the 876-unit content height, so scrolling is unnecessary. Brightness shows -50..+50 in steps of 5; Screen Effects shows 0..100 percent in steps of 10. Value strings are prewarmed for both languages.
+
+New string keys: `settings.post_processing` (Görüntü İşleme / Post-Processing), `settings.brightness` (Parlaklık / Brightness), `settings.screen_effects` (Ekran Efektleri / Screen Effects). Existing `settings.on` / `settings.off` values are reused. Run the shared settings builder in Unity to materialize the prefab and StringTable upgrade; no prefab/asset YAML is edited by P2.

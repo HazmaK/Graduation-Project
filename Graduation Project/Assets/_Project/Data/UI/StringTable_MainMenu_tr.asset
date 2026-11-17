@@ -143,3 +143,12 @@ MonoBehaviour:
   - key: pause.new_run_load_error
     value: "Yeni ko\u015Fu ba\u015Flat\u0131lamad\u0131. Tekrar deneyin."
     en: Could not start a new run. Try again.
+  - key: settings.post_processing
+    value: "G\xF6r\xFCnt\xFC \u0130\u015Fleme"
+    en: Post-Processing
+  - key: settings.brightness
+    value: "Parlakl\u0131k"
+    en: Brightness
+  - key: settings.screen_effects
+    value: Ekran Efektleri
+    en: Screen Effects

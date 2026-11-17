@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using NUnit.Framework;
 using RetroFPS.Settings;
 
@@ -15,6 +16,18 @@ namespace RetroFPS.Tests
             public GameSettingsData Load(GameSettingsData defaults) => Stored ?? defaults;
             public void Write(GameSettingsData data) { Stored = data; Writes++; }
             public void Save() { Saves++; }
+        }
+
+        private sealed class FakePreferences : ISettingsPreferences
+        {
+            private readonly Dictionary<string, object> values = new Dictionary<string, object>();
+            public float GetFloat(string key, float fallback) => values.TryGetValue(key, out object value) ? (float)value : fallback;
+            public int GetInt(string key, int fallback) => values.TryGetValue(key, out object value) ? (int)value : fallback;
+            public string GetString(string key, string fallback) => values.TryGetValue(key, out object value) ? (string)value : fallback;
+            public void SetFloat(string key, float value) => values[key] = value;
+            public void SetInt(string key, int value) => values[key] = value;
+            public void SetString(string key, string value) => values[key] = value;
+            public void Save() { }
         }
 
         private sealed class FakeDisplay : IDisplayApplier
@@ -51,6 +64,129 @@ namespace RetroFPS.Tests
 
         private SettingsService Create() => new SettingsService(store, display, audio, defaults);
 
+        /// <summary>Each new preference persists and publishes its live snapshot exactly once per request.</summary>
+        [Test]
+        public void PostFxSettersPersistNotifyAndRoundTrip()
+        {
+            SettingsService service = Create();
+            int events = 0;
+            GameSettingsData notified = default;
+            service.Changed += data => { events++; notified = data; };
+            service.SetPostProcessing(false);
+            Assert.That(notified.PostProcessing, Is.False);
+            service.SetBrightness(-0.6f);
+            Assert.That(notified.Brightness, Is.EqualTo(-0.6f));
+            service.SetScreenEffects(0.4f);
+            Assert.That(notified.ScreenEffects, Is.EqualTo(0.4f));
+            Assert.That(events, Is.EqualTo(3));
+            Assert.That(store.Writes, Is.EqualTo(3));
+            Assert.That(store.Saves, Is.Zero);
+            Assert.That(display.Calls, Is.EqualTo(1));
+            Assert.That(audio.Calls, Is.EqualTo(1));
+            service.Save();
+            GameSettingsData reloaded = Create().Current;
+            Assert.That(reloaded.PostProcessing, Is.False);
+            Assert.That(reloaded.Brightness, Is.EqualTo(-0.6f));
+            Assert.That(reloaded.ScreenEffects, Is.EqualTo(0.4f));
+            Assert.That(store.Saves, Is.EqualTo(1));
+        }
+
+        /// <summary>Both load validation and setters clamp finite values and repair non-finite values.</summary>
+        [TestCase(-2f, -1f, 0f)]
+        [TestCase(2f, 1f, 1f)]
+        [TestCase(float.NaN, 0f, 1f)]
+        [TestCase(float.PositiveInfinity, 0f, 1f)]
+        [TestCase(float.NegativeInfinity, 0f, 1f)]
+        public void PostFxClampsAtLoadAndAtSet(float input, float brightness, float effects)
+        {
+            store.Stored = new GameSettingsData(1, 0.7f, 1, 0.8f, 0.5f,
+                WindowModeSetting.Borderless, 2560, 1440, false, LanguageSetting.English, true, input, input);
+            SettingsService service = Create();
+            Assert.That(service.Current.Brightness, Is.EqualTo(brightness));
+            Assert.That(service.Current.ScreenEffects, Is.EqualTo(effects));
+            service.SetBrightness(input);
+            service.SetScreenEffects(input);
+            Assert.That(store.Stored.Value.Brightness, Is.EqualTo(brightness));
+            Assert.That(store.Stored.Value.ScreenEffects, Is.EqualTo(effects));
+        }
+
+        /// <summary>Existing setters and display commit/revert preserve every new preference.</summary>
+        [TestCase(false)]
+        [TestCase(true)]
+        public void PostFxSurvivesEveryCopyAndDisplayTransaction(bool confirm)
+        {
+            SettingsService service = Create();
+            service.SetPostProcessing(false);
+            service.SetBrightness(0.6f);
+            service.SetScreenEffects(0.3f);
+            service.RequestDisplay(WindowModeSetting.Windowed, 1280, 720);
+            foreach (string key in new[] { "masterVolume", "musicVolume", "sfxVolume", "uiVolume" })
+                service.SetVolume(key, 0.2f);
+            service.SetSensitivity(0.8f);
+            service.SetReduceMotion(true);
+            service.SetLanguage(LanguageSetting.Turkish);
+            Assert.That(store.Stored.Value.ResolutionWidth, Is.EqualTo(2560));
+            if (confirm) service.ConfirmDisplay(); else service.RevertDisplay();
+            service.Save();
+            GameSettingsData data = Create().Current;
+            Assert.That(data.PostProcessing, Is.False);
+            Assert.That(data.Brightness, Is.EqualTo(0.6f));
+            Assert.That(data.ScreenEffects, Is.EqualTo(0.3f));
+            Assert.That(data.ResolutionWidth, Is.EqualTo(confirm ? 1280 : 2560));
+            Assert.That(data.ReduceMotion, Is.True);
+        }
+
+        /// <summary>The shared facade publishes each post-processing setting for runtime consumers.</summary>
+        [Test]
+        public void FacadeForwardsAllPostFxSettings()
+        {
+            SettingsService service = Create();
+            try
+            {
+                GameSettings.SetServiceForTests(service);
+                int events = 0;
+                GameSettings.Changed += _ => events++;
+                service.SetPostProcessing(false);
+                service.SetBrightness(0.5f);
+                service.SetScreenEffects(0.2f);
+                Assert.That(events, Is.EqualTo(3));
+                Assert.That(GameSettings.Current.PostProcessing, Is.False);
+                Assert.That(GameSettings.Current.Brightness, Is.EqualTo(0.5f));
+                Assert.That(GameSettings.Current.ScreenEffects, Is.EqualTo(0.2f));
+            }
+            finally { GameSettings.SetServiceForTests(null); }
+        }
+
+        /// <summary>Legacy keys use explicit new defaults; typed persistence round-trips exact contract keys.</summary>
+        [Test]
+        public void PreferenceAdapterMissingKeysAndRoundTripUseContractDefaults()
+        {
+            var preferences = new FakePreferences();
+            preferences.SetFloat("musicVolume", 0.2f);
+            preferences.SetInt("reduceMotion", 1);
+            var adapter = new PlayerPrefsSettingsStore(preferences);
+            GameSettingsData legacy = adapter.Load(defaults);
+            Assert.That(legacy.PostProcessing, Is.True);
+            Assert.That(legacy.Brightness, Is.Zero);
+            Assert.That(legacy.ScreenEffects, Is.EqualTo(1f));
+            Assert.That(legacy.MusicVolume, Is.EqualTo(0.2f));
+            Assert.That(legacy.ReduceMotion, Is.True);
+            var service = new SettingsService(adapter, display, audio, defaults);
+            service.SetPostProcessing(false);
+            service.SetBrightness(-0.8f);
+            service.SetScreenEffects(0.2f);
+            service.Save();
+            Assert.That(preferences.GetInt("postProcessing", -1), Is.Zero);
+            Assert.That(preferences.GetFloat("brightness", 9f), Is.EqualTo(-0.8f));
+            Assert.That(preferences.GetFloat("screenEffects", 9f), Is.EqualTo(0.2f));
+            GameSettingsData loaded = new PlayerPrefsSettingsStore(preferences).Load(defaults);
+            Assert.That(loaded.PostProcessing, Is.False);
+            Assert.That(loaded.Brightness, Is.EqualTo(-0.8f));
+            Assert.That(loaded.ScreenEffects, Is.EqualTo(0.2f));
+            preferences.SetInt("postProcessing", 99);
+            Assert.That(adapter.Load(defaults).PostProcessing, Is.True);
+        }
+
         /// <summary>No saved values means borderless at desktop size.</summary>
         [Test]
         public void EmptyStoreAppliesDesktopBorderlessDefaults()
@@ -62,6 +198,9 @@ namespace RetroFPS.Tests
             Assert.That(service.Current.UiVolume, Is.EqualTo(0.8f));
             Assert.That(service.Current.MouseSensitivity, Is.EqualTo(0.5f));
             Assert.That(service.Current.ReduceMotion, Is.False);
+            Assert.That(service.Current.PostProcessing, Is.True);
+            Assert.That(service.Current.Brightness, Is.Zero);
+            Assert.That(service.Current.ScreenEffects, Is.EqualTo(1f));
             Assert.That(display.Mode, Is.EqualTo(WindowModeSetting.Borderless));
             Assert.That(display.Width, Is.EqualTo(2560));
             Assert.That(display.Height, Is.EqualTo(1440));

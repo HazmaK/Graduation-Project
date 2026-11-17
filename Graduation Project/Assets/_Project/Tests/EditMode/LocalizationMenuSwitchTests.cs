@@ -207,8 +207,9 @@ namespace RetroFPS.Tests
             Assert.That(Get(dialog, "countdownStrings"), Is.SameAs(englishCache));
         }
 
-        [Test]
-        public void SettingsSwitchKeepsValuesFocusAndLanguageNamesWithoutDisplayPrompt()
+        [TestCase(false)]
+        [TestCase(true)]
+        public void SettingsSwitchKeepsValuesFocusAndLanguageNamesWithoutDisplayPrompt(bool includePostFx)
         {
             SettingsPanelView panel = Child("Settings").AddComponent<SettingsPanelView>();
             var sliders = new MenuSlider[5];
@@ -226,6 +227,21 @@ namespace RetroFPS.Tests
             Set(panel, "strings", strings); Set(panel, "sliders", sliders); Set(panel, "percentages", percentages);
             Set(panel, "language", language); Set(panel, "windowMode", mode);
             Set(panel, "resolution", resolution); Set(panel, "reduceMotion", motion);
+            MenuCycleRow postProcessing = null;
+            MenuSlider brightness = null, effects = null;
+            TMP_Text brightnessValue = null, effectsValue = null;
+            if (includePostFx)
+            {
+                postProcessing = Cycle("PostProcessing");
+                brightness = Child("Brightness").AddComponent<MenuSlider>();
+                brightness.maxValue = 20; brightness.wholeNumbers = true;
+                effects = Child("ScreenEffects").AddComponent<MenuSlider>();
+                effects.maxValue = 10; effects.wholeNumbers = true;
+                brightnessValue = Text("BrightnessValue"); effectsValue = Text("EffectsValue");
+                Set(panel, "postProcessing", postProcessing);
+                Set(panel, "brightness", brightness); Set(panel, "brightnessValue", brightnessValue);
+                Set(panel, "screenEffects", effects); Set(panel, "screenEffectsValue", effectsValue);
+            }
             // The inactive controller is only the request gate; its scene composition is outside this fixture.
             MainMenuController controller = Child("ControllerGate").AddComponent<MainMenuController>();
             controller.gameObject.SetActive(false);
@@ -243,6 +259,23 @@ namespace RetroFPS.Tests
             Assert.That(language.Index, Is.Zero);
             Assert.That(CycleText(language), Is.EqualTo("Türkçe"));
             Assert.That(percentages[0].text, Is.EqualTo("%100"));
+            if (includePostFx)
+            {
+                Assert.That(postProcessing.Index, Is.EqualTo(1));
+                Assert.That(brightness.value, Is.EqualTo(10));
+                Assert.That(brightnessValue.text, Is.EqualTo("0"));
+                Assert.That(effects.value, Is.EqualTo(10));
+                Assert.That(effectsValue.text, Is.EqualTo("%100"));
+                postProcessing.Previous();
+                brightness.value = 15;
+                effects.value = 4;
+                Assert.That(service.Current.PostProcessing, Is.False);
+                Assert.That(service.Current.Brightness, Is.EqualTo(0.5f));
+                Assert.That(service.Current.ScreenEffects, Is.EqualTo(0.4f).Within(0.0001f));
+                Assert.That(brightnessValue.text, Is.EqualTo("+25"));
+                Assert.That(effectsValue.text, Is.EqualTo("%40"));
+                events.SetSelectedGameObject(language.gameObject);
+            }
             var caches = (string[][])Get(panel, "localePercent");
             string[] turkishCache = caches[0];
             string[] englishCache = caches[1];
@@ -255,6 +288,28 @@ namespace RetroFPS.Tests
             Assert.That(service.Current.Language, Is.EqualTo(LanguageSetting.English));
             Assert.That(CycleText(language), Is.EqualTo("English"));
             Assert.That(percentages[0].text, Is.EqualTo("100%"));
+            if (includePostFx)
+            {
+                Assert.That(CycleText(postProcessing), Is.EqualTo("OFF"));
+                Assert.That(brightnessValue.text, Is.EqualTo("+25"));
+                Assert.That(effectsValue.text, Is.EqualTo("40%"));
+                service.SetBrightness(-1f);
+                service.SetScreenEffects(0f);
+                Assert.That(brightness.value, Is.Zero);
+                Assert.That(brightnessValue.text, Is.EqualTo("-50"));
+                Assert.That(effects.value, Is.Zero);
+                Assert.That(effectsValue.text, Is.EqualTo("0%"));
+                panel.Bind(null);
+                brightness.value = 20;
+                effects.value = 10;
+                postProcessing.Next();
+                Assert.That(brightness.value, Is.Zero);
+                Assert.That(effects.value, Is.Zero);
+                Assert.That(postProcessing.Index, Is.Zero);
+                // A cycle row selects itself when changed; restore focus so the language-focus checks below stay meaningful.
+                events.SetSelectedGameObject(language.gameObject);
+                panel.Bind(controller);
+            }
             Assert.That(percentages[4].text, Is.EqualTo("75%"));
             Assert.That(sliders[4].value, Is.EqualTo(15));
             Assert.That(CycleText(mode), Is.EqualTo("Borderless"));

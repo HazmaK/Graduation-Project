@@ -4,6 +4,7 @@
         "RetroFPS.Core",
         "RetroFPS.Menu",
         "RetroFPS.Gameplay",
+        "RetroFPS.PostFx",
         "RetroFPS.HUD",
         "RetroFPS.Pause",
         "UnityEngine.UI",

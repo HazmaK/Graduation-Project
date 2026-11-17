@@ -102,6 +102,7 @@ MonoBehaviour:
   hookRange: 32
   hookPullSpeed: 29
   hookCooldown: 0.85
+  hookImpactDamage: 10
   hookFirePoint: {fileID: 0}
 --- !u!1 &406107772146634964
 GameObject:
@@ -874,6 +875,7 @@ Transform:
   - {fileID: 4508715376019674550}
   - {fileID: 1652090276660545247}
   - {fileID: 5288195337564481447}
+  - {fileID: 8618099986098365358}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!33 &107398435308259372
@@ -996,6 +998,7 @@ MonoBehaviour:
   dashDuration: 0.25
   maxDashCharges: 3
   dashRechargeTime: 5
+  lungeFov: 14
   cameraHolder: {fileID: 4508715376019674550}
 --- !u!114 &1486507966235886669
 MonoBehaviour:
@@ -1312,29 +1315,112 @@ MonoBehaviour:
   weaponVisual: {fileID: 0}
   firePoint: {fileID: 0}
   viewmodel: {fileID: 0}
-  combo1Damage: 45
-  combo2Damage: 55
-  combo3Damage: 95
+  lightSlashDamage: 34
+  backhandSlashDamage: 42
+  overheadBaseDamage: 71.11
   comboResetTime: 0.7
   slashRange: 3.4
   slashAngle: 85
+  lightSlashCooldown: 0.22
+  backhandSlashCooldown: 0.22
+  overheadCooldown: 0.44
+  overheadWindup: 0.1
+  primaryBufferWindow: 0.15
+  criticalMultiplier: 1.35
+  finisherRangeMultiplier: 1.15
+  finisherAngleMultiplier: 0.75
+  finisherStunSeconds: 1
+  finisherKnockback: 12
+  stepInDistance: 1.6
+  stepInImpulse: 2.5
+  guardBounceRecovery: 0.3
+  guardBouncePunch: 2
+  sunderDuration: 4
+  sunderMultiplier: 1.25
+  speedEdgeMinSpeed: 8
+  speedEdgeMaxSpeed: 13
+  speedEdgeMaxBonus: 0.35
+  speedEdgePitchThreshold: 1.2
+  speedEdgePitchMultiplier: 1.08
+  lightHitstopDuration: 0.035
+  lightHitstopScale: 0.05
+  overheadHitstopDuration: 0.1
+  overheadHitstopScale: 0.02
+  lightPitchPunch: -1.1
+  overheadPitchPunch: -3
+  slashYawPunch: 1.2
+  lightTrauma: 0.14
+  backhandTrauma: 0.16
+  overheadTrauma: 0.32
+  whiffTraumaMultiplier: 0.5
+  lightSwingPitch: 1.05
+  backhandSwingPitch: 0.95
+  overheadAnimationDuration: 0.28
+  lightBloom: 10
+  backhandBloom: 12
+  overheadBloom: 18
+  finisherGibCount: 2
   quickSwipeDamage: 25
   quickSwipeDuration: 0.18
   quickSwipePitch: 0.95
   lungeDamage: 95
   lungeSpeed: 28
   lungeDuration: 0.22
-  lungeCooldown: 0.95
-  lungeHealAmount: 25
+  executionLungeCooldown: 2.2
+  stunnedHarvestHeal: 20
   adrenalineDuration: 1.5
   harvestTargetCapacity: 512
+  lungeSweepDistance: 7.5
+  lungeSweepRadius: 0.75
+  lungeDirectionMinSqrMagnitude: 0.01
+  lungePrimaryRecovery: 0.35
+  lungeAnimationDuration: 0.28
+  lungeBloom: 24
+  chainResetCooldown: 0.1
+  chainResetHitstopDuration: 0.06
+  chainResetHitstopScale: 0.03
+  chainResetFovKick: 6
+  harvestOverhealCap: 125
+  adrenalineMultiplier: 1.35
+  harvestHitstopDuration: 0.08
+  harvestHitstopScale: 0.02
+  harvestGibCount: 3
   slamDownwardSpeed: 34
-  slamDamage: 80
-  slamRadius: 5.5
-  slamStunDuration: 2.2
   slamCooldown: 1.25
+  slamLandingCooldown: 1
+  slamMinHeight: 1
+  slamMaxHeight: 6
+  lungeSlamMaxHeight: 4
+  slamLightDamage: 45
+  slamHeavyDamage: 120
+  slamLightRadius: 3
+  slamRadius: 5.5
+  slamLightStun: 0.5
+  slamHeavyStun: 1.8
+  slamGuardBreakHeight: 3.5
+  slamGuardBreakDuration: 2
+  slamSightHeight: 0.5
+  slamLightTrauma: 0.22
+  slamHeavyTrauma: 0.5
+  slamLightHitstop: 0.05
+  slamHeavyHitstop: 0.12
+  slamHitstopScale: 0.02
+  slamLookDownThreshold: -0.42
+  slamPrimaryRecovery: 0.5
+  slamAnimationDuration: 0.35
+  slamBloom: 26
+  slamPitchPunch: -3
+  slamBurstHeight: 0.2
+  slamKnockbackUp: 0.35
+  slamKnockbackSpeed: 4.5
+  slamGibCount: 3
   enableProjectileSlice: 1
   projectileSliceRadius: 2.8
+  projectileSliceHalfAngle: 75
+  lungeSliceRadius: 1.8
+  lungeSliceHalfAngle: 90
+  projectileCutHitstopDuration: 0.04
+  projectileCutHitstopScale: 0.05
 --- !u!1 &5103496450618994878
 GameObject:
   m_ObjectHideFlags: 0
@@ -2634,6 +2720,68 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3a9609b900322da4ab5713caf572d840, type: 3}
   m_Name: 
   m_EditorClassIdentifier: RetroFPS.HUD::RetroFPS.UI.HUD.HudBannerView
+--- !u!1001 &1491254093062674695
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 8129818506611666789}
+    m_Modifications:
+    - target: {fileID: 4136384135693165227, guid: d1ac7cc45f2cdef468632c2523359943, type: 3}
+      propertyPath: m_Name
+      value: PostFx_Rig
+      objectReference: {fileID: 0}
+    - target: {fileID: 7145061914516142761, guid: d1ac7cc45f2cdef468632c2523359943, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7145061914516142761, guid: d1ac7cc45f2cdef468632c2523359943, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7145061914516142761, guid: d1ac7cc45f2cdef468632c2523359943, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7145061914516142761, guid: d1ac7cc45f2cdef468632c2523359943, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 7145061914516142761, guid: d1ac7cc45f2cdef468632c2523359943, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7145061914516142761, guid: d1ac7cc45f2cdef468632c2523359943, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7145061914516142761, guid: d1ac7cc45f2cdef468632c2523359943, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7145061914516142761, guid: d1ac7cc45f2cdef468632c2523359943, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7145061914516142761, guid: d1ac7cc45f2cdef468632c2523359943, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7145061914516142761, guid: d1ac7cc45f2cdef468632c2523359943, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: d1ac7cc45f2cdef468632c2523359943, type: 3}
+--- !u!4 &8618099986098365358 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 7145061914516142761, guid: d1ac7cc45f2cdef468632c2523359943, type: 3}
+  m_PrefabInstance: {fileID: 1491254093062674695}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &9083354353272658547
 PrefabInstance:
   m_ObjectHideFlags: 0

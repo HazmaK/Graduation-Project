@@ -17,6 +17,12 @@ namespace RetroFPS.Settings
         void SetSensitivity(float value);
         /// <summary>Applies and stages persistence for the accessibility preference.</summary>
         void SetReduceMotion(bool value);
+        /// <summary>Applies and stages persistence for post-processing.</summary>
+        void SetPostProcessing(bool value);
+        /// <summary>Clamps brightness to -1..1 and stages persistence.</summary>
+        void SetBrightness(float value);
+        /// <summary>Clamps screen effect intensity to 0..1 and stages persistence.</summary>
+        void SetScreenEffects(float value);
         /// <summary>Changes language immediately and stages committed persistence.</summary>
         void SetLanguage(LanguageSetting language);
         /// <summary>Previews display values without committing them.</summary>
@@ -26,6 +32,25 @@ namespace RetroFPS.Settings
         /// <summary>Restores the last committed display values.</summary>
         void RevertDisplay();
         /// <summary>Flushes committed values; pending display values are excluded.</summary>
+        void Save();
+    }
+
+    /// <summary>Typed preference boundary, replaceable with in-memory storage in tests.</summary>
+    public interface ISettingsPreferences
+    {
+        /// <summary>Reads a float or the supplied missing-key default.</summary>
+        float GetFloat(string key, float fallback);
+        /// <summary>Reads an integer or the supplied missing-key default.</summary>
+        int GetInt(string key, int fallback);
+        /// <summary>Reads a string or the supplied missing-key default.</summary>
+        string GetString(string key, string fallback);
+        /// <summary>Stages a float.</summary>
+        void SetFloat(string key, float value);
+        /// <summary>Stages an integer.</summary>
+        void SetInt(string key, int value);
+        /// <summary>Stages a string.</summary>
+        void SetString(string key, string value);
+        /// <summary>Flushes staged preferences.</summary>
         void Save();
     }
 

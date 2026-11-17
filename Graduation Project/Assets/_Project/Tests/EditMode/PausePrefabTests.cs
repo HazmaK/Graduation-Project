@@ -221,6 +221,93 @@ namespace RetroFPS.Tests
                 if (table != null) Object.DestroyImmediate(table);
             }
         }
+        /// <summary>The shared legacy upgrade preserves controls and serializes identically on its second pass.</summary>
+        [Test]
+        public void PostFxUpgradePreservesRowsFitsPanelAndIsIdempotent()
+        {
+            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(SharedPath);
+            if (prefab == null) Assert.Ignore("Generate shared settings before testing the prefab upgrade.");
+            string copyPath = AssetDatabase.GenerateUniqueAssetPath("Assets/_Project/Tests/EditMode/PostFxSettingsUpgrade.prefab");
+            string tablePath = AssetDatabase.GenerateUniqueAssetPath("Assets/_Project/Tests/EditMode/PostFxSettingsUpgradeStrings.asset");
+            GameObject root = null;
+            StringTable table = null;
+            var flags = System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic;
+            var builder = System.Type.GetType("RetroFPS.Editor.SharedSettingsPanelBuilder, RetroFPS.Editor", true);
+            var mainBuilder = System.Type.GetType("RetroFPS.Editor.MainMenuBuilder, RetroFPS.Editor", true);
+            object oldMainTheme = mainBuilder.GetField("theme", flags).GetValue(null);
+            object oldMainStrings = mainBuilder.GetField("strings", flags).GetValue(null);
+            try
+            {
+                Assert.That(AssetDatabase.CopyAsset(SharedPath, copyPath), Is.True);
+                root = PrefabUtility.LoadPrefabContents(copyPath);
+                root.SetActive(false);
+                SettingsPanelView view = root.GetComponent<SettingsPanelView>();
+                var data = new SerializedObject(view);
+                table = Object.Instantiate((StringTable)data.FindProperty("strings").objectReferenceValue);
+                table.PopulateBilingualDefaults();
+                AssetDatabase.CreateAsset(table, tablePath);
+                MenuTheme theme = AssetDatabase.LoadAssetAtPath<MenuTheme>("Assets/_Project/Data/UI/MenuTheme_KanVeKemik.asset");
+                mainBuilder.GetMethod("UseSharedPresentation", flags).Invoke(null, new object[] { theme, table });
+                Transform content = root.transform.Find("Content");
+                Object[] original = { content.Find("Language").gameObject, content.Find("Cycle2").gameObject, content.Find("Back").gameObject };
+                foreach (string name in new[] { "Cycle3", "Slider5", "Slider6" })
+                {
+                    Transform added = content.Find(name);
+                    if (added != null) Object.DestroyImmediate(added.gameObject);
+                }
+                var upgrade = builder.GetMethod("UpgradePostFxRows", flags);
+                var save = builder.GetMethod("Save", flags);
+                upgrade.Invoke(null, new object[] { root });
+                save.Invoke(null, new object[] { root, copyPath });
+                string first = System.IO.File.ReadAllText(copyPath);
+                Object addedCycle = content.Find("Cycle3").gameObject;
+                upgrade.Invoke(null, new object[] { root });
+                save.Invoke(null, new object[] { root, copyPath });
+                Assert.That(System.IO.File.ReadAllText(copyPath), Is.EqualTo(first));
+                Assert.That(content.Find("Language").gameObject, Is.EqualTo(original[0]));
+                Assert.That(content.Find("Cycle2").gameObject, Is.EqualTo(original[1]));
+                Assert.That(content.Find("Back").gameObject, Is.EqualTo(original[2]));
+                Assert.That(content.Find("Cycle3").gameObject, Is.EqualTo(addedCycle));
+                string[] names = { "Language", "Slider0", "Slider1", "Slider2", "Slider3", "Slider4", "Cycle0", "Cycle1", "Cycle2", "Cycle3", "Slider5", "Slider6", "Back" };
+                Assert.That(view.OrderedSelectables.Length, Is.EqualTo(names.Length));
+                float previousBottom = 0;
+                for (int i = 0; i < names.Length; i++)
+                {
+                    var item = view.OrderedSelectables[i];
+                    Assert.That(item.name, Is.EqualTo(names[i]));
+                    Assert.That(item.navigation.selectOnDown, Is.EqualTo(view.OrderedSelectables[(i + 1) % names.Length]));
+                    Assert.That(item.navigation.selectOnUp, Is.EqualTo(view.OrderedSelectables[(i + names.Length - 1) % names.Length]));
+                    RectTransform rect = (RectTransform)item.transform;
+                    float top = -rect.anchoredPosition.y - rect.rect.height * 0.5f;
+                    float bottom = top + rect.rect.height;
+                    Assert.That(top, Is.GreaterThanOrEqualTo(previousBottom));
+                    Assert.That(bottom, Is.LessThanOrEqualTo(((RectTransform)content).rect.height));
+                    previousBottom = bottom;
+                }
+                data.Update();
+                foreach (string field in new[] { "postProcessing", "brightness", "brightnessValue", "screenEffects", "screenEffectsValue" })
+                    Assert.That(data.FindProperty(field).objectReferenceValue, Is.Not.Null, field);
+                Assert.That(content.Find("Slider5").GetComponent<MenuSlider>().maxValue, Is.EqualTo(20));
+                Assert.That(content.Find("Slider6").GetComponent<MenuSlider>().maxValue, Is.EqualTo(10));
+                string[] rowNames = { "Cycle3", "Slider5", "Slider6" };
+                string[] keys = { "settings.post_processing", "settings.brightness", "settings.screen_effects" };
+                for (int i = 0; i < rowNames.Length; i++)
+                {
+                    var label = new SerializedObject(content.Find(rowNames[i] + "/Label").GetComponent<LocalizedText>());
+                    Assert.That(label.FindProperty("key").stringValue, Is.EqualTo(keys[i]));
+                }
+            }
+            finally
+            {
+                mainBuilder.GetField("theme", flags).SetValue(null, oldMainTheme);
+                mainBuilder.GetField("strings", flags).SetValue(null, oldMainStrings);
+                if (root != null) PrefabUtility.UnloadPrefabContents(root);
+                AssetDatabase.DeleteAsset(copyPath);
+                if (AssetDatabase.LoadAssetAtPath<StringTable>(tablePath) != null) AssetDatabase.DeleteAsset(tablePath);
+                else if (table != null) Object.DestroyImmediate(table);
+            }
+        }
+
         [Test]
         public void ModalNavigationWrapsAndSettingsStartAtLanguage()
         {
@@ -252,9 +339,9 @@ namespace RetroFPS.Tests
                 Assert.That(dialog.Affirmative.navigation.selectOnUp, Is.EqualTo(dialog.Negative));
             }
             SettingsPanelView settings = pause.GetComponentInChildren<SettingsPanelView>(true);
-            Assert.That(settings.OrderedSelectables.Length, Is.EqualTo(10));
+            Assert.That(settings.OrderedSelectables.Length, Is.EqualTo(13));
             Assert.That(settings.OrderedSelectables[0].name, Is.EqualTo("Language"));
-            Assert.That(settings.OrderedSelectables[9].navigation.selectOnDown, Is.EqualTo(settings.OrderedSelectables[0]));
+            Assert.That(settings.OrderedSelectables[12].navigation.selectOnDown, Is.EqualTo(settings.OrderedSelectables[0]));
         }
         [Test]
         public void TextFloorDynamicLabelsAndUiAudioExceptionAreValid()

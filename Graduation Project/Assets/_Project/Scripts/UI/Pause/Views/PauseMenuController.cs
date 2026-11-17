@@ -101,7 +101,7 @@ namespace RetroFPS.Pause
             ((UnityEngine.UI.Button)rootItems[1]).onClick.AddListener(OpenNewRun);
             ((UnityEngine.UI.Button)rootItems[2]).onClick.AddListener(OpenSettings);
             ((UnityEngine.UI.Button)rootItems[3]).onClick.AddListener(OpenMainMenu);
-            ((UnityEngine.UI.Button)settingsItems[9]).onClick.AddListener(Back);
+            ((UnityEngine.UI.Button)settingsItems[settingsItems.Length - 1]).onClick.AddListener(Back);
             mainMenuDialog.Affirmative.onClick.AddListener(ConfirmSceneLeave);
             mainMenuDialog.Negative.onClick.AddListener(Back);
             revertDialog.Affirmative.onClick.AddListener(KeepDisplay);
@@ -130,7 +130,7 @@ namespace RetroFPS.Pause
             ((UnityEngine.UI.Button)rootItems[1]).onClick.RemoveListener(OpenNewRun);
             ((UnityEngine.UI.Button)rootItems[2]).onClick.RemoveListener(OpenSettings);
             ((UnityEngine.UI.Button)rootItems[3]).onClick.RemoveListener(OpenMainMenu);
-            ((UnityEngine.UI.Button)settingsItems[9]).onClick.RemoveListener(Back);
+            ((UnityEngine.UI.Button)settingsItems[settingsItems.Length - 1]).onClick.RemoveListener(Back);
             mainMenuDialog.Affirmative.onClick.RemoveListener(ConfirmSceneLeave);
             mainMenuDialog.Negative.onClick.RemoveListener(Back);
             revertDialog.Affirmative.onClick.RemoveListener(KeepDisplay);
