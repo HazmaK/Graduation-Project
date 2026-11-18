@@ -17,9 +17,8 @@ namespace RetroFPS.Combat
         [Tooltip("Optional ground impact socket.")] [SerializeField] private Transform slamImpactSocket;
         [Tooltip("Optional head socket.")] [SerializeField] private Transform headSocket;
         [Tooltip("Optional death effect socket.")] [SerializeField] private Transform deathFxSocket;
-        [Tooltip("Full ground rectangle with four bright border quads.")] [SerializeField] private Transform slamAreaOutline;
-        [Tooltip("Ground fill quad growing forward from the near edge.")] [SerializeField] private Transform slamAreaFill;
-        [Tooltip("Full rectangle impact flash quad.")] [SerializeField] private Transform slamAreaImpact;
+        [Tooltip("Unit-cube renderer using RetroFPS/SlamAreaProjector; projects background, border, charge fill and impact flash onto upward-facing ground.")]
+        [SerializeField] private Renderer slamAreaProjector;
         [Tooltip("Optional amber light enabled only during the slam telegraph.")] [SerializeField] private Light telegraphLight;
         [Tooltip("Optional replacement model Animator.")] [SerializeField] private Animator animator;
         [Tooltip("Guard pivot position.")] [SerializeField] private Vector3 guardPosition = new Vector3(0f, 0.25f, 0.46f);
@@ -48,7 +47,11 @@ namespace RetroFPS.Combat
         [Tooltip("Impact flash fade duration in seconds.")] [SerializeField] private float areaImpactDuration = 0.25f;
         [Tooltip("Ground probe starts this far above the enemy's feet plane.")] [SerializeField] private float groundProbeHeight = 2f;
         [Tooltip("Ground probe distance below its start.")] [SerializeField] private float groundProbeDistance = 6f;
-        [Tooltip("Ground visual lift to prevent z-fighting.")] [SerializeField] private float groundLift = 0.03f;
+        [Tooltip("Steepest surface (degrees from flat) the slam area is drawn on; walls and step risers are skipped.")]
+        [SerializeField, Range(0f, 89f)] private float areaMaxSurfaceAngle = 60f;
+        [Tooltip("Border line thickness in metres.")] [SerializeField] private float areaBorderWidth = 0.08f;
+        [Tooltip("The area fades out within this distance of the camera so the viewmodel and the player's feet stay clean.")]
+        [SerializeField] private float areaCameraNearFade = 1.2f;
         [Tooltip("Pulse speed at windup start, radians per second.")] [SerializeField] private float pulseStartFrequency = 8f;
         [Tooltip("Pulse speed at windup completion, radians per second.")] [SerializeField] private float pulseEndFrequency = 32f;
         [Tooltip("Lid tint and emission colour at the end of windup.")] [SerializeField] private Color windupShieldColor = new Color(2f, 0.25f, 0.02f);
@@ -70,20 +73,30 @@ namespace RetroFPS.Combat
         private static readonly int HitId = Animator.StringToHash("Hit");
         private static readonly int DieId = Animator.StringToHash("Die");
         private static readonly int SpeedId = Animator.StringToHash("Speed");
-        private MaterialPropertyBlock _block;
+        private static readonly int AreaColorId = Shader.PropertyToID("_AreaColor");
+        private static readonly int BorderColorId = Shader.PropertyToID("_BorderColor");
+        private static readonly int FillColorId = Shader.PropertyToID("_FillColor");
+        private static readonly int ImpactColorId = Shader.PropertyToID("_ImpactColor");
+        private static readonly int ChargeId = Shader.PropertyToID("_Charge");
+        private static readonly int FillId = Shader.PropertyToID("_Fill");
+        private static readonly int ImpactId = Shader.PropertyToID("_Impact");
+        private static readonly int BorderSizeId = Shader.PropertyToID("_BorderSize");
+        private static readonly int MinUpDotId = Shader.PropertyToID("_MinUpDot");
+        private static readonly int NearFadeId = Shader.PropertyToID("_NearFade");
+        private MaterialPropertyBlock _block, _areaBlock;
         private Color[] _tints, _tintEmission, _glows, _glowEmission;
         private Collider[] _hitboxes;
-        private Renderer _shieldRenderer, _fillRenderer, _impactRenderer;
-        private Renderer[] _outlineRenderers;
+        private Renderer _shieldRenderer;
         private readonly RaycastHit[] _groundHits = new RaycastHit[32];
         private Color _shieldTint, _shieldEmission;
         private bool _dead, _guardLowered, _stunned, _elite, _windup, _poseActive;
         private float _windupDuration, _windupElapsed, _phase, _flashRemaining, _blockRemaining;
-        private float _areaLength, _areaWidth, _impactRemaining, _poseElapsed, _poseSeconds;
+        private float _areaLength, _areaWidth, _areaHeight, _impactRemaining, _poseElapsed, _poseSeconds;
         private Color _flashColor;
         private Vector3 _poseStart, _poseEnd;
         private Vector3 _areaOrigin, _areaForward;
         private Quaternion _rotationStart, _rotationEnd;
+        private Quaternion _areaFrame = Quaternion.identity;
 
         /// <summary>World slam impact origin with a forward fallback.</summary>
         public Vector3 SlamImpactPosition => slamImpactSocket != null ? slamImpactSocket.position : Fallback(impactFallback);
@@ -102,6 +115,7 @@ namespace RetroFPS.Combat
         private void Awake()
         {
             _block = new MaterialPropertyBlock();
+            _areaBlock = new MaterialPropertyBlock();
             CacheColors(tintRenderers, out _tints, out _tintEmission);
             CacheColors(glowRenderers, out _glows, out _glowEmission);
             _hitboxes = hitboxRoot != null ? hitboxRoot.GetComponentsInChildren<Collider>(true) : new Collider[0];
@@ -109,9 +123,6 @@ namespace RetroFPS.Combat
             Material shieldMaterial = _shieldRenderer != null ? _shieldRenderer.sharedMaterial : null;
             _shieldTint = shieldMaterial != null && shieldMaterial.HasProperty(BaseColorId) ? shieldMaterial.GetColor(BaseColorId) : Color.white;
             _shieldEmission = shieldMaterial != null && shieldMaterial.HasProperty(EmissionId) ? shieldMaterial.GetColor(EmissionId) : Color.black;
-            _outlineRenderers = slamAreaOutline != null ? slamAreaOutline.GetComponentsInChildren<Renderer>(true) : null;
-            _fillRenderer = slamAreaFill != null ? slamAreaFill.GetComponent<Renderer>() : null;
-            _impactRenderer = slamAreaImpact != null ? slamAreaImpact.GetComponent<Renderer>() : null;
             ApplyHitboxes();
             Render();
         }
@@ -171,9 +182,11 @@ namespace RetroFPS.Combat
             ApplyGuard();
         }
 
-        /// <summary>Locks a complete ground outline in world space and grows the charge fill toward its far edge.</summary>
+        /// <summary>Locks a complete ground outline in world space and grows the charge fill toward its far edge.
+        /// The area is projected onto every upward-facing surface within <paramref name="areaHeight"/> above or below
+        /// its ground plane, matching the slam's vertical damage tolerance.</summary>
         public void BeginSlamTelegraph(float windupDuration, Vector3 areaOrigin, Vector3 areaForward,
-            float areaLength, float areaWidth)
+            float areaLength, float areaWidth, float areaHeight)
         {
             if (_dead) return;
             _windup = true;
@@ -182,6 +195,7 @@ namespace RetroFPS.Combat
             _windupDuration = Mathf.Max(0f, windupDuration);
             _areaLength = Mathf.Max(0f, areaLength);
             _areaWidth = Mathf.Max(0f, areaWidth);
+            _areaHeight = Mathf.Max(0.01f, areaHeight);
             _areaForward = Vector3.ProjectOnPlane(areaForward, Vector3.up).normalized;
             if (_areaForward.sqrMagnitude < 0.000001f) _areaForward = Vector3.forward;
             _areaOrigin = areaOrigin;
@@ -197,6 +211,7 @@ namespace RetroFPS.Combat
                 nearest = _groundHits[i].distance;
                 _areaOrigin.y = _groundHits[i].point.y;
             }
+            _areaFrame = Quaternion.LookRotation(_areaForward, Vector3.up);
             if (animator != null) animator.SetTrigger(WindupId);
             Pose(overheadPosition, overheadEuler, _windupDuration);
             Render();
@@ -214,8 +229,6 @@ namespace RetroFPS.Combat
         public void EndSlamTelegraph()
         {
             _windup = false;
-            if (slamAreaOutline != null) slamAreaOutline.gameObject.SetActive(false);
-            if (slamAreaFill != null) slamAreaFill.gameObject.SetActive(false);
             if (telegraphLight != null) telegraphLight.enabled = false;
             if (animator != null) animator.ResetTrigger(WindupId);
             ApplyGuard();
@@ -345,53 +358,41 @@ namespace RetroFPS.Combat
             RenderArea(show);
         }
 
+        /// <summary>Drives the single projector box: charge (background, fill, border) while winding up, then the impact
+        /// flash fading out during recovery. The box covers the area footprint and +/- the slam's height tolerance.</summary>
         private void RenderArea(bool show)
         {
-            if (slamAreaOutline != null)
-            {
-                slamAreaOutline.gameObject.SetActive(show);
-                if (show)
-                {
-                    PlaceAreaQuad(slamAreaOutline, _areaLength, groundLift);
-                    if (_outlineRenderers != null)
-                        for (int i = 0; i < _outlineRenderers.Length; i++)
-                            if (_outlineRenderers[i] != null)
-                                Tint(_outlineRenderers[i], _outlineRenderers[i].transform == slamAreaOutline
-                                    ? areaOutlineColor : areaBorderColor, Color.black);
-                }
-            }
-            if (slamAreaFill != null)
-            {
-                slamAreaFill.gameObject.SetActive(show);
-                if (show)
-                {
-                    PlaceAreaQuad(slamAreaFill, _areaLength * Progress, groundLift * 1.2f);
-                    if (_fillRenderer != null) Tint(_fillRenderer, areaFillColor, Color.black);
-                }
-            }
-            if (slamAreaImpact != null)
-            {
-                bool impact = !_dead && _impactRemaining > 0f;
-                slamAreaImpact.gameObject.SetActive(impact);
-                if (impact)
-                {
-                    PlaceAreaQuad(slamAreaImpact, _areaLength, groundLift * 1.4f);
-                    Color color = areaImpactColor;
-                    color.a *= areaImpactDuration > 0f ? Mathf.Clamp01(_impactRemaining / areaImpactDuration) : 0f;
-                    if (_impactRenderer != null) Tint(_impactRenderer, color, Color.black);
-                }
-            }
-        }
+            if (slamAreaProjector == null) return;
+            float impact = !_dead && _impactRemaining > 0f && areaImpactDuration > 0f
+                ? Mathf.Clamp01(_impactRemaining / areaImpactDuration) : 0f;
+            bool visible = show || impact > 0f;
+            GameObject node = slamAreaProjector.gameObject;
+            if (node.activeSelf != visible) node.SetActive(visible);
+            if (!visible) return;
 
-        private void PlaceAreaQuad(Transform quad, float length, float lift)
-        {
-            // Reapply the cached world frame every frame, including impact fade during recovery.
-            quad.SetPositionAndRotation(_areaOrigin + _areaForward * (length * 0.5f) + Vector3.up * lift,
-                Quaternion.LookRotation(Vector3.up, _areaForward));
-            quad.localScale = Vector3.one;
-            Vector3 inherited = quad.lossyScale;
-            quad.localScale = new Vector3(_areaWidth / Mathf.Max(0.000001f, Mathf.Abs(inherited.x)),
-                length / Mathf.Max(0.000001f, Mathf.Abs(inherited.y)), 1f / Mathf.Max(0.000001f, Mathf.Abs(inherited.z)));
+            // Re-pin the cached world box every frame: the enemy may move or turn while the impact flash fades.
+            Transform box = slamAreaProjector.transform;
+            box.SetPositionAndRotation(_areaOrigin + _areaForward * (_areaLength * 0.5f), _areaFrame);
+            box.localScale = Vector3.one;
+            Vector3 inherited = box.lossyScale;
+            box.localScale = new Vector3(_areaWidth / Mathf.Max(0.000001f, Mathf.Abs(inherited.x)),
+                _areaHeight * 2f / Mathf.Max(0.000001f, Mathf.Abs(inherited.y)),
+                _areaLength / Mathf.Max(0.000001f, Mathf.Abs(inherited.z)));
+
+            slamAreaProjector.GetPropertyBlock(_areaBlock);
+            _areaBlock.SetColor(AreaColorId, areaOutlineColor);
+            _areaBlock.SetColor(BorderColorId, areaBorderColor);
+            _areaBlock.SetColor(FillColorId, areaFillColor);
+            _areaBlock.SetColor(ImpactColorId, areaImpactColor);
+            _areaBlock.SetFloat(ChargeId, show ? 1f : 0f);
+            _areaBlock.SetFloat(FillId, show ? Progress : 0f);
+            _areaBlock.SetFloat(ImpactId, impact);
+            // Shader border units: lateral runs 0..1 from centre line to side edge, forward 0..1 near to far.
+            _areaBlock.SetVector(BorderSizeId, new Vector4(
+                areaBorderWidth * 2f / Mathf.Max(0.0001f, _areaWidth), areaBorderWidth / Mathf.Max(0.0001f, _areaLength), 0f, 0f));
+            _areaBlock.SetFloat(MinUpDotId, Mathf.Cos(areaMaxSurfaceAngle * Mathf.Deg2Rad));
+            _areaBlock.SetFloat(NearFadeId, areaCameraNearFade);
+            slamAreaProjector.SetPropertyBlock(_areaBlock);
         }
 
         private void ApplyArt(Renderer[] renderers, Color[] colors, Color[] emission, bool glow)

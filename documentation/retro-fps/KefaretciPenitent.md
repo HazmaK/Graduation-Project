@@ -158,12 +158,11 @@ Enemy_Penitent_Kefaretci        (CharacterController, PenitentAI, PenitentView, 
 │   └─ Socket_DeathFx           (0, 1, 0)
 └─ Telegraph
     ├─ TelegraphLight           (Point Light, amber, menzil 6, gölgesiz, başlangıçta kapalı)
-    ├─ SlamArea_Outline         (dikdörtgen quad + Near/Far/Left/Right kenarlık quad'ları, başlangıçta kapalı)
-    ├─ SlamArea_Fill            (quad, hazırlık boyunca büyür, başlangıçta kapalı)
-    └─ SlamArea_Impact          (quad, vuruşta flaş, başlangıçta kapalı)
+    └─ SlamArea_Projector       (birim küp, Mat_Penitent_SlamProjector / RetroFPS/SlamAreaProjector, gölgesiz, başlangıçta kapalı)
 ```
 
 - Alan görselleri, hazırlık başında önbelleğe alınan dünya konum ve yönünden her karede açıkça konumlanır; Penitent'in transformuna bağlı kalmaz. Zemin yüksekliği hazırlık başında bir kez aşağı raycast ile bulunur (`GameLayers.GroundMask`).
+- **Projeksiyon (2026-11-18):** Tek bir kutu (alan genişliği × 2·`slamAreaHeight` × alan uzunluğu) `FX_Combat_SlamAreaProjector.shader` ile çizilir. Shader sahne derinliğinden dünya konumunu bulur ve yalnızca kutunun içindeki, yukarı bakan yüzeyleri boyar. Eğim sınırı `areaMaxSurfaceAngle` (60°) olduğu için duvarlar ve basamak yüzleri boyanmaz; zemin, basamak üstü ve rampalar kendi yüksekliklerinde boyanır. Unlit olduğu için karanlık bölümlerde de okunur. Arka plan, kenarlık, dolum (`_Fill`) ve vuruş flaşı (`_Impact`) aynı draw call'da, MaterialPropertyBlock ile sürülür. Kamera `areaCameraNearFade` (1.2 m) yakınında silinir (viewmodel temiz kalır). URP depth texture gerekir; URP Decal renderer feature kullanılmaz. Eski Outline/Fill/Impact quad'ları ve kenarlık quad'ları kaldırıldı.
 - Kapak parçaları: genişlik 1.1 m, alt 0.15 m, üst 2.35 m, derinlik 0.12 m. Vizör: yükseklik 0.09 m, genişlik 0.22 m, merkez yüksekliği 1.9 m (builder'da serileştirilmiş sabitler). Kapağın ileri ofseti 0.46 m.
 - Prefab: `Assets/_Project/Prefabs/Enemies/Enemy_Penitent_Kefaretci.prefab`. Dalga prefab'ı yoktur (`Penitent_Shockwave.prefab` kaldırıldı).
 - Materyaller: `Assets/_Project/Art/Enemies/Penitent/Placeholder/` (Mat_Penitent_Robe, Skin, Lid, Chain lit; SlamOutline, SlamFill, SlamImpact, Face unlit; SlamOutline, SlamFill ve SlamImpact ayrıca saydamdır)

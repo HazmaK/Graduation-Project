@@ -339,7 +339,7 @@ namespace RetroFPS.Combat
                 if (view != null)
                 {
                     view.BeginSlamTelegraph(attackSettings.SlamWindup, _slamAreaOrigin, _slamAreaForward,
-                        slamAreaLength, slamAreaWidth);
+                        slamAreaLength, slamAreaWidth, slamAreaHeight);
                     _slamAreaOrigin.y = view.SlamAreaGroundHeight;
                 }
             }

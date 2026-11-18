@@ -29,6 +29,29 @@ namespace RetroFPS.Tests.EditMode
         public void DestroyInstance()
         {
             if (_instance != null) Object.DestroyImmediate(_instance);
+            for (int i = 0; i < _ground.Count; i++)
+                if (_ground[i] != null) Object.DestroyImmediate(_ground[i]);
+            _ground.Clear();
+        }
+
+        private readonly System.Collections.Generic.List<GameObject> _ground = new System.Collections.Generic.List<GameObject>();
+
+        /// <summary>Creates a static box collider whose top face sits at <paramref name="topY"/>.</summary>
+        private void AddGroundBox(Vector3 centreXZ, Vector3 size, float topY)
+        {
+            GameObject box = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            box.name = "TestGround";
+            box.transform.position = new Vector3(centreXZ.x, topY - size.y * 0.5f, centreXZ.z);
+            box.transform.localScale = size;
+            _ground.Add(box);
+            Physics.SyncTransforms();
+        }
+
+        private static float AreaFloat(Renderer projector, string name)
+        {
+            var block = new MaterialPropertyBlock();
+            projector.GetPropertyBlock(block);
+            return block.GetFloat(name);
         }
 
         /// <summary>Requires the agreed model-swap hierarchy and exact child names.</summary>
@@ -56,9 +79,7 @@ namespace RetroFPS.Tests.EditMode
         [TestCase("Sockets/Socket_Head")]
         [TestCase("Sockets/Socket_DeathFx")]
         [TestCase("Telegraph")]
-        [TestCase("Telegraph/SlamArea_Outline")]
-        [TestCase("Telegraph/SlamArea_Fill")]
-        [TestCase("Telegraph/SlamArea_Impact")]
+        [TestCase("Telegraph/SlamArea_Projector")]
         [TestCase("Telegraph/TelegraphLight")]
         public void HierarchyContains(string path) => Required(path);
 
@@ -106,7 +127,7 @@ namespace RetroFPS.Tests.EditMode
             Assert.That(view, Is.Not.Null);
             var data = new SerializedObject(view);
             string[] names = { "visualRoot", "shieldPivot", "hitboxRoot", "shieldCenterSocket",
-                "slamImpactSocket", "headSocket", "deathFxSocket", "slamAreaOutline", "slamAreaFill", "slamAreaImpact", "telegraphLight" };
+                "slamImpactSocket", "headSocket", "deathFxSocket", "slamAreaProjector", "telegraphLight" };
             foreach (string name in names) Assert.That(Reference(data, name), Is.Not.Null, name);
             foreach (string name in new[] { "tintRenderers", "glowRenderers" })
             {
@@ -131,8 +152,7 @@ namespace RetroFPS.Tests.EditMode
                 CollectionAssert.Contains(authored, collider);
             }
             Assert.That(data.FindProperty("shieldCollider"), Is.Null);
-            foreach (string area in new[] { "SlamArea_Outline", "SlamArea_Fill", "SlamArea_Impact" })
-                Assert.That(Required("Telegraph/" + area).gameObject.activeSelf, Is.False);
+            Assert.That(Required("Telegraph/SlamArea_Projector").gameObject.activeSelf, Is.False);
         }
 
         /// <summary>Requires an independent owner-wired lid hitbox following the replaceable lid.</summary>
@@ -230,26 +250,24 @@ namespace RetroFPS.Tests.EditMode
             Physics.SyncTransforms();
         }
 
-        /// <summary>Area quads are transparent unlit, outlined on all sides and hidden until charging.</summary>
+        /// <summary>The slam area is one transparent projector box, shadowless and hidden until charging;
+        /// the retired flat quads are gone.</summary>
         [Test]
         public void TelegraphIsVisibleAndDefaultsOff()
         {
             Assert.That(_prefab.transform.Find("Telegraph/Glint"), Is.Null);
             Assert.That(_prefab.transform.Find("Telegraph/SlamLine"), Is.Null);
-            foreach (string name in new[] { "SlamArea_Outline", "SlamArea_Fill", "SlamArea_Impact" })
-            {
-                Transform quad = Required("Telegraph/" + name);
-                Assert.That(quad.gameObject.activeSelf, Is.False);
-                Material material = quad.GetComponent<Renderer>().sharedMaterial;
-                Assert.That(material.shader.name, Is.EqualTo("Universal Render Pipeline/Unlit"));
-                Assert.That(material.GetFloat("_Surface"), Is.EqualTo(1f));
-                Assert.That(material.GetFloat("_ZWrite"), Is.Zero);
-                Assert.That(material.renderQueue, Is.EqualTo(3000));
-                Assert.That(material.GetColor("_BaseColor").a, Is.InRange(0.01f, 0.99f));
-            }
-            Transform outline = Required("Telegraph/SlamArea_Outline");
-            foreach (string edge in new[] { "Near", "Far", "Left", "Right" })
-                Assert.That(outline.Find(edge).GetComponent<Renderer>(), Is.Not.Null);
+            foreach (string retired in new[] { "SlamArea_Outline", "SlamArea_Fill", "SlamArea_Impact" })
+                Assert.That(_prefab.transform.Find("Telegraph/" + retired), Is.Null, retired);
+            Transform projector = Required("Telegraph/SlamArea_Projector");
+            Assert.That(projector.gameObject.activeSelf, Is.False);
+            MeshRenderer renderer = projector.GetComponent<MeshRenderer>();
+            Assert.That(renderer.shadowCastingMode, Is.EqualTo(UnityEngine.Rendering.ShadowCastingMode.Off));
+            Assert.That(projector.GetComponent<MeshFilter>().sharedMesh, Is.Not.Null);
+            Assert.That(projector.GetComponent<Collider>(), Is.Null);
+            Material material = renderer.sharedMaterial;
+            Assert.That(material.shader.name, Is.EqualTo("RetroFPS/SlamAreaProjector"));
+            Assert.That(material.renderQueue, Is.EqualTo(3000));
             Light light = Required("Telegraph/TelegraphLight").GetComponent<Light>();
             Assert.That(light.type, Is.EqualTo(LightType.Point));
             Assert.That(light.range, Is.EqualTo(6f));
@@ -285,35 +303,67 @@ namespace RetroFPS.Tests.EditMode
             InvokeView(view, "Awake");
             view.ResetVisual();
             Vector3 origin = new Vector3(20f, 0f, 20f);
-            view.BeginSlamTelegraph(1.1f, origin, Vector3.forward, 6.5f, 4.5f);
-            Transform outline = _instance.transform.Find("Telegraph/SlamArea_Outline");
-            Transform fill = _instance.transform.Find("Telegraph/SlamArea_Fill");
-            Transform impact = _instance.transform.Find("Telegraph/SlamArea_Impact");
-            Assert.That(outline.gameObject.activeSelf, Is.True);
-            Assert.That(outline.lossyScale.y, Is.EqualTo(6.5f).Within(0.0001f));
-            Assert.That(fill.lossyScale.y, Is.Zero);
+            AddGroundBox(new Vector3(20f, 0f, 23.25f), new Vector3(8f, 1f, 10f), 0f);
+            view.BeginSlamTelegraph(1.1f, origin, Vector3.forward, 6.5f, 4.5f, 2.5f);
+            Transform box = _instance.transform.Find("Telegraph/SlamArea_Projector");
+            Renderer projector = box.GetComponent<Renderer>();
+            Assert.That(box.gameObject.activeSelf, Is.True);
+            Assert.That(box.lossyScale.x, Is.EqualTo(4.5f).Within(0.0001f));
+            Assert.That(box.lossyScale.z, Is.EqualTo(6.5f).Within(0.0001f));
+            Assert.That(AreaFloat(projector, "_Charge"), Is.EqualTo(1f));
+            Assert.That(AreaFloat(projector, "_Fill"), Is.Zero);
             typeof(PenitentView).GetField("_windupElapsed", BindingFlags.Instance | BindingFlags.NonPublic).SetValue(view, 0.55f);
             _instance.transform.SetPositionAndRotation(new Vector3(4f, 1f, 3f), Quaternion.Euler(0f, 35f, 0f));
             InvokeView(view, "Render");
-            Assert.That(outline.position.x, Is.EqualTo(origin.x).Within(0.0001f));
-            Assert.That(outline.position.z, Is.EqualTo(origin.z + 3.25f).Within(0.0001f));
-            Assert.That(fill.lossyScale.y, Is.EqualTo(3.25f).Within(0.0001f));
-            Assert.That(fill.position.z, Is.EqualTo(origin.z + 1.625f).Within(0.0001f));
+            // The area stays pinned to the cached world frame although the enemy moved and turned.
+            Assert.That(box.position.x, Is.EqualTo(origin.x).Within(0.0001f));
+            Assert.That(box.position.z, Is.EqualTo(origin.z + 3.25f).Within(0.0001f));
+            Assert.That(box.forward.z, Is.EqualTo(1f).Within(0.0001f));
+            Assert.That(box.lossyScale.z, Is.EqualTo(6.5f).Within(0.0001f));
+            Assert.That(AreaFloat(projector, "_Fill"), Is.EqualTo(0.5f).Within(0.0001f));
             view.PlaySlamImpact();
             view.EndSlamTelegraph();
-            Assert.That(outline.gameObject.activeSelf, Is.False);
-            Assert.That(fill.gameObject.activeSelf, Is.False);
-            Assert.That(impact.gameObject.activeSelf, Is.True);
+            // Charge visuals end; the impact flash keeps the box alive while it fades.
+            Assert.That(box.gameObject.activeSelf, Is.True);
+            Assert.That(AreaFloat(projector, "_Charge"), Is.Zero);
             typeof(PenitentView).GetField("_impactRemaining", BindingFlags.Instance | BindingFlags.NonPublic).SetValue(view, 0.125f);
             InvokeView(view, "Render");
-            var block = new MaterialPropertyBlock();
-            impact.GetComponent<Renderer>().GetPropertyBlock(block);
-            Assert.That(block.GetColor("_BaseColor").a, Is.EqualTo(0.45f).Within(0.0001f));
+            Assert.That(AreaFloat(projector, "_Impact"), Is.EqualTo(0.5f).Within(0.0001f));
             view.ResetVisual();
-            Assert.That(impact.gameObject.activeSelf, Is.False);
+            Assert.That(box.gameObject.activeSelf, Is.False);
             view.PlaySlamImpact();
             view.PlayDeath();
-            Assert.That(impact.gameObject.activeSelf, Is.False);
+            Assert.That(box.gameObject.activeSelf, Is.False);
+        }
+
+        /// <summary>Regression: a raised step inside the area used to lift the whole flat telegraph onto the step.
+        /// The projector box must span both the low floor and the raised step (the slam's full height tolerance),
+        /// and walls must be filtered by a real slope limit.</summary>
+        [Test]
+        public void AreaTelegraph_StepInsideArea_ProjectsOntoLowAndRaisedGround()
+        {
+            // Arrange: floor at y=0 under the near half, a 1 m step under the far half (including the centre probe).
+            _instance = Object.Instantiate(_prefab, Vector3.zero, Quaternion.identity);
+            PenitentView view = _instance.GetComponent<PenitentView>();
+            InvokeView(view, "Awake");
+            view.ResetVisual();
+            Vector3 origin = new Vector3(20f, 0f, 20f);
+            AddGroundBox(new Vector3(20f, 0f, 21.5f), new Vector3(8f, 1f, 3f), 0f);
+            AddGroundBox(new Vector3(20f, 0f, 25.5f), new Vector3(8f, 1f, 5f), 1f);
+            Transform box = _instance.transform.Find("Telegraph/SlamArea_Projector");
+
+            // Act
+            view.BeginSlamTelegraph(1.1f, origin, Vector3.forward, 6.5f, 4.5f, 2.5f);
+
+            // Assert: the box reaches below the floor and above the step top; vertical walls (up-dot 0) are rejected.
+            float bottom = box.position.y - box.lossyScale.y * 0.5f;
+            float top = box.position.y + box.lossyScale.y * 0.5f;
+            Assert.That(bottom, Is.LessThan(0f), "low floor outside the projector");
+            Assert.That(top, Is.GreaterThan(1f), "raised step outside the projector");
+            Assert.That(box.lossyScale.y, Is.EqualTo(5f).Within(0.0001f));
+            float minUpDot = AreaFloat(box.GetComponent<Renderer>(), "_MinUpDot");
+            Assert.That(minUpDot, Is.GreaterThan(0.05f), "walls would be painted");
+            Assert.That(minUpDot, Is.LessThan(0.99f), "gentle ramps would be skipped");
         }
 
         /// <summary>All four shield pieces disable together during guard-down, stun and death, then restore on reset.</summary>
@@ -494,7 +544,7 @@ namespace RetroFPS.Tests.EditMode
         {
             GameObject ghoul = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/_Project/Prefabs/Enemies/Enemy_Ghoul_Stalker.prefab");
             // Null materials affect only this disposable clone; persistent art and assets are never saved.
-            InvokeBuilder("ConfigureEnemy", new object[] { root, ghoul, null, null, null, null, null, null, null, null });
+            InvokeBuilder("ConfigureEnemy", new object[] { root, ghoul, null, null, null, null, null, null });
         }
 
         private static void InvokeBuilder(string method, object[] arguments)

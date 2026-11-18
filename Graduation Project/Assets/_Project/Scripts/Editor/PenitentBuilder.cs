@@ -43,11 +43,12 @@ namespace RetroFPS.Editor
             Material skin = customVisual ? null : MaterialAsset("Mat_Penitent_Skin", true, new Color(0.75f, 0.72f, 0.61f), Color.black);
             Material lid = customVisual ? null : MaterialAsset("Mat_Penitent_Lid", true, new Color(0.18f, 0.2f, 0.21f), new Color(0.12f, 0.07f, 0.025f));
             Material chain = customVisual ? null : MaterialAsset("Mat_Penitent_Chain", true, new Color(0.35f, 0.16f, 0.07f), Color.black);
-            Material outline = MaterialAsset("Mat_Penitent_SlamOutline", false, new Color(0.38f, 0.025f, 0.015f, 0.24f), Color.black, true);
-            Material fill = MaterialAsset("Mat_Penitent_SlamFill", false, new Color(1f, 0.18f, 0.035f, 0.65f), Color.black, true);
-            Material impact = MaterialAsset("Mat_Penitent_SlamImpact", false, new Color(1f, 0.85f, 0.6f, 0.9f), Color.black, true);
+            Material projector = ProjectorMaterialAsset("Mat_Penitent_SlamProjector");
             Material face = customVisual ? null : MaterialAsset("Mat_Penitent_Face", false, new Color(1.3f, 1.25f, 1.1f), new Color(0.3f, 0.28f, 0.2f));
-            BuildPrefab(EnemyPath, "Enemy_Penitent_Kefaretci", root => ConfigureEnemy(root, ghoul, robe, skin, lid, chain, outline, fill, impact, face));
+            BuildPrefab(EnemyPath, "Enemy_Penitent_Kefaretci", root => ConfigureEnemy(root, ghoul, robe, skin, lid, chain, projector, face));
+            DeleteStaleAsset(MaterialDirectory + "/Mat_Penitent_SlamOutline.mat");
+            DeleteStaleAsset(MaterialDirectory + "/Mat_Penitent_SlamFill.mat");
+            DeleteStaleAsset(MaterialDirectory + "/Mat_Penitent_SlamImpact.mat");
             DeleteStaleAsset("Assets/_Project/Prefabs/Enemies/Penitent_Shockwave.prefab");
             DeleteStaleAsset(MaterialDirectory + "/Mat_Penitent_Shockwave.mat");
             DeleteStaleAsset(MaterialDirectory + "/Mat_Penitent_Glint.mat");
@@ -109,7 +110,7 @@ namespace RetroFPS.Editor
 
         private static void ConfigureEnemy(GameObject root, GameObject ghoul,
             Material robe, Material skin, Material lidMaterial, Material chainMaterial,
-            Material outlineMaterial, Material fillMaterial, Material impactMaterial, Material faceMaterial)
+            Material projectorMaterial, Material faceMaterial)
         {
             root.layer = ghoul.layer;
             root.tag = ghoul.tag;
@@ -204,16 +205,18 @@ namespace RetroFPS.Editor
             Transform deathSocket = Socket(sockets, "Socket_DeathFx", new Vector3(0f, 1f, 0f));
             RemoveChild(telegraph, "Glint");
             RemoveChild(telegraph, "SlamLine");
-            Transform outline = Primitive(telegraph, "SlamArea_Outline", PrimitiveType.Quad, Vector3.zero, Vector3.one, outlineMaterial);
-            BuildBorder(outline, "Near", new Vector3(0f, -0.5f, 0.001f), new Vector3(1f, 0.012f, 1f), outlineMaterial);
-            BuildBorder(outline, "Far", new Vector3(0f, 0.5f, 0.001f), new Vector3(1f, 0.012f, 1f), outlineMaterial);
-            BuildBorder(outline, "Left", new Vector3(-0.5f, 0f, 0.001f), new Vector3(0.015f, 1f, 1f), outlineMaterial);
-            BuildBorder(outline, "Right", new Vector3(0.5f, 0f, 0.001f), new Vector3(0.015f, 1f, 1f), outlineMaterial);
-            Transform fill = Primitive(telegraph, "SlamArea_Fill", PrimitiveType.Quad, Vector3.zero, Vector3.one, fillMaterial);
-            Transform impact = Primitive(telegraph, "SlamArea_Impact", PrimitiveType.Quad, Vector3.zero, Vector3.one, impactMaterial);
-            outline.gameObject.SetActive(false);
-            fill.gameObject.SetActive(false);
-            impact.gameObject.SetActive(false);
+            // Retired flat quads (and their border children): one projector box now draws the whole area.
+            RemoveChild(telegraph, "SlamArea_Outline");
+            RemoveChild(telegraph, "SlamArea_Fill");
+            RemoveChild(telegraph, "SlamArea_Impact");
+            Transform projector = Primitive(telegraph, "SlamArea_Projector", PrimitiveType.Cube, Vector3.zero, Vector3.one, projectorMaterial);
+            MeshRenderer projectorRenderer = projector.GetComponent<MeshRenderer>();
+            projectorRenderer.shadowCastingMode = ShadowCastingMode.Off;
+            projectorRenderer.receiveShadows = false;
+            projectorRenderer.lightProbeUsage = LightProbeUsage.Off;
+            projectorRenderer.reflectionProbeUsage = ReflectionProbeUsage.Off;
+            projectorRenderer.motionVectorGenerationMode = MotionVectorGenerationMode.ForceNoMotion;
+            projector.gameObject.SetActive(false);
             Transform lightNode = Child(telegraph, "TelegraphLight", telegraph.gameObject.layer);
             lightNode.localPosition = new Vector3(0f, 1.55f, instance.lidForwardOffset);
             lightNode.gameObject.SetActive(true);
@@ -239,9 +242,7 @@ namespace RetroFPS.Editor
             Reference(viewData, "slamImpactSocket", impactSocket);
             Reference(viewData, "headSocket", headSocket);
             Reference(viewData, "deathFxSocket", deathSocket);
-            Reference(viewData, "slamAreaOutline", outline);
-            Reference(viewData, "slamAreaFill", fill);
-            Reference(viewData, "slamAreaImpact", impact);
+            Reference(viewData, "slamAreaProjector", projectorRenderer);
             Reference(viewData, "telegraphLight", telegraphLight);
             viewData.ApplyModifiedPropertiesWithoutUndo();
             var aiData = new SerializedObject(ai);
@@ -272,12 +273,23 @@ namespace RetroFPS.Editor
             if (child != null) Object.DestroyImmediate(child.gameObject);
         }
 
-        private static void BuildBorder(Transform parent, string name, Vector3 position, Vector3 scale, Material material)
+        private const string ProjectorShaderName = "RetroFPS/SlamAreaProjector";
+
+        /// <summary>Creates or refreshes the slam-area projector material; colours and state come from PenitentView at runtime.</summary>
+        private static Material ProjectorMaterialAsset(string name)
         {
-            Transform edge = Primitive(parent, name, PrimitiveType.Quad, position, scale, material);
-            var block = new MaterialPropertyBlock();
-            block.SetColor("_BaseColor", new Color(1f, 0.16f, 0.03f, 0.9f));
-            edge.GetComponent<Renderer>().SetPropertyBlock(block);
+            Shader shader = Shader.Find(ProjectorShaderName);
+            if (shader == null) throw new InvalidOperationException("Penitent requires shader: " + ProjectorShaderName);
+            string path = MaterialDirectory + "/" + name + ".mat";
+            Material material = AssetDatabase.LoadAssetAtPath<Material>(path);
+            if (material == null)
+            {
+                material = new Material(shader) { name = name };
+                AssetDatabase.CreateAsset(material, path);
+            }
+            else material.shader = shader;
+            EditorUtility.SetDirty(material);
+            return material;
         }
 
         private static void LidDimensions(int index, out string name, out Vector3 position, out Vector3 size)

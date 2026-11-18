@@ -31,7 +31,14 @@ namespace RetroFPS.Combat
         [SerializeField] private float rotationSpeed = 90f;
         [SerializeField] private float lifetime = 15f;
 
+        [Header("Düşme (Havada Ölen Düşmanlar)")]
+        [SerializeField] private float fallGravity = 22f;
+        [SerializeField] private float maxFallSpeed = 30f;
+        [SerializeField] private float groundProbeDistance = 200f;
+
         private Transform _playerTransform;
+        private bool _isFalling;
+        private float _fallSpeed;
         private PlayerAmmoInventory _playerInventory;
         private bool _isVacuuming = false;
         private float _currentVacuumSpeed;
@@ -54,9 +61,16 @@ namespace RetroFPS.Combat
             SetupVisualColors();
         }
 
+        /// <summary>Makes a dropped pickup fall under gravity onto the ground below before it starts hovering.</summary>
+        public void DropToGround()
+        {
+            _isFalling = true;
+            _fallSpeed = 0f;
+        }
+
         private void Start()
         {
-            _baseY = transform.position.y;
+            if (!_isFalling) _baseY = transform.position.y;
             _currentVacuumSpeed = vacuumSpeed;
             ResolvePlayer();
             SetupVisualColors();
@@ -141,6 +155,13 @@ namespace RetroFPS.Combat
 
         private void ExecuteIdleBobbing()
         {
+            if (_isFalling)
+            {
+                UpdateFalling();
+                transform.Rotate(Vector3.up, rotationSpeed * Time.deltaTime, Space.World);
+                return;
+            }
+
             _bobTimer += Time.deltaTime * bobFrequency;
             float newY = _baseY + hoverHeight + Mathf.Sin(_bobTimer) * bobAmplitude;
             Vector3 pos = transform.position;
@@ -148,6 +169,43 @@ namespace RetroFPS.Combat
             transform.position = pos;
 
             transform.Rotate(Vector3.up, rotationSpeed * Time.deltaTime, Space.World);
+        }
+
+        private void UpdateFalling()
+        {
+            float dt = Time.deltaTime;
+            Vector3 pos = transform.position;
+            // Rest height = ground + hoverHeight, the same height ExecuteIdleBobbing hovers at.
+            float restY = float.NegativeInfinity;
+            if (Physics.Raycast(pos, Vector3.down, out RaycastHit hit, groundProbeDistance,
+                GameLayers.GroundMask, QueryTriggerInteraction.Ignore))
+                restY = hit.point.y + hoverHeight;
+
+            if (pos.y <= restY)
+            {
+                Land(hit.point.y);
+                return;
+            }
+
+            _fallSpeed = Mathf.Min(_fallSpeed + fallGravity * dt, maxFallSpeed);
+            pos.y -= _fallSpeed * dt;
+            if (pos.y <= restY)
+            {
+                Land(hit.point.y);
+                return;
+            }
+            transform.position = pos;
+        }
+
+        private void Land(float groundY)
+        {
+            _isFalling = false;
+            _fallSpeed = 0f;
+            _baseY = groundY;
+            _bobTimer = 0f;
+            Vector3 pos = transform.position;
+            pos.y = groundY + hoverHeight;
+            transform.position = pos;
         }
 
         private void Collect()

@@ -542,13 +542,13 @@ namespace RetroFPS.Weapons
             if (CombatVFXManager.Instance != null)
             {
                 CombatVFXManager.Instance.SpawnOccultEnergyBurst(center + Vector3.up * slamBurstHeight, false);
-                CombatVFXManager.Instance.SpawnFleshGibs(center, Vector3.up, slamGibCount);
             }
             if (HitstopManager.Instance != null)
                 HitstopManager.Instance.TriggerHitstop(Mathf.Lerp(slamLightHitstop, slamHeavyHitstop, impact.T), slamHitstopScale);
             int count = Physics.OverlapSphereNonAlloc(center, impact.Radius, _overlapBuffer,
                 GameLayers.PlayerAttackMask, QueryTriggerInteraction.Ignore);
             BeginTargets();
+            bool hitEnemy = false;
             for (int i = 0; i < count; i++)
             {
                 Collider col = _overlapBuffer[i];
@@ -562,10 +562,14 @@ namespace RetroFPS.Weapons
                     guard.BreakGuard(slamGuardBreakDuration);
                 // Evaluate guard before stun: a low slam must not open the guard before checking it.
                 if (!DealBladeDamage(target, point, impact.Damage * DamageMultiplier(), true)) continue;
+                if ((target as IEncounterEnemy ?? binding.Enemy) != null) hitEnemy = true;
                 Vector3 knockback = (point - center).normalized;
                 knockback.y = slamKnockbackUp;
                 if (target is IStunnable stunnable) stunnable.Stun(impact.StunDuration, knockback * slamKnockbackSpeed);
             }
+            // Gore (blood pool + bone gibs) only when the slam actually lands on an enemy, never on empty ground.
+            if (hitEnemy && CombatVFXManager.Instance != null)
+                CombatVFXManager.Instance.SpawnFleshGibs(center, Vector3.up, slamGibCount);
         }
 
         private static float DamageMultiplier()

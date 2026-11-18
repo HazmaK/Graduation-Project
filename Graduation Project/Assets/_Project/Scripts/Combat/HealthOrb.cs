@@ -69,6 +69,9 @@ namespace RetroFPS.Combat
         [Tooltip("Kaybolmadan kaç saniye önce yanıp sönme uyarısı başlasın?")]
         [SerializeField] private float blinkWarningDuration = 3.0f;
 
+        [Tooltip("Havada ölen düşmanlarda zemini aramak için aşağı tarama mesafesi (metre)")]
+        [SerializeField] private float groundProbeDistance = 200f;
+
         [Header("Görsel Renk Paleti (Occult Emerald)")]
         [SerializeField] private Color orbCoreColor = new Color(0.08f, 1.0f, 0.45f, 1f);
         [SerializeField] private Color orbEmissionColor = new Color(0.20f, 2.5f, 0.85f, 1f);
@@ -176,7 +179,7 @@ namespace RetroFPS.Combat
             _velocity = new Vector3(randomCircle.x, Random.Range(3.2f, 4.8f), randomCircle.y);
 
             // Zemin temas yüksekliğini raycast ile bul
-            if (Physics.Raycast(spawnPosition + Vector3.up * 0.5f, Vector3.down, out RaycastHit hit, 6f, GameLayers.GroundMask, QueryTriggerInteraction.Ignore))
+            if (Physics.Raycast(spawnPosition + Vector3.up * 0.5f, Vector3.down, out RaycastHit hit, groundProbeDistance, GameLayers.GroundMask, QueryTriggerInteraction.Ignore))
             {
                 _restingY = hit.point.y + hoverHeight;
             }
@@ -234,6 +237,16 @@ namespace RetroFPS.Combat
             // Yerçekimi ivmesi
             _velocity.y -= 14f * dt;
             transform.position += _velocity * dt;
+
+            // Re-probe the ground under the orb every frame: the arc can carry it off a ledge, and a flying
+            // enemy can die higher than the spawn probe reaches. No ground below = keep falling until lifetime ends.
+            if (_velocity.y < 0f)
+            {
+                _restingY = Physics.Raycast(transform.position, Vector3.down, out RaycastHit hit, groundProbeDistance,
+                    GameLayers.GroundMask, QueryTriggerInteraction.Ignore)
+                    ? hit.point.y + hoverHeight
+                    : float.NegativeInfinity;
+            }
 
             // Zemin yüksekliğine ulaştığında yay hareketini bitir ve havada asılı kal
             if (transform.position.y <= _restingY)

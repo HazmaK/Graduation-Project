@@ -81,7 +81,9 @@ namespace RetroFPS.Combat
                 amount = (chosenType == AmmoType.Shells) ? gunKillShells : gunKillBolts;
             }
 
-            AmmoPickup.CreatePickupGameObject(spawnPos, chosenType, amount);
+            // Flying or elevated deaths must not leave the box hanging at the death height.
+            AmmoPickup pickup = AmmoPickup.CreatePickupGameObject(spawnPos, chosenType, amount);
+            if (pickup != null) pickup.DropToGround();
         }
     }
 }
