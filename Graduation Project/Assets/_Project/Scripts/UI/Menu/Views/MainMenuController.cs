@@ -23,6 +23,8 @@ namespace RetroFPS.UI.Menu
         [SerializeField] private ScreenFader fader;
         [SerializeField] private TMP_Text versionLabel;
         [SerializeField] private TMP_Text loadError;
+        [Tooltip("Scene loaded by the Start button. Must be enabled in Build Profiles / Build Settings.")]
+        [SerializeField] private string gameplaySceneName = "TestLevel_Gauntlet";
         private MainMenuStateMachine machine;
         private MainMenuState shownState = (MainMenuState)(-1);
         private MenuFocusVisual[] visuals;
@@ -80,7 +82,8 @@ namespace RetroFPS.UI.Menu
             Cursor.visible = true;
             Time.timeScale = 1f;
             GameSettings.EnsureInitialized();
-            machine = new MainMenuStateMachine(GameSettings.Current.ReduceMotion, theme.FirstLoadSeconds, theme.PressSeconds);
+            machine = new MainMenuStateMachine(GameSettings.Current.ReduceMotion, theme.FirstLoadSeconds, theme.PressSeconds,
+                string.IsNullOrEmpty(gameplaySceneName) ? "TestLevel_Gauntlet" : gameplaySceneName);
             groups = new[] { rootGroup, settingsGroup, quitDialog.Group, revertDialog.Group, dimGroup };
             alphaFrom = new float[groups.Length];
             alphaTo = new float[groups.Length];

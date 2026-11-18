@@ -62,6 +62,7 @@ MonoBehaviour:
   fader: {fileID: 0}
   versionLabel: {fileID: 0}
   loadError: {fileID: 0}
+  gameplaySceneName: mert_level
 --- !u!114 &6385519283910536969
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -75,6 +76,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: RetroFPS.Menu::RetroFPS.UI.Menu.MenuInputRouter
   controller: {fileID: 5704044783747586691}
+  pauseHost: 0
   eventSystem: {fileID: 0}
   cancel: {fileID: 7727032971491509709, guid: 052faaac586de48259a63d0c4782560b, type: 3}
   rightClick: {fileID: -4090225696740746782, guid: 052faaac586de48259a63d0c4782560b, type: 3}
