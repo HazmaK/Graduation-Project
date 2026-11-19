@@ -1,0 +1,34 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c56e1463869a5404f81f708caa32a28b, type: 3}
+  m_Name: Card_executioners_oath
+  m_EditorClassIdentifier: RetroFPS.Gameplay::RetroFPS.Run.Cards.CurseBlessingDefinition
+  id: executioners_oath
+  nameKey: hud.card.executioners_oath.name
+  boonKey: hud.card.executioners_oath.boon
+  curseKey: hud.card.executioners_oath.curse
+  flavorKey: hud.card.executioners_oath.flavor
+  accentColor: {r: 0.78, g: 0.12, b: 0.22, a: 1}
+  rarity: 1
+  modifiers:
+  - stat: 1
+    op: 0
+    value: 0.75
+    condition: 0
+  - stat: 4
+    op: 1
+    value: 0.8
+    condition: 0
+  - stat: 0
+    op: 0
+    value: -0.2
+    condition: 0

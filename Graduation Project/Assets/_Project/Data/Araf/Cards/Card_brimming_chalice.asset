@@ -17,7 +17,8 @@ MonoBehaviour:
   boonKey: hud.card.brimming_chalice.boon
   curseKey: hud.card.brimming_chalice.curse
   flavorKey: hud.card.brimming_chalice.flavor
-  accentColor: {r: 0.65, g: 0.42, b: 0.17, a: 1}
+  accentColor: {r: 0.56, g: 0.43, b: 0.28, a: 1}
+  rarity: 0
   modifiers:
   - stat: 11
     op: 2
@@ -29,5 +30,5 @@ MonoBehaviour:
     condition: 2
   - stat: 3
     op: 0
-    value: -0.2
+    value: -0.15
     condition: 1

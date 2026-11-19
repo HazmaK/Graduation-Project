@@ -4,7 +4,9 @@ using RetroFPS.Run;
 using RetroFPS.Run.Cards;
 using RetroFPS.Tests.EditMode;
 using RetroFPS.UI.HUD;
+using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace RetroFPS.Tests
 {
@@ -94,6 +96,46 @@ namespace RetroFPS.Tests
         {
             Open(); RunEvents.ResolveCardOffer(null); view.Confirm();
             Assert.That(resolutions, Is.EqualTo(1)); Assert.That(view.IsOpen, Is.False); Assert.That(GamePause.Service, Is.Null);
+        }
+        [TestCase(CardRarity.Common, "COMMON")]
+        [TestCase(CardRarity.Rare, "RARE")]
+        [TestCase(CardRarity.Relic, "RELIC")]
+        public void RarityChoiceUpdatesLabelAndAlwaysVisibleBorderWithoutAffectingFocusFrame(CardRarity rarity, string label)
+        {
+            var choice = (CardOfferChoiceView)LocalizationHudTestContext.Get(view, "first");
+            var rarityGo = new GameObject("Rarity"); rarityGo.transform.SetParent(choice.transform);
+            TMP_Text rarityText = rarityGo.AddComponent<TextMeshProUGUI>();
+            var borderGo = new GameObject("RarityBorder"); borderGo.transform.SetParent(choice.transform);
+            Image rarityBorder = borderGo.AddComponent<Image>();
+            var frameGo = new GameObject("SelectionFrame"); frameGo.transform.SetParent(choice.transform);
+            Image frame = frameGo.AddComponent<Image>(); frame.enabled = false;
+            LocalizationHudTestContext.Set(choice, "rarityText", rarityText);
+            LocalizationHudTestContext.Set(choice, "rarityBorder", rarityBorder);
+            LocalizationHudTestContext.Set(choice, "frame", frame);
+
+            choice.SetRarity(rarity, label);
+            Color expected = rarity switch
+            {
+                CardRarity.Rare => choice.RareColor,
+                CardRarity.Relic => choice.RelicColor,
+                _ => choice.CommonColor,
+            };
+            Assert.That(rarityText.text, Is.EqualTo(label));
+            Assert.That(rarityText.color, Is.EqualTo(expected));
+            Assert.That(rarityText.enabled, Is.True);
+            Assert.That(rarityBorder.color, Is.EqualTo(expected));
+            Assert.That(rarityBorder.enabled, Is.True);
+
+            choice.SetSelected(true);
+            Assert.That(frame.enabled, Is.True);
+            Assert.That(rarityBorder.enabled, Is.True);
+            choice.SetSelected(false);
+            Assert.That(frame.enabled, Is.False);
+            Assert.That(rarityBorder.enabled, Is.True);
+
+            choice.ClearRarity();
+            Assert.That(rarityText.enabled, Is.False);
+            Assert.That(rarityBorder.enabled, Is.False);
         }
     }
 }

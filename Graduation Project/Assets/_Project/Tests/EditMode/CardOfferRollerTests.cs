@@ -9,6 +9,102 @@ namespace RetroFPS.Tests.EditMode
     /// <summary>Determinism, eligibility and visit limits for card offers.</summary>
     public sealed class CardOfferRollerTests : CardTestFixture
     {
+        /// <summary>A disabled tier is excluded from every offer slot and does not consume an offer.</summary>
+        [TestCase(CardRarity.Common)]
+        [TestCase(CardRarity.Rare)]
+        [TestCase(CardRarity.Relic)]
+        public void ZeroWeightTierIsNeverOffered(CardRarity disabledTier)
+        {
+            var common = CreateRarityCard("common", CardRarity.Common);
+            var rare = CreateRarityCard("rare", CardRarity.Rare);
+            var relic = CreateRarityCard("relic", CardRarity.Relic);
+            var cards = new[] { common, rare, relic };
+            var catalog = CreateCatalog(cards);
+            catalog.Configure(cards, disabledTier == CardRarity.Common ? 0f : 10f,
+                disabledTier == CardRarity.Rare ? 0f : 5f,
+                disabledTier == CardRarity.Relic ? 0f : 1.5f);
+            for (ulong seed = 0; seed < 64; seed++)
+            {
+                var roller = new CardOfferRoller(new RunRandom(seed));
+                Assert.That(roller.TryRoll(catalog, null, out CardOffer offer), Is.True);
+                Assert.That(offer.Count, Is.EqualTo(2));
+                for (int i = 0; i < offer.Count; i++)
+                    Assert.That(offer.Get(i).Rarity, Is.Not.EqualTo(disabledTier));
+                Assert.That(roller.TryRoll(catalog, null, out _), Is.False);
+                Assert.That(roller.OffersMade, Is.EqualTo(1));
+            }
+        }
+
+        /// <summary>First picks follow per-card weights rather than a uniform rarity distribution.</summary>
+        [Test]
+        public void RelicShareMatchesWeightAcrossTwoThousandSeededPicks()
+        {
+            var common = CreateRarityCard("common", CardRarity.Common);
+            var relic = CreateRarityCard("relic", CardRarity.Relic);
+            var catalog = CreateCatalog(common, relic);
+            int relicPicks = 0;
+            const int picks = 2000;
+            for (ulong seed = 0; seed < picks; seed++)
+            {
+                var roller = new CardOfferRoller(new RunRandom(seed));
+                Assert.That(roller.TryRoll(catalog, null, out CardOffer offer), Is.True);
+                // Only the first pick is sampled: the second must be the remaining card.
+                if (offer.Get(0) == relic) relicPicks++;
+            }
+            Assert.That((float)relicPicks / picks, Is.InRange(0.08f, 0.18f));
+        }
+
+        /// <summary>Mixed-rarity catalogs preserve determinism across both offers in a visit.</summary>
+        [Test]
+        public void SameSeedProducesSameMixedRarityOffers()
+        {
+            var catalog = CreateCatalog(CreateRarityCard("common_a", CardRarity.Common),
+                CreateRarityCard("rare_a", CardRarity.Rare), CreateRarityCard("relic_a", CardRarity.Relic),
+                CreateRarityCard("common_b", CardRarity.Common), CreateRarityCard("rare_b", CardRarity.Rare),
+                CreateRarityCard("relic_b", CardRarity.Relic));
+            for (ulong seed = 0; seed < 32; seed++)
+            {
+                var first = new CardOfferRoller(new RunRandom(seed));
+                var second = new CardOfferRoller(new RunRandom(seed));
+                for (int i = 0; i < CardOfferRoller.MaxOffersPerVisit; i++)
+                {
+                    Assert.That(first.TryRoll(catalog, null, out CardOffer left), Is.True);
+                    Assert.That(second.TryRoll(catalog, null, out CardOffer right), Is.True);
+                    Assert.That(left.Count, Is.EqualTo(2));
+                    Assert.That(right.Count, Is.EqualTo(left.Count));
+                    for (int j = 0; j < left.Count; j++)
+                        Assert.That(right.Get(j), Is.SameAs(left.Get(j)));
+                }
+            }
+        }
+
+        /// <summary>Existing configure callers retain Common rarity and default weights; negative weights clamp to zero.</summary>
+        [Test]
+        public void DefaultRarityAndCatalogWeightClampingMatchContract()
+        {
+            var card = CreateCard("default");
+            var catalog = CreateCatalog(card);
+            Assert.That(card.Rarity, Is.EqualTo(CardRarity.Common));
+            Assert.That(catalog.GetWeight(CardRarity.Common), Is.EqualTo(10f));
+            Assert.That(catalog.GetWeight(CardRarity.Rare), Is.EqualTo(5f));
+            Assert.That(catalog.GetWeight(CardRarity.Relic), Is.EqualTo(1.5f));
+            catalog.Configure(new[] { card }, -10f, -5f, -1.5f);
+            Assert.That(catalog.GetWeight(CardRarity.Common), Is.Zero);
+            Assert.That(catalog.GetWeight(CardRarity.Rare), Is.Zero);
+            Assert.That(catalog.GetWeight(CardRarity.Relic), Is.Zero);
+            var roller = new CardOfferRoller(new RunRandom(7));
+            Assert.That(roller.TryRoll(catalog, null, out _), Is.False);
+            Assert.That(roller.OffersMade, Is.Zero);
+        }
+
+        private CurseBlessingDefinition CreateRarityCard(string id, CardRarity rarity)
+        {
+            var card = CreateCard(id);
+            card.Configure(card.Id, card.NameKey, card.BoonKey, card.CurseKey, card.FlavorKey,
+                card.AccentColor, null, rarity);
+            return card;
+        }
+
         /// <summary>Matching seeds and calls produce identical offers.</summary>
         [Test]
         public void SameSeedAndCallOrderProduceSameOffers()

@@ -10,7 +10,7 @@ using Object = UnityEngine.Object;
 
 namespace RetroFPS.Editor
 {
-    /// <summary>Creates the six curse cards, altar prefab and Araf scene references in place.</summary>
+    /// <summary>Creates the fifteen curse cards, altar prefab and Araf scene references in place.</summary>
     public static class CurseCardBuilder
     {
         private const string CardDir = "Assets/_Project/Data/Araf/Cards";
@@ -34,31 +34,67 @@ namespace RetroFPS.Editor
 
             CurseBlessingDefinition[] cards =
             {
-                Card("blood_debt", new Color(0.5f, 0.025f, 0.04f),
-                    new StatModifier(StatId.DamageDealt, StatOp.AddPercent, 0.35f),
-                    new StatModifier(StatId.MaxHealth, StatOp.AddPercent, -0.30f)),
-                Card("starving_steel", new Color(0.36f, 0.45f, 0.55f),
-                    new StatModifier(StatId.MeleeDamage, StatOp.AddPercent, 0.50f),
-                    new StatModifier(StatId.HarvestHeal, StatOp.Multiply, 2f),
+                Card("blood_debt", CardRarity.Common, new Color(0.44f, 0.22f, 0.24f),
+                    new StatModifier(StatId.DamageDealt, StatOp.AddPercent, 0.3f),
+                    new StatModifier(StatId.MaxHealth, StatOp.AddPercent, -0.25f)),
+                Card("starving_steel", CardRarity.Rare, new Color(0.24f, 0.48f, 0.88f),
+                    new StatModifier(StatId.MeleeDamage, StatOp.AddPercent, 0.45f),
+                    new StatModifier(StatId.HarvestHeal, StatOp.Multiply, 1.75f),
                     new StatModifier(StatId.OrbDropChance, StatOp.Multiply, 0f)),
-                Card("last_breath", new Color(0.85f, 0.84f, 0.80f),
-                    new StatModifier(StatId.DamageDealt, StatOp.AddPercent, 0.60f, StatCondition.HealthBelowHalf),
-                    new StatModifier(StatId.MoveSpeed, StatOp.AddPercent, 0.20f, StatCondition.HealthBelowHalf),
-                    new StatModifier(StatId.HealReceived, StatOp.AddPercent, -0.50f)),
-                Card("bone_wings", new Color(0.82f, 0.74f, 0.46f),
-                    new StatModifier(StatId.DashRechargeTime, StatOp.Multiply, 0.714f),
-                    new StatModifier(StatId.MoveSpeed, StatOp.AddPercent, 0.15f),
+                Card("last_breath", CardRarity.Rare, new Color(0.65f, 0.28f, 0.85f),
+                    new StatModifier(StatId.DamageDealt, StatOp.AddPercent, 0.5f, StatCondition.HealthBelowHalf),
+                    new StatModifier(StatId.MoveSpeed, StatOp.AddPercent, 0.2f, StatCondition.HealthBelowHalf),
+                    new StatModifier(StatId.HealReceived, StatOp.AddPercent, -0.35f)),
+                Card("bone_wings", CardRarity.Common, new Color(0.64f, 0.6f, 0.48f),
+                    new StatModifier(StatId.DashRechargeTime, StatOp.Multiply, 0.8f),
+                    new StatModifier(StatId.MoveSpeed, StatOp.AddPercent, 0.12f),
                     new StatModifier(StatId.DamageTaken, StatOp.AddPercent, 0.25f)),
-                Card("brimming_chalice", new Color(0.65f, 0.42f, 0.17f),
+                Card("brimming_chalice", CardRarity.Common, new Color(0.56f, 0.43f, 0.28f),
                     new StatModifier(StatId.OverhealCap, StatOp.AddFlat, 50f),
                     new StatModifier(StatId.FireRate, StatOp.AddPercent, 0.35f, StatCondition.Overhealed),
-                    new StatModifier(StatId.MoveSpeed, StatOp.AddPercent, -0.20f, StatCondition.HealthBelowHalf)),
-                Card("glutton_barrel", new Color(0.95f, 0.25f, 0.035f),
-                    new StatModifier(StatId.FireRate, StatOp.AddPercent, 0.40f),
-                    new StatModifier(StatId.AmmoPickupAmount, StatOp.AddPercent, -0.50f))
+                    new StatModifier(StatId.MoveSpeed, StatOp.AddPercent, -0.15f, StatCondition.HealthBelowHalf)),
+                Card("glutton_barrel", CardRarity.Common, new Color(0.6f, 0.34f, 0.24f),
+                    new StatModifier(StatId.FireRate, StatOp.AddPercent, 0.4f),
+                    new StatModifier(StatId.AmmoPickupAmount, StatOp.AddPercent, -0.5f)),
+                Card("iron_hide", CardRarity.Common, new Color(0.39f, 0.43f, 0.44f),
+                    new StatModifier(StatId.DamageTaken, StatOp.AddPercent, -0.2f),
+                    new StatModifier(StatId.MoveSpeed, StatOp.AddPercent, -0.1f)),
+                Card("carrion_crow", CardRarity.Common, new Color(0.34f, 0.32f, 0.4f),
+                    new StatModifier(StatId.AmmoPickupAmount, StatOp.AddPercent, 0.75f),
+                    new StatModifier(StatId.OrbDropChance, StatOp.Multiply, 0.75f)),
+                Card("pilgrims_flask", CardRarity.Common, new Color(0.4f, 0.51f, 0.41f),
+                    new StatModifier(StatId.HealReceived, StatOp.AddPercent, 0.35f),
+                    new StatModifier(StatId.OrbDropChance, StatOp.Multiply, 1.5f),
+                    new StatModifier(StatId.FireRate, StatOp.AddPercent, -0.12f)),
+                Card("gilded_vein", CardRarity.Rare, new Color(0.89f, 0.48f, 0.12f),
+                    new StatModifier(StatId.OverhealCap, StatOp.AddFlat, 50f),
+                    new StatModifier(StatId.DamageTaken, StatOp.AddPercent, -0.25f, StatCondition.Overhealed),
+                    new StatModifier(StatId.MaxHealth, StatOp.AddPercent, -0.2f)),
+                Card("executioners_oath", CardRarity.Rare, new Color(0.78f, 0.12f, 0.22f),
+                    new StatModifier(StatId.MeleeDamage, StatOp.AddPercent, 0.75f),
+                    new StatModifier(StatId.DashRechargeTime, StatOp.Multiply, 0.8f),
+                    new StatModifier(StatId.DamageDealt, StatOp.AddPercent, -0.2f)),
+                Card("bell_tower", CardRarity.Rare, new Color(0.22f, 0.58f, 0.79f),
+                    new StatModifier(StatId.FireRate, StatOp.AddPercent, 0.5f),
+                    new StatModifier(StatId.DamageTaken, StatOp.AddPercent, -0.2f),
+                    new StatModifier(StatId.MoveSpeed, StatOp.AddPercent, -0.15f),
+                    new StatModifier(StatId.DashRechargeTime, StatOp.Multiply, 1.2f)),
+                Card("judges_scale", CardRarity.Relic, new Color(0.95f, 0.76f, 0.3f),
+                    new StatModifier(StatId.DamageDealt, StatOp.AddPercent, 0.6f),
+                    new StatModifier(StatId.DamageTaken, StatOp.AddPercent, 0.4f)),
+                Card("hollow_saint", CardRarity.Relic, new Color(0.94f, 0.9f, 0.77f),
+                    new StatModifier(StatId.DashRechargeTime, StatOp.Multiply, 0.625f),
+                    new StatModifier(StatId.MoveSpeed, StatOp.AddPercent, 0.25f),
+                    new StatModifier(StatId.MaxHealth, StatOp.AddPercent, -0.25f)),
+                Card("red_hour", CardRarity.Relic, new Color(0.88f, 0.66f, 0.3f),
+                    new StatModifier(StatId.FireRate, StatOp.AddPercent, 0.5f),
+                    new StatModifier(StatId.MeleeDamage, StatOp.AddPercent, 0.5f),
+                    new StatModifier(StatId.MoveSpeed, StatOp.AddPercent, 0.15f),
+                    new StatModifier(StatId.HealReceived, StatOp.AddPercent, -0.25f),
+                    new StatModifier(StatId.OrbDropChance, StatOp.Multiply, 0.5f))
             };
             CardCatalog catalog = LoadOrCreate<CardCatalog>(CatalogPath);
-            catalog.Configure(cards);
+            catalog.Configure(cards, 10f, 5f, 1.5f);
             EditorUtility.SetDirty(catalog);
             Material glow = AssetDatabase.LoadAssetAtPath<Material>(MaterialDir + "/Mat_Araf_CardGlow.mat");
             if (glow == null)
@@ -88,14 +124,14 @@ namespace RetroFPS.Editor
             }
             AssetDatabase.SaveAssets();
             WireArafScene();
-            Debug.Log("[CurseCardBuilder] Updated six curse cards, default catalog, altar prefab and Araf wiring.");
+            Debug.Log("[CurseCardBuilder] Updated fifteen curse cards, default catalog, altar prefab and Araf wiring.");
         }
 
-        private static CurseBlessingDefinition Card(string id, Color accent, params StatModifier[] modifiers)
+        private static CurseBlessingDefinition Card(string id, CardRarity rarity, Color accent, params StatModifier[] modifiers)
         {
             CurseBlessingDefinition card = LoadOrCreate<CurseBlessingDefinition>(CardDir + "/Card_" + id + ".asset");
             string key = "hud.card." + id + ".";
-            card.Configure(id, key + "name", key + "boon", key + "curse", key + "flavor", accent, modifiers);
+            card.Configure(id, key + "name", key + "boon", key + "curse", key + "flavor", accent, modifiers, rarity);
             EditorUtility.SetDirty(card);
             return card;
         }

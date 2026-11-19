@@ -17,15 +17,16 @@ MonoBehaviour:
   boonKey: hud.card.bone_wings.boon
   curseKey: hud.card.bone_wings.curse
   flavorKey: hud.card.bone_wings.flavor
-  accentColor: {r: 0.82, g: 0.74, b: 0.46, a: 1}
+  accentColor: {r: 0.64, g: 0.6, b: 0.48, a: 1}
+  rarity: 0
   modifiers:
   - stat: 4
     op: 1
-    value: 0.714
+    value: 0.8
     condition: 0
   - stat: 3
     op: 0
-    value: 0.15
+    value: 0.12
     condition: 0
   - stat: 6
     op: 0

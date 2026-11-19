@@ -125,30 +125,69 @@ namespace RetroFPS.Editor
                 new StringTable.Translation("hud.card.hint", "SE\u00c7: A/D   ONAYLA: ENTER", "SELECT: A/D   CONFIRM: ENTER"),
                 new StringTable.Translation("hud.card.acquired.banner", "BEDEL \u00d6DEND\u0130: {0}", "PRICE PAID: {0}"),
                 new StringTable.Translation("hud.card.strip.title", "KARTLAR", "CARDS"),
+                new StringTable.Translation("hud.card.rarity.common", "SIRADAN", "COMMON"),
+                new StringTable.Translation("hud.card.rarity.rare", "NAD\u0130R", "RARE"),
+                new StringTable.Translation("hud.card.rarity.relic", "KAD\u0130M", "RELIC"),
                 new StringTable.Translation("hud.card.blood_debt.name", "Kan Borcu", "Blood Debt"),
-                new StringTable.Translation("hud.card.blood_debt.boon", "T\u00fcm hasar +%35", "All damage +35%"),
-                new StringTable.Translation("hud.card.blood_debt.curse", "Maksimum can -%30", "Max health -30%"),
+                new StringTable.Translation("hud.card.blood_debt.boon", "T\u00fcm hasar +%30", "All damage +30%"),
+                new StringTable.Translation("hud.card.blood_debt.curse", "Maksimum can -%25", "Max health -25%"),
                 new StringTable.Translation("hud.card.blood_debt.flavor", "Kule borcunu etinden tahsil eder.", "The tower collects its due in flesh."),
                 new StringTable.Translation("hud.card.starving_steel.name", "A\u00e7 \u00c7elik", "Starving Steel"),
-                new StringTable.Translation("hud.card.starving_steel.boon", "B\u0131\u00e7ak hasar\u0131 +%50, Kan Hasad\u0131 iki kat iyile\u015ftirir", "Blade damage +50%, Blood Harvest heals double"),
+                new StringTable.Translation("hud.card.starving_steel.boon", "B\u0131\u00e7ak hasar\u0131 +%45, Kan Hasad\u0131 %75 fazla iyile\u015ftirir", "Blade damage +45%, Blood Harvest heals +75%"),
                 new StringTable.Translation("hud.card.starving_steel.curse", "D\u00fc\u015fmanlar can k\u00fcresi d\u00fc\u015f\u00fcrmez", "Enemies drop no health orbs"),
                 new StringTable.Translation("hud.card.starving_steel.flavor", "\u00c7elik doymad\u0131k\u00e7a sen de doymazs\u0131n.", "While the steel hungers, so do you."),
                 new StringTable.Translation("hud.card.last_breath.name", "Son Nefes", "Last Breath"),
-                new StringTable.Translation("hud.card.last_breath.boon", "Can yar\u0131n\u0131n alt\u0131ndayken hasar +%60, h\u0131z +%20", "Below half health: damage +60%, speed +20%"),
-                new StringTable.Translation("hud.card.last_breath.curse", "T\u00fcm iyile\u015fmeler -%50", "All healing -50%"),
+                new StringTable.Translation("hud.card.last_breath.boon", "Can yar\u0131n\u0131n alt\u0131ndayken hasar +%50, h\u0131z +%20", "Below half health: damage +50%, speed +20%"),
+                new StringTable.Translation("hud.card.last_breath.curse", "T\u00fcm iyile\u015fmeler -%35", "All healing -35%"),
                 new StringTable.Translation("hud.card.last_breath.flavor", "\u00d6l\u00fcm yakla\u015ft\u0131k\u00e7a elin a\u011f\u0131rla\u015f\u0131r.", "The nearer death comes, the heavier your hand."),
                 new StringTable.Translation("hud.card.bone_wings.name", "Kemik Kanatlar", "Bone Wings"),
-                new StringTable.Translation("hud.card.bone_wings.boon", "Dash %40 h\u0131zl\u0131 dolar, h\u0131z +%15", "Dash recharges 40% faster, speed +15%"),
+                new StringTable.Translation("hud.card.bone_wings.boon", "Dash %25 h\u0131zl\u0131 dolar, h\u0131z +%12", "Dash recharges 25% faster, speed +12%"),
                 new StringTable.Translation("hud.card.bone_wings.curse", "Al\u0131nan hasar +%25", "Damage taken +25%"),
                 new StringTable.Translation("hud.card.bone_wings.flavor", "Hafif kemik \u00e7abuk k\u0131r\u0131l\u0131r.", "Light bones break fast."),
                 new StringTable.Translation("hud.card.brimming_chalice.name", "Dolu Kadeh", "Brimming Chalice"),
                 new StringTable.Translation("hud.card.brimming_chalice.boon", "Fazla can s\u0131n\u0131r\u0131 +50; fazla can varken at\u0131\u015f h\u0131z\u0131 +%35", "Overheal cap +50; while overhealed, fire rate +35%"),
-                new StringTable.Translation("hud.card.brimming_chalice.curse", "Can yar\u0131n\u0131n alt\u0131ndayken h\u0131z -%20", "Below half health: speed -20%"),
+                new StringTable.Translation("hud.card.brimming_chalice.curse", "Can yar\u0131n\u0131n alt\u0131ndayken h\u0131z -%15", "Below half health: speed -15%"),
                 new StringTable.Translation("hud.card.brimming_chalice.flavor", "Kadeh doluyken herkes cesurdur.", "Everyone is brave while the cup is full."),
                 new StringTable.Translation("hud.card.glutton_barrel.name", "Obur Namlu", "Glutton's Barrel"),
                 new StringTable.Translation("hud.card.glutton_barrel.boon", "At\u0131\u015f h\u0131z\u0131 +%40", "Fire rate +40%"),
                 new StringTable.Translation("hud.card.glutton_barrel.curse", "Toplanan cephane -%50", "Ammo pickups -50%"),
                 new StringTable.Translation("hud.card.glutton_barrel.flavor", "\u00c7abuk yer, a\u00e7 kal\u0131r.", "It eats fast and starves faster."),
+                new StringTable.Translation("hud.card.iron_hide.name", "Demir Post", "Iron Hide"),
+                new StringTable.Translation("hud.card.iron_hide.boon", "Al\u0131nan hasar -%20", "Damage taken -20%"),
+                new StringTable.Translation("hud.card.iron_hide.curse", "H\u0131z -%10", "Speed -10%"),
+                new StringTable.Translation("hud.card.iron_hide.flavor", "Z\u0131rh etine kaynar, ad\u0131m\u0131n a\u011f\u0131rla\u015f\u0131r.", "Armor fuses to flesh, and every step grows heavy."),
+                new StringTable.Translation("hud.card.carrion_crow.name", "Le\u015f Kargas\u0131", "Carrion Crow"),
+                new StringTable.Translation("hud.card.carrion_crow.boon", "Toplanan cephane +%75", "Ammo pickups +75%"),
+                new StringTable.Translation("hud.card.carrion_crow.curse", "Can k\u00fcresi \u015fans\u0131 -%25", "Health orb chance -25%"),
+                new StringTable.Translation("hud.card.carrion_crow.flavor", "Karga diriyi de\u011fil, geride kalan\u0131 besler.", "The crow feeds not the living, but what is left behind."),
+                new StringTable.Translation("hud.card.pilgrims_flask.name", "Hac\u0131 Mataras\u0131", "Pilgrim's Flask"),
+                new StringTable.Translation("hud.card.pilgrims_flask.boon", "\u0130yile\u015fmeler +%35, can k\u00fcresi \u015fans\u0131 +%50", "Healing +35%, health orb chance +50%"),
+                new StringTable.Translation("hud.card.pilgrims_flask.curse", "At\u0131\u015f h\u0131z\u0131 -%12", "Fire rate -12%"),
+                new StringTable.Translation("hud.card.pilgrims_flask.flavor", "Her yudum can verir, her dua eli yava\u015flat\u0131r.", "Every sip mends the flesh, every prayer slows the hand."),
+                new StringTable.Translation("hud.card.gilded_vein.name", "Yald\u0131zl\u0131 Damar", "Gilded Vein"),
+                new StringTable.Translation("hud.card.gilded_vein.boon", "Fazla can s\u0131n\u0131r\u0131 +50; fazla can varken al\u0131nan hasar -%25", "Overheal cap +50; while overhealed, damage taken -25%"),
+                new StringTable.Translation("hud.card.gilded_vein.curse", "Maksimum can -%20", "Max health -20%"),
+                new StringTable.Translation("hud.card.gilded_vein.flavor", "Alt\u0131n damarlar\u0131 korur ama kalbi daralt\u0131r.", "Gold shields the veins, yet narrows the heart."),
+                new StringTable.Translation("hud.card.executioners_oath.name", "Cellat Yemini", "Executioner's Oath"),
+                new StringTable.Translation("hud.card.executioners_oath.boon", "B\u0131\u00e7ak hasar\u0131 +%75, dash %25 h\u0131zl\u0131 dolar", "Blade damage +75%, dash recharges 25% faster"),
+                new StringTable.Translation("hud.card.executioners_oath.curse", "T\u00fcm hasar -%20", "All damage -20%"),
+                new StringTable.Translation("hud.card.executioners_oath.flavor", "Yemin yaln\u0131zca yak\u0131ndan vurana sad\u0131kt\u0131r.", "The oath keeps faith only with those who strike up close."),
+                new StringTable.Translation("hud.card.bell_tower.name", "\u00c7an Kulesi", "Bell Tower"),
+                new StringTable.Translation("hud.card.bell_tower.boon", "At\u0131\u015f h\u0131z\u0131 +%50, al\u0131nan hasar -%20", "Fire rate +50%, damage taken -20%"),
+                new StringTable.Translation("hud.card.bell_tower.curse", "H\u0131z -%15, dash %20 yava\u015f dolar", "Speed -15%, dash recharges 20% slower"),
+                new StringTable.Translation("hud.card.bell_tower.flavor", "Tun\u00e7 \u00e7an\u0131n alt\u0131nda duran e\u011filmez ama k\u0131p\u0131rdayamaz.", "Who stands beneath the bronze bell never bends, yet barely moves."),
+                new StringTable.Translation("hud.card.judges_scale.name", "Yarg\u0131\u00e7 Terazisi", "Judge's Scale"),
+                new StringTable.Translation("hud.card.judges_scale.boon", "T\u00fcm hasar +%60", "All damage +60%"),
+                new StringTable.Translation("hud.card.judges_scale.curse", "Al\u0131nan hasar +%40", "Damage taken +40%"),
+                new StringTable.Translation("hud.card.judges_scale.flavor", "Terazi iki kefeyi de kanla tartar.", "The scale weighs both pans in blood."),
+                new StringTable.Translation("hud.card.hollow_saint.name", "Oyuk Aziz", "Hollow Saint"),
+                new StringTable.Translation("hud.card.hollow_saint.boon", "Dash %60 h\u0131zl\u0131 dolar, h\u0131z +%25", "Dash recharges 60% faster, speed +25%"),
+                new StringTable.Translation("hud.card.hollow_saint.curse", "Maksimum can -%25", "Max health -25%"),
+                new StringTable.Translation("hud.card.hollow_saint.flavor", "Kemiklerinden bo\u015falan her gram r\u00fczg\u00e2ra d\u00f6n\u00fc\u015f\u00fcr.", "Every ounce hollowed from the bone turns to wind."),
+                new StringTable.Translation("hud.card.red_hour.name", "K\u0131z\u0131l Saat", "Red Hour"),
+                new StringTable.Translation("hud.card.red_hour.boon", "At\u0131\u015f h\u0131z\u0131 +%50, b\u0131\u00e7ak hasar\u0131 +%50, h\u0131z +%15", "Fire rate +50%, blade damage +50%, speed +15%"),
+                new StringTable.Translation("hud.card.red_hour.curse", "\u0130yile\u015fmeler -%25, can k\u00fcresi \u015fans\u0131 -%50", "Healing -25%, health orb chance -50%"),
+                new StringTable.Translation("hud.card.red_hour.flavor", "K\u0131z\u0131l saatte merhamet kurur, yaln\u0131zca k\u0131y\u0131m kal\u0131r.", "In the red hour mercy dries up, leaving only slaughter."),
                 new StringTable.Translation("boss.judge.name", "YARGI\u00C7", "THE JUDGE"),
                 new StringTable.Translation("hud.health.label", "CAN", "HEALTH"),
                 new StringTable.Translation("hud.dash.label", "ATILMA", "DASH"),
@@ -460,7 +499,10 @@ namespace RetroFPS.Editor
             RectTransform card = Plate(name, content, new Vector2(540, 440));
             card.anchoredPosition = new Vector2(x, -90);
             card.GetComponent<UnityEngine.UI.Image>().raycastTarget = true;
-            TMP_Text nameText = Label("Name", card, null, 32, 24, 18, 492, 54);
+            TMP_Text nameText = Label("Name", card, null, 32, 24, 18, 332, 54);
+            TMP_Text rarity = Label("Rarity", card, null, 20, 360, 20, 156, 28);
+            rarity.alignment = TextAlignmentOptions.MidlineRight;
+            rarity.fontStyle = FontStyles.Bold | FontStyles.UpperCase;
             Label("BoonLabel", card, "hud.card.boon.label", 22, 24, 90, 492, 34).color = new Color(1f, 0.70f, 0.15f);
             TMP_Text boon = Label("Boon", card, null, 24, 24, 126, 492, 92);
             boon.color = new Color(1f, 0.70f, 0.15f); boon.textWrappingMode = TextWrappingModes.Normal;
@@ -470,8 +512,12 @@ namespace RetroFPS.Editor
             TMP_Text flavor = Label("Flavor", card, null, 20, 24, 350, 492, 72);
             flavor.fontStyle = FontStyles.Italic; flavor.color = new Color(160f / 255f, 150f / 255f, 132f / 255f);
             flavor.textWrappingMode = TextWrappingModes.Normal;
+            var rarityBorder = Image("RarityBorder", card, theme.Chip, Palette.Text, 0, 0, 540, 440);
+            Stretch(rarityBorder.rectTransform); rarityBorder.type = UnityEngine.UI.Image.Type.Sliced;
+            rarityBorder.fillCenter = false; rarityBorder.pixelsPerUnitMultiplier = 1f / 2f; rarityBorder.enabled = true;
             var view = Component<CardOfferChoiceView>(card.gameObject);
             Set(view, "nameText", nameText); Set(view, "boonText", boon); Set(view, "curseText", curse); Set(view, "flavorText", flavor);
+            Set(view, "rarityText", rarity); Set(view, "rarityBorder", rarityBorder);
             Set(view, "frame", ChoiceFrame(card, 540, 440));
             WireChoiceButton(view, card);
             return view;

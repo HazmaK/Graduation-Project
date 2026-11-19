@@ -2,7 +2,7 @@ using System;
 
 namespace RetroFPS.Run.Cards
 {
-    /// <summary>Deterministic, uniform offers without repeated card identities.</summary>
+    /// <summary>Deterministic, rarity-weighted offers without repeated identities or allocations during picks.</summary>
     public sealed class CardOfferRoller
     {
         /// <summary>Maximum successful offers during the run's Araf visit.</summary>
@@ -42,13 +42,16 @@ namespace RetroFPS.Run.Cards
         private CurseBlessingDefinition Pick(CardCatalog catalog, CardInventory inventory)
         {
             CurseBlessingDefinition selected = null;
-            int candidates = 0;
+            float total = 0f;
             for (int i = 0; i < catalog.Count; i++)
             {
                 CurseBlessingDefinition card = catalog.Get(i);
                 if (!IsCandidate(catalog, i, card, inventory)) continue;
-                // Reservoir sampling gives each distinct eligible identity equal probability.
-                if (_rng.Range(0, ++candidates) == 0) selected = card;
+                float weight = catalog.GetWeight(card.Rarity);
+                if (weight <= 0f) continue;
+                total += weight;
+                // Weighted reservoir sampling retains candidates in proportion to their tier weight.
+                if (_rng.Value01 * total < weight) selected = card;
             }
             return selected;
         }

@@ -20,7 +20,7 @@ MonoBehaviour:
     value: ATILMA
     en: DASH
   - key: hud.parry.label
-    value: HÜKÜM
+    value: "H\xDCK\xDCM"
     en: PARRY
   - key: hud.parry.ready
     value: HAZIR
@@ -248,3 +248,123 @@ MonoBehaviour:
   - key: hud.card.strip.title
     value: KARTLAR
     en: CARDS
+  - key: hud.card.rarity.common
+    value: SIRADAN
+    en: COMMON
+  - key: hud.card.rarity.rare
+    value: "NAD\u0130R"
+    en: RARE
+  - key: hud.card.rarity.relic
+    value: "KAD\u0130M"
+    en: RELIC
+  - key: hud.card.iron_hide.name
+    value: Demir Post
+    en: Iron Hide
+  - key: hud.card.iron_hide.boon
+    value: "Al\u0131nan hasar -%20"
+    en: Damage taken -20%
+  - key: hud.card.iron_hide.curse
+    value: "H\u0131z -%10"
+    en: Speed -10%
+  - key: hud.card.iron_hide.flavor
+    value: "Z\u0131rh etine kaynar, ad\u0131m\u0131n a\u011F\u0131rla\u015F\u0131r."
+    en: Armor fuses to flesh, and every step grows heavy.
+  - key: hud.card.carrion_crow.name
+    value: "Le\u015F Kargas\u0131"
+    en: Carrion Crow
+  - key: hud.card.carrion_crow.boon
+    value: Toplanan cephane +%75
+    en: Ammo pickups +75%
+  - key: hud.card.carrion_crow.curse
+    value: "Can k\xFCresi \u015Fans\u0131 -%25"
+    en: Health orb chance -25%
+  - key: hud.card.carrion_crow.flavor
+    value: "Karga diriyi de\u011Fil, geride kalan\u0131 besler."
+    en: The crow feeds not the living, but what is left behind.
+  - key: hud.card.pilgrims_flask.name
+    value: "Hac\u0131 Mataras\u0131"
+    en: Pilgrim's Flask
+  - key: hud.card.pilgrims_flask.boon
+    value: "\u0130yile\u015Fmeler +%35, can k\xFCresi \u015Fans\u0131 +%50"
+    en: Healing +35%, health orb chance +50%
+  - key: hud.card.pilgrims_flask.curse
+    value: "At\u0131\u015F h\u0131z\u0131 -%12"
+    en: Fire rate -12%
+  - key: hud.card.pilgrims_flask.flavor
+    value: "Her yudum can verir, her dua eli yava\u015Flat\u0131r."
+    en: Every sip mends the flesh, every prayer slows the hand.
+  - key: hud.card.gilded_vein.name
+    value: "Yald\u0131zl\u0131 Damar"
+    en: Gilded Vein
+  - key: hud.card.gilded_vein.boon
+    value: "Fazla can s\u0131n\u0131r\u0131 +50; fazla can varken al\u0131nan hasar
+      -%25"
+    en: Overheal cap +50; while overhealed, damage taken -25%
+  - key: hud.card.gilded_vein.curse
+    value: Maksimum can -%20
+    en: Max health -20%
+  - key: hud.card.gilded_vein.flavor
+    value: "Alt\u0131n damarlar\u0131 korur ama kalbi daralt\u0131r."
+    en: Gold shields the veins, yet narrows the heart.
+  - key: hud.card.executioners_oath.name
+    value: Cellat Yemini
+    en: Executioner's Oath
+  - key: hud.card.executioners_oath.boon
+    value: "B\u0131\xE7ak hasar\u0131 +%75, dash %25 h\u0131zl\u0131 dolar"
+    en: Blade damage +75%, dash recharges 25% faster
+  - key: hud.card.executioners_oath.curse
+    value: "T\xFCm hasar -%20"
+    en: All damage -20%
+  - key: hud.card.executioners_oath.flavor
+    value: "Yemin yaln\u0131zca yak\u0131ndan vurana sad\u0131kt\u0131r."
+    en: The oath keeps faith only with those who strike up close.
+  - key: hud.card.bell_tower.name
+    value: "\xC7an Kulesi"
+    en: Bell Tower
+  - key: hud.card.bell_tower.boon
+    value: "At\u0131\u015F h\u0131z\u0131 +%50, al\u0131nan hasar -%20"
+    en: Fire rate +50%, damage taken -20%
+  - key: hud.card.bell_tower.curse
+    value: "H\u0131z -%15, dash %20 yava\u015F dolar"
+    en: Speed -15%, dash recharges 20% slower
+  - key: hud.card.bell_tower.flavor
+    value: "Tun\xE7 \xE7an\u0131n alt\u0131nda duran e\u011Filmez ama k\u0131p\u0131rdayamaz."
+    en: Who stands beneath the bronze bell never bends, yet barely moves.
+  - key: hud.card.judges_scale.name
+    value: "Yarg\u0131\xE7 Terazisi"
+    en: Judge's Scale
+  - key: hud.card.judges_scale.boon
+    value: "T\xFCm hasar +%60"
+    en: All damage +60%
+  - key: hud.card.judges_scale.curse
+    value: "Al\u0131nan hasar +%40"
+    en: Damage taken +40%
+  - key: hud.card.judges_scale.flavor
+    value: Terazi iki kefeyi de kanla tartar.
+    en: The scale weighs both pans in blood.
+  - key: hud.card.hollow_saint.name
+    value: Oyuk Aziz
+    en: Hollow Saint
+  - key: hud.card.hollow_saint.boon
+    value: "Dash %60 h\u0131zl\u0131 dolar, h\u0131z +%25"
+    en: Dash recharges 60% faster, speed +25%
+  - key: hud.card.hollow_saint.curse
+    value: Maksimum can -%25
+    en: Max health -25%
+  - key: hud.card.hollow_saint.flavor
+    value: "Kemiklerinden bo\u015Falan her gram r\xFCzg\xE2ra d\xF6n\xFC\u015F\xFCr."
+    en: Every ounce hollowed from the bone turns to wind.
+  - key: hud.card.red_hour.name
+    value: "K\u0131z\u0131l Saat"
+    en: Red Hour
+  - key: hud.card.red_hour.boon
+    value: "At\u0131\u015F h\u0131z\u0131 +%50, b\u0131\xE7ak hasar\u0131 +%50, h\u0131z
+      +%15"
+    en: Fire rate +50%, blade damage +50%, speed +15%
+  - key: hud.card.red_hour.curse
+    value: "\u0130yile\u015Fmeler -%25, can k\xFCresi \u015Fans\u0131 -%50"
+    en: Healing -25%, health orb chance -50%
+  - key: hud.card.red_hour.flavor
+    value: "K\u0131z\u0131l saatte merhamet kurur, yaln\u0131zca k\u0131y\u0131m
+      kal\u0131r."
+    en: In the red hour mercy dries up, leaving only slaughter.

@@ -67,6 +67,7 @@ namespace RetroFPS.UI.HUD
             Gamepad pad = Gamepad.current;
             stickHeld = pad != null && Mathf.Abs(pad.leftStick.x.ReadValue()) > 0.5f;
             first.Bind(this, 0); second.Bind(this, 1); refuse.Bind(this, value.Count);
+            refuse?.ClearRarity();
             SetInputReady(false);
             first.gameObject.SetActive(value.Count > 0); second.gameObject.SetActive(value.Count > 1);
             offerLayer.SetActive(true);
@@ -89,17 +90,26 @@ namespace RetroFPS.UI.HUD
         private void RefreshText()
         {
             if (strings == null) return;
+            LanguageSetting language = GameSettings.Current.Language;
             for (int i = 0; i < offer.Count; i++)
             {
                 CurseBlessingDefinition card = offer.Get(i);
                 CardOfferChoiceView choice = i == 0 ? first : second;
-                choice.NameText.text = strings.Get(card.NameKey, GameSettings.Current.Language);
+                choice.NameText.text = strings.Get(card.NameKey, language);
                 choice.NameText.color = card.AccentColor;
-                choice.BoonText.text = strings.Get(card.BoonKey, GameSettings.Current.Language);
-                choice.CurseText.text = strings.Get(card.CurseKey, GameSettings.Current.Language);
-                choice.FlavorText.text = strings.Get(card.FlavorKey, GameSettings.Current.Language);
+                choice.BoonText.text = strings.Get(card.BoonKey, language);
+                choice.CurseText.text = strings.Get(card.CurseKey, language);
+                choice.FlavorText.text = strings.Get(card.FlavorKey, language);
+                choice.SetRarity(card.Rarity, strings.Get(RarityKey(card.Rarity), language));
             }
+            refuse?.ClearRarity();
         }
+        private static string RarityKey(CardRarity rarity) => rarity switch
+        {
+            CardRarity.Rare => "hud.card.rarity.rare",
+            CardRarity.Relic => "hud.card.rarity.relic",
+            _ => "hud.card.rarity.common",
+        };
         /// <summary>Changes focus from a pointer hover without confirming.</summary>
         public void Select(int index) { if (!IsOpen) return; gate.Select(index); Highlight(); }
         private void Highlight()

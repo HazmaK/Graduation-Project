@@ -17,11 +17,12 @@ MonoBehaviour:
   boonKey: hud.card.last_breath.boon
   curseKey: hud.card.last_breath.curse
   flavorKey: hud.card.last_breath.flavor
-  accentColor: {r: 0.85, g: 0.84, b: 0.8, a: 1}
+  accentColor: {r: 0.65, g: 0.28, b: 0.85, a: 1}
+  rarity: 1
   modifiers:
   - stat: 0
     op: 0
-    value: 0.6
+    value: 0.5
     condition: 1
   - stat: 3
     op: 0
@@ -29,5 +30,5 @@ MonoBehaviour:
     condition: 1
   - stat: 7
     op: 0
-    value: -0.5
+    value: -0.35
     condition: 0

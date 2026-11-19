@@ -62,7 +62,7 @@ MonoBehaviour:
   fader: {fileID: 0}
   versionLabel: {fileID: 0}
   loadError: {fileID: 0}
-  gameplaySceneName: mert_level
+  gameplaySceneName: TestLevel_Gauntlet
 --- !u!114 &6385519283910536969
 MonoBehaviour:
   m_ObjectHideFlags: 0

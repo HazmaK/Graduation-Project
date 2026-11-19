@@ -14,6 +14,7 @@ namespace RetroFPS.Run.Cards
         [SerializeField] private string curseKey;
         [SerializeField] private string flavorKey;
         [SerializeField] private Color accentColor;
+        [SerializeField] private CardRarity rarity;
         [SerializeField] private StatModifier[] modifiers = Array.Empty<StatModifier>();
 
         /// <summary>Stable card identity.</summary>
@@ -28,6 +29,8 @@ namespace RetroFPS.Run.Cards
         public string FlavorKey => flavorKey;
         /// <summary>Presentation accent.</summary>
         public Color AccentColor => accentColor;
+        /// <summary>Rarity tier used for presentation and offer weighting.</summary>
+        public CardRarity Rarity => rarity;
         /// <summary>Number of modifiers granted by this card.</summary>
         public int ModifierCount => modifiers != null ? modifiers.Length : 0;
 
@@ -41,7 +44,7 @@ namespace RetroFPS.Run.Cards
 #if UNITY_EDITOR
         /// <summary>Initializes definition data for editor builders and tests.</summary>
         public void Configure(string id, string nameKey, string boonKey, string curseKey, string flavorKey,
-            Color accent, StatModifier[] modifiers)
+            Color accent, StatModifier[] modifiers, CardRarity rarity = CardRarity.Common)
         {
             this.id = id;
             this.nameKey = nameKey;
@@ -49,6 +52,7 @@ namespace RetroFPS.Run.Cards
             this.curseKey = curseKey;
             this.flavorKey = flavorKey;
             accentColor = accent;
+            this.rarity = rarity;
             this.modifiers = modifiers != null ? (StatModifier[])modifiers.Clone() : Array.Empty<StatModifier>();
         }
 #endif

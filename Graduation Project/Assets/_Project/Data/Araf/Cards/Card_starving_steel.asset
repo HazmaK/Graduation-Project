@@ -17,15 +17,16 @@ MonoBehaviour:
   boonKey: hud.card.starving_steel.boon
   curseKey: hud.card.starving_steel.curse
   flavorKey: hud.card.starving_steel.flavor
-  accentColor: {r: 0.36, g: 0.45, b: 0.55, a: 1}
+  accentColor: {r: 0.24, g: 0.48, b: 0.88, a: 1}
+  rarity: 1
   modifiers:
   - stat: 1
     op: 0
-    value: 0.5
+    value: 0.45
     condition: 0
   - stat: 8
     op: 1
-    value: 2
+    value: 1.75
     condition: 0
   - stat: 9
     op: 1

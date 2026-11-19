@@ -1,0 +1,42 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c56e1463869a5404f81f708caa32a28b, type: 3}
+  m_Name: Card_red_hour
+  m_EditorClassIdentifier: RetroFPS.Gameplay::RetroFPS.Run.Cards.CurseBlessingDefinition
+  id: red_hour
+  nameKey: hud.card.red_hour.name
+  boonKey: hud.card.red_hour.boon
+  curseKey: hud.card.red_hour.curse
+  flavorKey: hud.card.red_hour.flavor
+  accentColor: {r: 0.88, g: 0.66, b: 0.3, a: 1}
+  rarity: 2
+  modifiers:
+  - stat: 2
+    op: 0
+    value: 0.5
+    condition: 0
+  - stat: 1
+    op: 0
+    value: 0.5
+    condition: 0
+  - stat: 3
+    op: 0
+    value: 0.15
+    condition: 0
+  - stat: 7
+    op: 0
+    value: -0.25
+    condition: 0
+  - stat: 9
+    op: 1
+    value: 0.5
+    condition: 0

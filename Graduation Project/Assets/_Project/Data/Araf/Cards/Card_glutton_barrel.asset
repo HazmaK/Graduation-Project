@@ -17,7 +17,8 @@ MonoBehaviour:
   boonKey: hud.card.glutton_barrel.boon
   curseKey: hud.card.glutton_barrel.curse
   flavorKey: hud.card.glutton_barrel.flavor
-  accentColor: {r: 0.95, g: 0.25, b: 0.035, a: 1}
+  accentColor: {r: 0.6, g: 0.34, b: 0.24, a: 1}
+  rarity: 0
   modifiers:
   - stat: 2
     op: 0
