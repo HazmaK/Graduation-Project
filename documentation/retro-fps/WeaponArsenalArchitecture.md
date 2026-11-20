@@ -174,6 +174,8 @@ Tempo ve infaz odaklı yakın dövüş silahıdır; ücretsiz DPS, dokunulmazlı
 - **Bobbing (Yürüme/Kayma Sallantısı):** Koşarken, kayarken ve zıplarken sinüs dalgasıyla doğal silah adımlaması.
 - **Recoil Spring (Dinamik Yay):** `AddRecoil` / `AddDamageFlinch` altı `Spring`'in yer değiştirmesini ekler; yaylar `recoilFrequency = 9 Hz`, `recoilDamping = 0.5` ile hafif overshoot yaparak döner.
 - **Dikey Atalet, İniş ve Equip:** Havadaki dikey hıza göre ofset, `OnLanded`/`OnJumped` ile çökme, `OnEquip` → `PlayEquip()` ile 0.16s'lik aşağıdan kalkış animasyonu. Tüm ofsetler `ComposePose()` içinde tek seferde transform'a yazılır. Ayrıntı: [[GameFeelArchitecture]].
+- **Kılıç Savuruşları (`MeleeSwingCurve.cs`, 2026-11-20):** Beş `TriggerMelee*` çağrısı artık birer `SwingProfile` oynatır (Inspector: "Melee Swings"). Profil üç anahtardan oluşur — `chamber` (hazırlık), `contact` (temas, yolun ortası), `follow` (savuruş sonu) — her anahtar kamera uzayında **rest'e göre sap ofseti + bıçak yönü**dür. Fazlar: windup (o anki pozdan hazırlığa, ani zıplama yok) → strike (easeOutCubic, temastan geçen eğri) → hold → recovery (rest'e easeInOutCubic). Bıçağın kendi ekseni etrafındaki dönüşü yazılmaz: kesici kenar (+X) her anahtarda hareket yönüne çevrilir; `roll` yassı yüzü göstermek için ek açı verir. Yaylar kameranın önünden geçecek şekilde tasarlandı ki temas anında bıçak nişangahın içinden geçsin. Saf C# (`MeleeSwingCurve`), testler: `MeleeSwingCurveTests`. Dikkat: profiller `Player.prefab`'a serileşir; koddaki varsayılanı değiştirmek prefabı güncellemez.
+- **Kılıç modeli:** `Prefabs/Weapons/sword1.fbx` (Maya'da 3.86 cm çıktı → import Scale Factor 26 ≈ 1 m), `Weapon_Greatsword/Model` ölçek 0.8, sap merkezi silah orijininde. Rest: (0.22, −0.29, 0.55).
 
 ---
 

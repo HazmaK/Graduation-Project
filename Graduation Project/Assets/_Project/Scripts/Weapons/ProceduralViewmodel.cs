@@ -46,6 +46,35 @@ namespace RetroFPS
         [SerializeField] private float equipDuration = 0.16f;
         [SerializeField] private float equipPitchDown = 35f;
 
+        // Melee swing keys are in view space: grip offset from rest, and where the blade points.
+        // The arcs pass in front of the camera so the blade crosses the screen; the edge is turned to lead the motion.
+        [Header("Melee Swings (blade only)")]
+        [SerializeField] private SwingProfile slashSwing = new SwingProfile(   // combo 1: upper-right to lower-left
+            new SwingKey(new Vector3(0.08f, 0.21f, -0.15f), new Vector3(0.55f, 0.75f, -0.35f)),
+            new SwingKey(new Vector3(-0.16f, 0.17f, 0.0f), new Vector3(-0.50f, 0.45f, 0.75f)),
+            new SwingKey(new Vector3(-0.34f, 0.04f, 0.0f), new Vector3(-0.85f, -0.15f, 0.45f)),
+            0.15f, 0.25f, 0.10f);
+        [SerializeField] private SwingProfile backhandSwing = new SwingProfile( // combo 2: lower-left to upper-right
+            new SwingKey(new Vector3(-0.40f, 0.06f, 0.0f), new Vector3(-0.85f, -0.20f, 0.45f)),
+            new SwingKey(new Vector3(-0.36f, 0.20f, 0.02f), new Vector3(0.40f, 0.58f, 0.71f)),
+            new SwingKey(new Vector3(0.06f, 0.22f, -0.10f), new Vector3(0.60f, 0.75f, -0.20f)),
+            0.15f, 0.25f, 0.10f, 45f);
+        [SerializeField] private SwingProfile overheadSwing = new SwingProfile( // combo 3: heavy top-down chop
+            new SwingKey(new Vector3(0.0f, 0.30f, -0.18f), new Vector3(0.35f, 0.85f, -0.40f)),
+            new SwingKey(new Vector3(-0.12f, 0.20f, 0.0f), new Vector3(-0.30f, 0.60f, 0.74f)),
+            new SwingKey(new Vector3(-0.24f, 0.04f, 0.0f), new Vector3(-0.55f, -0.45f, 0.70f)),
+            0.28f, 0.22f, 0.12f, 25f);
+        [SerializeField] private SwingProfile lungeSwing = new SwingProfile(    // alt: forward thrust
+            new SwingKey(new Vector3(0.05f, -0.02f, -0.22f), new Vector3(-0.10f, 0.15f, 0.98f)),
+            new SwingKey(new Vector3(0.0f, 0.02f, 0.0f), new Vector3(-0.15f, 0.18f, 0.97f)),
+            new SwingKey(new Vector3(-0.02f, 0.03f, 0.12f), new Vector3(-0.15f, 0.17f, 0.97f)),
+            0.18f, 0.22f, 0.25f);
+        [SerializeField] private SwingProfile slamSwing = new SwingProfile(     // air alt: raise then drive down
+            new SwingKey(new Vector3(0.0f, 0.32f, -0.15f), new Vector3(0.10f, 0.90f, 0.42f)),
+            new SwingKey(new Vector3(-0.10f, 0.22f, 0.05f), new Vector3(-0.08f, 0.30f, 0.95f)),
+            new SwingKey(new Vector3(-0.12f, 0.12f, 0.10f), new Vector3(-0.05f, -0.88f, 0.47f)),
+            0.25f, 0.20f, 0.20f, 20f);
+
         private PlayerMovement _movement;
         private Spring _recoilX;
         private Spring _recoilY;
@@ -67,10 +96,9 @@ namespace RetroFPS
         private bool _isSlashing = false;
         private float _slashTimer = 0f;
         private float _slashDuration = 0.25f;
-        private Vector3 _slashStartPos;
-        private Vector3 _slashPeakPos;
-        private Quaternion _slashStartRot;
-        private Quaternion _slashPeakRot;
+        private SwingProfile _activeSwing;
+        private Vector3 _swingFromPos;
+        private Quaternion _swingFromRot;
 
         private void Awake()
         {
@@ -273,106 +301,38 @@ namespace RetroFPS
         /// <summary>
         /// Kılıçla saldırıldığında ekranda sert ve savurgan bir darbe arkı çizer (Kombo 1: Sağdan Sola Yatay Kesiş).
         /// </summary>
-        public void TriggerMeleeSlash(float duration = 0.20f)
+        public void TriggerMeleeSlash(float duration = 0.20f) => StartSwing(in slashSwing, duration);
+
+        /// <summary>Kombo 2: lower-left to upper-right backhand.</summary>
+        public void TriggerMeleeBackhand(float duration = 0.20f) => StartSwing(in backhandSwing, duration);
+
+        /// <summary>Kombo 3: heavy top-down finisher chop.</summary>
+        public void TriggerMeleeOverhead(float duration = 0.28f) => StartSwing(in overheadSwing, duration);
+
+        /// <summary>Right click: executioner's forward lunge thrust.</summary>
+        public void TriggerMeleeLunge(float duration = 0.28f) => StartSwing(in lungeSwing, duration);
+
+        /// <summary>Airborne right click: raise the blade and drive it straight down.</summary>
+        public void TriggerMeleeSlam(float duration = 0.35f) => StartSwing(in slamSwing, duration);
+
+        // Starts from the current pose, so a chained combo swing flows out of the previous one instead of snapping.
+        private void StartSwing(in SwingProfile swing, float duration)
         {
-            _isSlashing = true;
+            _activeSwing = swing;
+            _swingFromPos = _posePosition;
+            _swingFromRot = _poseRotation;
             _slashTimer = 0f;
-            _slashDuration = duration;
-
-            _slashStartPos = restPosition + new Vector3(0.20f, 0.12f, -0.06f);
-            _slashPeakPos = restPosition + new Vector3(-0.35f, -0.16f, 0.10f);
-
-            _slashStartRot = Quaternion.Euler(restRotation + new Vector3(-20f, 45f, -30f));
-            _slashPeakRot = Quaternion.Euler(restRotation + new Vector3(35f, -65f, 50f));
-        }
-
-        /// <summary>
-        /// Kombo 2: Soldan Sağa Geri Dönüş Ters Kesişi (Backhand Slash).
-        /// </summary>
-        public void TriggerMeleeBackhand(float duration = 0.20f)
-        {
+            _slashDuration = Mathf.Max(0.05f, duration);
             _isSlashing = true;
-            _slashTimer = 0f;
-            _slashDuration = duration;
-
-            _slashStartPos = restPosition + new Vector3(-0.30f, -0.14f, 0.05f);
-            _slashPeakPos = restPosition + new Vector3(0.32f, 0.14f, -0.05f);
-
-            _slashStartRot = Quaternion.Euler(restRotation + new Vector3(30f, -55f, 45f));
-            _slashPeakRot = Quaternion.Euler(restRotation + new Vector3(-18f, 55f, -35f));
-        }
-
-        /// <summary>
-        /// Kombo 3: Yukarıdan Aşağıya Ağır İnfaz Ezici Darbesi (Overhead Heavy Finisher).
-        /// </summary>
-        public void TriggerMeleeOverhead(float duration = 0.28f)
-        {
-            _isSlashing = true;
-            _slashTimer = 0f;
-            _slashDuration = duration;
-
-            _slashStartPos = restPosition + new Vector3(0.04f, 0.32f, -0.12f);
-            _slashPeakPos = restPosition + new Vector3(-0.02f, -0.26f, 0.18f);
-
-            _slashStartRot = Quaternion.Euler(restRotation + new Vector3(-55f, 8f, 10f));
-            _slashPeakRot = Quaternion.Euler(restRotation + new Vector3(65f, -4f, -8f));
-        }
-
-        /// <summary>
-        /// Sağ Tık: Cellat İnfaz Hücumu (Executioner's Lunge Thrust).
-        /// </summary>
-        public void TriggerMeleeLunge(float duration = 0.28f)
-        {
-            _isSlashing = true;
-            _slashTimer = 0f;
-            _slashDuration = duration;
-
-            _slashStartPos = restPosition + new Vector3(-0.08f, 0.04f, -0.22f);
-            _slashPeakPos = restPosition + new Vector3(0.02f, 0.02f, 0.36f);
-
-            _slashStartRot = Quaternion.Euler(restRotation + new Vector3(-12f, 10f, -14f));
-            _slashPeakRot = Quaternion.Euler(restRotation + new Vector3(6f, -3f, 4f));
-        }
-
-        /// <summary>
-        /// Havada Sağ Tık: Kılıç Yere Dik Çakılma (Meteor Slam).
-        /// </summary>
-        public void TriggerMeleeSlam(float duration = 0.35f)
-        {
-            _isSlashing = true;
-            _slashTimer = 0f;
-            _slashDuration = duration;
-
-            _slashStartPos = restPosition + new Vector3(0f, 0.22f, -0.06f);
-            _slashPeakPos = restPosition + new Vector3(0f, -0.35f, 0.22f);
-
-            _slashStartRot = Quaternion.Euler(restRotation + new Vector3(15f, 0f, 0f));
-            _slashPeakRot = Quaternion.Euler(restRotation + new Vector3(88f, 0f, 0f));
         }
 
         private void ExecuteSlashAnimation()
         {
             _slashTimer += Time.deltaTime;
             float t = Mathf.Clamp01(_slashTimer / _slashDuration);
-
-            // İki aşamalı kinetik eğri: Hızlı sert vuruş darbesi (%40) + akıcı toparlanma (%60)
-            if (t <= 0.40f)
-            {
-                float strikeT = Mathf.Sin((t / 0.40f) * Mathf.PI * 0.5f);
-                _posePosition = Vector3.Lerp(_slashStartPos, _slashPeakPos, strikeT);
-                _poseRotation = Quaternion.Slerp(_slashStartRot, _slashPeakRot, strikeT);
-            }
-            else
-            {
-                float returnT = Mathf.SmoothStep(0f, 1f, (t - 0.40f) / 0.60f);
-                _posePosition = Vector3.Lerp(_slashPeakPos, restPosition, returnT);
-                _poseRotation = Quaternion.Slerp(_slashPeakRot, Quaternion.Euler(restRotation), returnT);
-            }
-
-            if (t >= 1.0f)
-            {
-                _isSlashing = false;
-            }
+            MeleeSwingCurve.Evaluate(in _activeSwing, t, _swingFromPos, _swingFromRot,
+                restPosition, Quaternion.Euler(restRotation), out _posePosition, out _poseRotation);
+            if (t >= 1f) _isSlashing = false;
         }
     }
 }

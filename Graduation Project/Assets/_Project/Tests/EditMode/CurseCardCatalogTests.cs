@@ -106,7 +106,7 @@ namespace RetroFPS.Tests.EditMode
                 },
                 new[]
                 {
-                    new StatModifier(StatId.OverhealCap, StatOp.AddFlat, 50f),
+                    new StatModifier(StatId.OverhealCap, StatOp.AddFlat, 75f),
                     new StatModifier(StatId.DamageTaken, StatOp.AddPercent, -0.25f, StatCondition.Overhealed),
                     new StatModifier(StatId.MaxHealth, StatOp.AddPercent, -0.2f)
                 },
@@ -119,7 +119,7 @@ namespace RetroFPS.Tests.EditMode
                 new[]
                 {
                     new StatModifier(StatId.FireRate, StatOp.AddPercent, 0.5f),
-                    new StatModifier(StatId.DamageTaken, StatOp.AddPercent, -0.2f),
+                    new StatModifier(StatId.DamageTaken, StatOp.AddPercent, -0.1f),
                     new StatModifier(StatId.MoveSpeed, StatOp.AddPercent, -0.15f),
                     new StatModifier(StatId.DashRechargeTime, StatOp.Multiply, 1.2f)
                 },

@@ -54,9 +54,9 @@ değil, bilinçli ve radikal oyun tarzı dönüşümleridir.
 | 7 | iron_hide | Demir Post | Iron Hide | Common | DamageTaken AddPercent -0.20; MoveSpeed AddPercent -0.10 |
 | 8 | carrion_crow | Leş Kargası | Carrion Crow | Common | AmmoPickupAmount AddPercent +0.75; OrbDropChance Multiply 0.75 |
 | 9 | pilgrims_flask | Hacı Matarası | Pilgrim's Flask | Common | HealReceived AddPercent +0.35; OrbDropChance Multiply 1.5; FireRate AddPercent -0.12 |
-| 10 | gilded_vein | Yaldızlı Damar | Gilded Vein | Rare | OverhealCap AddFlat +50; DamageTaken AddPercent -0.25 [Overhealed]; MaxHealth AddPercent -0.20 |
+| 10 | gilded_vein | Yaldızlı Damar | Gilded Vein | Rare | OverhealCap AddFlat +75; DamageTaken AddPercent -0.25 [Overhealed]; MaxHealth AddPercent -0.20 |
 | 11 | executioners_oath | Cellat Yemini | Executioner's Oath | Rare | MeleeDamage AddPercent +0.75; DashRechargeTime Multiply 0.8; DamageDealt AddPercent -0.20 |
-| 12 | bell_tower | Çan Kulesi | Bell Tower | Rare | FireRate AddPercent +0.50; DamageTaken AddPercent -0.20; MoveSpeed AddPercent -0.15; DashRechargeTime Multiply 1.2 |
+| 12 | bell_tower | Çan Kulesi | Bell Tower | Rare | FireRate AddPercent +0.50; DamageTaken AddPercent -0.10; MoveSpeed AddPercent -0.15; DashRechargeTime Multiply 1.2 |
 | 13 | judges_scale | Yargıç Terazisi | Judge's Scale | Relic | DamageDealt AddPercent +0.60; DamageTaken AddPercent +0.40 |
 | 14 | hollow_saint | Oyuk Aziz | Hollow Saint | Relic | DashRechargeTime Multiply 0.625; MoveSpeed AddPercent +0.25; MaxHealth AddPercent -0.25 |
 | 15 | red_hour | Kızıl Saat | Red Hour | Relic | FireRate AddPercent +0.50; MeleeDamage AddPercent +0.50; MoveSpeed AddPercent +0.15; HealReceived AddPercent -0.25; OrbDropChance Multiply 0.5 |
@@ -138,3 +138,9 @@ Stat başına nihai değer için güvenli sınırlar (ÖNERİ - tabana oran):
   oynanış mekaniği kazandıran kartlar henüz tasarlanmamıştır.
 - **Denge Doğrulaması:** Kartların sayısal dengesi ve oynanış hissi henüz elle
   oynanarak test edilmemiştir.
+- **Hasar × atış hızı sınırsız:** tek tek stat'lar sınırda kalsa da çarpımları
+  sınırlanmıyor. En güçlü kombinasyon Yargıç Terazisi + Çan Kulesi ≈ 2.4× silah
+  çıktısı (/balance-check 2026-11-20). Oynanış testinden sonra değerlendirilecek.
+- **Denge geçişi 2026-11-20:** Çan Kulesi alınan hasar -%20 → -%10 (Nadir için
+  fazla güçlüydü); Yaldızlı Damar fazla can sınırı +50 → +75 (Dolu Kadeh'in
+  gerisinde kalıyordu).

@@ -4,11 +4,11 @@
     "type": "split",
     "children": [
       {
-        "id": "ab3c9ff0d0821284",
+        "id": "4703ae0b69ac7abc",
         "type": "tabs",
         "children": [
           {
-            "id": "d93b57ea0f91edca",
+            "id": "a297e7c87c51299a",
             "type": "leaf",
             "state": {
               "type": "empty",
@@ -184,11 +184,18 @@
       "bases:Yeni taban oluştur": false
     }
   },
-  "active": "d93b57ea0f91edca",
+  "active": "a297e7c87c51299a",
   "lastOpenFiles": [
-    "file:C:/Users/karac/Desktop/Ders/GADS404/GADS404_Midterm_Master_Guide.md",
-    "HealthOrbAndDropSystem.md",
+    "EnemyAIAndSpawning.md",
+    "EnemyAIAndCombatFeel.md",
+    "DualLoadoutAndWeapons.md",
+    "CurseBlessingCards.md",
+    "CombatVFXAndDecalSystem.md",
+    "CombatAndDamageInterfaces.md",
+    "CombatHudArchitecture.md",
     "START_HERE_AI_CONSTITUTION.md",
+    "HealthOrbAndDropSystem.md",
+    "file:C:/Users/karac/Desktop/Ders/GADS404/GADS404_Midterm_Master_Guide.md",
     "MultiAgentSharedMemory.md",
     "HitstopAndAudioFeedback.md",
     "CoreLoopAndPurgatory.md",

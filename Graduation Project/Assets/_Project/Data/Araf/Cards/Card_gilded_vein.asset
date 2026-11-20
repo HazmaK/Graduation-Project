@@ -22,7 +22,7 @@ MonoBehaviour:
   modifiers:
   - stat: 11
     op: 2
-    value: 50
+    value: 75
     condition: 0
   - stat: 6
     op: 0
