@@ -4389,6 +4389,10 @@ PrefabInstance:
       propertyPath: m_fontColor32.rgba
       value: 4290829544
       objectReference: {fileID: 0}
+    - target: {fileID: 1195498673038873464, guid: 8a7854e3713bc4343b5a793ccb58fac2, type: 3}
+      propertyPath: far clip plane
+      value: 100
+      objectReference: {fileID: 0}
     - target: {fileID: 1453220795992313917, guid: 8a7854e3713bc4343b5a793ccb58fac2, type: 3}
       propertyPath: m_AnchorMax.y
       value: 0
@@ -67337,6 +67341,10 @@ PrefabInstance:
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
       objectReference: {fileID: 2100000, guid: 94f1c5d849be8e64391c62b288861e81, type: 2}
+    - target: {fileID: -8732795751611541864, guid: f070e3506246c6d4eaedbf688cd91068, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: fc21ac147f7b66b4e886332fc115bcc1, type: 2}
     - target: {fileID: -8719832944701211113, guid: f070e3506246c6d4eaedbf688cd91068, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
@@ -70145,6 +70153,10 @@ PrefabInstance:
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
       objectReference: {fileID: 2100000, guid: fc21ac147f7b66b4e886332fc115bcc1, type: 2}
+    - target: {fileID: 6419471244867143317, guid: f070e3506246c6d4eaedbf688cd91068, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 52a0649a3c3980c41b739d57eeda5d94, type: 2}
     - target: {fileID: 6420334637626707912, guid: f070e3506246c6d4eaedbf688cd91068, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
