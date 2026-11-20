@@ -12,24 +12,23 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6505808ee0b3b984ba7b9489e29a96cd, type: 3}
   m_Name: WaveSet_Gauntlet_R3_Ossuary
   m_EditorClassIdentifier: RetroFPS.Gameplay::RetroFPS.Combat.WaveSet
-  designNotes: "Oda 3 (5 faz). Boss \xF6ncesi s\u0131nav: k\xF6pr\xFC/balkon, kalabal\u0131k
-    ve hava bask\u0131s\u0131 birlikte."
+  designNotes: "Oda 3 (5 faz). Boss öncesi sınav: köprü/balkon, kalabalık + hava baskısı + Kefaretçi. Dengelendi: 2026-11-20."
   waves:
-  - waveName: "Faz 1: Kemik Ya\u011Fmuru"
-    preWaveDelay: 1
-    maxConcurrentEnemies: 8
-    threatBudget: 10
+  - waveName: "Faz 1: Kemik Yağmuru"
+    preWaveDelay: 1.2
+    maxConcurrentEnemies: 7
+    threatBudget: 9
     transitionMode: 1
     remainingThreshold: 2
     percentageThreshold: 0.75
-    timeLimit: 30
+    timeLimit: 35
     carryOverRemainingEnemies: 1
     rewardHealthOrbs: 1
     rewardAmmoPickups: 1
     spawnEntries:
     - enemyPrefab: {fileID: 5349570471886633040, guid: 9ac052f5657dabe478d13eea780617b6, type: 3}
-      count: 8
-      spawnInterval: 0.8
+      count: 7
+      spawnInterval: 0.9
       isAirEnemy: 0
       targetZoneTag: 
       delayFromWaveStart: 0
@@ -47,31 +46,31 @@ MonoBehaviour:
       spawnPattern: 2
       runInParallel: 1
       threatCostOverride: 0
-  - waveName: "Faz 2: K\xF6pr\xFC Sava\u015F\u0131"
-    preWaveDelay: 0.8
-    maxConcurrentEnemies: 10
-    threatBudget: 12
+  - waveName: "Faz 2: Köprü Savaşı"
+    preWaveDelay: 1.5
+    maxConcurrentEnemies: 8
+    threatBudget: 10
     transitionMode: 4
     remainingThreshold: 2
     percentageThreshold: 0.7
-    timeLimit: 25
+    timeLimit: 35
     carryOverRemainingEnemies: 1
     rewardHealthOrbs: 1
     rewardAmmoPickups: 1
     spawnEntries:
     - enemyPrefab: {fileID: 5349570471886633040, guid: 9ac052f5657dabe478d13eea780617b6, type: 3}
-      count: 10
-      spawnInterval: 0.9
+      count: 8
+      spawnInterval: 1
       isAirEnemy: 0
       targetZoneTag: 
       delayFromWaveStart: 0
-      batchSize: 3
+      batchSize: 2
       spawnPattern: 0
       runInParallel: 0
       threatCostOverride: 0
     - enemyPrefab: {fileID: 3659605130630274911, guid: 02177a9e23183124fbe40a546e414de1, type: 3}
       count: 3
-      spawnInterval: 1.6
+      spawnInterval: 2
       isAirEnemy: 1
       targetZoneTag: 
       delayFromWaveStart: 2
@@ -79,21 +78,21 @@ MonoBehaviour:
       spawnPattern: 2
       runInParallel: 1
       threatCostOverride: 0
-  - waveName: "Faz 3: Ruhlar\u0131n Dans\u0131"
-    preWaveDelay: 0.8
-    maxConcurrentEnemies: 12
-    threatBudget: 14
+  - waveName: "Faz 3: Ruhların Dansı"
+    preWaveDelay: 1.5
+    maxConcurrentEnemies: 9
+    threatBudget: 12
     transitionMode: 4
     remainingThreshold: 2
     percentageThreshold: 0.7
-    timeLimit: 28
+    timeLimit: 36
     carryOverRemainingEnemies: 1
     rewardHealthOrbs: 2
     rewardAmmoPickups: 1
     spawnEntries:
     - enemyPrefab: {fileID: 5349570471886633040, guid: 9ac052f5657dabe478d13eea780617b6, type: 3}
-      count: 12
-      spawnInterval: 1
+      count: 9
+      spawnInterval: 1.1
       isAirEnemy: 0
       targetZoneTag: 
       delayFromWaveStart: 0
@@ -102,86 +101,116 @@ MonoBehaviour:
       runInParallel: 0
       threatCostOverride: 0
     - enemyPrefab: {fileID: 3659605130630274911, guid: 02177a9e23183124fbe40a546e414de1, type: 3}
-      count: 5
-      spawnInterval: 1.4
+      count: 3
+      spawnInterval: 1.8
       isAirEnemy: 1
       targetZoneTag: 
-      delayFromWaveStart: 1
+      delayFromWaveStart: 2
       batchSize: 1
       spawnPattern: 0
       runInParallel: 1
       threatCostOverride: 0
-  - waveName: "Faz 4: K\u0131yamet Yakla\u015F\u0131yor"
-    preWaveDelay: 0.8
-    maxConcurrentEnemies: 14
-    threatBudget: 16
+    - enemyPrefab: {fileID: 7637322481129231680, guid: a88eba293ab871d4ba7c37b1af78554f, type: 3}
+      count: 1
+      spawnInterval: 1
+      isAirEnemy: 0
+      targetZoneTag: 
+      delayFromWaveStart: 3
+      batchSize: 1
+      spawnPattern: 2
+      runInParallel: 1
+      threatCostOverride: 0
+  - waveName: "Faz 4: Kıyamet Yaklaşıyor"
+    preWaveDelay: 1.5
+    maxConcurrentEnemies: 10
+    threatBudget: 13
     transitionMode: 4
     remainingThreshold: 2
     percentageThreshold: 0.75
-    timeLimit: 30
+    timeLimit: 38
     carryOverRemainingEnemies: 1
     rewardHealthOrbs: 2
     rewardAmmoPickups: 2
     spawnEntries:
     - enemyPrefab: {fileID: 5349570471886633040, guid: 9ac052f5657dabe478d13eea780617b6, type: 3}
-      count: 12
-      spawnInterval: 1
+      count: 9
+      spawnInterval: 1.2
       isAirEnemy: 0
       targetZoneTag: 
       delayFromWaveStart: 0
-      batchSize: 4
+      batchSize: 3
       spawnPattern: 0
       runInParallel: 0
       threatCostOverride: 0
     - enemyPrefab: {fileID: 3659605130630274911, guid: 02177a9e23183124fbe40a546e414de1, type: 3}
-      count: 6
-      spawnInterval: 1.2
+      count: 4
+      spawnInterval: 1.6
       isAirEnemy: 1
       targetZoneTag: 
-      delayFromWaveStart: 1
+      delayFromWaveStart: 2
       batchSize: 1
       spawnPattern: 2
       runInParallel: 1
       threatCostOverride: 0
-  - waveName: "Faz 5: E\u015Fik (Final)"
-    preWaveDelay: 1
-    maxConcurrentEnemies: 16
-    threatBudget: 18
+    - enemyPrefab: {fileID: 7637322481129231680, guid: a88eba293ab871d4ba7c37b1af78554f, type: 3}
+      count: 1
+      spawnInterval: 1
+      isAirEnemy: 0
+      targetZoneTag: 
+      delayFromWaveStart: 3
+      batchSize: 1
+      spawnPattern: 2
+      runInParallel: 1
+      threatCostOverride: 0
+  - waveName: "Faz 5: Eşik (Final)"
+    preWaveDelay: 1.5
+    maxConcurrentEnemies: 12
+    threatBudget: 16
     transitionMode: 0
     remainingThreshold: 2
     percentageThreshold: 0.75
-    timeLimit: 30
+    timeLimit: 40
     carryOverRemainingEnemies: 1
     rewardHealthOrbs: 3
     rewardAmmoPickups: 3
     spawnEntries:
     - enemyPrefab: {fileID: 5349570471886633040, guid: 9ac052f5657dabe478d13eea780617b6, type: 3}
-      count: 12
-      spawnInterval: 1.1
+      count: 9
+      spawnInterval: 1.2
       isAirEnemy: 0
       targetZoneTag: 
       delayFromWaveStart: 0
-      batchSize: 4
+      batchSize: 3
       spawnPattern: 0
       runInParallel: 0
       threatCostOverride: 0
     - enemyPrefab: {fileID: 3659605130630274911, guid: 02177a9e23183124fbe40a546e414de1, type: 3}
-      count: 6
-      spawnInterval: 1.2
+      count: 4
+      spawnInterval: 1.6
       isAirEnemy: 1
       targetZoneTag: 
-      delayFromWaveStart: 1
+      delayFromWaveStart: 2
       batchSize: 1
       spawnPattern: 0
       runInParallel: 1
       threatCostOverride: 0
+    - enemyPrefab: {fileID: 7637322481129231680, guid: a88eba293ab871d4ba7c37b1af78554f, type: 3}
+      count: 2
+      spawnInterval: 5
+      isAirEnemy: 0
+      targetZoneTag: 
+      delayFromWaveStart: 3
+      batchSize: 1
+      spawnPattern: 2
+      runInParallel: 1
+      threatCostOverride: 0
     - enemyPrefab: {fileID: 5349570471886633040, guid: 9ac052f5657dabe478d13eea780617b6, type: 3}
-      count: 6
+      count: 4
       spawnInterval: 1
       isAirEnemy: 0
       targetZoneTag: 
-      delayFromWaveStart: 6
-      batchSize: 6
+      delayFromWaveStart: 10
+      batchSize: 4
       spawnPattern: 1
       runInParallel: 1
       threatCostOverride: 0
