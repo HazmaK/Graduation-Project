@@ -12,101 +12,101 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6505808ee0b3b984ba7b9489e29a96cd, type: 3}
   m_Name: WaveSet_Gauntlet_R2_BoneHall
   m_EditorClassIdentifier: RetroFPS.Gameplay::RetroFPS.Combat.WaveSet
-  designNotes: "Oda 2 (4 faz). Uçan Göz tanıtımı + yan platformlardan flank; Kefaretçi Faz 3'ten itibaren. Dengelendi: 2026-11-20."
+  designNotes: "Oda 2 (4 faz). Ghoul sürüleri + Uçan Göz çiftleri aynı anda; Kefaretçi Faz 3'ten itibaren sürüyle gelir. Sürü ayarı: 2026-11-20."
   waves:
   - waveName: "Faz 1: Gökyüzü Gözleri"
     preWaveDelay: 1.2
-    maxConcurrentEnemies: 6
-    threatBudget: 8
+    maxConcurrentEnemies: 7
+    threatBudget: 9
     transitionMode: 2
     remainingThreshold: 2
     percentageThreshold: 0.7
-    timeLimit: 35
+    timeLimit: 37
     carryOverRemainingEnemies: 1
     rewardHealthOrbs: 1
     rewardAmmoPickups: 1
     spawnEntries:
     - enemyPrefab: {fileID: 5349570471886633040, guid: 9ac052f5657dabe478d13eea780617b6, type: 3}
       count: 5
-      spawnInterval: 1.1
+      spawnInterval: 2.5
       isAirEnemy: 0
       targetZoneTag: 
       delayFromWaveStart: 0
-      batchSize: 2
+      batchSize: 3
       spawnPattern: 1
       runInParallel: 0
       threatCostOverride: 0
     - enemyPrefab: {fileID: 3659605130630274911, guid: 02177a9e23183124fbe40a546e414de1, type: 3}
       count: 2
-      spawnInterval: 2.5
+      spawnInterval: 3
       isAirEnemy: 1
       targetZoneTag: 
-      delayFromWaveStart: 3
-      batchSize: 1
+      delayFromWaveStart: 1
+      batchSize: 2
       spawnPattern: 2
       runInParallel: 1
       threatCostOverride: 0
   - waveName: "Faz 2: Kuşatma"
-    preWaveDelay: 1.5
-    maxConcurrentEnemies: 7
-    threatBudget: 9
-    transitionMode: 4
-    remainingThreshold: 2
-    percentageThreshold: 0.7
-    timeLimit: 35
-    carryOverRemainingEnemies: 1
-    rewardHealthOrbs: 1
-    rewardAmmoPickups: 1
-    spawnEntries:
-    - enemyPrefab: {fileID: 5349570471886633040, guid: 9ac052f5657dabe478d13eea780617b6, type: 3}
-      count: 7
-      spawnInterval: 1
-      isAirEnemy: 0
-      targetZoneTag: 
-      delayFromWaveStart: 0
-      batchSize: 2
-      spawnPattern: 0
-      runInParallel: 0
-      threatCostOverride: 0
-    - enemyPrefab: {fileID: 3659605130630274911, guid: 02177a9e23183124fbe40a546e414de1, type: 3}
-      count: 3
-      spawnInterval: 2.2
-      isAirEnemy: 1
-      targetZoneTag: 
-      delayFromWaveStart: 2
-      batchSize: 1
-      spawnPattern: 2
-      runInParallel: 1
-      threatCostOverride: 0
-  - waveName: "Faz 3: Balkon Baskısı"
     preWaveDelay: 1.5
     maxConcurrentEnemies: 9
     threatBudget: 11
     transitionMode: 4
     remainingThreshold: 2
     percentageThreshold: 0.7
-    timeLimit: 38
+    timeLimit: 37
+    carryOverRemainingEnemies: 1
+    rewardHealthOrbs: 1
+    rewardAmmoPickups: 1
+    spawnEntries:
+    - enemyPrefab: {fileID: 5349570471886633040, guid: 9ac052f5657dabe478d13eea780617b6, type: 3}
+      count: 7
+      spawnInterval: 2.5
+      isAirEnemy: 0
+      targetZoneTag: 
+      delayFromWaveStart: 0
+      batchSize: 4
+      spawnPattern: 1
+      runInParallel: 0
+      threatCostOverride: 0
+    - enemyPrefab: {fileID: 3659605130630274911, guid: 02177a9e23183124fbe40a546e414de1, type: 3}
+      count: 3
+      spawnInterval: 3
+      isAirEnemy: 1
+      targetZoneTag: 
+      delayFromWaveStart: 1
+      batchSize: 2
+      spawnPattern: 2
+      runInParallel: 1
+      threatCostOverride: 0
+  - waveName: "Faz 3: Balkon Baskısı"
+    preWaveDelay: 1.5
+    maxConcurrentEnemies: 10
+    threatBudget: 13
+    transitionMode: 4
+    remainingThreshold: 2
+    percentageThreshold: 0.7
+    timeLimit: 40
     carryOverRemainingEnemies: 1
     rewardHealthOrbs: 2
     rewardAmmoPickups: 1
     spawnEntries:
     - enemyPrefab: {fileID: 5349570471886633040, guid: 9ac052f5657dabe478d13eea780617b6, type: 3}
       count: 8
-      spawnInterval: 1.2
+      spawnInterval: 2.5
       isAirEnemy: 0
       targetZoneTag: 
       delayFromWaveStart: 0
-      batchSize: 3
+      batchSize: 4
       spawnPattern: 0
       runInParallel: 0
       threatCostOverride: 0
     - enemyPrefab: {fileID: 3659605130630274911, guid: 02177a9e23183124fbe40a546e414de1, type: 3}
       count: 3
-      spawnInterval: 2
+      spawnInterval: 3
       isAirEnemy: 1
       targetZoneTag: 
-      delayFromWaveStart: 2
-      batchSize: 1
+      delayFromWaveStart: 1
+      batchSize: 2
       spawnPattern: 0
       runInParallel: 1
       threatCostOverride: 0
@@ -115,40 +115,40 @@ MonoBehaviour:
       spawnInterval: 1
       isAirEnemy: 0
       targetZoneTag: 
-      delayFromWaveStart: 3
+      delayFromWaveStart: 1.5
       batchSize: 1
       spawnPattern: 2
       runInParallel: 1
       threatCostOverride: 0
   - waveName: "Faz 4: Katliam (Final)"
     preWaveDelay: 1.5
-    maxConcurrentEnemies: 10
-    threatBudget: 13
+    maxConcurrentEnemies: 12
+    threatBudget: 15
     transitionMode: 0
     remainingThreshold: 2
     percentageThreshold: 0.75
-    timeLimit: 40
+    timeLimit: 42
     carryOverRemainingEnemies: 1
     rewardHealthOrbs: 2
     rewardAmmoPickups: 2
     spawnEntries:
     - enemyPrefab: {fileID: 5349570471886633040, guid: 9ac052f5657dabe478d13eea780617b6, type: 3}
       count: 8
-      spawnInterval: 1.1
+      spawnInterval: 2.4
       isAirEnemy: 0
       targetZoneTag: 
       delayFromWaveStart: 0
-      batchSize: 3
+      batchSize: 4
       spawnPattern: 1
       runInParallel: 0
       threatCostOverride: 0
     - enemyPrefab: {fileID: 3659605130630274911, guid: 02177a9e23183124fbe40a546e414de1, type: 3}
       count: 4
-      spawnInterval: 1.8
+      spawnInterval: 3
       isAirEnemy: 1
       targetZoneTag: 
-      delayFromWaveStart: 2
-      batchSize: 1
+      delayFromWaveStart: 1
+      batchSize: 2
       spawnPattern: 2
       runInParallel: 1
       threatCostOverride: 0
@@ -157,7 +157,7 @@ MonoBehaviour:
       spawnInterval: 1
       isAirEnemy: 0
       targetZoneTag: 
-      delayFromWaveStart: 3
+      delayFromWaveStart: 2
       batchSize: 1
       spawnPattern: 2
       runInParallel: 1
@@ -167,7 +167,7 @@ MonoBehaviour:
       spawnInterval: 1
       isAirEnemy: 0
       targetZoneTag: 
-      delayFromWaveStart: 10
+      delayFromWaveStart: 9
       batchSize: 4
       spawnPattern: 0
       runInParallel: 1
