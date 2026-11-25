@@ -1000,6 +1000,8 @@ MonoBehaviour:
   bannerView: {fileID: 7911658764415417938}
   bossView: {fileID: 6519760220590087455}
   deathView: {fileID: 5296283879113072414}
+  floorSummaryView: {fileID: 6628099076380368507}
+  pauseRuntime: {fileID: 2672204519215826301}
   cardOfferView: {fileID: 6678087122986490641}
   activeCardsView: {fileID: 2739863212822722961}
 --- !u!114 &6592472749984716966
@@ -1873,6 +1875,17 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b1e96286d9974904db492c1aa865727c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: RetroFPS.HUD::RetroFPS.UI.HUD.BossBarView
+--- !u!114 &6628099076380368507 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 5993313742771717417, guid: 3c5dfc9cab0bd9a498cc5cf150565861, type: 3}
+  m_PrefabInstance: {fileID: 637043733453282130}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b6e4cbc69ba4485418f9126157a20df2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: RetroFPS.HUD::RetroFPS.UI.HUD.FloorSummaryView
 --- !u!114 &6678087122986490641 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 6087300155309506627, guid: 3c5dfc9cab0bd9a498cc5cf150565861, type: 3}

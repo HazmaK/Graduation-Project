@@ -59,7 +59,7 @@ flowchart TD
 - **Risk & Ödül:**
   * Düşmanlar kuledekilere göre %40 daha agresiftir ve yüksek hasar verir.
   * Labirentte bulunan eşyalar çift taraflıdır (örn. "+%50 Saldırı Hızı ancak -%30 Maksimum Can").
-- **Kuleye Dönüş:** Portaldan kaçan oyuncu **öldüğü odanın başına (encounter checkpoint)** döner ve o karşılaşma 1. dalgadan yeniden başlar. Karşılaşma dışında öldüyse `RunDirector.towerFallbackRespawn` noktasına (yoksa öldüğü yere) döner.
+- **Kuleye Dönüş:** Portaldan kaçan oyuncu **öldüğü odanın başına (encounter checkpoint)** döner ve o karşılaşma **kaldığı dalgadan** devam eder (2026-11-22): savaşta ölünen dalga baştan oynanır (o dalganın düşmanları yeniden doğar), bitmiş dalgalar tekrar edilmez; dalgalar arası cooldown'da ölündüyse bir sonraki dalgadan, warmup'ta ölündüyse 1. dalgadan başlar. Toplam öldürme sayısı o dalganın başındaki değere geri yüklenir. Araf'sız `RetryInterceptor` yeniden denemesi hâlâ 1. dalgadan başlar. Karşılaşma dışında öldüyse `RunDirector.towerFallbackRespawn` noktasına (yoksa öldüğü yere) döner.
 
 ### 3. Gerçek Kalıcı Ölüm (True Permadeath)
 - **Koşul:** Oyuncu Araf labirentinde de canını sıfırlarsa ikinci bir şans verilmez.
@@ -96,7 +96,7 @@ stateDiagram-v2
     FallingToAraf --> InAraf: ArafLevel'e geçiş & Revive
     InAraf --> EscapingAraf: Kaçış portalı
     InAraf --> TrueDeath: Arafta ölüm
-    EscapingAraf --> Tower: Checkpoint'e dönüş & 1. dalgadan yeniden başlama
+    EscapingAraf --> Tower: Checkpoint'e dönüş & kalınan dalgadan devam
     TrueDeath --> [*]: R / Space / Enter (Sahne yeniden yüklenir)
 ```
 
@@ -144,3 +144,11 @@ stateDiagram-v2
 - [[CurseBlessingCards]] ➔ `implements_cards`
 - ⬅️ [[ProjectOverview]] ➔ `features_mechanic` *(gelen)*
 - ⬅️ [[START_HERE_AI_CONSTITUTION]] ➔ `mandated_by_constitution` *(gelen)*
+
+
+## Kat Sonu İstatistik Ekranı (Run Stats)
+- Akış: Judge ölünce `BossEncounter.HandleBossDeath` -> `RunEvents.RaiseFloorCleared()` (yalnızca `RunPhase.Tower` ve oyuncu hayattaysa) -> `FloorSummaryView` ("KAT TEMİZLENDİ" paneli, oyunu `CardOfferView` desenleriyle duraklatır, açıkken Esc pause menüsü açılmaz, hitstop iptal edilir). Butonlar: Devam = `RunEvents.ContinueAfterFloorClear()` (`FloorIndex++`), Ana Menü = `PauseRuntime.TryLeaveToMainMenu()`.
+- Veri: `RunRecord` (POCO, `RunState.Record`): kule/Araf kill, kritik, gib, alınan hasar, Araf süresi (`FallingToAraf`/`InAraf`/`EscapingAraf` evrelerinde). `RunSummary` readonly struct anlık görüntü (`RunState.CreateSummary`). `RunRecordRecorder` (`RunDirector.prefab` üzerinde) `CombatEvents.OnEnemyKilled` ve `PlayerHealth.OnDamageTaken` dinler; Araf mekaniği için bkz. [[ArafLabyrinthSystem]].
+- Gösterim: `RunSummaryModel` (`UI/HUD/Logic`) satırları üretir; aynı stat bloğu `TrueDeathView` ölüm kartında da var. Prefab `CombatHudBuilder` (`RetroFPS/Build Combat HUD`) ile üretilir; anahtarlar `hud.floor_summary.*` (TR/EN).
+- Testler: `RunRecordTests`, `RunSummaryModelTests`, `Pause*` testleri. Kanıt: `production/qa/evidence/floor-summary-01..03.png` (2026-11-22).
+- Açık: Sonraki kat henüz yok (Devam sadece kat indeksini artırır); oyun içi Türkçe düzen ve gamepad gezinmesi doğrulanmadı.

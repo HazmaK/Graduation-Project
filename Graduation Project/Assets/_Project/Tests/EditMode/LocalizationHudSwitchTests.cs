@@ -108,7 +108,7 @@ namespace RetroFPS.Tests.EditMode
             Assert.That(Text(encounter, "waveText"), Is.EqualTo("WAVE 2/5"));
             Assert.That(Text(encounter, "remainingText"), Is.EqualTo("LEFT 1"));
             Assert.That(Text(encounter, "roomsText"), Is.EqualTo("ROOMS 3/10"));
-            Assert.That(Text(encounter, "chargeText"), Is.EqualTo("ARAF: USED"));
+            Assert.That(Text(encounter, "chargeText"), Is.EqualTo("PURGATORY: USED"));
             Assert.That(Text(weapon, "weaponName"), Is.EqualTo("ARBALEST"));
             Assert.That(Text(weapon, "warningText"), Is.EqualTo("EMPTY"));
             Assert.That(LocalizationHudTestContext.Get(ability, "successUntil"), Is.EqualTo(successUntil));
@@ -194,7 +194,7 @@ namespace RetroFPS.Tests.EditMode
         }
 
         /// <summary>Both fade phases retain semantic captions, opacity and timing when the language changes.</summary>
-        [TestCase(ArafTransition.MessageKind.Enter, "ARAF", "ARAF")]
+        [TestCase(ArafTransition.MessageKind.Enter, "ARAF", "PURGATORY")]
         [TestCase(ArafTransition.MessageKind.Escape, "KAÇIŞ", "ESCAPE")]
         public void TransitionCaptionSwitchKeepsFadeColorsAndSlowMotion(ArafTransition.MessageKind kind, string tr, string en)
         {

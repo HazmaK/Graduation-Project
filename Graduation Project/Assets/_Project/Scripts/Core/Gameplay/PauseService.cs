@@ -117,6 +117,15 @@ namespace RetroFPS.Pause
             return true;
         }
 
+        /// <summary>Transfers a modal into departure using a gameplay baseline, independent of toggle input.</summary>
+        public bool PrepareSceneLeave(PauseSnapshot exclusiveRestoration)
+        {
+            if (paused || leaving) return false;
+            restoration = exclusiveRestoration;
+            paused = true;
+            return PrepareSceneLeave();
+        }
+
         /// <summary>
         /// After black and hitstop cancellation, applies destination cleanup once. The adapter supplies
         /// the positive normal physics baseline captured before hitstop; both gates remain latched

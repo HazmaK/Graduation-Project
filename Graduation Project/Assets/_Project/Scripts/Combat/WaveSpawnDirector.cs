@@ -258,6 +258,9 @@ namespace RetroFPS.Combat
         private Quaternion _checkpointRotation = Quaternion.identity;
         private bool _hasCheckpoint = false;
         private bool _suspendedForPurgatory = false;
+        private int _killsAtWaveStart = 0;     // Mevcut dalga başladığında karşılaşmadaki toplam öldürme
+        private int _resumeWaveIndex = 0;      // Araf dönüşünde başlanacak dalga (0 = baştan)
+        private int _resumeKillCount = 0;      // Araf dönüşünde geri yüklenecek toplam öldürme
 
         // Önbelleğe Alınmış Referanslar
         private Transform _playerTransform;
@@ -805,11 +808,19 @@ namespace RetroFPS.Combat
                 RecordCheckpoint();
             }
 
+            if (!isRetry)
+            {
+                _resumeWaveIndex = 0;
+                _resumeKillCount = 0;
+            }
+
             _state = EncounterState.Warmup;
             _stateTimer = warmup;
-            _currentWaveIndex = -1;
+            // Retry'da kalınan dalgadan devam: StartNextWave indeksi bir artırır
+            _currentWaveIndex = _resumeWaveIndex - 1;
             _totalEnemiesInAllWaves = CalculateTotalEnemiesAllWaves();
-            _totalEnemiesKilledInEncounter = 0;
+            _totalEnemiesKilledInEncounter = _resumeKillCount;
+            _killsAtWaveStart = _resumeKillCount;
 
             if (enableCheckpointRetry && _playerHealth != null)
             {
@@ -881,6 +892,7 @@ namespace RetroFPS.Combat
             _forceEmergencyPick = false;
             _warnedSpawnBlocked = false;
             _enemiesKilledInCurrentWave = 0;
+            _killsAtWaveStart = _totalEnemiesKilledInEncounter;
 
             BuildStreams(wave);
 
@@ -1434,8 +1446,29 @@ namespace RetroFPS.Combat
         {
             if (!CanResumeAfterDeath) return;
 
+            // Kalınan yeri kaydet: savaştaki dalga baştan oynanır, bitmiş dalgalar tekrar edilmez
+            int resumeWave;
+            int resumeKills;
+            switch (_state)
+            {
+                case EncounterState.WaveSpawningAndCombat:
+                    resumeWave = Mathf.Max(0, _currentWaveIndex);
+                    resumeKills = _killsAtWaveStart;
+                    break;
+                case EncounterState.WaveCooldown:
+                    resumeWave = _currentWaveIndex + 1;
+                    resumeKills = _totalEnemiesKilledInEncounter;
+                    break;
+                default: // Warmup: henüz dalga başlamadı
+                    resumeWave = 0;
+                    resumeKills = 0;
+                    break;
+            }
+
             _difficultyModel.RegisterPlayerDeath();
             ResetEncounter();
+            _resumeWaveIndex = resumeWave;
+            _resumeKillCount = resumeKills;
             _suspendedForPurgatory = true;
         }
 
@@ -1463,6 +1496,9 @@ namespace RetroFPS.Combat
             if (!CanResumeAfterDeath) return false;
 
             SuspendForPurgatory();
+            // Araf'sız yeniden deneme eskisi gibi 1. dalgadan başlar
+            _resumeWaveIndex = 0;
+            _resumeKillCount = 0;
             ResumeAfterPurgatory();
             return true;
         }

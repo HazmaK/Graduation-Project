@@ -40,6 +40,22 @@ namespace RetroFPS.Tests
         private static void SetInstance(HitstopManager value) => typeof(HitstopManager)
             .GetProperty("Instance", BindingFlags.Public | BindingFlags.Static).SetValue(null, value);
 
+        /// <summary>Modal cancellation restores both clock values and prevents later hitstop ticks from changing them.</summary>
+        [Test]
+        public void CancelHitstopRestoresNormalClockBeforeModalCapture()
+        {
+            hitstop.TriggerHitstop(0.2f, 0.02f);
+            hitstop.CancelHitstop();
+            hitstop.CancelHitstop();
+            Assert.That(hitstop.IsActive, Is.False);
+            Assert.That(hitstop.RemainingSeconds, Is.Zero);
+            Assert.That(Time.timeScale, Is.EqualTo(0.8f));
+            Assert.That(Time.fixedDeltaTime, Is.EqualTo(0.013f));
+            hitstop.AdvanceHitstop(1f);
+            Assert.That(Time.timeScale, Is.EqualTo(0.8f));
+            Assert.That(Time.fixedDeltaTime, Is.EqualTo(0.013f));
+        }
+
         /// <summary>Half-finished hitstop freezes exactly, rejects new requests and resumes its original baseline.</summary>
         [TestCase(0f)]
         [TestCase(0.04f)]

@@ -111,6 +111,9 @@ namespace RetroFPS
             CancelForSceneLeave();
         }
 
+        /// <summary>Ends active hitstop and restores its normal clock before another modal captures it.</summary>
+        public void CancelHitstop() => RestoreTime();
+
         /// <summary>Cancels hitstop without restoring a snapshot into a departing scene.</summary>
         public void CancelForSceneLeave()
         {

@@ -34,6 +34,9 @@ namespace RetroFPS.Run
         /// <summary>Unscaled run duration, frozen at true death.</summary>
         public float ElapsedSeconds => _elapsedSeconds;
 
+        /// <summary>Statistics accumulated during this run.</summary>
+        public RunRecord Record { get; }
+
         /// <summary>Stat modifiers owned by this run.</summary>
         public StatSheet Stats { get; }
 
@@ -78,6 +81,7 @@ namespace RetroFPS.Run
             _floorIndex = 0;
             _arafChargeUsed = false;
             _phase = RunPhase.Tower;
+            Record = new RunRecord();
             Stats = new StatSheet();
             Cards = new CardInventory(Stats);
             CardOffers = new CardOfferRoller(GetStream(RunStream.ArafCards));
@@ -97,7 +101,21 @@ namespace RetroFPS.Run
         public void AdvanceElapsedTime(float unscaledDeltaSeconds)
         {
             if (_phase != RunPhase.TrueDeath && unscaledDeltaSeconds > 0f &&
-                !float.IsInfinity(unscaledDeltaSeconds)) _elapsedSeconds += unscaledDeltaSeconds;
+                !float.IsInfinity(unscaledDeltaSeconds))
+            {
+                _elapsedSeconds += unscaledDeltaSeconds;
+                Record.AdvanceTime(unscaledDeltaSeconds, _phase);
+            }
+        }
+
+        /// <summary>Captures cumulative statistics and card membership for the current floor.</summary>
+        public RunSummary CreateSummary()
+        {
+            var cards = new CurseBlessingDefinition[Cards.Count];
+            for (int i = 0; i < cards.Length; i++) cards[i] = Cards.Get(i);
+            return new RunSummary(_floorIndex + 1, _elapsedSeconds, Record.ArafSeconds,
+                Record.TotalKills, Record.TowerKills, Record.ArafKills, Record.CriticalKills,
+                Record.GibKills, Record.DamageTaken, _arafChargeUsed, cards);
         }
 
         /// <summary>Akışın koşu tohumundan türetilen, önbelleğe alınmış üretecini döndürür.</summary>

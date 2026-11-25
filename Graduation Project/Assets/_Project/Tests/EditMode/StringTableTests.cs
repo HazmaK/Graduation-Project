@@ -334,9 +334,9 @@ namespace RetroFPS.Tests
                 new StringTable.Translation("hud.wave.label", "DALGA", "WAVE"),
                 new StringTable.Translation("hud.wave.remainingLabel", "KALAN", "LEFT"),
                 new StringTable.Translation("hud.araf.roomsLabel", "ODALAR", "ROOMS"),
-                new StringTable.Translation("hud.araf.ready", "ARAF: HAZIR", "ARAF: READY"),
-                new StringTable.Translation("hud.araf.used", "ARAF: KULLANILDI", "ARAF: USED"),
-                new StringTable.Translation("hud.araf.warning", "ARAF'TASIN — ÇIKIŞ ODASINI BUL", "IN ARAF — FIND THE EXIT ROOM"),
+                new StringTable.Translation("hud.araf.ready", "ARAF: HAZIR", "PURGATORY: READY"),
+                new StringTable.Translation("hud.araf.used", "ARAF: KULLANILDI", "PURGATORY: USED"),
+                new StringTable.Translation("hud.araf.warning", "ARAF'TASIN — ÇIKIŞ ODASINI BUL", "IN PURGATORY — FIND THE EXIT ROOM"),
                 new StringTable.Translation("hud.araf.rooms", "ODALAR {0}/{1}", "ROOMS {0}/{1}"),
                 new StringTable.Translation("hud.araf.exitFound", "ÇIKIŞ BULUNDU", "EXIT FOUND"),
                 new StringTable.Translation("hud.banner.arenaSealed", "ARENA MÜHÜRLENDİ", "ARENA SEALED"),
@@ -359,7 +359,7 @@ namespace RetroFPS.Tests
                 new StringTable.Translation("popup.health", "HP", "HP"),
                 new StringTable.Translation("popup.bolts", "OK", "BOLTS"),
                 new StringTable.Translation("popup.shells", "SAÇMA", "SHELLS"),
-                new StringTable.Translation("transition.araf.enter", "ARAF", "ARAF"),
+                new StringTable.Translation("transition.araf.enter", "ARAF", "PURGATORY"),
                 new StringTable.Translation("transition.araf.escape", "KAÇIŞ", "ESCAPE"),
                 new StringTable.Translation("boss.judge.name", "YARGIÇ", "THE JUDGE")
             };

@@ -1,5 +1,6 @@
 using System;
 using RetroFPS.Combat;
+using RetroFPS.Pause;
 using RetroFPS.Presentation;
 using RetroFPS.Run;
 using RetroFPS.Run.Labyrinth;
@@ -29,8 +30,12 @@ namespace RetroFPS.UI.HUD
         [SerializeField] private HudBannerView bannerView;
         [SerializeField] private BossBarView bossView;
         [SerializeField] private TrueDeathView deathView;
+        [SerializeField] private FloorSummaryView floorSummaryView;
+        [SerializeField] private PauseRuntime pauseRuntime;
         [SerializeField] private CardOfferView cardOfferView;
         [SerializeField] private ActiveCardsHudView activeCardsView;
+        /// <summary>Exclusive floor-cleared summary presentation owned by this HUD.</summary>
+        public FloorSummaryView FloorSummaryView => floorSummaryView;
         /// <summary>Exclusive card offer presentation owned by this HUD.</summary>
         public CardOfferView CardOfferView => cardOfferView;
         /// <summary>Acquired card strip owned by this HUD.</summary>
@@ -49,6 +54,7 @@ namespace RetroFPS.UI.HUD
         private void Awake()
         {
             HudNumberCache.Prewarm();
+            if (pauseRuntime == null) pauseRuntime = GetComponent<PauseRuntime>();
             encounterStarted = EncounterStarted; encounterCompleted = EncounterCompleted; encounterRetried = EncounterRetried;
             waveStarted = WaveStarted; remainingChanged = RemainingChanged; waveCompleted = WaveCompleted;
             // Complete the global TMP pass before view initialization and before OnEnable subscribes to gameplay.
@@ -85,17 +91,18 @@ namespace RetroFPS.UI.HUD
             if (parry == null) parry = FindAnyObjectByType<PlayerParryController>();
             if (weapons == null) weapons = FindAnyObjectByType<WeaponController>();
             if (ammo == null) ammo = FindAnyObjectByType<PlayerAmmoInventory>();
+            if (pauseRuntime == null) pauseRuntime = GetComponent<PauseRuntime>();
             if (health == null || movement == null || parry == null || weapons == null || ammo == null || config == null)
                 Debug.LogWarning("[CombatHud] Missing local sources/config; dependent content is hidden. No further searches will run.", this);
             if (healthView != null) { healthView.Initialize(); healthView.gameObject.SetActive(health != null); }
             abilityView?.Initialize(movement, parry); weaponView?.Initialize(ammo);
-            encounterView?.Initialize(); bannerView?.Initialize(); deathView?.Initialize(); bossView?.Initialize();
+            encounterView?.Initialize(); bannerView?.Initialize(); deathView?.Initialize(); floorSummaryView?.Initialize(pauseRuntime); bossView?.Initialize();
             started = true; Subscribe(); Snapshot();
         }
         private void PrepareViews()
         {
             healthView?.Initialize(); abilityView?.Initialize(movement, parry); weaponView?.Initialize(ammo);
-            encounterView?.Initialize(); bannerView?.Initialize(); deathView?.Initialize(); bossView?.Initialize();
+            encounterView?.Initialize(); bannerView?.Initialize(); deathView?.Initialize(); floorSummaryView?.Initialize(pauseRuntime); bossView?.Initialize();
             cardOfferView?.Initialize(); activeCardsView?.RefreshSnapshot();
         }
         private void OnDisable()
@@ -232,7 +239,8 @@ namespace RetroFPS.UI.HUD
                 languageKnown = true; lastLanguage = data.Language;
                 abilityView?.RefreshLanguage(data.Language); encounterView?.RefreshLanguage(data.Language);
                 weaponView?.RefreshLanguage(data.Language); bannerView?.RefreshLanguage(data.Language);
-                bossView?.RefreshLanguage(data.Language);
+                bossView?.RefreshLanguage(data.Language); deathView?.RefreshLanguage(data.Language);
+                floorSummaryView?.RefreshLanguage(data.Language);
             }
             // A language/audio event must not clear pickup, dash or room feedback or finish fades.
             if (motionKnown && lastReduceMotion == data.ReduceMotion) return;
@@ -240,6 +248,7 @@ namespace RetroFPS.UI.HUD
             healthView?.SetReduceMotion(data.ReduceMotion); abilityView?.SetReduceMotion(data.ReduceMotion);
             weaponView?.SetReduceMotion(data.ReduceMotion); encounterView?.SetReduceMotion(data.ReduceMotion);
             bannerView?.SetReduceMotion(data.ReduceMotion); deathView?.SetReduceMotion(data.ReduceMotion);
+            floorSummaryView?.SetReduceMotion(data.ReduceMotion);
         }
     }
 

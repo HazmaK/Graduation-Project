@@ -243,7 +243,7 @@ namespace RetroFPS.Tests
         [TestCase(RunPhase.TrueDeath, false)]
         public void AdapterMapsExactRunPhases(RunPhase phase, bool expected)
         {
-            Assert.That(PauseRuntime.EvaluateEligibility(true, true, false, false, false, false, true, phase),
+            Assert.That(PauseRuntime.EvaluateEligibility(true, true, false, false, false, false, false, true, phase),
                 Is.EqualTo(expected));
         }
 
@@ -251,7 +251,15 @@ namespace RetroFPS.Tests
         [Test]
         public void CardOfferFlagDeniesPause()
         {
-            Assert.That(PauseRuntime.EvaluateEligibility(true, true, false, true, false, false, true,
+            Assert.That(PauseRuntime.EvaluateEligibility(true, true, false, true, false, false, false, true,
+                RunPhase.Tower), Is.False);
+        }
+
+        /// <summary>An open floor summary independently denies ordinary pause.</summary>
+        [Test]
+        public void FloorSummaryFlagDeniesPause()
+        {
+            Assert.That(PauseRuntime.EvaluateEligibility(true, true, false, false, true, false, false, true,
                 RunPhase.Tower), Is.False);
         }
 
@@ -263,7 +271,7 @@ namespace RetroFPS.Tests
         [TestCase(true, true, false, false, true)]
         public void AdapterDeniesEveryExclusiveOwner(bool gameplay, bool alive, bool card, bool load, bool transition)
         {
-            Assert.That(PauseRuntime.EvaluateEligibility(gameplay, alive, card, false, load, transition,
+            Assert.That(PauseRuntime.EvaluateEligibility(gameplay, alive, card, false, false, load, transition,
                 true, RunPhase.Tower), Is.False);
         }
 
@@ -271,9 +279,9 @@ namespace RetroFPS.Tests
         [Test]
         public void NoRunDoesNotRequireRunDirectorAndNeverAdmitsMainMenu()
         {
-            Assert.That(PauseRuntime.EvaluateEligibility(true, true, false, false, false, false, false,
+            Assert.That(PauseRuntime.EvaluateEligibility(true, true, false, false, false, false, false, false,
                 RunPhase.Tower), Is.True);
-            Assert.That(PauseRuntime.EvaluateEligibility(false, true, false, false, false, false, false,
+            Assert.That(PauseRuntime.EvaluateEligibility(false, true, false, false, false, false, false, false,
                 RunPhase.Tower), Is.False);
         }
 

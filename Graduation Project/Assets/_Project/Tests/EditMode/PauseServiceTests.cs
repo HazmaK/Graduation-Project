@@ -43,6 +43,26 @@ namespace RetroFPS.Tests
 
         private bool Pause() => service.TryPause(true, true, false, false, true);
 
+        /// <summary>Exclusive departure ignores held/consumed toggle input and never captures the modal's zero clock.</summary>
+        [Test]
+        public void ExclusiveDepartureUsesSuppliedBaselineAndRecovers()
+        {
+            Assert.That(Pause(), Is.True);
+            service.Resume();
+            environment.Current = new PauseSnapshot(0f, initial.FixedDeltaTime, true, 0, true);
+            int captures = environment.CaptureCount;
+            Assert.That(Pause(), Is.False);
+            Assert.That(service.PrepareSceneLeave(initial), Is.True);
+            Assert.That(service.PrepareSceneLeave(initial), Is.False);
+            Assert.That(environment.CaptureCount, Is.EqualTo(captures));
+            Assert.That(service.IsLeaving, Is.True);
+            service.RecoverSceneLeave();
+            service.Resume();
+            Assert.That(environment.Current.TimeScale, Is.EqualTo(initial.TimeScale));
+            Assert.That(environment.Current.FixedDeltaTime, Is.EqualTo(initial.FixedDeltaTime));
+            Assert.That(environment.Current.AudioPaused, Is.EqualTo(initial.AudioPaused));
+        }
+
         /// <summary>Gameplay and menu departures share normal time/audio but have distinct cursor ownership.</summary>
         [TestCase(true, 1, false)]
         [TestCase(false, 0, true)]

@@ -208,9 +208,9 @@ namespace RetroFPS.Editor
                 new StringTable.Translation("hud.wave.label", "DALGA", "WAVE"),
                 new StringTable.Translation("hud.wave.remainingLabel", "KALAN", "LEFT"),
                 new StringTable.Translation("hud.araf.roomsLabel", "ODALAR", "ROOMS"),
-                new StringTable.Translation("hud.araf.ready", "ARAF: HAZIR", "ARAF: READY"),
-                new StringTable.Translation("hud.araf.used", "ARAF: KULLANILDI", "ARAF: USED"),
-                new StringTable.Translation("hud.araf.warning", "ARAF'TASIN — ÇIKIŞ ODASINI BUL", "IN ARAF — FIND THE EXIT ROOM"),
+                new StringTable.Translation("hud.araf.ready", "ARAF: HAZIR", "PURGATORY: READY"),
+                new StringTable.Translation("hud.araf.used", "ARAF: KULLANILDI", "PURGATORY: USED"),
+                new StringTable.Translation("hud.araf.warning", "ARAF'TASIN — ÇIKIŞ ODASINI BUL", "IN PURGATORY — FIND THE EXIT ROOM"),
                 new StringTable.Translation("hud.araf.rooms", "ODALAR {0}/{1}", "ROOMS {0}/{1}"),
                 new StringTable.Translation("hud.araf.exitFound", "ÇIKIŞ BULUNDU", "EXIT FOUND"),
                 new StringTable.Translation("hud.banner.arenaSealed", "ARENA MÜHÜRLENDİ", "ARENA SEALED"),
@@ -233,8 +233,23 @@ namespace RetroFPS.Editor
                 new StringTable.Translation("popup.health", "HP", "HP"),
                 new StringTable.Translation("popup.bolts", "OK", "BOLTS"),
                 new StringTable.Translation("popup.shells", "SAÇMA", "SHELLS"),
-                new StringTable.Translation("transition.araf.enter", "ARAF", "ARAF"),
-                new StringTable.Translation("transition.araf.escape", "KAÇIŞ", "ESCAPE")
+                new StringTable.Translation("transition.araf.enter", "ARAF", "PURGATORY"),
+                new StringTable.Translation("transition.araf.escape", "KAÇIŞ", "ESCAPE"),
+                new StringTable.Translation("hud.floor_summary.title", "KAT TEMİZLENDİ", "FLOOR CLEARED"),
+                new StringTable.Translation("hud.floor_summary.continue", "DEVAM", "CONTINUE"),
+                new StringTable.Translation("hud.floor_summary.main_menu", "ANA MENÜ", "MAIN MENU"),
+                new StringTable.Translation("hud.floor_summary.floor", "Kat", "Floor"),
+                new StringTable.Translation("hud.floor_summary.total_time", "Toplam süre", "Total time"),
+                new StringTable.Translation("hud.floor_summary.araf_time", "Araf'ta geçen süre", "Time in Purgatory"),
+                new StringTable.Translation("hud.floor_summary.total_kills", "Öldürülen düşman", "Enemies killed"),
+                new StringTable.Translation("hud.floor_summary.kills_split", "Kule / Araf öldürme", "Tower / Purgatory kills"),
+                new StringTable.Translation("hud.floor_summary.crit_kills", "Kritik öldürme", "Critical kills"),
+                new StringTable.Translation("hud.floor_summary.damage_taken", "Alınan hasar", "Damage taken"),
+                new StringTable.Translation("hud.floor_summary.araf_charge", "Araf hakkı", "Purgatory charge"),
+                new StringTable.Translation("hud.floor_summary.araf_used", "Kullanıldı", "Used"),
+                new StringTable.Translation("hud.floor_summary.araf_ready", "Hazır", "Ready"),
+                new StringTable.Translation("hud.floor_summary.cards", "Alınan kartlar", "Cards acquired"),
+                new StringTable.Translation("hud.floor_summary.cards_none", "\u2014", "\u2014")
             };
             if (strings.UpsertEntries(defaults)) EditorUtility.SetDirty(strings);
             ApplyEnglishCopyV1();
@@ -390,11 +405,14 @@ namespace RetroFPS.Editor
             HudEventSystemGuard guard = BuildEventSystem(root);
             RectTransform offers = Rect("CardOfferLayer", canvasRect); Stretch(offers);
             BuildCardOffer(offers, canvasRect);
+            RectTransform floorSummary = Rect("FloorSummaryLayer", canvasRect); Stretch(floorSummary);
+            RectTransform floorSummaryContent = BuildFloorSummary(floorSummary, canvasRect, gameplay, guard);
             RectTransform death = Rect("DeathLayer", canvasRect); Stretch(death);
             RectTransform deathContent = BuildDeath(death, canvasRect, gameplay, guard);
             HudLayout layout = Component<HudLayout>(root);
             Set(layout, "config", config); Set(layout, "canvasRect", canvasRect); Set(layout, "hudRoot", hudRoot);
             Set(layout, "safeArea", safe); Set(layout, "deathContent", deathContent);
+            Set(layout, "floorSummaryContent", floorSummaryContent);
         }
 
         private static void BuildHealth(RectTransform parent)
@@ -706,29 +724,126 @@ namespace RetroFPS.Editor
             return guard;
         }
 
+        private static RectTransform BuildFloorSummary(RectTransform layer, RectTransform canvas, CanvasGroup gameplay, HudEventSystemGuard guard)
+        {
+            var group = Component<CanvasGroup>(layer.gameObject); group.alpha = 1f; group.blocksRaycasts = true; group.interactable = true;
+            var backdrop = Image("Backdrop", layer, null, theme.DeathOverlay, 0, 0, 0, 0); Stretch(backdrop.rectTransform); backdrop.raycastTarget = true;
+            RectTransform content = Rect("Content", layer); content.anchorMin = content.anchorMax = content.pivot = Vector2.one * 0.5f;
+            content.anchoredPosition = Vector2.zero; content.sizeDelta = new Vector2(880, 702);
+            RectTransform cardPlate = Plate("CardPlate", content, new Vector2(880, 702));
+            cardPlate.SetAsFirstSibling();
+            TMP_Text title = Label("Title", content, "hud.floor_summary.title", 56f, 24, 24, 832, 74);
+            title.font = Palette.TitleFont; title.characterSpacing = theme.DeathTitleTracking;
+            title.alignment = TextAlignmentOptions.Center; title.color = Palette.Focus;
+            Image("TitleRule", content, null, Palette.Accent, (880f - 220f) * 0.5f, 104, 220f, theme.BannerRuleHeight);
+
+            var view = Component<FloorSummaryView>(canvas.gameObject); Style(view);
+            Set(view, "strings", strings); Set(view, "summaryLayer", layer.gameObject);
+            Set(view, "cardGroup", group); Set(view, "gameplayGroup", gameplay); Set(view, "eventSystemGuard", guard);
+
+            var serialized = new SerializedObject(view);
+            SerializedProperty labelProps = serialized.FindProperty("statLabels");
+            SerializedProperty valueProps = serialized.FindProperty("statValues");
+            labelProps.arraySize = RunSummaryModel.StatRowCount;
+            valueProps.arraySize = RunSummaryModel.StatRowCount;
+            for (int i = 0; i < RunSummaryModel.StatRowCount; i++)
+            {
+                float y = 124f + i * 38f;
+                if ((i & 1) == 0) Image("RowBand" + i, content, null, Palette.RowBand, 40f, y, 800f, 34f);
+                TMP_Text rowLabel = Label("StatLabel" + i, content, null, 22f, 52f, y, 480f, 34f);
+                // A shared baseline avoids glyph-dependent midline shifts between stat rows.
+                rowLabel.alignment = TextAlignmentOptions.BaselineLeft;
+                rowLabel.margin = Vector4.zero;
+                rowLabel.color = Palette.Text;
+                TMP_Text rowValue = Label("StatValue" + i, content, null, 22f, 540f, y, 288f, 34f);
+                rowValue.alignment = TextAlignmentOptions.BaselineRight;
+                rowValue.margin = Vector4.zero; rowValue.color = Palette.Focus;
+                labelProps.GetArrayElementAtIndex(i).objectReferenceValue = rowLabel;
+                valueProps.GetArrayElementAtIndex(i).objectReferenceValue = rowValue;
+            }
+            serialized.ApplyModifiedPropertiesWithoutUndo();
+
+            Image("CardsRule", content, null, theme.Border, 40f, 434f, 800f, 2f);
+            // Use the remaining space through y=582, leaving 12 px before the buttons at y=594.
+            const float cardsHeight = 138f;
+            TMP_Text cardsLabel = Label("CardsLabel", content, null, 22f, 52f, 444f, 260f, cardsHeight);
+            cardsLabel.alignment = TextAlignmentOptions.TopLeft;
+            cardsLabel.color = Palette.Text;
+            TMP_Text cardsValue = Label("CardsValue", content, null, 22f, 320f, 444f, 508f, cardsHeight);
+            cardsValue.alignment = TextAlignmentOptions.TopRight; cardsValue.color = Palette.Focus;
+            cardsValue.textWrappingMode = TextWrappingModes.Normal;
+            cardsValue.enableAutoSizing = true;
+            cardsValue.fontSizeMin = 18f;
+            cardsValue.fontSizeMax = 22f;
+            Set(view, "cardsLabel", cardsLabel); Set(view, "cardsValue", cardsValue);
+
+            BuildDeathStyleButton("ContinueButton", content, 60f, 594f, "hud.floor_summary.continue",
+                out UnityEngine.UI.Button continueButton, out TMP_Text continueLabel,
+                out UnityEngine.UI.Image continueSeal, out UnityEngine.UI.Image continueUnderline);
+            BuildDeathStyleButton("MainMenuButton", content, 460f, 594f, "hud.floor_summary.main_menu",
+                out UnityEngine.UI.Button mainMenuButton, out TMP_Text mainMenuLabel,
+                out UnityEngine.UI.Image mainMenuSeal, out UnityEngine.UI.Image mainMenuUnderline);
+
+            continueButton.navigation = new UnityEngine.UI.Navigation
+            {
+                mode = UnityEngine.UI.Navigation.Mode.Explicit,
+                selectOnLeft = mainMenuButton, selectOnRight = mainMenuButton,
+                selectOnUp = mainMenuButton, selectOnDown = mainMenuButton
+            };
+            mainMenuButton.navigation = new UnityEngine.UI.Navigation
+            {
+                mode = UnityEngine.UI.Navigation.Mode.Explicit,
+                selectOnLeft = continueButton, selectOnRight = continueButton,
+                selectOnUp = continueButton, selectOnDown = continueButton
+            };
+            mainMenuSeal.enabled = false;
+            mainMenuUnderline.enabled = false;
+
+            Set(view, "continueButton", continueButton); Set(view, "continueLabel", continueLabel);
+            Set(view, "continueSeal", continueSeal); Set(view, "continueUnderline", continueUnderline);
+            Set(view, "mainMenuButton", mainMenuButton); Set(view, "mainMenuLabel", mainMenuLabel);
+            Set(view, "mainMenuSeal", mainMenuSeal); Set(view, "mainMenuUnderline", mainMenuUnderline);
+
+            layer.SetAsLastSibling(); layer.gameObject.SetActive(false);
+            return content;
+        }
+
+        private static void BuildDeathStyleButton(string name, Transform parent, float x, float y, string key,
+            out UnityEngine.UI.Button button, out TMP_Text label, out UnityEngine.UI.Image seal, out UnityEngine.UI.Image underline)
+        {
+            RectTransform buttonRect = At(name, parent, x, y, theme.DeathButtonSize.x, theme.DeathButtonSize.y);
+            // Set the graphic before adding Selectable: its edit-mode Awake must see valid dependencies.
+            var background = Component<UnityEngine.UI.Image>(buttonRect.gameObject); background.color = Palette.Panel; background.raycastTarget = true;
+            var border = Image("Border", buttonRect, theme.Chip, Palette.Text, 0, 0, theme.DeathButtonSize.x, theme.DeathButtonSize.y);
+            Stretch(border.rectTransform); border.type = UnityEngine.UI.Image.Type.Sliced; border.fillCenter = false;
+            border.pixelsPerUnitMultiplier = 1f / theme.DeathButtonBorderWidth;
+            button = Component<UnityEngine.UI.Button>(buttonRect.gameObject);
+            button.targetGraphic = background; button.transition = UnityEngine.UI.Selectable.Transition.None;
+            label = Label("Label", buttonRect, key, theme.DeathButtonTextSize, 62, 0, 270, theme.DeathButtonSize.y);
+            seal = Image("FocusSeal", buttonRect, theme.DeathSeal, Color.white, 19, 19.5f, 27, 33);
+            underline = Image("FocusUnderline", buttonRect, MainMenuPlaceholderArt.Sprite("FocusUnderline"), Color.white, 62, 58, 264, 6);
+            underline.type = UnityEngine.UI.Image.Type.Sliced; underline.pixelsPerUnitMultiplier = 1f / 3f;
+        }
+
         private static RectTransform BuildDeath(RectTransform layer, RectTransform canvas, CanvasGroup gameplay, HudEventSystemGuard guard)
         {
             var group = Component<CanvasGroup>(layer.gameObject); group.alpha = 1f; group.blocksRaycasts = true; group.interactable = true;
             var backdrop = Image("Backdrop", layer, null, theme.DeathOverlay, 0, 0, 0, 0); Stretch(backdrop.rectTransform); backdrop.raycastTarget = true;
             RectTransform content = Rect("Content", layer); content.anchorMin = content.anchorMax = content.pivot = Vector2.one * 0.5f;
-            content.anchoredPosition = Vector2.zero; content.sizeDelta = new Vector2(720, 280);
-            TMP_Text title = Label("Title", content, "hud.truedeath.title", theme.DeathTitleSize, 0, 0, 720, 90);
+            content.anchoredPosition = Vector2.zero; content.sizeDelta = new Vector2(760, 600);
+            TMP_Text title = Label("Title", content, "hud.truedeath.title", theme.DeathTitleSize, 0, 0, 760, 90);
             title.font = Palette.TitleFont; title.characterSpacing = theme.DeathTitleTracking; title.alignment = TextAlignmentOptions.Center;
-            Image("TitleRule", content, null, Palette.Accent, (720f - theme.DeathTitleRuleWidth) * 0.5f, 97, theme.DeathTitleRuleWidth, theme.BannerRuleHeight);
-            RectTransform buttonRect = At("RestartButton", content, 180, 156, theme.DeathButtonSize.x, theme.DeathButtonSize.y);
-            // Set the graphic before adding Selectable: its edit-mode Awake must see valid dependencies.
-            var background = Component<UnityEngine.UI.Image>(buttonRect.gameObject); background.color = Palette.Panel; background.raycastTarget = true;
-            var border = Image("Border", buttonRect, theme.Chip, Palette.Text, 0, 0, 360, 72);
-            Stretch(border.rectTransform); border.type = UnityEngine.UI.Image.Type.Sliced; border.fillCenter = false;
-            border.pixelsPerUnitMultiplier = 1f / theme.DeathButtonBorderWidth;
-            var button = Component<UnityEngine.UI.Button>(buttonRect.gameObject);
-            button.targetGraphic = background; button.transition = UnityEngine.UI.Selectable.Transition.None;
+            Image("TitleRule", content, null, Palette.Accent, (760f - theme.DeathTitleRuleWidth) * 0.5f, 97, theme.DeathTitleRuleWidth, theme.BannerRuleHeight);
+            RectTransform statsPlate = Plate("StatsPlate", content, new Vector2(720, 358));
+            statsPlate.anchoredPosition = new Vector2(20, -118);
+            TMP_Text statsText = Label("StatsText", statsPlate, null, 22f, 24f, 14f, 672f, 330f);
+            statsText.alignment = TextAlignmentOptions.TopLeft; statsText.textWrappingMode = TextWrappingModes.Normal;
+            statsText.overflowMode = TextOverflowModes.Overflow; statsText.color = Palette.Text;
+            BuildDeathStyleButton("RestartButton", content, (760f - theme.DeathButtonSize.x) * 0.5f, 500f, "hud.truedeath.restart",
+                out UnityEngine.UI.Button button, out TMP_Text label, out UnityEngine.UI.Image seal, out UnityEngine.UI.Image underline);
             button.navigation = new UnityEngine.UI.Navigation { mode = UnityEngine.UI.Navigation.Mode.Explicit, selectOnUp = button, selectOnDown = button, selectOnLeft = button, selectOnRight = button };
-            TMP_Text label = Label("Label", buttonRect, "hud.truedeath.restart", theme.DeathButtonTextSize, 62, 0, 270, 72);
-            var seal = Image("FocusSeal", buttonRect, theme.DeathSeal, Color.white, 19, 19.5f, 27, 33);
-            var underline = Image("FocusUnderline", buttonRect, MainMenuPlaceholderArt.Sprite("FocusUnderline"), Color.white, 62, 58, 264, 6);
-            underline.type = UnityEngine.UI.Image.Type.Sliced; underline.pixelsPerUnitMultiplier = 1f / 3f;
             var view = Component<TrueDeathView>(canvas.gameObject); Style(view);
+            Set(view, "strings", strings); Set(view, "statsText", statsText);
             Set(view, "deathLayer", layer.gameObject); Set(view, "cardGroup", group); Set(view, "gameplayGroup", gameplay);
             Set(view, "restartButton", button); Set(view, "buttonLabel", label); Set(view, "focusSeal", seal); Set(view, "focusUnderline", underline); Set(view, "eventSystemGuard", guard);
             guard.GetComponent<EventSystem>().firstSelectedGameObject = button.gameObject;
@@ -766,6 +881,8 @@ namespace RetroFPS.Editor
             Set(bindings, "weaponView", hud.GetComponentInChildren<WeaponAmmoHudView>(true)); Set(bindings, "encounterView", hud.GetComponentInChildren<EncounterRunHudView>(true));
             Set(bindings, "bossView", hud.GetComponentInChildren<BossBarView>(true));
             Set(bindings, "bannerView", hud.GetComponentInChildren<HudBannerView>(true)); Set(bindings, "deathView", hud.GetComponentInChildren<TrueDeathView>(true));
+            Set(bindings, "floorSummaryView", hud.GetComponentInChildren<FloorSummaryView>(true));
+            Set(bindings, "pauseRuntime", player.GetComponent<RetroFPS.Pause.PauseRuntime>());
             Set(bindings, "cardOfferView", hud.GetComponentInChildren<CardOfferView>(true));
             Set(bindings, "activeCardsView", hud.GetComponentInChildren<ActiveCardsHudView>(true));
             var feedback = Component<PlayerDamageFeedback>(player); Set(feedback, "hudConfig", config);

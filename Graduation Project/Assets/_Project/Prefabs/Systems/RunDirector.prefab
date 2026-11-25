@@ -12,6 +12,7 @@ GameObject:
   - component: {fileID: 7070358075023152814}
   - component: {fileID: 3319314777351839384}
   - component: {fileID: 4626908514782958330}
+  - component: {fileID: 7186096511970692485}
   m_Layer: 0
   m_Name: RunDirector
   m_TagString: Untagged
@@ -85,3 +86,15 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: RetroFPS.Gameplay::RetroFPS.Run.RunRestartHandler
   director: {fileID: 7070358075023152814}
+--- !u!114 &7186096511970692485
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5411190053915765346}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1be3536a3b9c6fb4d86cbf2753cca087, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: RetroFPS.Gameplay::RetroFPS.Run.RunRecordRecorder

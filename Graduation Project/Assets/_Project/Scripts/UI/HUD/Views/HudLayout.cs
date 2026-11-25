@@ -11,6 +11,7 @@ namespace RetroFPS.UI.HUD
         [SerializeField] private RectTransform hudRoot;
         [SerializeField] private RectTransform safeArea;
         [SerializeField] private RectTransform deathContent;
+        [SerializeField] private RectTransform floorSummaryContent;
         private int width = -1, height = -1;
         private Rect previousSafe;
         private float previousScale = -1f, previousInset = -1f;
@@ -40,6 +41,7 @@ namespace RetroFPS.UI.HUD
             safeArea.anchorMin = minimum; safeArea.anchorMax = maximum;
             safeArea.offsetMin = safeArea.offsetMax = Vector2.zero;
             if (deathContent != null) deathContent.localScale = Vector3.one * scale;
+            if (floorSummaryContent != null) floorSummaryContent.localScale = Vector3.one * scale;
         }
     }
 }

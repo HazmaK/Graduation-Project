@@ -134,6 +134,9 @@ namespace RetroFPS
             SetBarriers(false);
             ReleaseRetry();
             onBossDefeated?.Invoke();
+            if ((RunEvents.CurrentRun == null || RunEvents.CurrentRun.Phase == RunPhase.Tower)
+                && (_player == null || !_player.IsDead))
+                RunEvents.RaiseFloorCleared();
         }
 
         /// <inheritdoc />

@@ -16,6 +16,41 @@ namespace RetroFPS.Run
         private static int _fallbackSeed;
         private static bool _isCardOfferOpen;
         private static CardOffer _currentCardOffer;
+        private static bool _isFloorSummaryOpen;
+        private static RunSummary _lastFloorSummary;
+
+        /// <summary>Whether the current floor summary is awaiting continuation.</summary>
+        public static bool IsFloorSummaryOpen => _isFloorSummaryOpen;
+
+        /// <summary>Most recently captured floor summary, or an empty summary for a new run.</summary>
+        public static RunSummary LastFloorSummary => _lastFloorSummary;
+
+        /// <summary>Raised once when a floor summary opens.</summary>
+        public static event Action<RunSummary> OnFloorCleared;
+
+        /// <summary>Raised after an open floor summary closes and the floor advances.</summary>
+        public static event Action OnFloorContinued;
+
+        /// <summary>Captures a Tower floor unless there is no run or a summary is already open.</summary>
+        public static void RaiseFloorCleared()
+        {
+            if (_currentRun == null || _currentRun.Phase != RunPhase.Tower || _isFloorSummaryOpen) return;
+            _lastFloorSummary = _currentRun.CreateSummary();
+            _isFloorSummaryOpen = true;
+            OnFloorCleared?.Invoke(_lastFloorSummary);
+        }
+
+        /// <summary>Clears summary ownership without advancing the floor or notifying continuation listeners.</summary>
+        public static void CloseFloorSummary() => _isFloorSummaryOpen = false;
+
+        /// <summary>Closes an open summary, advances the current floor, and notifies listeners.</summary>
+        public static void ContinueAfterFloorClear()
+        {
+            if (!_isFloorSummaryOpen) return;
+            _isFloorSummaryOpen = false;
+            _currentRun?.AdvanceFloor();
+            OnFloorContinued?.Invoke();
+        }
 
         /// <summary>Whether an offer is waiting for a choice or refusal.</summary>
         public static bool IsCardOfferOpen => _isCardOfferOpen;
@@ -48,6 +83,8 @@ namespace RetroFPS.Run
             _currentRun = state;
             _isCardOfferOpen = false;
             _currentCardOffer = default;
+            _isFloorSummaryOpen = false;
+            _lastFloorSummary = default;
             if (_currentRun != null) _currentRun.OnArafChargeChanged += ForwardArafChargeChanged;
             OnRunChanged?.Invoke(state);
             OnArafChargeChanged?.Invoke(state != null && state.ArafChargeUsed);
@@ -143,7 +180,10 @@ namespace RetroFPS.Run
         /// Gerçek ölüm olayını tetikler.
         /// </summary>
         public static void RaiseTrueDeath()
-            => OnTrueDeath?.Invoke();
+        {
+            CloseFloorSummary();
+            OnTrueDeath?.Invoke();
+        }
 
         /// <summary>
         /// Kaçış portalına ulaşma olayını tetikler.
@@ -195,6 +235,10 @@ namespace RetroFPS.Run
             OnCardOfferOpened = null;
             OnCardOfferResolved = null;
             OnCardAcquired = null;
+            OnFloorCleared = null;
+            OnFloorContinued = null;
+            _isFloorSummaryOpen = false;
+            _lastFloorSummary = default;
             _isCardOfferOpen = false;
             _currentCardOffer = default;
             _activeEncounter = null;

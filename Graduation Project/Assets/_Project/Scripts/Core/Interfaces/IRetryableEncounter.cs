@@ -21,7 +21,7 @@ namespace RetroFPS.Combat
 
         /// <summary>
         /// Oyuncu Araf'tan kan portalı ile kaçtığında çağrılır: oyuncuyu oda checkpoint noktasında diriltir
-        /// ve karşılaşmayı 1. dalgadan yeniden başlatır.
+        /// ve karşılaşmayı öldüğü dalgadan (bitmiş dalgalar tekrar edilmeden) devam ettirir.
         /// </summary>
         void ResumeAfterPurgatory();
     }

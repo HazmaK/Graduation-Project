@@ -1,5 +1,7 @@
 using RetroFPS.Pause;
 using RetroFPS.Presentation;
+using RetroFPS.Run;
+using RetroFPS.Settings;
 using RetroFPS.UI.Menu;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -13,8 +15,10 @@ namespace RetroFPS.UI.HUD
     {
         [SerializeField] private HudConfig config;
         [SerializeField] private HudTheme theme;
+        [SerializeField] private StringTable strings;
         [SerializeField] private GameObject deathLayer;
         [SerializeField] private CanvasGroup cardGroup, gameplayGroup;
+        [SerializeField] private TMP_Text statsText;
         [SerializeField] private UnityEngine.UI.Button restartButton;
         [SerializeField] private TMP_Text buttonLabel;
         [SerializeField] private UnityEngine.UI.Image focusSeal, focusUnderline;
@@ -23,7 +27,8 @@ namespace RetroFPS.UI.HUD
         private readonly MenuTween fade = new MenuTween();
         private BaseEventData focusEvent;
         private Vector2 labelPosition;
-        private bool reduceMotion, needsFocus, initialized;
+        private RunSummary summary;
+        private bool reduceMotion, needsFocus, initialized, hasSummary;
         /// <summary>Gets whether this view has received a true-death event.</summary>
         public bool IsOpen => gate.Visible;
 
@@ -55,9 +60,26 @@ namespace RetroFPS.UI.HUD
         {
             if (!gate.OnTrueDeath(Time.unscaledTimeAsDouble, config != null ? config.DeathArmSeconds : 0.6d)) return;
             GamePause.Service?.CancelForExclusiveFlow();
+            RunState run = RunEvents.CurrentRun;
+            hasSummary = run != null;
+            if (hasSummary) summary = run.CreateSummary();
+            RefreshStatsText(GameSettings.Current.Language);
             fade.Start(reduceMotion || config == null ? 0f : config.DeathFadeMs * 0.001f);
             Restore();
             if (cardGroup != null) cardGroup.alpha = fade.Value;
+        }
+
+        /// <summary>Refreshes the optional death-card run summary when the active language changes.</summary>
+        public void RefreshLanguage(LanguageSetting language)
+        {
+            if (gate.Visible) RefreshStatsText(language);
+        }
+
+        private void RefreshStatsText(LanguageSetting language)
+        {
+            if (statsText == null) return;
+            if (!hasSummary) { statsText.text = string.Empty; return; }
+            statsText.text = RunSummaryModel.FormatBlock(in summary, strings, language);
         }
 
         private void Restore()

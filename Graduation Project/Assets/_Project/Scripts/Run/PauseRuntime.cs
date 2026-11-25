@@ -29,6 +29,7 @@ namespace RetroFPS.Pause
         private bool hasProcessedFrame;
         private int processedFrame;
         private float normalFixedDeltaTime;
+        private IPauseService exclusiveLeaveOwner;
 
         /// <summary>Core owner for UI subscriptions; the UI never writes Unity time or audio.</summary>
         public IPauseService Service => service;
@@ -38,7 +39,7 @@ namespace RetroFPS.Pause
             || (runDirector != null && runDirector.IsSceneLoadInProgress);
         /// <summary>Fresh primitive eligibility, independent of whether the menu is already open.</summary>
         public bool CanPause => EvaluateEligibility(gameplayScene, player != null && !player.IsDead,
-            trueDeathOpen, RunEvents.IsCardOfferOpen, IsSceneLoadInProgress, runDirector != null && runDirector.IsTransitioning,
+            trueDeathOpen, RunEvents.IsCardOfferOpen, RunEvents.IsFloorSummaryOpen, IsSceneLoadInProgress, runDirector != null && runDirector.IsTransitioning,
             run != null, phase);
         /// <summary>Raised after load/preflight failure has restored visible pause ownership.</summary>
         public event Action SceneLeaveFailed;
@@ -112,9 +113,9 @@ namespace RetroFPS.Pause
                 if (exclusive) service.CancelForExclusiveFlow();
                 else service.Release();
                 if (ReferenceEquals(GamePause.Service, service)) GamePause.SetService(null);
-                // A card modal torn down after this runtime holds a service that wraps ours; drop it so the
+                // An exclusive modal torn down after this runtime holds a service that wraps ours; drop it so the
                 // next scene's OnEnable never sees a foreign owner (the modal's own Close tolerates this).
-                else if (GamePause.Service != null && RunEvents.IsCardOfferOpen) GamePause.SetService(null);
+                else if (GamePause.Service != null && (RunEvents.IsCardOfferOpen || RunEvents.IsFloorSummaryOpen)) GamePause.SetService(null);
             }
             ownsService = false;
         }
@@ -139,9 +140,9 @@ namespace RetroFPS.Pause
 
         /// <summary>Maps gameplay-only run phases without introducing Gameplay dependencies into Core.</summary>
         public static bool EvaluateEligibility(bool isGameplayScene, bool playerAlive, bool deathCardOpen,
-            bool cardOfferOpen, bool sceneLoadInProgress, bool transitioning, bool hasRun, RunPhase runPhase)
+            bool cardOfferOpen, bool floorSummaryOpen, bool sceneLoadInProgress, bool transitioning, bool hasRun, RunPhase runPhase)
         {
-            return isGameplayScene && playerAlive && !deathCardOpen && !cardOfferOpen && !sceneLoadInProgress
+            return isGameplayScene && playerAlive && !deathCardOpen && !cardOfferOpen && !floorSummaryOpen && !sceneLoadInProgress
                 && !transitioning && (!hasRun || runPhase == RunPhase.Tower || runPhase == RunPhase.InAraf);
         }
 
@@ -208,7 +209,7 @@ namespace RetroFPS.Pause
         {
             if (!ownsService) return false;
             return service.TryPause(gameplayScene, player != null && !player.IsDead, trueDeathOpen,
-                IsSceneLoadInProgress, !RunEvents.IsCardOfferOpen && (runDirector == null || !runDirector.IsTransitioning)
+                IsSceneLoadInProgress, !RunEvents.IsCardOfferOpen && !RunEvents.IsFloorSummaryOpen && (runDirector == null || !runDirector.IsTransitioning)
                     && (run == null || phase == RunPhase.Tower || phase == RunPhase.InAraf));
         }
 
@@ -248,9 +249,12 @@ namespace RetroFPS.Pause
 
         /// <summary>Preflights the chosen destination and latches the frozen leaving fade exactly once.</summary>
         public bool TryPrepareSceneLeave(bool newRun = false)
+            => TryPrepareSceneLeave(newRun, false);
+
+        private bool TryPrepareSceneLeave(bool newRun, bool fromFloorSummary)
         {
-            if (service == null || service.IsLeaving || !service.IsPaused) return false;
-            if (!CanPause) { CancelForExclusiveFlow(); return false; }
+            if (service == null || service.IsLeaving || (!fromFloorSummary && !service.IsPaused)) return false;
+            if (!fromFloorSummary && !CanPause) { CancelForExclusiveFlow(); return false; }
             leavingForNewRun = newRun;
             leaveSceneName = newRun
                 ? (runDirector != null ? runDirector.TowerSceneName : SceneManager.GetActiveScene().name)
@@ -261,7 +265,27 @@ namespace RetroFPS.Pause
                 SceneLeaveFailed?.Invoke();
                 return false;
             }
-            return service.PrepareSceneLeave();
+            return fromFloorSummary
+                ? service.PrepareSceneLeave(PauseSnapshot.SceneLeave(normalFixedDeltaTime, true))
+                : service.PrepareSceneLeave();
+        }
+
+        /// <summary>Leaves an open floor summary without pause-toggle latches or a paused restoration snapshot.</summary>
+        public bool TryLeaveToMainMenu()
+        {
+            if (!ownsService || !RunEvents.IsFloorSummaryOpen || IsSceneLoadInProgress
+                || !EvaluateEligibility(gameplayScene, player != null && !player.IsDead, trueDeathOpen,
+                    RunEvents.IsCardOfferOpen, false, false, runDirector != null && runDirector.IsTransitioning,
+                    run != null, phase)) return false;
+            exclusiveLeaveOwner = GamePause.Service;
+            if (!TryPrepareSceneLeave(false, true))
+            {
+                exclusiveLeaveOwner = null;
+                return false;
+            }
+            GamePause.SetService(service);
+            LoadMainMenu();
+            return service.IsLeaving;
         }
 
         /// <summary>Called once after the UI reaches black; keeps simulation blocked through Single loading.</summary>
@@ -316,6 +340,12 @@ namespace RetroFPS.Pause
             loadIssued = false;
             if (runDirector != null) runDirector.RecoverSceneLeave();
             service.RecoverSceneLeave();
+            if (exclusiveLeaveOwner != null)
+            {
+                service.CancelForExclusiveFlow();
+                GamePause.SetService(exclusiveLeaveOwner);
+                exclusiveLeaveOwner = null;
+            }
             SceneLeaveFailed?.Invoke();
         }
 

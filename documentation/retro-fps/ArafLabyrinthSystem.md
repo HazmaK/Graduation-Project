@@ -99,6 +99,74 @@ Namespace: `RetroFPS.Run.Labyrinth` (`Scripts/Run/Labyrinth/`).
 
 ---
 
+## 9. YENİDEN TASARIM (2026-11-26) — ONAYLANDI, HENÜZ KODLANMADI
+
+> [!warning] Bu bölüm planlanan tasarımdır. Yukarıdaki 1–8. bölümler hâlâ koddaki mevcut durumu anlatır. Fazlar kodlandıkça yukarıdaki bölümler güncellenecek.
+
+### Çözülen problemler
+- **Erken ölüm açığı:** Kat 1'in ilk dalgasında ölmek de 2 kart teklifi veriyordu; oyuncu bilerek ölüp kartlı devam ediyordu.
+- **Anlamsız labirent:** Çıkış rastgele pity zarıyla belirleniyordu; keşfin oyuncuya faydası yoktu, koridorlar boştu.
+- **Küçük ve kolay:** Tek 9×9 labirent, 7 oda, 3-5 düşman.
+- **Atmosfer:** Kızıl tonlar cehennemi andırıyordu, ürpertici değildi.
+
+### Kullanıcı kararları
+| Konu | Karar |
+| :--- | :--- |
+| Ölüm bedeli | Derinlik ölçekleme + giriş vergisi (Araf Yarası) |
+| Araf Yarası | Girişte -25 max can; **sadece Araf içinde** geçerli, kaçınca her zaman silinir |
+| Hedef | 3 mühür toplanır; portal 3 mühürle açılır; pity çıkış zarı kalkar |
+| Tehdit | **Uyanış + boşluk** (öldürülemez avcı reddedildi: hızlı tempoya uymuyor, çok yeni sistem ister) |
+| Kart ödülü | Sunak sayısı + nadirlik derinliğe göre |
+| Mekan | İç mekan (kapalı kemik labirentler) + dış mekan (boşlukta adalar) iç içe: labirentte başlanır, labirentin bölümleri arası adalarla geçilir |
+| Sıra | Önce mekanik, sonra yapı, sonra atmosfer |
+
+### 9.1 Yapı — Merkez + 3 kanat
+- **Merkez labirent:** Başlangıç ve mühürlü portal. Etrafında **3 kanat labirenti** (~7×7, hücre 6 m), kapalı kemik kemerli koridorlar (tavansız, gökyüzü görünür).
+- Her labirentin ağzı boşluğa açılır → **ada / köprü / platform parkuru** → sonraki labirent. Adalardan tüm yapı havada görünür (yön bulma).
+- Labirentler farklı Y yüksekliklerinde; hepsi Y > 0 (negatif Y kuralı korunur).
+- **Boşluğa düşme:** 20 hasar + son güvenli platforma geri atılma; hasar öldürebilir (→ Gerçek Ölüm). *(Ajan kararı, ayarlanabilir.)*
+- Kod: `LabyrinthGenerator` her bölüm için yeniden kullanılır; yeni POCO bölümleri ve ada zincirlerini yerleştirir; seed determinizmi korunur.
+
+### 9.2 Hedef — 3 Mühür
+- Her kanadın en derin noktasında (kanat girişinden BFS max derinlik) **mühür odası**: dövüş odası + mühür kaidesi + duvarların üstünden görünen kızıl ışık sütunu (minimap yerine yön göstergesi).
+- Portal merkezde, 3 mühürle açılır. Diğer yuvalar (Shrine, Ossuary, Combat, Ambush) perde/zar sistemiyle kalır, labirent başına daha az yuva.
+- HUD: "MÜHÜR x/3".
+
+### 9.3 Tehdit — Uyanış (kademe 0 → 3)
+- Giriş: kademe 0, koridorlarda seyrek devriye.
+- Her mühür +1 kademe: o odada pusu dalgası; tüm labirent koridorlarına devriye sürüleri; sis kapanır; adalara Uçan Göz, köprülere Kefaretçi (slam fırlatması + Göz mermileri oyuncuyu boşluğa iter).
+- 3. mühürden sonra merkeze dönüş = en uyanık Araf'ta final.
+- Yeniden kullanılır: `IEliteScalable`, `ArafRoom` ambush, mevcut düşman prefabları.
+
+### 9.4 Bedel ve derinlik
+- **Araf Yarası:** `StatSheet` modifier'ı (-25 max can), girişte eklenir, kaçışta kaldırılır.
+- **Derinlik kademesi** (katta temizlenen karşılaşma/dalga oranı):
+
+| Kademe | Koşul | Sunak | Nadirlik |
+| :--- | :--- | :--- | :--- |
+| 0 | < %34 | 1 | Sadece sıradan |
+| 1 | %34–67 | 2 | Sıradan + nadir |
+| 2 | ≥ %67 veya boss | 3 | Nadir ağırlıklı |
+
+- Sunaklar mühür odalarında çıkar. `CardOfferRoller.MaxOffersPerVisit = 2` sabiti kademeye bağlı değere döner.
+- Not: Yara Araf içinde kaldığı için açığı asıl kapatan derinlik ölçeklemesidir. Hâlâ erken ölmek cazipse kademe 0 sunak sayısı 0'a çekilir.
+
+### 9.5 Atmosfer
+- Palet kızıl → mor/menekşe: sis, ambient, `PostFx_Araf` profili. Kızıl yalnızca tehlike vurgusu (lav çatlakları, mühür ışınları, portal).
+- Gökyüzü: siyah güneş + nebula; etrafta süzülen kemer/sütun/monolit parçaları.
+- Ses: Araf ambiyansı, fısıltılar, uyanış kademe sting'i (klip yoksa placeholder).
+
+### 9.6 Fazlar
+1. **Mekanik** (mevcut tek labirent üzerinde, placeholder görsel): yara, derinlik kademesi, 3 mühür, pity kaldırma, uyanış + koridor devriyeleri, sunak ölçekleme, HUD. POCO testleri: kademe hesabı, uyanış durumu, mühür takibi, teklif zarı.
+2. **Yapı:** merkez + 3 kanat, ada zincirleri, düşme/geri atılma, ışık sütunları. Determinizm + bağlantılılık testleri.
+3. **Atmosfer:** mor palet, gökyüzü, süzülen parçalar, post-fx, ses.
+
+Ayarlanabilir ajan kararları: merkez + 3 kanat düzeni, düşme hasarı 20 ve öldürebilmesi, 7×7 boyut, %34 / %67 kademe sınırları.
+
+Referans görseller: boşlukta yüzen labirent adaları ve siyah güneş; mor gökyüzü altında kemik kemerli koridor ve kızıl çatlaklı zemin; uçurum üstünde gargoyle bloklu platform parkuru.
+
+---
+
 ## İlişkiler (Sinaptik Ağ Bağlantıları)
 - [[CoreLoopAndPurgatory]] ➔ `implements_purgatory`
 - [[RunRandomness]] ➔ `seeded_by`
