@@ -405,6 +405,19 @@ MonoBehaviour:
   proximityRange: 3.5
   loseSightDistance: 26
   loseSightDuration: 4
+  navSettings:
+    repathInterval: 0.4
+    targetMoveThreshold: 1.5
+    cornerReachDistance: 0.6
+    sampleMaxDistance: 2.5
+    targetSampleMaxDistance: 6
+    reachableHeightTolerance: 1.6
+    partialEndAttackRadius: 2.2
+    ambushRadiusMin: 5
+    ambushRadiusMax: 7
+    ambushSampleCount: 8
+    ambushRefreshDistance: 3
+  losSearchDuration: 6
   attackRange: 20
   lightProjectileSpeed: 16
   projectileDamage: 18
@@ -481,6 +494,9 @@ MonoBehaviour:
   criticalDamageMultiplier: 2
   groundProbeOffset: 0.5
   groundProbeDistance: 25
+  voidDropThreshold: 2.5
+  acceptLowerAfter: 2
+  defaultHuntStartDelay: 0.35
   hoverSpeedFactor: 2
   sightForwardOffset: 0.5
   sightTargetHeight: 1.1

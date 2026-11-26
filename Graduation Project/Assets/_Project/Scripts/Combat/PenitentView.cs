@@ -86,6 +86,7 @@ namespace RetroFPS.Combat
         private MaterialPropertyBlock _block, _areaBlock;
         private Color[] _tints, _tintEmission, _glows, _glowEmission;
         private Collider[] _hitboxes;
+        private Collider[] _colliders;
         private Renderer _shieldRenderer;
         private readonly RaycastHit[] _groundHits = new RaycastHit[32];
         private Color _shieldTint, _shieldEmission;
@@ -119,6 +120,7 @@ namespace RetroFPS.Combat
             CacheColors(tintRenderers, out _tints, out _tintEmission);
             CacheColors(glowRenderers, out _glows, out _glowEmission);
             _hitboxes = hitboxRoot != null ? hitboxRoot.GetComponentsInChildren<Collider>(true) : new Collider[0];
+            _colliders = GetComponentsInChildren<Collider>(true);
             _shieldRenderer = shieldPivot != null ? shieldPivot.GetComponentInChildren<Renderer>(true) : null;
             Material shieldMaterial = _shieldRenderer != null ? _shieldRenderer.sharedMaterial : null;
             _shieldTint = shieldMaterial != null && shieldMaterial.HasProperty(BaseColorId) ? shieldMaterial.GetColor(BaseColorId) : Color.white;
@@ -206,8 +208,8 @@ namespace RetroFPS.Combat
             float nearest = float.PositiveInfinity;
             for (int i = 0; i < count; i++)
             {
-                Transform hit = _groundHits[i].transform;
-                if (hit == null || hit == transform || hit.IsChildOf(transform) || _groundHits[i].distance >= nearest) continue;
+                Collider hit = _groundHits[i].collider;
+                if (hit == null || ContainsCollider(hit) || _groundHits[i].distance >= nearest) continue;
                 nearest = _groundHits[i].distance;
                 _areaOrigin.y = _groundHits[i].point.y;
             }
@@ -215,6 +217,14 @@ namespace RetroFPS.Combat
             if (animator != null) animator.SetTrigger(WindupId);
             Pose(overheadPosition, overheadEuler, _windupDuration);
             Render();
+        }
+
+        private bool ContainsCollider(Collider candidate)
+        {
+            if (_colliders == null) return false;
+            for (int i = 0; i < _colliders.Length; i++)
+                if (_colliders[i] == candidate) return true;
+            return false;
         }
 
         /// <summary>Flashes the full cached rectangle, then fades independently of the charge visuals.</summary>

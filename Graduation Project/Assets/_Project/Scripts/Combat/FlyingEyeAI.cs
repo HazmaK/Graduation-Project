@@ -1,6 +1,7 @@
 using RetroFPS.Pause;
 using UnityEngine;
 using RetroFPS.Combat;
+using RetroFPS.Combat.Navigation;
 
 namespace RetroFPS
 {
@@ -32,7 +33,7 @@ namespace RetroFPS
     /// - Gözbebeği Kritik Vuruş Noktasıdır (2x Headshot / Crit).
     /// </summary>
     [RequireComponent(typeof(CharacterController))]
-    public class FlyingEyeAI : MonoBehaviour, IDamageable, IAlertableEnemy, IStunnable, IEncounterEnemy, IThreatCost, IEliteScalable, IStunState, IReflectPunishable
+    public class FlyingEyeAI : MonoBehaviour, IDamageable, IAlertableEnemy, IStunnable, IEncounterEnemy, IThreatCost, IEliteScalable, IStunState, IReflectPunishable, IHuntableEnemy
     {
         [Header("Sağlık ve Ödül")]
         [Tooltip("Flying Eye tuning or authored reference.")] [SerializeField] private float maxHealth = 90f; // Havada olduğu için biraz daha kırılgan
@@ -64,6 +65,10 @@ namespace RetroFPS
         [Tooltip("Flying Eye tuning or authored reference.")] [SerializeField] private float proximityRange = 3.5f;
         [Tooltip("Flying Eye tuning or authored reference.")] [SerializeField] private float loseSightDistance = 26f;
         [Tooltip("Flying Eye tuning or authored reference.")] [SerializeField] private float loseSightDuration = 4.0f;
+
+        [Header("Yol Bulma")]
+        [Tooltip("NavMesh yol bulma ayarları.")] [SerializeField] private EnemyNavSettings navSettings = new EnemyNavSettings();
+        [Tooltip("NavMesh üzerinde görüş ararken takibi sürdürme süresi (sn).")] [SerializeField] private float losSearchDuration = 6f;
 
         [Header("Menzilli Saldırı")]
         [Tooltip("Flying Eye tuning or authored reference.")] [SerializeField] private float attackRange = 20f;
@@ -157,6 +162,9 @@ namespace RetroFPS
         [Tooltip("Pupil and head hitbox damage multiplier.")] [SerializeField] private float criticalDamageMultiplier = 2f;
         [Tooltip("Ground ray start above the eye.")] [SerializeField] private float groundProbeOffset = 0.5f;
         [Tooltip("Ground ray maximum length.")] [SerializeField] private float groundProbeDistance = 25f;
+        [Tooltip("Ground drop below last solid ground treated as void unless sustained.")] [SerializeField] private float voidDropThreshold = 2.5f;
+        [Tooltip("Seconds a deeper ground hit must persist before accepting it.")] [SerializeField] private float acceptLowerAfter = 2.0f;
+        [Tooltip("Fallback grace delay in seconds when BeginHunt is called without a profile.")] [SerializeField] private float defaultHuntStartDelay = 0.35f;
         [Tooltip("Altitude correction fraction of fly speed.")] [SerializeField] private float hoverSpeedFactor = 2f;
         [Tooltip("Line of sight origin forward from body.")] [SerializeField] private float sightForwardOffset = 0.5f;
         [Tooltip("Line of sight target above player position.")] [SerializeField] private float sightTargetHeight = 1.1f;
@@ -184,6 +192,8 @@ namespace RetroFPS
         private EnemyHealthDropper _healthDropper;
         private EnemyAmmoDropper _ammoDropper;
         private CharacterController _controller;
+        private EnemyNavigator _nav;
+        private bool _hadSightInCombat;
         private Transform _playerTransform;
         private float _playerSearchTimer;
 
@@ -191,9 +201,20 @@ namespace RetroFPS
         private float _currentHealth;
         private bool _eliteBaseCached;
         private bool _isElite;
+        private float _eliteSpeedMultiplier = 1f;
         private float _baseMaxHealth;
         private float _baseProjectileDamage;
         private float _baseFlySpeed;
+        private float _baseLightCooldown;
+        private float _baseHeavyCooldown;
+        private float _baseHoverHeight;
+        private float _baseMinFlyHeight;
+        private float _baseMaxFlyHeight;
+        private bool _isHunting;
+        private EnemyAggressionProfile _huntProfile;
+        private float _huntGraceTimer;
+        private float _huntMoveSpeedMultiplier = 1f;
+        private float _lowerGroundTimer;
         private Vector3 _spawnPosition;
         private float _lastGroundY; // Son bilinen zemin yüksekliği (uçuş sınırları buna GÖRELİ uygulanır)
         private Quaternion _spawnRotation;
@@ -213,6 +234,8 @@ namespace RetroFPS
         private readonly RaycastHit[] _groundHits = new RaycastHit[8];
 
         private Collider[] _colliders;
+        private Collider[] _playerColliders;
+        private Transform _playerCollidersOwner;
         private CharacterController _playerController;
         private FlyingEyeAttackPlanner _planner;
         private EnemyProjectileSettings _lightSettings;
@@ -256,22 +279,34 @@ namespace RetroFPS
         /// <summary>Bu doğuşta elit güçlendirmesi uygulanıp uygulanmadığı.</summary>
         public bool IsElite => _isElite;
 
+        /// <summary>Whether this eye is currently in arena hunt mode.</summary>
+        public bool IsHunting => _isHunting;
+
+        private void EnsureBaseStatsCached()
+        {
+            if (_eliteBaseCached) return;
+            _baseMaxHealth = maxHealth;
+            _baseProjectileDamage = projectileDamage;
+            _baseHeavyDamage = heavyDamage;
+            _baseFlySpeed = flySpeed;
+            _baseLightCooldown = lightCooldown;
+            _baseHeavyCooldown = heavyCooldown;
+            _baseHoverHeight = hoverHeight;
+            _baseMinFlyHeight = minFlyHeight;
+            _baseMaxFlyHeight = maxFlyHeight;
+            _eliteBaseCached = true;
+        }
+
         /// <summary>Temel değerleri saklayarak elit çarpanlarını doğuş başına bir kez uygular.</summary>
         public void ApplyEliteScaling(float damageMultiplier, float speedMultiplier, float healthMultiplier)
         {
             if (_isElite) return;
-            if (!_eliteBaseCached)
-            {
-                _baseMaxHealth = maxHealth;
-                _baseProjectileDamage = projectileDamage;
-                _baseHeavyDamage = heavyDamage;
-                _baseFlySpeed = flySpeed;
-                _eliteBaseCached = true;
-            }
+            EnsureBaseStatsCached();
 
+            _eliteSpeedMultiplier = speedMultiplier;
             projectileDamage = _baseProjectileDamage * damageMultiplier;
             heavyDamage = _baseHeavyDamage * damageMultiplier;
-            flySpeed = _baseFlySpeed * speedMultiplier;
+            flySpeed = _baseFlySpeed * _eliteSpeedMultiplier * _huntMoveSpeedMultiplier;
             maxHealth = _baseMaxHealth * healthMultiplier;
             _currentHealth = maxHealth;
             _isElite = true;
@@ -281,12 +316,85 @@ namespace RetroFPS
         private void ResetEliteScaling()
         {
             if (!_eliteBaseCached) return;
+            _eliteSpeedMultiplier = 1f;
             projectileDamage = _baseProjectileDamage;
             heavyDamage = _baseHeavyDamage;
-            flySpeed = _baseFlySpeed;
+            flySpeed = _baseFlySpeed * _huntMoveSpeedMultiplier;
             maxHealth = _baseMaxHealth;
             _isElite = false;
             RebuildProjectileSettings();
+        }
+
+        /// <inheritdoc />
+        public void BeginHunt(Transform target, EnemyAggressionProfile profile)
+        {
+            if (IsDead) return;
+            EnsureBaseStatsCached();
+            // Av başlangıcındaki bekleme süresi süren bir hazırlıkla atlanmasın.
+            if (_currentState == FlyingEyeState.Windup) CancelWindup();
+
+            _isHunting = true;
+            _huntProfile = profile;
+            _huntGraceTimer = profile != null ? profile.HuntStartDelay : defaultHuntStartDelay;
+            _huntMoveSpeedMultiplier = profile != null ? profile.MoveSpeedMultiplier : 1f;
+
+            flySpeed = _baseFlySpeed * _eliteSpeedMultiplier * _huntMoveSpeedMultiplier;
+            float cooldownMult = profile != null ? profile.AttackCooldownMultiplier : 1f;
+            lightCooldown = _baseLightCooldown * cooldownMult;
+            heavyCooldown = _baseHeavyCooldown * cooldownMult;
+
+            if (profile != null)
+            {
+                hoverHeight = profile.EyeHoverHeight;
+                minFlyHeight = profile.EyeMinFlyHeight;
+                maxFlyHeight = profile.EyeMaxFlyHeight;
+            }
+            else
+            {
+                hoverHeight = _baseHoverHeight;
+                minFlyHeight = _baseMinFlyHeight;
+                maxFlyHeight = _baseMaxFlyHeight;
+            }
+
+            if (!_grounded) _hoverTarget = hoverHeight;
+
+            if (target != null)
+            {
+                _playerTransform = target;
+                target.TryGetComponent(out _playerController);
+            }
+            else if (_playerTransform == null)
+            {
+                FindPlayer();
+            }
+
+            if (_currentState == FlyingEyeState.Idle || _currentState == FlyingEyeState.Patrol)
+            {
+                StartCombat(false);
+            }
+            else if (_playerTransform != null)
+            {
+                _lastKnownPlayerPos = _playerTransform.position;
+                _hadSightInCombat = true;
+                _nav?.Invalidate();
+            }
+        }
+
+        private void ClearHunt()
+        {
+            _isHunting = false;
+            _huntProfile = null;
+            _huntGraceTimer = 0f;
+            _huntMoveSpeedMultiplier = 1f;
+            if (_eliteBaseCached)
+            {
+                flySpeed = _baseFlySpeed * _eliteSpeedMultiplier;
+                lightCooldown = _baseLightCooldown;
+                heavyCooldown = _baseHeavyCooldown;
+                hoverHeight = _baseHoverHeight;
+                minFlyHeight = _baseMinFlyHeight;
+                maxFlyHeight = _baseMaxFlyHeight;
+            }
         }
 
         // IEncounterEnemy Uygulaması
@@ -312,6 +420,9 @@ namespace RetroFPS
 
         private void Awake()
         {
+            EnsureBaseStatsCached();
+            if (navSettings == null) navSettings = new EnemyNavSettings();
+            _nav = new EnemyNavigator(new UnityNavMeshQuery(), navSettings, null);
             _controller = GetComponent<CharacterController>();
             _spawnPosition = transform.position;
             _spawnRotation = transform.rotation;
@@ -486,6 +597,7 @@ namespace RetroFPS
         {
             if (_cooldownTimer > 0f) _cooldownTimer -= Time.deltaTime;
             if (_jinkCooldown > 0f) _jinkCooldown -= Time.deltaTime;
+            if (_huntGraceTimer > 0f) _huntGraceTimer -= Time.deltaTime;
         }
         private void ExecuteStateMachine()
         {
@@ -581,6 +693,8 @@ namespace RetroFPS
         {
             _currentState = FlyingEyeState.Combat;
             _loseSightTimer = loseSightDuration;
+            _hadSightInCombat = true;
+            _nav?.Invalidate();
             if (_playerTransform != null)
             {
                 _lastKnownPlayerPos = _playerTransform.position;
@@ -595,13 +709,92 @@ namespace RetroFPS
 
         private void ExecuteCombat(float distToPlayer)
         {
+            if (_huntGraceTimer > 0f)
+            {
+                LookAtPosition(_playerTransform.position + Vector3.up * aimHeight);
+                _velocity.x = 0f;
+                _velocity.z = 0f;
+                return;
+            }
+
             bool canSee = CanSeePlayer();
             if (canSee)
             {
+                _hadSightInCombat = true;
                 _loseSightTimer = loseSightDuration;
                 _lastKnownPlayerPos = _playerTransform.position;
+
+                LookAtPosition(_playerTransform.position + Vector3.up * aimHeight);
+
+                if (_jinkTimer > 0f)
+                {
+                    _jinkTimer -= Time.deltaTime;
+                    MoveTangent(jinkSpeedFactor);
+                    return;
+                }
+
+                // 1. Saldırı Hazırlığı Kontrolü
+                if (distToPlayer <= attackRange && _cooldownTimer <= 0f)
+                {
+                    StartWindup();
+                    return;
+                }
+
+                // 2. Menzil ve Konumlandırma (Kiting)
+                Vector3 toPlayerFlat = _playerTransform.position - transform.position;
+                toPlayerFlat.y = 0f;
+                Vector3 dirToPlayer = toPlayerFlat.normalized;
+
+                Vector3 moveDir = Vector3.zero;
+
+                // Çok yakınsa geri çekil
+                if (distToPlayer < minDistance)
+                {
+                    moveDir = -dirToPlayer * (flySpeed * retreatSpeedFactor);
+                }
+                // Çok uzaksa yaklaş
+                else if (distToPlayer > preferredDistance + approachDistanceSlack)
+                {
+                    moveDir = dirToPlayer * flySpeed;
+                }
+                // İdeal mesafedeyse hafifçe yanlara süzül (strafe)
+                else
+                {
+                    _strafeTimer -= Time.deltaTime;
+                    if (_strafeTimer <= 0f)
+                    {
+                        _strafeDirection = Random.value > 0.5f ? 1f : -1f;
+                        _strafeTimer = Random.Range(strafeDuration.x, strafeDuration.y);
+                    }
+
+                    Vector3 strafeVector = Vector3.Cross(Vector3.up, dirToPlayer) * _strafeDirection;
+                    moveDir = strafeVector * (flySpeed * combatStrafeFactor);
+                }
+
+                _velocity.x = moveDir.x;
+                _velocity.z = moveDir.z;
+                _controller.Move(_velocity * Time.deltaTime);
+                return;
             }
-            else
+
+            // Yolu izle, görüş ara
+            bool lostSightThisFrame = _hadSightInCombat;
+            if (lostSightThisFrame)
+            {
+                _hadSightInCombat = false;
+                _nav.Invalidate();
+            }
+
+            Vector3 pos = transform.position;
+            Vector3 groundSelf = new Vector3(pos.x, _lastGroundY, pos.z);
+            Vector3 steer = _nav.Tick(Time.deltaTime, groundSelf, _playerTransform.position, false);
+
+            if (lostSightThisFrame && _nav.Status != NavPathStatus.NoNavMesh)
+            {
+                _loseSightTimer = losSearchDuration;
+            }
+
+            if (!_isHunting)
             {
                 _loseSightTimer -= Time.deltaTime;
                 if (_loseSightTimer <= 0f || distToPlayer > loseSightDistance)
@@ -614,8 +807,16 @@ namespace RetroFPS
                 }
             }
 
-            Vector3 aimTarget = canSee ? _playerTransform.position + Vector3.up * aimHeight : _lastKnownPlayerPos;
-            LookAtPosition(aimTarget);
+            Vector3 toSteer = steer - groundSelf;
+            toSteer.y = 0f;
+            if (_nav.Status != NavPathStatus.NoNavMesh && toSteer.sqrMagnitude > 0.05f * 0.05f)
+            {
+                LookAtPosition(new Vector3(steer.x, pos.y, steer.z));
+            }
+            else
+            {
+                LookAtPosition(_lastKnownPlayerPos);
+            }
 
             if (_jinkTimer > 0f)
             {
@@ -624,46 +825,10 @@ namespace RetroFPS
                 return;
             }
 
-            // 1. Saldırı Hazırlığı Kontrolü
-            if (canSee && distToPlayer <= attackRange && _cooldownTimer <= 0f)
-            {
-                StartWindup();
-                return;
-            }
-
-            // 2. Menzil ve Konumlandırma (Kiting)
-            Vector3 toPlayerFlat = _playerTransform.position - transform.position;
-            toPlayerFlat.y = 0f;
-            Vector3 dirToPlayer = toPlayerFlat.normalized;
-
-            Vector3 moveDir = Vector3.zero;
-
-            // Çok yakınsa geri çekil
-            if (distToPlayer < minDistance)
-            {
-                moveDir = -dirToPlayer * (flySpeed * retreatSpeedFactor);
-            }
-            // Çok uzaksa yaklaş
-            else if (distToPlayer > preferredDistance + approachDistanceSlack)
-            {
-                moveDir = dirToPlayer * flySpeed;
-            }
-            // İdeal mesafedeyse hafifçe yanlara süzül (strafe)
-            else
-            {
-                _strafeTimer -= Time.deltaTime;
-                if (_strafeTimer <= 0f)
-                {
-                    _strafeDirection = Random.value > 0.5f ? 1f : -1f;
-                    _strafeTimer = Random.Range(strafeDuration.x, strafeDuration.y);
-                }
-
-                Vector3 strafeVector = Vector3.Cross(Vector3.up, dirToPlayer) * _strafeDirection;
-                moveDir = strafeVector * (flySpeed * combatStrafeFactor);
-            }
-
-            _velocity.x = moveDir.x;
-            _velocity.z = moveDir.z;
+            float navSpeed = Time.deltaTime > 0f ? Mathf.Min(flySpeed, toSteer.magnitude / Time.deltaTime) : 0f;
+            Vector3 navMove = toSteer.sqrMagnitude > 0.05f * 0.05f ? toSteer.normalized * navSpeed : Vector3.zero;
+            _velocity.x = navMove.x;
+            _velocity.z = navMove.z;
             _controller.Move(_velocity * Time.deltaTime);
         }
 
@@ -692,7 +857,7 @@ namespace RetroFPS
         {
             if (!_hasAttackToken) return;
             _hasAttackToken = false;
-            EnemyAttackTokens.Release();
+            EnemyAttackTokens.Release(AttackTokenChannel.RangedHeavy);
         }
 
         private void CancelWindup()
@@ -710,7 +875,8 @@ namespace RetroFPS
 
         private void StartWindup()
         {
-            _hasAttackToken = _planner.WantsHeavy && EnemyAttackTokens.TryAcquire();
+            int heavyLimit = _huntProfile != null ? _huntProfile.RangedHeavyTokenLimit : 0;
+            _hasAttackToken = _planner.WantsHeavy && EnemyAttackTokens.TryAcquire(AttackTokenChannel.RangedHeavy, heavyLimit);
             _pendingAttack = _hasAttackToken ? FlyingEyeAttack.Heavy : FlyingEyeAttack.Light;
             // Commit only at launch, so cancelled heavies remain wanted.
             _windupDuration = _pendingAttack == FlyingEyeAttack.Heavy ? heavyWindup : lightWindup;
@@ -808,24 +974,47 @@ namespace RetroFPS
             if (view != null) view.SetGrounded(false);
             _currentState = FlyingEyeState.Combat;
         }
+        private bool IsOwnCollider(Collider col)
+        {
+            if (col == null) return false;
+            if (col == _controller) return true;
+            if (_colliders == null) return false;
+            for (int i = 0; i < _colliders.Length; i++)
+            {
+                if (_colliders[i] == col) return true;
+            }
+            return false;
+        }
+
         private void ApplyHoverAltitude()
         {
-            // Zemin bulunamazsa son bilinen zemini kullan (dünya Y=0 varsayılmaz; Araf gibi yüksekteki alanlarda da çalışır)
-            float groundY = _lastGroundY;
             // Zemin seviyesinde doğan göz de zemini bulabilsin; kendi collider'ları aşağıda elenir.
             Vector3 rayOrigin = transform.position + Vector3.up * groundProbeOffset;
             int hitCount = Physics.RaycastNonAlloc(rayOrigin, Vector3.down, _groundHits, groundProbeDistance, GameLayers.GroundMask, QueryTriggerInteraction.Ignore);
 
+            bool hasHit = false;
+            float hitY = 0f;
+            float bestDist = float.MaxValue;
             for (int i = 0; i < hitCount; i++)
             {
-                // Kendisine veya kendi çocuk parçalarına çarpışmayı yok say
-                if (_groundHits[i].transform == transform || _groundHits[i].transform.IsChildOf(transform))
+                // Kendisine veya kendi çocuk parçalarına çarpışmayı yok say (hit.transform yerine cache'li collider karşılaştırması)
+                if (IsOwnCollider(_groundHits[i].collider))
                     continue;
 
-                groundY = _groundHits[i].point.y;
-                _lastGroundY = groundY;
-                break;
+                if (_groundHits[i].distance < bestDist)
+                {
+                    bestDist = _groundHits[i].distance;
+                    hitY = _groundHits[i].point.y;
+                    hasHit = true;
+                }
             }
+
+            // Zemin bulunamazsa veya boşluk eşiği aşılırsa son bilinen zemini koru
+            float groundY = FlyingEyeAltitude.ResolveGround(
+                _lastGroundY, hasHit, hitY,
+                voidDropThreshold, acceptLowerAfter,
+                Time.deltaTime, ref _lowerGroundTimer);
+            _lastGroundY = groundY;
 
             // Hedef Y yüksekliği: Zemin + hoverHeight + dalgalanma. min/maxFlyHeight ZEMİNE GÖRELİDİR (mutlak dünya Y'si değil).
             float bob = Mathf.Sin(Time.time * bobFrequency) * bobAmplitude;
@@ -868,7 +1057,7 @@ namespace RetroFPS
             {
                 if (CombatRaycast.Nearest(eyePos, toPlayer.normalized, dist, GameLayers.EnemySightMask, _sightHits, out RaycastHit proxHit))
                 {
-                    if (proxHit.transform == _playerTransform || proxHit.transform.IsChildOf(_playerTransform))
+                    if (IsPlayerCollider(proxHit.collider))
                     {
                         return true;
                     }
@@ -881,12 +1070,28 @@ namespace RetroFPS
 
             if (CombatRaycast.Nearest(eyePos, dirToPlayer, dist, GameLayers.EnemySightMask, _sightHits, out RaycastHit hit))
             {
-                if (hit.transform == _playerTransform || hit.transform.IsChildOf(_playerTransform))
+                if (IsPlayerCollider(hit.collider))
                 {
                     return true;
                 }
             }
 
+            return false;
+        }
+
+        // RaycastHit.transform allocates a managed wrapper per call; compare colliders by reference instead.
+        private bool IsPlayerCollider(Collider candidate)
+        {
+            if (candidate == null || _playerTransform == null) return false;
+            if (!ReferenceEquals(_playerCollidersOwner, _playerTransform) || _playerColliders == null)
+            {
+                _playerCollidersOwner = _playerTransform;
+                _playerColliders = _playerTransform.GetComponentsInChildren<Collider>(true);
+            }
+            for (int i = 0; i < _playerColliders.Length; i++)
+            {
+                if (ReferenceEquals(_playerColliders[i], candidate)) return true;
+            }
             return false;
         }
 
@@ -975,6 +1180,7 @@ namespace RetroFPS
         {
             if (!IsAlive) return;
             CancelWindup();
+            ClearHunt();
             _grounded = false;
             _recoveringAltitude = false;
             if (view != null) view.SetGrounded(false);
@@ -1048,6 +1254,7 @@ namespace RetroFPS
         private void Respawn()
         {
             CancelWindup();
+            ClearHunt();
             ResetEliteScaling();
             _planner.Reset();
             _grounded = false;
@@ -1059,6 +1266,9 @@ namespace RetroFPS
             _jinkTimer = 0f;
             _jinkCooldown = 0f;
             _loseSightTimer = 0f;
+            _lowerGroundTimer = 0f;
+            _hadSightInCombat = false;
+            _nav?.Invalidate();
             _strafeTimer = 0f;
             _stateTimer = 0f;
             _lastGroundY = _spawnPosition.y - hoverHeight;
@@ -1096,6 +1306,8 @@ namespace RetroFPS
         public void OnSpawnFromDirector(Vector3 spawnPosition, Quaternion spawnRotation)
         {
             autoRespawn = false;
+            ClearHunt();
+            _lowerGroundTimer = 0f;
             _spawnPosition = spawnPosition;
             _spawnRotation = spawnRotation;
             _patrolTarget = spawnPosition;
@@ -1114,6 +1326,7 @@ namespace RetroFPS
 
             gameObject.SetActive(true);
             Respawn();
+            _nav?.Invalidate();
             StartCombat(true);
         }
 
@@ -1123,6 +1336,7 @@ namespace RetroFPS
         public void OnDespawnToDirector()
         {
             CancelWindup();
+            ClearHunt();
             autoRespawn = false;
             _currentState = FlyingEyeState.Dead;
             gameObject.SetActive(false);
@@ -1174,6 +1388,15 @@ namespace RetroFPS
             Gizmos.color = new Color(0.2f, 0.9f, 1f, 0.3f);
             Vector3 center = Application.isPlaying ? _spawnPosition : transform.position;
             Gizmos.DrawWireSphere(center, patrolRadius);
+
+            if (_nav != null && _nav.CornerCount > 1)
+            {
+                Gizmos.color = Color.cyan;
+                for (int i = 0; i < _nav.CornerCount - 1; i++)
+                {
+                    Gizmos.DrawLine(_nav.GetCorner(i), _nav.GetCorner(i + 1));
+                }
+            }
         }
 #endif
     }

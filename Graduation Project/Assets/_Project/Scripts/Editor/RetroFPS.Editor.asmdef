@@ -12,7 +12,8 @@
         "RetroFPS.HUD",
         "RetroFPS.Pause",
         "UnityEngine.UI",
-        "Unity.TextMeshPro"
+        "Unity.TextMeshPro",
+        "Unity.AI.Navigation"
     ],
     "includePlatforms": [
         "Editor"

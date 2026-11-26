@@ -1,4 +1,5 @@
 using System.Collections;
+using RetroFPS.Combat.Navigation;
 using RetroFPS.Pause;
 using UnityEngine;
 
@@ -8,7 +9,7 @@ namespace RetroFPS.Combat
     /// Leave the area or parry at impact; jumping does not avoid it.</summary>
     [RequireComponent(typeof(CharacterController))]
     public sealed class PenitentAI : MonoBehaviour, IDamageable, IAlertableEnemy, IStunnable, IStunState,
-        IEncounterEnemy, IThreatCost, IEliteScalable, IGuardBreakable, IMeleeGuard
+        IEncounterEnemy, IThreatCost, IEliteScalable, IGuardBreakable, IMeleeGuard, IHuntableEnemy
     {
         [Header("References")]
         [SerializeField, Tooltip("Optional presentation driver.")] private PenitentView view;
@@ -29,6 +30,14 @@ namespace RetroFPS.Combat
         [SerializeField, Tooltip("Delay before automatic respawn, or deactivation after death.")]
         private float respawnTime = 4f;
 
+        [Header("Navigation")]
+        [SerializeField, Tooltip("NavMesh pathfinding and unreachable-target settings.")]
+        private EnemyNavSettings navSettings = new EnemyNavSettings();
+        [SerializeField, Tooltip("Forward ground-probe distance for walking and guard-broken knockback.")]
+        private float ledgeLookAhead = 0.9f;
+        [SerializeField, Tooltip("Maximum safe ground drop for walking and guard-broken knockback.")]
+        private float ledgeMaxDrop = 1.2f;
+
         [Header("Detection")]
         [SerializeField, Tooltip("Maximum player detection distance.")] private float sightRange = 18f;
         [SerializeField, Tooltip("Full detection cone in degrees.")] private float fieldOfView = 110f;
@@ -40,6 +49,8 @@ namespace RetroFPS.Combat
         private float playerTargetHeight = 1.1f;
         [SerializeField, Tooltip("Seconds between searches when the player is absent.")]
         private float playerSearchInterval = 0.5f;
+        [SerializeField, Tooltip("Turn-only hunt grace in seconds when no aggression profile is supplied.")]
+        private float huntStartDelay = 0.35f;
 
         [Header("Shield and slam")]
         [SerializeField, Tooltip("Shield arc half-angle in degrees.")] private float guardHalfAngle = 65f;
@@ -94,13 +105,16 @@ namespace RetroFPS.Combat
         [SerializeField, Tooltip("Stun signal particle count.")] private int stunSignalCount = 6;
 
         private readonly RaycastHit[] _sightHits = new RaycastHit[32];
+        private readonly RaycastHit[] _ledgeHits = new RaycastHit[32];
         private CharacterController _controller;
         private Collider[] _colliders;
+        private Collider[] _playerColliders;
         private PlayerHealth _playerHealth;
         private PlayerMovement _playerMovement;
         private PlayerLook _playerLook;
         private Transform _playerTransform;
         private PenitentAttackLoop _loop;
+        private EnemyNavigator _nav;
         private Coroutine _cacheRoutine;
         private Vector3 _slamAreaOrigin;
         private Vector3 _slamAreaForward;
@@ -123,6 +137,9 @@ namespace RetroFPS.Combat
         private float _baseHealth;
         private float _baseSlamDamage;
         private float _baseWalkSpeed;
+        private EnemyAggressionProfile _aggressionProfile;
+        private bool _isHunting;
+        private float _huntGraceRemaining;
 
         /// <inheritdoc />
         public event System.Action<IEncounterEnemy> OnEnemyDeath;
@@ -140,6 +157,8 @@ namespace RetroFPS.Combat
         public float ThreatCost => threatCost;
         /// <inheritdoc />
         public bool IsElite => _isElite;
+        /// <inheritdoc />
+        public bool IsHunting => _isHunting;
         /// <inheritdoc />
         public bool IsStunned => _alive && _loop != null && _loop.Phase == PenitentAttackPhase.GuardBroken;
         /// <inheritdoc />
@@ -159,6 +178,9 @@ namespace RetroFPS.Combat
             if (ammoDropper == null) ammoDropper = GetComponent<EnemyAmmoDropper>();
             _colliders = GetComponentsInChildren<Collider>(true);
             _loop = new PenitentAttackLoop(attackSettings);
+            if (navSettings == null) navSettings = new EnemyNavSettings();
+            var navQuery = new UnityNavMeshQuery();
+            _nav = new EnemyNavigator(navQuery, navSettings, new MeleeUnreachableResponse(navQuery, navSettings));
             _spawnPosition = transform.position;
             _spawnRotation = transform.rotation;
             _health = maxHealth;
@@ -214,7 +236,13 @@ namespace RetroFPS.Combat
             Vector3 toPlayer = _playerTransform != null ? _playerTransform.position - transform.position : Vector3.zero;
             float distance = _playerTransform != null ? toPlayer.magnitude : float.PositiveInfinity;
             bool seesPlayer = CanSeePlayer(toPlayer, distance);
-            if (seesPlayer)
+            bool inReach = _playerTransform != null && EnemyNavigator.IsWithinVerticalReach(
+                transform.position, _playerTransform.position, navSettings.ReachableHeightTolerance);
+            if (_isHunting)
+            {
+                _alerted = true;
+            }
+            else if (seesPlayer)
             {
                 if (!_alerted)
                     EnemyAlertHub.BroadcastAlert(this, transform.position, _playerTransform, alertRadius);
@@ -228,8 +256,11 @@ namespace RetroFPS.Combat
             }
             if (!HasLivingPlayer)
             {
-                _alerted = false;
-                _lostSightRemaining = 0f;
+                if (!_isHunting)
+                {
+                    _alerted = false;
+                    _lostSightRemaining = 0f;
+                }
                 if (_loop.WantsToken)
                 {
                     CancelSlam();
@@ -240,27 +271,33 @@ namespace RetroFPS.Combat
             Vector3 flatToPlayer = toPlayer;
             flatToPlayer.y = 0f;
             float targetAngle = Vector3.Angle(transform.forward, flatToPlayer);
-            if (_alerted && _loop.CanBeginSlam(distance, seesPlayer, targetAngle) && !_hasAttackToken)
-                _hasAttackToken = EnemyAttackTokens.TryAcquire();
+            bool canAttack = HasLivingPlayer && !(_isHunting && _huntGraceRemaining > 0f)
+                && seesPlayer && inReach;
+            if (_alerted && _loop.CanBeginSlam(distance, canAttack, targetAngle) && !_hasAttackToken)
+                _hasAttackToken = EnemyAttackTokens.TryAcquire(AttackTokenChannel.Slam,
+                    _aggressionProfile != null ? _aggressionProfile.SlamTokenLimit : 0);
             PenitentAttackPhase before = _loop.Phase;
-            _loop.Tick(dt, distance, _alerted && seesPlayer, _hasAttackToken, targetAngle, Random.Range(-1f, 1f));
+            _loop.Tick(dt, distance, _alerted && canAttack, _hasAttackToken, targetAngle, Random.Range(-1f, 1f));
             if (_loop.Phase != before) OnPhaseChanged();
             if (_loop.StrikeStartedThisTick) PerformSlam();
             if (!_alive || !isActiveAndEnabled) return;
             if (!_loop.WantsToken || _loop.SlamEndedThisTick) ReleaseToken();
 
-            MoveAndTurn(toPlayer, dt);
+            MoveAndTurn(toPlayer, seesPlayer, inReach, dt);
+            _huntGraceRemaining = Mathf.Max(0f, _huntGraceRemaining - dt);
         }
 
         private void FindPlayer()
         {
             _playerSearchTimer = playerSearchInterval;
-            PlayerHealth player = FindAnyObjectByType<PlayerHealth>();
-            if (player == _playerHealth && _playerTransform != null) return;
+            PlayerHealth player = _isHunting && _playerTransform != null
+                ? _playerTransform.GetComponentInParent<PlayerHealth>() : FindAnyObjectByType<PlayerHealth>();
+            if (player == _playerHealth && _playerTransform != null && _playerColliders != null) return;
             _playerHealth = player;
-            _playerTransform = _playerHealth != null ? _playerHealth.transform : null;
+            if (!_isHunting) _playerTransform = _playerHealth != null ? _playerHealth.transform : null;
             _playerMovement = _playerHealth != null ? _playerHealth.GetComponent<PlayerMovement>() : null;
             _playerLook = _playerHealth != null ? _playerHealth.GetComponent<PlayerLook>() : null;
+            _playerColliders = _playerHealth != null ? _playerHealth.GetComponentsInChildren<Collider>(true) : null;
         }
 
         private bool CanSeePlayer(Vector3 toPlayer, float distance)
@@ -277,23 +314,42 @@ namespace RetroFPS.Combat
             int count = Physics.RaycastNonAlloc(eye, ray.normalized, _sightHits, ray.magnitude,
                 GameLayers.EnemySightMask, QueryTriggerInteraction.Ignore);
             float nearest = float.PositiveInfinity;
-            Transform nearestTransform = null;
+            Collider nearestCollider = null;
             for (int i = 0; i < count; i++)
             {
-                Transform t = _sightHits[i].transform;
-                if (t == null || t == transform || t.IsChildOf(transform)) continue;
+                Collider hitCollider = _sightHits[i].collider;
+                if (hitCollider == null || ContainsCollider(_colliders, hitCollider)) continue;
                 if (_sightHits[i].distance >= nearest) continue;
                 nearest = _sightHits[i].distance;
-                nearestTransform = t;
+                nearestCollider = hitCollider;
             }
-            return nearestTransform != null
-                && (nearestTransform == _playerTransform || nearestTransform.IsChildOf(_playerTransform));
+            return nearestCollider != null && ContainsCollider(_playerColliders, nearestCollider);
+        }
+
+        private static bool ContainsCollider(Collider[] colliders, Collider candidate)
+        {
+            if (colliders == null) return false;
+            for (int i = 0; i < colliders.Length; i++)
+                if (colliders[i] == candidate) return true;
+            return false;
         }
 
         private bool HasLivingPlayer => _playerTransform != null && _playerHealth != null && !_playerHealth.IsDead;
 
-        private void MoveAndTurn(Vector3 toPlayer, float dt)
+        private void MoveAndTurn(Vector3 toPlayer, bool seesPlayer, bool inReach, float dt)
         {
+            float effectiveTurnSpeed = turnSpeedAdvance
+                * (_aggressionProfile != null ? _aggressionProfile.TurnSpeedMultiplier : 1f);
+            if (_isHunting && _huntGraceRemaining > 0f)
+            {
+                _velocity = Vector3.zero;
+                toPlayer.y = 0f;
+                if (toPlayer.sqrMagnitude > 0.000001f)
+                    transform.rotation = Quaternion.RotateTowards(transform.rotation,
+                        Quaternion.LookRotation(toPlayer), effectiveTurnSpeed * dt);
+                if (view != null) view.SetMoveSpeed01(0f);
+                return;
+            }
             PenitentAttackPhase phase = _loop.Phase;
             if (phase == PenitentAttackPhase.SlamWindup || phase == PenitentAttackPhase.SlamStrike
                 || phase == PenitentAttackPhase.SlamRecover)
@@ -303,14 +359,44 @@ namespace RetroFPS.Combat
                 return;
             }
             toPlayer.y = 0f;
-            float turnRate = phase == PenitentAttackPhase.Advance ? turnSpeedAdvance : 0f;
-            if (_alerted && toPlayer.sqrMagnitude > 0.000001f && turnRate > 0f)
-                transform.rotation = Quaternion.RotateTowards(transform.rotation, Quaternion.LookRotation(toPlayer), turnRate * dt);
-            bool walking = _alerted && phase == PenitentAttackPhase.Advance
-                && toPlayer.sqrMagnitude > stoppingDistance * stoppingDistance;
+            float turnRate = phase == PenitentAttackPhase.Advance ? effectiveTurnSpeed : 0f;
+            // Keep prefab/elite speeds intact so either ordering of elite scaling and BeginHunt composes.
+            float effectiveWalkSpeed = walkSpeed
+                * (_aggressionProfile != null ? _aggressionProfile.MoveSpeedMultiplier : 1f);
+            bool walking = false;
+            float moveSpeed = 0f;
+            Vector3 walkDir = Vector3.zero;
+            Vector3 lookDir = toPlayer;
+            if (_alerted && HasLivingPlayer && phase == PenitentAttackPhase.Advance && _playerTransform != null)
+            {
+                Vector3 steer = _nav.Tick(dt, transform.position, _playerTransform.position, true);
+                Vector3 toSteer = steer - transform.position;
+                toSteer.y = 0f;
+                bool isAmbush = _nav.Intent == ChaseIntent.Ambush;
+                bool ambushArrived = isAmbush && _nav.HasArrived(transform.position);
+                bool onFinalCorner = _nav.Intent == ChaseIntent.Direct || _nav.CurrentCorner >= _nav.CornerCount - 1;
+                bool withinStopDist = !isAmbush && onFinalCorner && inReach
+                    && toPlayer.sqrMagnitude <= stoppingDistance * stoppingDistance;
+                if (!ambushArrived && !withinStopDist && toSteer.sqrMagnitude > 0.05f * 0.05f)
+                {
+                    walking = true;
+                    walkDir = toSteer.normalized;
+                    moveSpeed = dt > 0f ? Mathf.Min(effectiveWalkSpeed, toSteer.magnitude / dt) : 0f;
+                }
+                if (ambushArrived || (onFinalCorner && seesPlayer && inReach))
+                {
+                    lookDir = toPlayer;
+                }
+                else if (toSteer.sqrMagnitude > 0.000001f)
+                {
+                    lookDir = toSteer;
+                }
+            }
+            if (_alerted && lookDir.sqrMagnitude > 0.000001f && turnRate > 0f)
+                transform.rotation = Quaternion.RotateTowards(transform.rotation, Quaternion.LookRotation(lookDir), turnRate * dt);
             if (phase != PenitentAttackPhase.GuardBroken)
             {
-                Vector3 horizontal = walking ? toPlayer.normalized * walkSpeed : Vector3.zero;
+                Vector3 horizontal = walking ? walkDir * moveSpeed : Vector3.zero;
                 _velocity.x = horizontal.x;
                 _velocity.z = horizontal.z;
             }
@@ -319,6 +405,16 @@ namespace RetroFPS.Combat
                 float decay = Mathf.Exp(-knockbackDecay * dt);
                 _velocity.x *= decay;
                 _velocity.z *= decay;
+            }
+            Vector3 horizontalVelocity = _velocity;
+            horizontalVelocity.y = 0f;
+            if (horizontalVelocity.sqrMagnitude > 0.000001f
+                && !LedgeProbe.HasGroundAhead(transform.position, horizontalVelocity, ledgeLookAhead,
+                    ledgeMaxDrop, _ledgeHits, _colliders))
+            {
+                _velocity.x = 0f;
+                _velocity.z = 0f;
+                walking = false;
             }
             if (_controller != null && _controller.enabled)
             {
@@ -434,7 +530,29 @@ namespace RetroFPS.Combat
         {
             if (!_hasAttackToken) return;
             _hasAttackToken = false;
-            EnemyAttackTokens.Release();
+            EnemyAttackTokens.Release(AttackTokenChannel.Slam);
+        }
+
+        /// <inheritdoc />
+        public void BeginHunt(Transform target, EnemyAggressionProfile profile)
+        {
+            if (!_alive || target == null) return;
+            if (_loop != null && _loop.WantsToken) CancelSlam();
+            _isHunting = true;
+            _aggressionProfile = profile;
+            _huntGraceRemaining = Mathf.Max(0f, profile != null ? profile.HuntStartDelay : huntStartDelay);
+            _playerTransform = target;
+            FindPlayer();
+            _alerted = true;
+            _nav?.Invalidate();
+            SynchronizeView();
+        }
+
+        private void ClearHunt()
+        {
+            _isHunting = false;
+            _aggressionProfile = null;
+            _huntGraceRemaining = 0f;
         }
 
         /// <inheritdoc />
@@ -563,6 +681,7 @@ namespace RetroFPS.Combat
         {
             if (!_alive) return;
             CancelSlam();
+            ClearHunt();
             _alive = false;
             _deathRemaining = respawnTime;
             _velocity = Vector3.zero;
@@ -630,7 +749,9 @@ namespace RetroFPS.Combat
         public void Respawn()
         {
             CancelSlam();
+            ClearHunt();
             _loop.Reset();
+            _nav?.Invalidate();
             ResetEliteScaling();
             if (_controller != null) _controller.enabled = false;
             transform.SetPositionAndRotation(_spawnPosition, _spawnRotation);
@@ -656,6 +777,7 @@ namespace RetroFPS.Combat
             _spawnPosition = spawnPosition;
             _spawnRotation = spawnRotation;
             Respawn();
+            _nav?.Invalidate();
             if (_playerHealth == null) FindPlayer();
         }
 
@@ -663,9 +785,20 @@ namespace RetroFPS.Combat
         public void OnDespawnToDirector()
         {
             CancelSlam();
+            ClearHunt();
             autoRespawn = false;
             _alive = false;
             gameObject.SetActive(false);
+        }
+
+        private void OnDrawGizmosSelected()
+        {
+            if (_nav == null || _nav.CornerCount < 2) return;
+            Gizmos.color = Color.cyan;
+            for (int i = 0; i < _nav.CornerCount - 1; i++)
+            {
+                Gizmos.DrawLine(_nav.GetCorner(i), _nav.GetCorner(i + 1));
+            }
         }
     }
 }

@@ -2,36 +2,60 @@ using UnityEngine;
 
 namespace RetroFPS.Combat
 {
-    /// <summary>Shared, bounded attack slots for melee enemies.</summary>
+    /// <summary>Independent, bounded attack budgets with a legacy melee facade.</summary>
     public static class EnemyAttackTokens
     {
-        private static int _maxConcurrent = 2;
-        private static int _inUse;
+        private static readonly int[] _maxConcurrent = { 2, 1, 2 };
+        private static readonly int[] _inUse = new int[3];
 
         /// <summary>Maximum simultaneous attacks.</summary>
-        public static int MaxConcurrent => _maxConcurrent;
+        public static int MaxConcurrent => MaxOf(AttackTokenChannel.Melee);
         /// <summary>Currently occupied attack slots.</summary>
-        public static int InUse => _inUse;
+        public static int InUse => InUseOf(AttackTokenChannel.Melee);
 
         /// <summary>Sets the capacity, clamped to at least one.</summary>
-        public static void SetMaxConcurrent(int value) => _maxConcurrent = Mathf.Max(1, value);
+        public static void SetMaxConcurrent(int value) => SetMaxConcurrent(AttackTokenChannel.Melee, value);
+
+        /// <summary>Sets a channel's default capacity, clamped to at least one.</summary>
+        public static void SetMaxConcurrent(AttackTokenChannel channel, int value) =>
+            _maxConcurrent[(int)channel] = Mathf.Max(1, value);
+
+        /// <summary>Returns the channel's default capacity.</summary>
+        public static int MaxOf(AttackTokenChannel channel) => _maxConcurrent[(int)channel];
+
+        /// <summary>Returns the number of occupied slots in a channel.</summary>
+        public static int InUseOf(AttackTokenChannel channel) => _inUse[(int)channel];
 
         /// <summary>Acquires one slot if capacity is available.</summary>
-        public static bool TryAcquire()
+        public static bool TryAcquire() => TryAcquire(AttackTokenChannel.Melee, 0);
+
+        /// <summary>Acquires using a caller limit, or the channel default when limit is nonpositive.</summary>
+        public static bool TryAcquire(AttackTokenChannel channel, int limit)
         {
-            if (_inUse >= _maxConcurrent) return false;
-            _inUse++;
+            int index = (int)channel;
+            int capacity = limit > 0 ? limit : _maxConcurrent[index];
+            if (_inUse[index] >= capacity) return false;
+            _inUse[index]++;
             return true;
         }
 
         /// <summary>Releases one slot without allowing a negative count.</summary>
-        public static void Release() => _inUse = Mathf.Max(0, _inUse - 1);
+        public static void Release() => Release(AttackTokenChannel.Melee);
+
+        /// <summary>Releases a channel slot without allowing a negative count.</summary>
+        public static void Release(AttackTokenChannel channel)
+        {
+            int index = (int)channel;
+            if (_inUse[index] > 0) _inUse[index]--;
+        }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStatics()
         {
-            _inUse = 0;
-            _maxConcurrent = 2;
+            for (int i = 0; i < _inUse.Length; i++) _inUse[i] = 0;
+            _maxConcurrent[0] = 2;
+            _maxConcurrent[1] = 1;
+            _maxConcurrent[2] = 2;
         }
     }
 }

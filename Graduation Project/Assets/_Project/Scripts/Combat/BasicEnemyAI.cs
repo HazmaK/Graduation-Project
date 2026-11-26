@@ -2,6 +2,7 @@ using RetroFPS.Pause;
 using System.Collections.Generic;
 using UnityEngine;
 using RetroFPS.Combat;
+using RetroFPS.Combat.Navigation;
 
 namespace RetroFPS
 {
@@ -21,13 +22,13 @@ namespace RetroFPS
     /// - Görüş Açısı (FOV) ve Doğrudan Görüş Hattı (LoS): Sadece oyuncuyu gördüğünde saldırır.
     /// - Devriye ve Gezinme: Oyuncuyu görmediğinde etrafta sakin devriye gezer.
     /// - Sürü Bilinci (Pack Mentality): Bir düşman saldırdığında yakındaki müttefikler de alarma geçer, uzaktakiler etkilenmez.
-    /// - NavMesh bağımsız, CharacterController tabanlı akıllı takip ve engelden kaçınma
+    /// - CharacterController tabanlı hareket; rotalar NavMesh üzerinden hesaplanır (NavMesh yoksa düz yönelime düşer).
     /// - İki pençeli kombo ve yönlendirilen sıçrama; her hazırlıkta parry parıltısı.
     /// - Hasar biriktiren poise, kararlı vuruş zırhı ve ortak saldırı kotasıyla kuşatma.
     /// - Ölümden 4 saniye sonra otomatik yeniden doğma (Kesintisiz arena testi)
     /// </summary>
     [RequireComponent(typeof(CharacterController))]
-    public class BasicEnemyAI : MonoBehaviour, IDamageable, IAlertableEnemy, IStunnable, IEncounterEnemy, IThreatCost, IEliteScalable, IStunState
+    public class BasicEnemyAI : MonoBehaviour, IDamageable, IAlertableEnemy, IStunnable, IEncounterEnemy, IThreatCost, IEliteScalable, IStunState, IHuntableEnemy
     {
         [Header("Sağlık ve Ödül")]
         [SerializeField] private float maxHealth = 150f;
@@ -82,11 +83,49 @@ namespace RetroFPS
         [SerializeField] private GhoulAttackSettings attackSettings = new GhoulAttackSettings();
         [SerializeField] private float sprintSpeedMultiplier = 1.35f;
         [SerializeField] private float sprintDistance = 9f;
-        [SerializeField] private float flankRadius = 4.5f;
+        [SerializeField, Tooltip("Legacy; unused for surround orbit (see surroundRadiusMin/Max).")]
+        private float flankRadius = 4.5f;
         [SerializeField] private float flankSpeed = 4.2f;
+        [SerializeField, Tooltip("Minimum surround ring radius in metres when waiting for an attack token.")]
+        private float surroundRadiusMin = 3.0f;
+        [SerializeField, Tooltip("Maximum surround ring radius in metres when waiting for an attack token.")]
+        private float surroundRadiusMax = 3.5f;
+        [SerializeField, Tooltip("Distance in metres within which hunting Ghouls engage surround slots while attacks are on cooldown.")]
+        private float surroundEngageDistance = 7.0f;
+        [SerializeField, Tooltip("Minimum seconds a Ghoul remains latched in the surround/token-wait state.")]
+        private float tokenWaitMinTime = 0.6f;
+        [SerializeField, Tooltip("Horizontal arrival distance in metres from a surround slot to start slow tangent strafing.")]
+        private float slotArriveDistance = 0.6f;
+        [SerializeField, Tooltip("Horizontal distance in metres at which a ghoul without sight has reached the last known player position and refreshes it.")]
+        private float lastKnownArriveDistance = 1.0f;
+        [SerializeField, Tooltip("Forward probe distance in metres for ledge detection.")]
+        private float ledgeLookAhead = 0.7f;
+        [SerializeField, Tooltip("Maximum downward ground drop in metres allowed ahead before stopping.")]
+        private float ledgeMaxDrop = 1.2f;
+        [SerializeField, Tooltip("Default hunt start grace delay in seconds when no aggression profile is supplied.")]
+        private float defaultHuntStartDelay = 0.35f;
+        [SerializeField, Tooltip("Minimum seconds between feints in hunt mode.")]
+        private float feintMinInterval = 1.0f;
+        [SerializeField, Tooltip("Minimum horizontal distance in metres to stop closing during a feint.")]
+        private float feintStopDistance = 1.2f;
 
+        [Header("Yol Bulma")]
+        [SerializeField, Tooltip("NavMesh yol bulma ve erişilemeyen hedef ayarları.")]
+        private EnemyNavSettings navSettings = new EnemyNavSettings();
+
+        private EnemyNavigator _nav;
         private GhoulAttackLoop _attack;
         private bool _hasAttackToken;
+        private int _slotOwnerKey;
+        private float _surroundRadiusT;
+        private bool _waitingForToken;
+        private float _waitTokenTimer;
+        private bool _isHunting;
+        private EnemyAggressionProfile _huntProfile;
+        private float _huntGraceTimer;
+        private bool _isFeinting;
+        private float _feintTimer;
+        private float _feintCooldownTimer;
         private float _orbitSign;
         private float _visualTilt = 0f;
         private float _targetVisualTilt = 0f;
@@ -98,17 +137,26 @@ namespace RetroFPS
         private CharacterController _controller;
         private Transform _playerTransform;
         private PlayerHealth _playerHealth;
+        private Collider[] _playerColliders;
+        private Transform _cachedPlayerColliderRoot;
         private float _playerSearchTimer;
         private const float PlayerSearchInterval = 0.5f;
 
         private EnemyState _currentState = EnemyState.Idle;
         private float _currentHealth;
-        private bool _eliteBaseCached;
+        private bool _baseStatsCached;
         private bool _isElite;
         private float _baseMaxHealth;
         private float _baseAttackDamage;
         private float _baseChaseSpeed;
         private float _basePatrolSpeed;
+        private float _baseRotationSpeed;
+        private float _baseFlankSpeed;
+        private float _eliteDamageMult = 1f;
+        private float _eliteSpeedMult = 1f;
+        private float _eliteHealthMult = 1f;
+        private float _huntMoveMult = 1f;
+        private float _huntTurnMult = 1f;
         private Vector3 _spawnPosition;
         private Quaternion _spawnRotation;
         private Vector3 _initialScale;
@@ -155,35 +203,122 @@ namespace RetroFPS
         /// <summary>Bu doğuşta elit güçlendirmesi uygulanıp uygulanmadığı.</summary>
         public bool IsElite => _isElite;
 
+        /// <summary>Whether this Ghoul is currently in director-driven hunt mode.</summary>
+        public bool IsHunting => _isHunting;
+
+        /// <summary>Legacy flank radius value retained for serialized compatibility.</summary>
+        public float FlankRadius => flankRadius;
+
+        private void EnsureBaseStatsCached()
+        {
+            if (_baseStatsCached) return;
+            _baseMaxHealth = maxHealth;
+            _baseAttackDamage = attackDamage;
+            _baseChaseSpeed = chaseSpeed;
+            _basePatrolSpeed = patrolSpeed;
+            _baseRotationSpeed = rotationSpeed;
+            _baseFlankSpeed = flankSpeed;
+            _baseStatsCached = true;
+        }
+
+        private void RecomputeEffectiveStats()
+        {
+            if (!_baseStatsCached) return;
+            attackDamage = _baseAttackDamage * _eliteDamageMult;
+            maxHealth = _baseMaxHealth * _eliteHealthMult;
+            chaseSpeed = _baseChaseSpeed * _eliteSpeedMult * _huntMoveMult;
+            patrolSpeed = _basePatrolSpeed * _eliteSpeedMult;
+            // Elit çarpanı kulede de flankSpeed'e dokunmaz (eski davranış); yalnızca av çarpanı uygulanır.
+            flankSpeed = _baseFlankSpeed * _huntMoveMult;
+            rotationSpeed = _baseRotationSpeed * _huntTurnMult;
+        }
+
         /// <summary>Temel değerleri saklayarak elit çarpanlarını doğuş başına bir kez uygular.</summary>
         public void ApplyEliteScaling(float damageMultiplier, float speedMultiplier, float healthMultiplier)
         {
             if (_isElite) return;
-            if (!_eliteBaseCached)
-            {
-                _baseMaxHealth = maxHealth;
-                _baseAttackDamage = attackDamage;
-                _baseChaseSpeed = chaseSpeed;
-                _basePatrolSpeed = patrolSpeed;
-                _eliteBaseCached = true;
-            }
+            EnsureBaseStatsCached();
 
-            attackDamage = _baseAttackDamage * damageMultiplier;
-            chaseSpeed = _baseChaseSpeed * speedMultiplier;
-            patrolSpeed = _basePatrolSpeed * speedMultiplier;
-            maxHealth = _baseMaxHealth * healthMultiplier;
-            _currentHealth = maxHealth;
+            _eliteDamageMult = damageMultiplier;
+            _eliteSpeedMult = speedMultiplier;
+            _eliteHealthMult = healthMultiplier;
             _isElite = true;
+            RecomputeEffectiveStats();
+            _currentHealth = maxHealth;
         }
 
         private void ResetEliteScaling()
         {
-            if (!_eliteBaseCached) return;
-            attackDamage = _baseAttackDamage;
-            chaseSpeed = _baseChaseSpeed;
-            patrolSpeed = _basePatrolSpeed;
-            maxHealth = _baseMaxHealth;
+            if (!_baseStatsCached) return;
+            _eliteDamageMult = 1f;
+            _eliteSpeedMult = 1f;
+            _eliteHealthMult = 1f;
             _isElite = false;
+            RecomputeEffectiveStats();
+        }
+
+        /// <summary>Enters hunt mode against the given target using optional aggression overrides.</summary>
+        public void BeginHunt(Transform target, EnemyAggressionProfile profile)
+        {
+            if (_currentState == EnemyState.Dead) return;
+
+            // Av başlangıcındaki bekleme süresi bir saldırının ortasında atlanmasın.
+            if (_attack != null && _attack.IsActive)
+            {
+                _attack.Cancel(0f);
+                ReleaseToken();
+                if (_currentState != EnemyState.Stagger) _currentState = EnemyState.Chase;
+            }
+
+            EnsureBaseStatsCached();
+            _isHunting = true;
+            _huntProfile = profile;
+            _huntGraceTimer = profile != null ? profile.HuntStartDelay : defaultHuntStartDelay;
+            _huntMoveMult = profile != null ? profile.MoveSpeedMultiplier : 1f;
+            _huntTurnMult = profile != null ? profile.TurnSpeedMultiplier : 1f;
+            _attack?.SetCooldownScale(profile != null ? profile.AttackCooldownMultiplier : 1f);
+            RecomputeEffectiveStats();
+
+            if (target != null)
+            {
+                CachePlayerTarget(target, null);
+            }
+            else if (_playerTransform == null)
+            {
+                FindPlayer();
+            }
+
+            _loseSightTimer = loseSightDuration;
+            if (_playerTransform != null)
+            {
+                _lastKnownPlayerPos = _playerTransform.position;
+            }
+
+            if (_currentState == EnemyState.Idle || _currentState == EnemyState.Patrol)
+            {
+                StartChase(false);
+            }
+            else if (_currentState == EnemyState.Chase && _playerTransform != null)
+            {
+                LookAtPosition(_playerTransform.position);
+            }
+        }
+
+        private void ClearHunt()
+        {
+            CancelFeint();
+            _feintCooldownTimer = 0f;
+            _waitingForToken = false;
+            _waitTokenTimer = 0f;
+            _huntGraceTimer = 0f;
+            if (!_isHunting && _huntProfile == null) return;
+
+            _isHunting = false;
+            _huntProfile = null;
+            _huntMoveMult = 1f;
+            _huntTurnMult = 1f;
+            _attack?.SetCooldownScale(1f);
+            RecomputeEffectiveStats();
         }
 
         // IEncounterEnemy Uygulaması
@@ -201,6 +336,10 @@ namespace RetroFPS
         {
             _attack?.Cancel(0f);
             ReleaseToken();
+            ReleaseSurroundSlot();
+            _waitingForToken = false;
+            _waitTokenTimer = 0f;
+            CancelFeint();
             EnemyAlertHub.Unregister(this);
         }
 
@@ -221,10 +360,16 @@ namespace RetroFPS
 
         private void Awake()
         {
+            EnsureBaseStatsCached();
+            if (navSettings == null) navSettings = new EnemyNavSettings();
+            var q = new UnityNavMeshQuery();
+            _nav = new EnemyNavigator(q, navSettings, new MeleeUnreachableResponse(q, navSettings));
             _attack = new GhoulAttackLoop(attackSettings);
             _attack.Glint += OnAttackGlint;
             _attack.StrikeStarted += OnAttackStrikeStarted;
             _attack.PhaseChanged += OnAttackPhaseChanged;
+            _slotOwnerKey = MeleeSurroundSlots.NextOwnerKey();
+            _surroundRadiusT = Random.value;
             _orbitSign = Random.value < 0.5f ? -1f : 1f;
             _controller = GetComponent<CharacterController>();
             _spawnPosition = transform.position;
@@ -284,8 +429,20 @@ namespace RetroFPS
             PlayerMovement pm = Object.FindAnyObjectByType<PlayerMovement>();
             if (pm != null)
             {
-                _playerTransform = pm.transform;
-                _playerHealth = pm.GetComponent<PlayerHealth>();
+                CachePlayerTarget(pm.transform, pm.GetComponent<PlayerHealth>());
+            }
+        }
+
+        private void CachePlayerTarget(Transform target, PlayerHealth health)
+        {
+            _playerTransform = target;
+            if (health != null) _playerHealth = health;
+            // Bileşen araması yalnızca hedef değiştiğinde (sık gelen alarmlar ayırma yapmasın).
+            if (target != _cachedPlayerColliderRoot)
+            {
+                _cachedPlayerColliderRoot = target;
+                if (health == null) _playerHealth = target != null ? target.GetComponent<PlayerHealth>() : null;
+                _playerColliders = target != null ? target.GetComponentsInChildren<Collider>(true) : null;
             }
         }
 
@@ -396,12 +553,20 @@ namespace RetroFPS
             {
                 // Oyuncu saldırı ortasında yok olduysa döngüyü bırak; jeton sızmasın.
                 if (_attack.IsActive) _attack.Cancel(0f);
+                ReleaseSurroundSlot();
+                _waitingForToken = false;
+                _waitTokenTimer = 0f;
+                CancelFeint();
                 if (_currentState == EnemyState.Stagger) ExecuteStagger();
             }
         }
 
         private void UpdateTimers()
         {
+            if (_feintCooldownTimer > 0f)
+            {
+                _feintCooldownTimer = Mathf.Max(0f, _feintCooldownTimer - Time.deltaTime);
+            }
             if (_flashTimer > 0f)
             {
                 _flashTimer -= Time.deltaTime;
@@ -489,21 +654,13 @@ namespace RetroFPS
                 return;
             }
 
-            dirToDest.Normalize();
-
-            // Engelden kaçınma
-            Vector3 rayOrigin = transform.position + Vector3.up * 0.5f;
-            if (CombatRaycast.Nearest(rayOrigin, dirToDest, 1.2f, GameLayers.EnemyObstacleMask, _sightHits, out _))
+            Vector3 steer = MoveAlongPath(_patrolTarget, patrolSpeed, false);
+            Vector3 flatSteer = steer - transform.position;
+            flatSteer.y = 0f;
+            if (flatSteer.sqrMagnitude > 0.05f * 0.05f)
             {
-                dirToDest = Quaternion.Euler(0f, 45f, 0f) * dirToDest;
+                LookAtPosition(steer);
             }
-
-            LookAtPosition(transform.position + dirToDest);
-
-            Vector3 move = dirToDest * patrolSpeed;
-            _velocity.x = move.x;
-            _velocity.z = move.z;
-            _controller.Move(_velocity * Time.deltaTime);
         }
 
         private void PickNewPatrolDestination()
@@ -512,12 +669,14 @@ namespace RetroFPS
             _patrolTarget = _spawnPosition + new Vector3(circle.x, 0f, circle.y);
             _currentState = EnemyState.Patrol;
             _stateTimer = Random.Range(4.0f, 7.0f);
+            _nav?.Invalidate();
         }
 
         private void StartChase(bool alertAllies)
         {
             _currentState = EnemyState.Chase;
             _loseSightTimer = loseSightDuration;
+            _nav?.Invalidate();
             if (_playerTransform != null)
             {
                 _lastKnownPlayerPos = _playerTransform.position;
@@ -532,21 +691,38 @@ namespace RetroFPS
 
         private void ExecuteChase(float distToPlayer)
         {
+            if (_isHunting && _huntGraceTimer > 0f)
+            {
+                _huntGraceTimer -= Time.deltaTime;
+                _velocity.x = 0f;
+                _velocity.z = 0f;
+                _controller.Move(_velocity * Time.deltaTime);
+                LookAtPosition(_playerTransform.position);
+                return;
+            }
+
             bool canSee = CanSeePlayer();
-            if (canSee)
+            if (_isHunting)
             {
                 _loseSightTimer = loseSightDuration;
                 _lastKnownPlayerPos = _playerTransform.position;
-                LookAtPosition(_playerTransform.position);
+            }
+            else if (canSee)
+            {
+                _loseSightTimer = loseSightDuration;
+                _lastKnownPlayerPos = _playerTransform.position;
             }
             else
             {
                 _loseSightTimer -= Time.deltaTime;
-                LookAtPosition(_lastKnownPlayerPos);
 
                 // Oyuncu görüşten çok uzun süre kaybolduysa veya aşırı uzaklaştıysa takibi bırak
                 if (_loseSightTimer <= 0f || distToPlayer > loseSightDistance)
                 {
+                    ReleaseSurroundSlot();
+                    _waitingForToken = false;
+                    _waitTokenTimer = 0f;
+                    CancelFeint();
                     _currentState = EnemyState.Idle;
                     _stateTimer = Random.Range(idleDurationMin, idleDurationMax);
                     _velocity.x = 0f;
@@ -555,12 +731,22 @@ namespace RetroFPS
                 }
             }
 
-            GhoulAttackKind kind = _attack.ChooseAttack(distToPlayer, canSee);
+            bool inReach = EnemyNavigator.IsWithinVerticalReach(
+                transform.position, _playerTransform.position, navSettings.ReachableHeightTolerance);
+            bool isAmbush = _nav.Intent == ChaseIntent.Ambush;
+
+            GhoulAttackKind kind = (inReach && !isAmbush)
+                ? _attack.ChooseAttack(distToPlayer, canSee)
+                : GhoulAttackKind.None;
             bool tokenDenied = false;
             if (kind != GhoulAttackKind.None)
             {
                 if (AcquireToken())
                 {
+                    ReleaseSurroundSlot();
+                    _waitingForToken = false;
+                    _waitTokenTimer = 0f;
+                    CancelFeint();
                     _attack.SetCooldownJitter(Random.Range(-1f, 1f));
                     _attack.Begin(kind);
                     AlertNearbyAllies();
@@ -569,21 +755,195 @@ namespace RetroFPS
                 tokenDenied = true;
             }
 
-            if (canSee && distToPlayer < flankRadius + 1.5f && tokenDenied)
+            if (!inReach || isAmbush)
             {
-                Vector3 radial = transform.position - _playerTransform.position;
-                radial.y = 0f;
-                float radius = radial.magnitude;
-                radial = radius > 0.001f ? radial / radius : -FlatForward();
-                Vector3 tangent = Vector3.Cross(Vector3.up, radial) * _orbitSign;
-                Vector3 direction = (tangent + radial * Mathf.Clamp((flankRadius - radius) / Mathf.Max(flankRadius, 0.01f), -1f, 1f)).normalized;
-                MoveTowards(transform.position + direction, flankSpeed);
+                if (_waitingForToken)
+                {
+                    ReleaseSurroundSlot();
+                    _waitingForToken = false;
+                    _waitTokenTimer = 0f;
+                    CancelFeint();
+                }
             }
             else
             {
-                Vector3 target = canSee ? _playerTransform.position : _lastKnownPlayerPos;
-                float speed = canSee && distToPlayer > sprintDistance ? chaseSpeed * sprintSpeedMultiplier : chaseSpeed;
-                MoveTowards(target, speed);
+                bool huntCooldownWait = _isHunting && distToPlayer < surroundEngageDistance
+                    && _attack.ClawCooldownRemaining > 0f
+                    && (_attack.LungeCooldownRemaining > 0f || distToPlayer < attackSettings.LungeMinRange);
+                bool shouldWait = tokenDenied || huntCooldownWait;
+
+                if (shouldWait && !_waitingForToken)
+                {
+                    _waitingForToken = true;
+                    _waitTokenTimer = tokenWaitMinTime;
+                }
+
+                if (_waitingForToken)
+                {
+                    _waitTokenTimer = Mathf.Max(0f, _waitTokenTimer - Time.deltaTime);
+                    if (_waitTokenTimer <= 0f && !shouldWait)
+                    {
+                        _waitingForToken = false;
+                        ReleaseSurroundSlot();
+                        CancelFeint();
+                        _nav?.Invalidate();
+                    }
+                }
+            }
+
+            if (_waitingForToken)
+            {
+                ExecuteTokenWait(distToPlayer, canSee);
+                return;
+            }
+
+            if (!_isHunting && !canSee)
+            {
+                // Reached the last known spot without sight: refresh it so the ghoul keeps closing in instead of
+                // standing until loseSightDuration expires (tower 3-8 m idle bug, 2026-11-26).
+                Vector3 toLastKnown = _lastKnownPlayerPos - transform.position;
+                toLastKnown.y = 0f;
+                if (toLastKnown.sqrMagnitude <= lastKnownArriveDistance * lastKnownArriveDistance)
+                {
+                    _lastKnownPlayerPos = _playerTransform.position;
+                }
+            }
+
+            Vector3 target = (_isHunting || canSee) ? _playerTransform.position : _lastKnownPlayerPos;
+            float speed = (!isAmbush && canSee && distToPlayer > sprintDistance)
+                ? chaseSpeed * sprintSpeedMultiplier
+                : chaseSpeed;
+            Vector3 steer = MoveAlongPath(target, speed, true);
+            if (_nav.Intent == ChaseIntent.Ambush && _nav.HasArrived(transform.position))
+            {
+                LookAtPosition(_playerTransform.position);
+            }
+            else if (canSee && (_nav.Intent == ChaseIntent.Direct || _nav.CurrentCorner >= _nav.CornerCount - 1))
+            {
+                LookAtPosition(_playerTransform.position);
+            }
+            else
+            {
+                Vector3 flatSteer = steer - transform.position;
+                flatSteer.y = 0f;
+                if (flatSteer.sqrMagnitude > 0.05f * 0.05f)
+                {
+                    LookAtPosition(steer);
+                }
+            }
+        }
+
+        private float GetSurroundRadius()
+        {
+            float minR = (_isHunting && _huntProfile != null) ? _huntProfile.SurroundRadiusMin : surroundRadiusMin;
+            float maxR = (_isHunting && _huntProfile != null) ? _huntProfile.SurroundRadiusMax : surroundRadiusMax;
+            if (maxR < minR) maxR = minR;
+            return Mathf.Lerp(minR, maxR, _surroundRadiusT);
+        }
+
+        private void CancelFeint()
+        {
+            if (!_isFeinting) return;
+            _isFeinting = false;
+            _feintTimer = 0f;
+            if (_currentState != EnemyState.Windup && _currentState != EnemyState.Stagger)
+            {
+                _flashTimer = 0f;
+                ClearFlash();
+            }
+        }
+
+        private void ExecuteTokenWait(float distToPlayer, bool canSee)
+        {
+            if (_isFeinting)
+            {
+                _feintTimer -= Time.deltaTime;
+                LookAtPosition(_playerTransform.position);
+                if (_feintTimer <= 0f)
+                {
+                    _isFeinting = false;
+                    _feintTimer = 0f;
+                    _feintCooldownTimer = feintMinInterval;
+                    if (_flashTimer <= 0f && _currentState != EnemyState.Windup && _currentState != EnemyState.Stagger)
+                    {
+                        ClearFlash();
+                    }
+                }
+                else
+                {
+                    float fSpeed = _huntProfile != null ? _huntProfile.FeintSpeed : 0f;
+                    if (distToPlayer > feintStopDistance && fSpeed > 0f)
+                    {
+                        MoveDirect(_playerTransform.position, fSpeed);
+                    }
+                    else
+                    {
+                        _velocity.x = 0f;
+                        _velocity.z = 0f;
+                        _controller.Move(_velocity * Time.deltaTime);
+                    }
+                    return;
+                }
+            }
+
+            float radius = GetSurroundRadius();
+            int slot = _slotOwnerKey != 0
+                ? MeleeSurroundSlots.Shared.Claim(_slotOwnerKey, _playerTransform.position, transform.position)
+                : -1;
+
+            LookAtPosition(_playerTransform.position);
+
+            if (slot >= 0)
+            {
+                Vector3 slotPos = MeleeSurroundSlots.SlotPosition(slot, _playerTransform.position, radius);
+                Vector3 toSlot = slotPos - transform.position;
+                toSlot.y = 0f;
+                if (toSlot.sqrMagnitude <= slotArriveDistance * slotArriveDistance)
+                {
+                    if (_isHunting && _huntProfile != null
+                        && _huntProfile.FeintChancePerSecond > 0f && _huntProfile.FeintDuration > 0f
+                        && canSee && _feintCooldownTimer <= 0f
+                        && Random.value < _huntProfile.FeintChancePerSecond * Time.deltaTime)
+                    {
+                        _isFeinting = true;
+                        _feintTimer = _huntProfile.FeintDuration;
+                        _flashTimer = _huntProfile.FeintDuration;
+                        SetColor(windupGlowColor);
+                        float fSpeed = _huntProfile.FeintSpeed;
+                        if (distToPlayer > feintStopDistance && fSpeed > 0f)
+                        {
+                            MoveDirect(_playerTransform.position, fSpeed);
+                        }
+                        else
+                        {
+                            _velocity.x = 0f;
+                            _velocity.z = 0f;
+                            _controller.Move(_velocity * Time.deltaTime);
+                        }
+                        return;
+                    }
+
+                    Vector3 radial = transform.position - _playerTransform.position;
+                    radial.y = 0f;
+                    float r = radial.magnitude;
+                    radial = r > 0.001f ? radial / r : -FlatForward();
+                    Vector3 tangent = Vector3.Cross(Vector3.up, radial) * _orbitSign;
+                    MoveDirect(transform.position + tangent, flankSpeed * 0.5f);
+                }
+                else
+                {
+                    MoveAlongPath(slotPos, flankSpeed, false);
+                }
+            }
+            else
+            {
+                Vector3 radial = transform.position - _playerTransform.position;
+                radial.y = 0f;
+                float r = radial.magnitude;
+                radial = r > 0.001f ? radial / r : -FlatForward();
+                Vector3 tangent = Vector3.Cross(Vector3.up, radial) * _orbitSign;
+                Vector3 direction = (tangent + radial * Mathf.Clamp((radius - r) / Mathf.Max(radius, 0.01f), -1f, 1f)).normalized;
+                MoveDirect(transform.position + direction, flankSpeed);
             }
         }
 
@@ -616,7 +976,8 @@ namespace RetroFPS
         private bool AcquireToken()
         {
             if (_hasAttackToken) return true;
-            _hasAttackToken = EnemyAttackTokens.TryAcquire();
+            int limit = _isHunting && _huntProfile != null ? _huntProfile.MeleeTokenLimit : 0;
+            _hasAttackToken = EnemyAttackTokens.TryAcquire(AttackTokenChannel.Melee, limit);
             return _hasAttackToken;
         }
 
@@ -624,7 +985,15 @@ namespace RetroFPS
         {
             if (!_hasAttackToken) return;
             _hasAttackToken = false;
-            EnemyAttackTokens.Release();
+            EnemyAttackTokens.Release(AttackTokenChannel.Melee);
+        }
+
+        private void ReleaseSurroundSlot()
+        {
+            if (_slotOwnerKey != 0)
+            {
+                MeleeSurroundSlots.Shared.Release(_slotOwnerKey);
+            }
         }
 
         private void OnAttackGlint()
@@ -656,6 +1025,14 @@ namespace RetroFPS
                     _telegraphColor = windupGlowColor;
                     SetColor(windupGlowColor);
                     break;
+                case GhoulAttackPhase.ClawRecover:
+                case GhoulAttackPhase.LungeRecover:
+                    if (_isHunting && _huntProfile != null && _huntProfile.ReleaseMeleeTokenOnRecover)
+                    {
+                        ReleaseToken();
+                    }
+                    _currentState = EnemyState.Attack;
+                    break;
                 case GhoulAttackPhase.None:
                     ReleaseToken();
                     _currentState = EnemyState.Chase;
@@ -674,10 +1051,26 @@ namespace RetroFPS
             return forward.sqrMagnitude > 0.001f ? forward.normalized : Vector3.forward;
         }
 
+        private bool HasGroundAhead(Vector3 horizontalDir)
+        {
+            return LedgeProbe.HasGroundAhead(transform.position, horizontalDir, ledgeLookAhead, ledgeMaxDrop, _sightHits, _colliders);
+        }
+
         private void MoveAttackForward(float speed)
         {
             Vector3 forward = FlatForward();
             transform.rotation = Quaternion.LookRotation(forward) * Quaternion.Euler(_visualTilt, 0f, 0f);
+            if (speed > 0f && !HasGroundAhead(forward))
+            {
+                _velocity.x = 0f;
+                _velocity.z = 0f;
+                _controller.Move(_velocity * Time.deltaTime);
+                if (_attack.Phase == GhoulAttackPhase.Lunging)
+                {
+                    _attack.ReportLungeBlocked();
+                }
+                return;
+            }
             Vector3 move = forward * speed;
             _velocity.x = move.x;
             _velocity.z = move.z;
@@ -739,7 +1132,8 @@ namespace RetroFPS
 
         private void TryAttackHit(float range, float halfAngle)
         {
-            if (!_attack.HitWindowOpen || _playerHealth == null) return;
+            if (!_attack.HitWindowOpen || _playerHealth == null || _playerTransform == null) return;
+            if (!EnemyNavigator.IsWithinVerticalReach(transform.position, _playerTransform.position, navSettings.ReachableHeightTolerance)) return;
             Vector3 toPlayer = _playerTransform.position - transform.position;
             toPlayer.y = 0f;
             if (toPlayer.sqrMagnitude > range * range || Vector3.Angle(FlatForward(), toPlayer) > halfAngle) return;
@@ -767,19 +1161,76 @@ namespace RetroFPS
                 _targetVisualTilt = 0f;
                 ClearFlash();
                 _currentState = EnemyState.Chase;
+                _nav?.Invalidate();
             }
         }
 
-        private void MoveTowards(Vector3 targetPos, float speed)
+        private Vector3 MoveAlongPath(Vector3 target, float speed, bool useUnreachableResponse)
+        {
+            Vector3 steer = _nav.Tick(Time.deltaTime, transform.position, target, useUnreachableResponse);
+            if (useUnreachableResponse && _nav.Intent == ChaseIntent.Ambush && _nav.HasArrived(transform.position))
+            {
+                _velocity.x = 0f;
+                _velocity.z = 0f;
+                _controller.Move(_velocity * Time.deltaTime);
+                return steer;
+            }
+
+            Vector3 dir = steer - transform.position;
+            dir.y = 0f;
+            if (dir.sqrMagnitude <= 0.05f * 0.05f)
+            {
+                _velocity.x = 0f;
+                _velocity.z = 0f;
+                _controller.Move(_velocity * Time.deltaTime);
+                return steer;
+            }
+
+            float remainingDistance = dir.magnitude;
+            dir.Normalize();
+            if (_nav.Intent == ChaseIntent.Direct)
+            {
+                Vector3 rayOrigin = transform.position + Vector3.up * 0.5f;
+                if (CombatRaycast.Nearest(rayOrigin, dir, 1.2f, GameLayers.EnemyObstacleMask, _sightHits, out _))
+                {
+                    dir = Quaternion.Euler(0f, 45f, 0f) * dir;
+                }
+            }
+
+            if (!HasGroundAhead(dir))
+            {
+                _velocity.x = 0f;
+                _velocity.z = 0f;
+                _controller.Move(_velocity * Time.deltaTime);
+                return steer;
+            }
+
+            float moveSpeed = Time.deltaTime > 0f ? Mathf.Min(speed, remainingDistance / Time.deltaTime) : 0f;
+            Vector3 move = dir * moveSpeed;
+            _velocity.x = move.x;
+            _velocity.z = move.z;
+            _controller.Move(_velocity * Time.deltaTime);
+            return steer;
+        }
+
+        private void MoveDirect(Vector3 targetPos, float speed)
         {
             Vector3 dir = (targetPos - transform.position);
             dir.y = 0f;
-            dir.Normalize();
+            if (dir.sqrMagnitude > 0.0001f) dir.Normalize();
 
             Vector3 rayOrigin = transform.position + Vector3.up * 0.5f;
             if (CombatRaycast.Nearest(rayOrigin, dir, 1.2f, GameLayers.EnemyObstacleMask, _sightHits, out _))
             {
                 dir = Quaternion.Euler(0f, 45f, 0f) * dir;
+            }
+
+            if (!HasGroundAhead(dir))
+            {
+                _velocity.x = 0f;
+                _velocity.z = 0f;
+                _controller.Move(_velocity * Time.deltaTime);
+                return;
             }
 
             Vector3 move = dir * speed;
@@ -800,6 +1251,21 @@ namespace RetroFPS
             }
         }
 
+        private bool IsPlayerCollider(Collider hitCollider)
+        {
+            if (hitCollider == null) return false;
+            if (_playerColliders != null && _playerColliders.Length > 0)
+            {
+                for (int i = 0; i < _playerColliders.Length; i++)
+                {
+                    if (_playerColliders[i] == hitCollider) return true;
+                }
+                return false;
+            }
+            Transform hitTransform = hitCollider.transform;
+            return hitTransform == _playerTransform || hitTransform.IsChildOf(_playerTransform);
+        }
+
         public bool CanSeePlayer()
         {
             if (_playerTransform == null) return false;
@@ -817,7 +1283,7 @@ namespace RetroFPS
             {
                 if (CombatRaycast.Nearest(eyePos, toPlayer.normalized, dist, GameLayers.EnemySightMask, _sightHits, out RaycastHit proxHit))
                 {
-                    if (proxHit.transform == _playerTransform || proxHit.transform.IsChildOf(_playerTransform))
+                    if (IsPlayerCollider(proxHit.collider))
                     {
                         return true;
                     }
@@ -833,7 +1299,7 @@ namespace RetroFPS
             // 3. Line of Sight (Doğrudan görüş hattı) Raycast'i
             if (CombatRaycast.Nearest(eyePos, dirToPlayer, dist, GameLayers.EnemySightMask, _sightHits, out RaycastHit hit))
             {
-                if (hit.transform == _playerTransform || hit.transform.IsChildOf(_playerTransform))
+                if (IsPlayerCollider(hit.collider))
                 {
                     return true;
                 }
@@ -852,7 +1318,7 @@ namespace RetroFPS
             // Sadece boşta bekleyen (Idle) veya devriye gezen (Patrol) müttefikler uyarılır
             if (_currentState == EnemyState.Idle || _currentState == EnemyState.Patrol)
             {
-                _playerTransform = target;
+                CachePlayerTarget(target, null);
                 StartChase(false);
                 if (_playerTransform != null)
                 {
@@ -883,6 +1349,10 @@ namespace RetroFPS
             {
                 _attack.Cancel(Random.Range(-1f, 1f));
                 ReleaseToken();
+                ReleaseSurroundSlot();
+                _waitingForToken = false;
+                _waitTokenTimer = 0f;
+                CancelFeint();
                 _currentState = EnemyState.Stagger;
                 _stateTimer = wasStaggered ? Mathf.Max(_stateTimer, 0.35f) : 0.35f;
                 if (!wasStaggered) _stunSequence++;
@@ -914,6 +1384,10 @@ namespace RetroFPS
         {
             _attack.Cancel(Random.Range(-1f, 1f));
             ReleaseToken();
+            ReleaseSurroundSlot();
+            _waitingForToken = false;
+            _waitTokenTimer = 0f;
+            CancelFeint();
             if (_currentState == EnemyState.Dead) return;
 
             _currentState = EnemyState.Stagger;
@@ -944,6 +1418,8 @@ namespace RetroFPS
             if (!IsAlive) return;
             _attack.Cancel(0f);
             ReleaseToken();
+            ReleaseSurroundSlot();
+            ClearHunt();
             _currentState = EnemyState.Dead;
             _stateTimer = respawnTime;
             _squashTimer = 0f;
@@ -1068,8 +1544,11 @@ namespace RetroFPS
         {
             _attack.Cancel(0f);
             ReleaseToken();
+            ReleaseSurroundSlot();
+            ClearHunt();
             _attack.ResetAll();
             _orbitSign = Random.value < 0.5f ? -1f : 1f;
+            _surroundRadiusT = Random.value;
             ResetEliteScaling();
             if (_controller != null) _controller.enabled = false;
             transform.position = _spawnPosition;
@@ -1089,6 +1568,7 @@ namespace RetroFPS
             _currentHealth = maxHealth;
             _currentState = EnemyState.Idle;
             _velocity = Vector3.zero;
+            _nav?.Invalidate();
             ClearFlash();
 
             SetRenderersActive(true);
@@ -1126,6 +1606,7 @@ namespace RetroFPS
 
             gameObject.SetActive(true);
             Respawn();
+            _nav?.Invalidate();
             StartChase(true);
         }
 
@@ -1136,6 +1617,8 @@ namespace RetroFPS
         {
             _attack?.Cancel(0f); // Hiç aktive edilmemiş havuz örneğinde Awake çalışmamış olabilir.
             ReleaseToken();
+            ReleaseSurroundSlot();
+            ClearHunt();
             autoRespawn = false;
             _currentState = EnemyState.Dead;
             gameObject.SetActive(false);
@@ -1174,6 +1657,16 @@ namespace RetroFPS
             {
                 if (_renderers[i] == null) continue;
                 _renderers[i].SetPropertyBlock(null);
+            }
+        }
+
+        private void OnDrawGizmosSelected()
+        {
+            if (_nav == null || _nav.CornerCount < 2) return;
+            Gizmos.color = Color.cyan;
+            for (int i = 0; i < _nav.CornerCount - 1; i++)
+            {
+                Gizmos.DrawLine(_nav.GetCorner(i), _nav.GetCorner(i + 1));
             }
         }
 

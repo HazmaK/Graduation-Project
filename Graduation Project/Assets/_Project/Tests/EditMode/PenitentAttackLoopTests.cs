@@ -370,9 +370,9 @@ namespace RetroFPS.Tests.EditMode
             player.SetActive(false);
             IPauseService previousPause = GamePause.Service;
             GamePause.SetService(null);
-            int tokensBefore = EnemyAttackTokens.InUse;
-            int capacityBefore = EnemyAttackTokens.MaxConcurrent;
-            EnemyAttackTokens.SetMaxConcurrent(tokensBefore + 1);
+            int tokensBefore = EnemyAttackTokens.InUseOf(AttackTokenChannel.Slam);
+            int capacityBefore = EnemyAttackTokens.MaxOf(AttackTokenChannel.Slam);
+            EnemyAttackTokens.SetMaxConcurrent(AttackTokenChannel.Slam, tokensBefore + 1);
             try
             {
                 if (!missingHealth)
@@ -384,21 +384,21 @@ namespace RetroFPS.Tests.EditMode
                 Set(_ai, "_playerTransform", player.transform);
                 Set(_ai, "_alerted", true);
                 Set(_ai, "_lostSightRemaining", 3f);
-                Assert.That(EnemyAttackTokens.TryAcquire(), Is.True);
+                Assert.That(EnemyAttackTokens.TryAcquire(AttackTokenChannel.Slam, 0), Is.True);
                 Set(_ai, "_hasAttackToken", true);
                 Assert.That(_loop.TryBeginSlam(1f, true, true, 0f), Is.True);
                 typeof(PenitentAI).GetMethod("Update", PrivateInstance).Invoke(_ai, null);
                 Assert.That(_loop.Phase, Is.EqualTo(PenitentAttackPhase.Advance));
                 Assert.That(_loop.WantsToken, Is.False);
                 Assert.That(_loop.StrikeStartedThisTick, Is.False);
-                Assert.That(EnemyAttackTokens.InUse, Is.EqualTo(tokensBefore));
+                Assert.That(EnemyAttackTokens.InUseOf(AttackTokenChannel.Slam), Is.EqualTo(tokensBefore));
                 Assert.That(Get<bool>(_ai, "_alerted"), Is.False);
                 Assert.That(_root.transform.position, Is.EqualTo(Vector3.zero));
             }
             finally
             {
                 typeof(PenitentAI).GetMethod("CancelSlam", PrivateInstance).Invoke(_ai, null);
-                EnemyAttackTokens.SetMaxConcurrent(capacityBefore);
+                EnemyAttackTokens.SetMaxConcurrent(AttackTokenChannel.Slam, capacityBefore);
                 GamePause.SetService(previousPause);
                 Object.DestroyImmediate(player);
             }
@@ -415,7 +415,7 @@ namespace RetroFPS.Tests.EditMode
             if (phase == PenitentAttackPhase.SlamRecover) _loop.Tick(1f, 1f, true, true, 0f);
             Set(_ai, "_alerted", true);
             Set(_ai, "_velocity", new Vector3(5f, 5f, 5f));
-            typeof(PenitentAI).GetMethod("MoveAndTurn", PrivateInstance).Invoke(_ai, new object[] { Vector3.right * 4f, 1f });
+            typeof(PenitentAI).GetMethod("MoveAndTurn", PrivateInstance).Invoke(_ai, new object[] { Vector3.right * 4f, false, false, 1f });
             Assert.That(_root.transform.position, Is.EqualTo(Vector3.zero));
             Assert.That(_root.transform.rotation, Is.EqualTo(Quaternion.identity));
             Assert.That(Get<Vector3>(_ai, "_velocity"), Is.EqualTo(Vector3.zero));

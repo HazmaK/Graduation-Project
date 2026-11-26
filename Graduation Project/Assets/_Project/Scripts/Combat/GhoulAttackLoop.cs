@@ -145,6 +145,7 @@ namespace RetroFPS.Combat
         private bool _hit;
         private float _poiseDamage;
         private float _poiseWindowStart;
+        private float _cooldownScale = 1f;
 
         /// <summary>Creates a loop using the supplied tuning.</summary>
         public GhoulAttackLoop(GhoulAttackSettings settings)
@@ -307,12 +308,16 @@ namespace RetroFPS.Combat
         /// <summary>Injects signed jitter for the next cooldown that is assigned.</summary>
         public void SetCooldownJitter(float jitterSigned) => _nextJitter = Mathf.Clamp(jitterSigned, -1f, 1f);
 
+        /// <summary>Scales claw and lunge cooldowns assigned after an attack (clamped to >= 0).</summary>
+        public void SetCooldownScale(float scale) => _cooldownScale = Mathf.Max(0f, scale);
+
         /// <summary>Clears phases, cooldowns, jitter and accumulated poise for a fresh spawn.</summary>
         public void ResetAll()
         {
             _clawCooldown = 0f;
             _lungeCooldown = 0f;
             _nextJitter = 0f;
+            _cooldownScale = 1f;
             _poiseDamage = 0f;
             _poiseWindowStart = 0f;
             _swipeIndex = 0;
@@ -322,7 +327,7 @@ namespace RetroFPS.Combat
 
         private float Cooldown(float duration)
         {
-            float result = Mathf.Max(0f, duration * (1f + _settings.CooldownJitter * _nextJitter));
+            float result = Mathf.Max(0f, duration * _cooldownScale * (1f + _settings.CooldownJitter * _nextJitter));
             _nextJitter = 0f;
             return result;
         }

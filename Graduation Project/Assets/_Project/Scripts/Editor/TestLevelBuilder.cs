@@ -6,6 +6,7 @@ using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.SceneManagement;
 using RetroFPS.Combat;
+using Unity.AI.Navigation;
 
 namespace RetroFPS.Editor
 {
@@ -84,6 +85,7 @@ namespace RetroFPS.Editor
             BuildRoomOssuary(geo, enc, set3);
             BuildCorridorC4(geo);
             BuildBossRoom(geo, root.transform);
+            BakeNavMesh(geo);
 
             // Oyuncu + savaş sistemleri
             GameObject player = (GameObject)PrefabUtility.InstantiatePrefab(playerPrefab);
@@ -364,7 +366,22 @@ namespace RetroFPS.Editor
         {
             GameObject g = Solid(parent, name, pos, new Vector3(DoorW + 0.2f, DoorH, 0.8f), _gate, null, 2f);
             g.isStatic = false;
+            // Kapılar açılıp kapanır: navmesh'i kesmesin.
+            NavMeshModifier nav = g.AddComponent<NavMeshModifier>();
+            nav.ignoreFromBuild = true;
             return g;
+        }
+
+        /// <summary>Geometry üzerine NavMeshSurface ekler ve bake eder (Humanoid, PhysicsColliders, GroundMask).</summary>
+        private static void BakeNavMesh(Transform geo)
+        {
+            NavMeshSurface surface = geo.gameObject.GetComponent<NavMeshSurface>();
+            if (surface == null) surface = geo.gameObject.AddComponent<NavMeshSurface>();
+            surface.agentTypeID = 0;
+            surface.collectObjects = CollectObjects.Children;
+            surface.useGeometry = UnityEngine.AI.NavMeshCollectGeometry.PhysicsColliders;
+            surface.layerMask = GameLayers.GroundMask;
+            surface.BuildNavMesh();
         }
 
         // ───────────────────────────── DALGA VERİSİ ─────────────────────────────
