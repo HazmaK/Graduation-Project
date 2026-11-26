@@ -13,8 +13,10 @@ namespace RetroFPS.Run.Labyrinth
         [SerializeField] private GameObject veil;
         [SerializeField] private GameObject doorBarrier;
         [SerializeField] private GameObject torch;
+        [SerializeField] private GameObject islandPlatform;
         [SerializeField, Min(0.1f)] private float wallHeight = 5f;
         [SerializeField, Min(0.01f)] private float wallThickness = 0.6f;
+        [SerializeField, Min(0.1f)] private float islandThickness = 1.2f;
         [SerializeField, Min(1)] private int torchEveryNCells = 4;
 
         /// <summary>Birim küp duvar parçası.</summary>
@@ -31,10 +33,14 @@ namespace RetroFPS.Run.Labyrinth
         public GameObject DoorBarrier => doorBarrier;
         /// <summary>İsteğe bağlı meşale; ileri yönü duvardan koridora bakar.</summary>
         public GameObject Torch => torch;
+        /// <summary>Yüzen ada platformu birim küp parçası.</summary>
+        public GameObject IslandPlatform => islandPlatform;
         /// <summary>Duvar yüksekliği.</summary>
         public float WallHeight => wallHeight;
         /// <summary>Duvar kalınlığı.</summary>
         public float WallThickness => wallThickness;
+        /// <summary>Ada platformu kalınlığı.</summary>
+        public float IslandThickness => islandThickness;
         /// <summary>Koridor hücrelerindeki meşale aralığı.</summary>
         public int TorchEveryNCells => torchEveryNCells;
     }

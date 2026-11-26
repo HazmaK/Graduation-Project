@@ -2,7 +2,6 @@ using System.Text;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using RetroFPS.Run;
-using RetroFPS.Run.Labyrinth;
 
 namespace RetroFPS.UI
 {
@@ -29,11 +28,11 @@ namespace RetroFPS.UI
 
         private const string StrArafReady = "ARAF: HAZIR";
         private const string StrArafUsed = "ARAF: KULLANILDI";
-        private const string StrInArafWarning = "ARAF'TASIN — Çıkış odasını bul";
+        private const string StrInArafWarning = "ARAF'TASIN — 3 mührü topla";
 
-        private const string StrExitFound = "ÇIKIŞ BULUNDU";
-        private string _cachedRoomsStr = "ODALAR 0/0";
-        private bool _exitRevealed;
+        private const string StrPortalOpen = "PORTAL AÇIK";
+        private string _cachedSealsStr = "MÜHÜR 0/0";
+        private bool _portalOpen;
 
         private readonly StringBuilder _sb = new StringBuilder(64);
 
@@ -74,25 +73,23 @@ namespace RetroFPS.UI
         {
             RunEvents.OnTrueDeath += HandleTrueDeath;
             RunEvents.OnPhaseChanged += HandlePhaseChanged;
-            RunEvents.OnArafRoomsChanged += HandleArafRoomsChanged;
-            ArafLabyrinthDirector director = ArafLabyrinthDirector.Active;
-            HandleArafRoomsChanged(director != null ? director.RevealedRooms : 0,
-                director != null ? director.TotalRooms : 0, director != null && director.ExitRevealed);
+            RunEvents.OnArafSealsChanged += HandleArafSealsChanged;
+            HandleArafSealsChanged(RunEvents.ArafSealsCollected, RunEvents.ArafSealsTotal);
         }
 
         private void OnDisable()
         {
             RunEvents.OnTrueDeath -= HandleTrueDeath;
             RunEvents.OnPhaseChanged -= HandlePhaseChanged;
-            RunEvents.OnArafRoomsChanged -= HandleArafRoomsChanged;
+            RunEvents.OnArafSealsChanged -= HandleArafSealsChanged;
         }
 
-        private void HandleArafRoomsChanged(int revealed, int total, bool exitRevealed)
+        private void HandleArafSealsChanged(int collected, int total)
         {
-            _exitRevealed = exitRevealed;
+            _portalOpen = total > 0 && collected >= total;
             _sb.Clear();
-            _sb.Append("ODALAR ").Append(revealed).Append('/').Append(total);
-            _cachedRoomsStr = _sb.ToString();
+            _sb.Append("MÜHÜR ").Append(collected).Append('/').Append(total);
+            _cachedSealsStr = _sb.ToString();
         }
 
         private void HandleTrueDeath()
@@ -276,7 +273,7 @@ namespace RetroFPS.UI
             // Panel boyutlandırması ve konumu (Sağ üst köşe)
             float panelW = 360f;
             float contentH = 22f; // Araf durumu satırı
-            if (isInAraf) contentH += _exitRevealed ? 60f : 40f;
+            if (isInAraf) contentH += _portalOpen ? 60f : 40f;
             if (_showDebug) contentH += 60f; // Seed, Floor, Timer + ayırıcı çizgi
 
             float panelH = contentH + 16f;
@@ -307,11 +304,11 @@ namespace RetroFPS.UI
             {
                 GUI.Label(new Rect(curX, curY, innerW, 18f), StrInArafWarning, _inArafStyle);
                 curY += 20f;
-                GUI.Label(new Rect(curX, curY, innerW, 18f), _cachedRoomsStr, _inArafStyle);
+                GUI.Label(new Rect(curX, curY, innerW, 18f), _cachedSealsStr, _inArafStyle);
                 curY += 20f;
-                if (_exitRevealed)
+                if (_portalOpen)
                 {
-                    GUI.Label(new Rect(curX, curY, innerW, 18f), StrExitFound, _inArafStyle);
+                    GUI.Label(new Rect(curX, curY, innerW, 18f), StrPortalOpen, _inArafStyle);
                     curY += 20f;
                 }
             }

@@ -136,6 +136,9 @@ MonoBehaviour:
   bobFrequency: 3
   rotationSpeed: 90
   lifetime: 600
+  fallGravity: 22
+  maxFallSpeed: 30
+  groundProbeDistance: 200
 --- !u!1 &1984516990700091006
 GameObject:
   m_ObjectHideFlags: 0
@@ -426,6 +429,9 @@ MonoBehaviour:
   bobFrequency: 3
   rotationSpeed: 90
   lifetime: 600
+  fallGravity: 22
+  maxFallSpeed: 30
+  groundProbeDistance: 200
 --- !u!1 &3722030665430806304
 GameObject:
   m_ObjectHideFlags: 0
@@ -898,6 +904,9 @@ MonoBehaviour:
   bobFrequency: 3
   rotationSpeed: 90
   lifetime: 600
+  fallGravity: 22
+  maxFallSpeed: 30
+  groundProbeDistance: 200
 --- !u!1 &7712354420907589994
 GameObject:
   m_ObjectHideFlags: 0

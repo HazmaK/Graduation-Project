@@ -1,4 +1,5 @@
 using UnityEngine;
+using RetroFPS.Run.Araf;
 
 namespace RetroFPS.Run
 {
@@ -18,6 +19,11 @@ namespace RetroFPS.Run
         [Tooltip("Araf sahnesi additive yüklendiğinde başlangıçta kapalı tutulacak içerik kökü")]
         [SerializeField] private GameObject contentRoot;
 
+        [SerializeField] private ArafTuning tuning;
+
+        /// <summary>Araf mühür, uyanış ve yara ayarları.</summary>
+        public ArafTuning Tuning => tuning;
+
         /// <summary>
         /// Oyuncunun Araf'a giriş doğuş noktası.
         /// </summary>
@@ -27,6 +33,12 @@ namespace RetroFPS.Run
         /// Araf sahnesinin aktif/pasif yapılan içerik kök nesnesi.
         /// </summary>
         public GameObject ContentRoot => contentRoot;
+
+        /// <summary>İçerik kökünün kendi etkinlik durumu.</summary>
+        public bool IsContentActive => contentRoot != null && contentRoot.activeSelf;
+
+        /// <summary>İçerik etkinliği ayarlandıktan sonra bildirilir.</summary>
+        public event System.Action<bool> ContentActiveChanged;
 
         private void Awake()
         {
@@ -46,6 +58,7 @@ namespace RetroFPS.Run
             {
                 contentRoot.SetActive(active);
             }
+            ContentActiveChanged?.Invoke(active);
         }
 
 #if UNITY_EDITOR

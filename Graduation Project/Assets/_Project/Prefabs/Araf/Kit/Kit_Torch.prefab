@@ -76,7 +76,7 @@ Light:
   m_Enabled: 1
   serializedVersion: 13
   m_Type: 2
-  m_Color: {r: 1, g: 0.36, b: 0.12, a: 1}
+  m_Color: {r: 0.62, g: 0.48, b: 1, a: 1}
   m_Intensity: 2.2
   m_Range: 7
   m_SpotAngle: 30
@@ -146,8 +146,8 @@ MonoBehaviour:
   baseIntensity: 2.2
   flickerIntensity: 0.45
   flickerSpeed: 7.5
-  flameColor: {r: 1, g: 0.36, b: 0.12, a: 1}
-  emberColor: {r: 0.85, g: 0.15, b: 0.06, a: 1}
+  flameColor: {r: 0.62, g: 0.48, b: 1, a: 1}
+  emberColor: {r: 0.32, g: 0.18, b: 0.62, a: 1}
   enableEmbers: 1
   emberRateOverTime: 3.5
 --- !u!1 &8195101394089751882

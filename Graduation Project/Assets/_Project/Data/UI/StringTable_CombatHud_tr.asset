@@ -67,9 +67,9 @@ MonoBehaviour:
   - key: hud.wave.remainingLabel
     value: KALAN
     en: LEFT
-  - key: hud.araf.roomsLabel
-    value: ODALAR
-    en: ROOMS
+  - key: hud.araf.sealsLabel
+    value: "M\xDCH\xDCR"
+    en: SEALS
   - key: hud.araf.ready
     value: 'ARAF: HAZIR'
     en: 'PURGATORY: READY'
@@ -77,14 +77,14 @@ MonoBehaviour:
     value: 'ARAF: KULLANILDI'
     en: 'PURGATORY: USED'
   - key: hud.araf.warning
-    value: "ARAF'TASIN \u2014 \xC7IKI\u015E ODASINI BUL"
-    en: "IN PURGATORY \u2014 FIND THE EXIT ROOM"
-  - key: hud.araf.rooms
-    value: ODALAR {0}/{1}
-    en: ROOMS {0}/{1}
-  - key: hud.araf.exitFound
-    value: "\xC7IKI\u015E BULUNDU"
-    en: EXIT FOUND
+    value: "ARAF'TASIN \u2014 3 M\xDCHR\xDC TOPLA"
+    en: "IN PURGATORY \u2014 TAKE 3 SEALS"
+  - key: hud.araf.seals
+    value: "M\xDCH\xDCR {0}/{1}"
+    en: SEALS {0}/{1}
+  - key: hud.araf.portalOpen
+    value: "PORTAL A\xC7IK"
+    en: PORTAL OPEN
   - key: hud.banner.arenaSealed
     value: "ARENA M\xDCH\xDCRLEND\u0130"
     en: ARENA SEALED
@@ -176,11 +176,11 @@ MonoBehaviour:
     value: Kan Borcu
     en: Blood Debt
   - key: hud.card.blood_debt.boon
-    value: "T\xFCm hasar +%35"
-    en: All damage +35%
+    value: "T\xFCm hasar +%30"
+    en: All damage +30%
   - key: hud.card.blood_debt.curse
-    value: Maksimum can -%30
-    en: Max health -30%
+    value: Maksimum can -%25
+    en: Max health -25%
   - key: hud.card.blood_debt.flavor
     value: Kule borcunu etinden tahsil eder.
     en: The tower collects its due in flesh.
@@ -188,8 +188,8 @@ MonoBehaviour:
     value: "A\xE7 \xC7elik"
     en: Starving Steel
   - key: hud.card.starving_steel.boon
-    value: "B\u0131\xE7ak hasar\u0131 +%50, Kan Hasad\u0131 iki kat iyile\u015Ftirir"
-    en: Blade damage +50%, Blood Harvest heals double
+    value: "B\u0131\xE7ak hasar\u0131 +%45, Kan Hasad\u0131 %75 fazla iyile\u015Ftirir"
+    en: Blade damage +45%, Blood Harvest heals +75%
   - key: hud.card.starving_steel.curse
     value: "D\xFC\u015Fmanlar can k\xFCresi d\xFC\u015F\xFCrmez"
     en: Enemies drop no health orbs
@@ -200,11 +200,11 @@ MonoBehaviour:
     value: Son Nefes
     en: Last Breath
   - key: hud.card.last_breath.boon
-    value: "Can yar\u0131n\u0131n alt\u0131ndayken hasar +%60, h\u0131z +%20"
-    en: 'Below half health: damage +60%, speed +20%'
+    value: "Can yar\u0131n\u0131n alt\u0131ndayken hasar +%50, h\u0131z +%20"
+    en: 'Below half health: damage +50%, speed +20%'
   - key: hud.card.last_breath.curse
-    value: "T\xFCm iyile\u015Fmeler -%50"
-    en: All healing -50%
+    value: "T\xFCm iyile\u015Fmeler -%35"
+    en: All healing -35%
   - key: hud.card.last_breath.flavor
     value: "\xD6l\xFCm yakla\u015Ft\u0131k\xE7a elin a\u011F\u0131rla\u015F\u0131r."
     en: The nearer death comes, the heavier your hand.
@@ -212,8 +212,8 @@ MonoBehaviour:
     value: Kemik Kanatlar
     en: Bone Wings
   - key: hud.card.bone_wings.boon
-    value: "Dash %40 h\u0131zl\u0131 dolar, h\u0131z +%15"
-    en: Dash recharges 40% faster, speed +15%
+    value: "Dash %25 h\u0131zl\u0131 dolar, h\u0131z +%12"
+    en: Dash recharges 25% faster, speed +12%
   - key: hud.card.bone_wings.curse
     value: "Al\u0131nan hasar +%25"
     en: Damage taken +25%
@@ -228,8 +228,8 @@ MonoBehaviour:
       h\u0131z\u0131 +%35"
     en: Overheal cap +50; while overhealed, fire rate +35%
   - key: hud.card.brimming_chalice.curse
-    value: "Can yar\u0131n\u0131n alt\u0131ndayken h\u0131z -%20"
-    en: 'Below half health: speed -20%'
+    value: "Can yar\u0131n\u0131n alt\u0131ndayken h\u0131z -%15"
+    en: 'Below half health: speed -15%'
   - key: hud.card.brimming_chalice.flavor
     value: Kadeh doluyken herkes cesurdur.
     en: Everyone is brave while the cup is full.
@@ -297,9 +297,9 @@ MonoBehaviour:
     value: "Yald\u0131zl\u0131 Damar"
     en: Gilded Vein
   - key: hud.card.gilded_vein.boon
-    value: "Fazla can s\u0131n\u0131r\u0131 +50; fazla can varken al\u0131nan hasar
+    value: "Fazla can s\u0131n\u0131r\u0131 +75; fazla can varken al\u0131nan hasar
       -%25"
-    en: Overheal cap +50; while overhealed, damage taken -25%
+    en: Overheal cap +75; while overhealed, damage taken -25%
   - key: hud.card.gilded_vein.curse
     value: Maksimum can -%20
     en: Max health -20%
@@ -322,8 +322,8 @@ MonoBehaviour:
     value: "\xC7an Kulesi"
     en: Bell Tower
   - key: hud.card.bell_tower.boon
-    value: "At\u0131\u015F h\u0131z\u0131 +%50, al\u0131nan hasar -%20"
-    en: Fire rate +50%, damage taken -20%
+    value: "At\u0131\u015F h\u0131z\u0131 +%50, al\u0131nan hasar -%10"
+    en: Fire rate +50%, damage taken -10%
   - key: hud.card.bell_tower.curse
     value: "H\u0131z -%15, dash %20 yava\u015F dolar"
     en: Speed -15%, dash recharges 20% slower

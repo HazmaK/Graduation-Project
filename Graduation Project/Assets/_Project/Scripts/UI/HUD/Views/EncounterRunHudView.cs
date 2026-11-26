@@ -21,12 +21,12 @@ namespace RetroFPS.UI.HUD
         [SerializeField] private UnityEngine.UI.Image remainingFill, remainingUnderline, sigilFill;
         private readonly char[] buffer = new char[256];
         private readonly MenuTween completedFade = new MenuTween();
-        private string ready, used, waveFormat, remainingFormat, roomsFormat;
+        private string ready, used, waveFormat, remainingFormat, sealsFormat;
         private bool initialized, inAraf, encounterVisible, hiding, reduceMotion, runPresent;
-        private int wave = -1, waveTotal = -1, remaining = -1, enemyTotal = -1, rooms = -1, roomTotal = -1;
-        private bool exit, chargeConsumed;
-        private bool waveTextDirty, remainingTextDirty, roomsTextDirty;
-        private float roomFlashUntil;
+        private int wave = -1, waveTotal = -1, remaining = -1, enemyTotal = -1, seals = -1, sealTotal = -1;
+        private bool portalOpen, chargeConsumed;
+        private bool waveTextDirty, remainingTextDirty, sealsTextDirty;
+        private float sealFlashUntil;
 
         /// <summary>Resolves state copy and prewarms numeric pieces before gameplay events.</summary>
         public void Initialize()
@@ -36,20 +36,20 @@ namespace RetroFPS.UI.HUD
             RefreshLanguage(GameSettings.Current.Language);
             HudText.Prewarm(waveText); HudText.Prewarm(remainingText);
             HudText.Prewarm(roomsText); HudText.Prewarm(chargeText, used);
-            waveTextDirty = remainingTextDirty = roomsTextDirty = true;
+            waveTextDirty = remainingTextDirty = sealsTextDirty = true;
         }
 
-        /// <summary>Refreshes counters and charge copy while retaining fades, room flashes and context.</summary>
+        /// <summary>Refreshes counters and charge copy while retaining fades, seal flashes and context.</summary>
         public void RefreshLanguage(LanguageSetting language)
         {
             if (!initialized || strings == null) return;
             waveFormat = strings.Get("hud.wave.counter", language); remainingFormat = strings.Get("hud.wave.remaining", language);
-            roomsFormat = strings.Get("hud.araf.rooms", language);
+            sealsFormat = strings.Get("hud.araf.seals", language);
             ready = strings.Get("hud.araf.ready", language); used = strings.Get("hud.araf.used", language);
-            waveTextDirty = remainingTextDirty = roomsTextDirty = true;
+            waveTextDirty = remainingTextDirty = sealsTextDirty = true;
             if (wave >= 0) SetWave(wave, waveTotal);
             if (remaining >= 0) SetRemaining(remaining, enemyTotal);
-            if (rooms >= 0) SetRooms(rooms, roomTotal, exit);
+            if (seals >= 0) SetSeals(seals, sealTotal);
             SetCharge(chargeConsumed);
         }
 
@@ -115,27 +115,27 @@ namespace RetroFPS.UI.HUD
             hiding = true; completedFade.Start(config.EncounterCompletedHideMs * 0.001f);
         }
 
-        /// <summary>Snapshots labyrinth counters, including rooms revealed before the HUD was bound.</summary>
-        public void SetRooms(int revealed, int total, bool exitRevealed)
+        /// <summary>Snapshots labyrinth seal counters, including seals collected before the HUD was bound.</summary>
+        public void SetSeals(int collected, int total)
         {
-            if (roomsTextDirty || rooms != revealed || roomTotal != total)
+            if (sealsTextDirty || seals != collected || sealTotal != total)
             {
-                roomsTextDirty = false;
-                bool flash = rooms >= 0 && revealed > rooms;
-                rooms = revealed; roomTotal = total;
-                HudText.Template(roomsText, roomsFormat, revealed, total, buffer);
-                if (flash && !reduceMotion) { roomFlashUntil = GamePause.UnscaledTime + 0.2f; roomsText.color = theme.MenuTheme.Focus; }
+                sealsTextDirty = false;
+                bool flash = seals >= 0 && collected > seals;
+                seals = collected; sealTotal = total;
+                HudText.Template(roomsText, sealsFormat, collected, total, buffer);
+                if (flash && !reduceMotion) { sealFlashUntil = GamePause.UnscaledTime + 0.2f; roomsText.color = theme.MenuTheme.Focus; }
             }
-            exit = exitRevealed;
-            exitGroup.SetActive(inAraf && exit);
+            portalOpen = total > 0 && collected >= total;
+            exitGroup.SetActive(inAraf && portalOpen);
         }
 
-        /// <summary>Finishes any completion fade and room flash when motion is reduced.</summary>
+        /// <summary>Finishes any completion fade and seal flash when motion is reduced.</summary>
         public void SetReduceMotion(bool value)
         {
             reduceMotion = value;
             if (value && hiding) SetEncounter(false);
-            if (value && roomsText != null && theme != null) { roomsText.color = theme.MenuTheme.Text; roomFlashUntil = 0f; }
+            if (value && roomsText != null && theme != null) { roomsText.color = theme.MenuTheme.Text; sealFlashUntil = 0f; }
         }
 
         private void ApplyContext()
@@ -143,7 +143,7 @@ namespace RetroFPS.UI.HUD
             if (theme == null || plate == null) return;
             bool combat = encounterVisible && !inAraf;
             waveGroup.SetActive(combat); arafGroup.SetActive(runPresent && inAraf);
-            exitGroup.SetActive(runPresent && inAraf && exit);
+            exitGroup.SetActive(runPresent && inAraf && portalOpen);
             Vector2 size = plate.sizeDelta;
             size.y = inAraf && runPresent ? theme.ArafPlateHeight : combat ? theme.CombatPlateHeight : theme.ExplorationPlateHeight;
             plate.sizeDelta = size;
@@ -157,8 +157,8 @@ namespace RetroFPS.UI.HUD
                 completedFade.Tick(GamePause.UnscaledDeltaTime); waveOpacity.alpha = 1f - completedFade.Value;
                 if (completedFade.Complete) SetEncounter(false);
             }
-            if (roomFlashUntil > 0f && GamePause.UnscaledTime >= roomFlashUntil)
-            { roomFlashUntil = 0f; roomsText.color = theme.MenuTheme.Text; }
+            if (sealFlashUntil > 0f && GamePause.UnscaledTime >= sealFlashUntil)
+            { sealFlashUntil = 0f; roomsText.color = theme.MenuTheme.Text; }
         }
     }
 }

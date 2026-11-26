@@ -19414,7 +19414,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: RetroFPS.Menu::RetroFPS.UI.Menu.LocalizedText
   strings: {fileID: 11400000, guid: 169af019b672b4d4c8a9b2b6a16b962d, type: 2}
-  key: hud.araf.exitFound
+  key: hud.araf.portalOpen
   label: {fileID: 237525840517236918}
 --- !u!1 &8993917850749098990
 GameObject:

@@ -103,7 +103,7 @@ namespace RetroFPS.Tests.EditMode
         {
             var state = new RunState(-42);
             var repeat = new RunState(-42);
-            for (int id = 1; id <= 4; id++)
+            for (int id = 1; id <= 8; id++)
             {
                 RunStream stream = (RunStream)id;
                 RunRandom random = state.GetStream(stream);
@@ -118,6 +118,32 @@ namespace RetroFPS.Tests.EditMode
             }
             Assert.That(state.GetStream(RunStream.Encounter),
                 Is.Not.SameAs(state.GetStream(RunStream.Loot)));
+        }
+
+        /// <summary>Araf threat stream 8 is cached, deterministic and independent of every earlier stream.</summary>
+        [Test]
+        public void ArafThreatStreamIsIndependent()
+        {
+            Assert.That((int)RunStream.ArafThreat, Is.EqualTo(8));
+            var state = new RunState(42);
+            RunRandom threat = state.GetStream(RunStream.ArafThreat);
+            RunRandom expected = RunRandom.Derive(42, RunStream.ArafThreat);
+            for (int id = 1; id < 8; id++)
+            {
+                RunRandom other = state.GetStream((RunStream)id);
+                Assert.That(other, Is.Not.SameAs(threat));
+                bool differs = false;
+                RunRandom otherExpected = RunRandom.Derive(42, (RunStream)id);
+                RunRandom threatExpected = RunRandom.Derive(42, RunStream.ArafThreat);
+                for (int i = 0; i < 32; i++)
+                {
+                    if (otherExpected.NextUInt() != threatExpected.NextUInt()) differs = true;
+                    other.NextUInt();
+                }
+                Assert.That(differs, Is.True);
+                Assert.That(threat.NextUInt(), Is.EqualTo(expected.NextUInt()));
+            }
+            Assert.That(state.GetStream(RunStream.ArafThreat), Is.SameAs(threat));
         }
 
         /// <summary>Araf hakkı tüketildikten sonra tekrar kullanılamaz.</summary>

@@ -22,7 +22,7 @@ namespace RetroFPS.Run
     public sealed class RunState
     {
         private readonly int _seed;
-        private readonly RunRandom[] _streams = new RunRandom[8];
+        private readonly RunRandom[] _streams = new RunRandom[9];
         private int _floorIndex;
         private bool _arafChargeUsed;
         private RunPhase _phase;

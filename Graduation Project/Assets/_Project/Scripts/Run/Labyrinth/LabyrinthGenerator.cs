@@ -7,6 +7,7 @@ namespace RetroFPS.Run.Labyrinth
     public static class LabyrinthGenerator
     {
         private const int PlacementAttempts = 200;
+        private const int PlacementSearchNodeLimit = 200000;
 
         /// <summary>Pozitif boyutlar ve geçerli olasılık/sınırlar ile bağlantılı bir labirent üretir.</summary>
         public static LabyrinthLayout Generate(LabyrinthSettings settings, RunRandom rng)
@@ -14,10 +15,40 @@ namespace RetroFPS.Run.Labyrinth
             Validate(settings, rng);
             int width = settings.Width;
             int height = settings.Height;
-            int cellCount = checked(width * height);
+            _ = checked(width * height);
             int corner = rng.Range(0, 4);
             var start = new GridPos((corner & 1) == 0 ? 0 : width - 1,
                 (corner & 2) == 0 ? 0 : height - 1);
+            return GenerateCore(settings, rng, start, Array.Empty<LabyrinthMouth>());
+        }
+
+        /// <summary>Belirtilen başlangıcı ve sınır ağızlarını koridorda tutan labirenti üretir.</summary>
+        public static LabyrinthLayout Generate(LabyrinthSettings settings, RunRandom rng,
+            GridPos start, LabyrinthMouth[] mouths)
+        {
+            Validate(settings, rng);
+            _ = checked(settings.Width * settings.Height);
+            if ((uint)start.X >= (uint)settings.Width || (uint)start.Y >= (uint)settings.Height)
+                throw new ArgumentException("Başlangıç hücresi ızgaranın içinde olmalıdır.", nameof(start));
+            if (mouths == null) throw new ArgumentNullException(nameof(mouths));
+            for (int i = 0; i < mouths.Length; i++)
+            {
+                LabyrinthMouth mouth = mouths[i];
+                if ((uint)mouth.Cell.X >= (uint)settings.Width || (uint)mouth.Cell.Y >= (uint)settings.Height
+                    || (uint)mouth.Outward > 3u
+                    || Neighbour(mouth.Cell.Y * settings.Width + mouth.Cell.X,
+                        (int)mouth.Outward, settings.Width, settings.Height) >= 0)
+                    throw new ArgumentException("Ağız sınırda bulunmalı ve ızgara dışına bakmalıdır.", nameof(mouths));
+            }
+            return GenerateCore(settings, rng, start, (LabyrinthMouth[])mouths.Clone());
+        }
+
+        private static LabyrinthLayout GenerateCore(LabyrinthSettings settings, RunRandom rng,
+            GridPos start, LabyrinthMouth[] mouths)
+        {
+            int width = settings.Width;
+            int height = settings.Height;
+            int cellCount = checked(width * height);
             int startIndex = start.Y * width + start.X;
             var roomIndices = new int[cellCount];
             var walls = new byte[cellCount];
@@ -30,7 +61,7 @@ namespace RetroFPS.Run.Labyrinth
             }
 
             var roomMins = new GridPos[Math.Min(settings.RoomSlotCount, (cellCount - 1) / 4)];
-            int roomCount = PlaceRooms(settings, rng, startIndex, roomIndices, roomMins, visited, work);
+            int roomCount = PlaceRooms(settings, rng, startIndex, roomIndices, roomMins, visited, work, mouths);
             Array.Clear(visited, 0, visited.Length);
             CarveMaze(width, height, startIndex, roomIndices, walls, rng, visited, work);
 
@@ -83,12 +114,15 @@ namespace RetroFPS.Run.Labyrinth
                     + new Vector3(settings.CellSize / 2f, 0f, settings.CellSize / 2f);
                 rooms[room] = new RoomSlotInfo(room, min, depth, centre, doorways[room]);
             }
+            // Dış açıklıklar BFS ve örgüden sonra açılır; dışarıya hücre araması yapılmaz.
+            for (int i = 0; i < mouths.Length; i++)
+                walls[mouths[i].Cell.Y * width + mouths[i].Cell.X] &= (byte)(15 ^ (1 << (int)mouths[i].Outward));
             return new LabyrinthLayout(width, height, settings.CellSize, start,
-                walls, roomIndices, depths, rooms);
+                walls, roomIndices, depths, rooms, mouths);
         }
 
         private static int PlaceRooms(LabyrinthSettings settings, RunRandom rng, int start,
-            int[] indices, GridPos[] mins, bool[] visited, int[] work)
+            int[] indices, GridPos[] mins, bool[] visited, int[] work, LabyrinthMouth[] mouths)
         {
             if (settings.Width < 2 || settings.Height < 2) return 0;
             int count = 0;
@@ -102,6 +136,7 @@ namespace RetroFPS.Run.Labyrinth
                     int startY = start / settings.Width;
                     if (startX >= min.X && startX <= min.X + 1 && startY >= min.Y && startY <= min.Y + 1)
                         continue;
+                    if (CoversMouth(min, mouths)) continue;
                     bool fits = true;
                     for (int i = 0; i < count; i++)
                     {
@@ -125,7 +160,89 @@ namespace RetroFPS.Run.Labyrinth
                 if (!placed) break;
                 count++;
             }
-            return count;
+            if (count == mins.Length) return count;
+            return SearchRoomPlacement(settings, rng, start, indices, mins, count, visited, work, mouths);
+        }
+
+        private static int SearchRoomPlacement(LabyrinthSettings settings, RunRandom rng, int start,
+            int[] indices, GridPos[] mins, int bestCount, bool[] visited, int[] work, LabyrinthMouth[] mouths)
+        {
+            // Açgözlü sonuç korunur; arama sınırında daha az oda döndürülmez.
+            var best = new GridPos[mins.Length];
+            Array.Copy(mins, best, bestCount);
+            var candidates = new GridPos[(settings.Width - 1) * (settings.Height - 1)];
+            int candidateCount = 0;
+            int startX = start % settings.Width;
+            int startY = start / settings.Width;
+            for (int y = 0; y < settings.Height - 1; y++)
+            for (int x = 0; x < settings.Width - 1; x++)
+            {
+                if (startX >= x && startX <= x + 1 && startY >= y && startY <= y + 1) continue;
+                if (CoversMouth(new GridPos(x, y), mouths)) continue;
+                candidates[candidateCount++] = new GridPos(x, y);
+            }
+            rng.Shuffle(candidates, candidateCount);
+            var nextCandidate = new int[mins.Length + 1];
+            for (int i = 0; i < indices.Length; i++) indices[i] = -1;
+            int count = 0;
+            int nodes = 0;
+            long separation = 2L + settings.MinRoomGap;
+            while (nodes < PlacementSearchNodeLimit)
+            {
+                int candidate = nextCandidate[count];
+                // Artan aday indisleri aynı oda kümesinin permütasyonlarını eler.
+                if (candidate >= candidateCount || count + candidateCount - candidate <= bestCount)
+                {
+                    if (count == 0) break;
+                    count--;
+                    SetRoom(indices, settings.Width, mins[count], -1);
+                    continue;
+                }
+                nextCandidate[count] = candidate + 1;
+                nodes++;
+                GridPos min = candidates[candidate];
+                bool fits = true;
+                for (int i = 0; i < count; i++)
+                {
+                    if (Math.Abs((long)min.X - mins[i].X) < separation
+                        && Math.Abs((long)min.Y - mins[i].Y) < separation)
+                    { fits = false; break; }
+                }
+                if (!fits) continue;
+                mins[count] = min;
+                SetRoom(indices, settings.Width, min, count);
+                if (!CorridorsConnected(indices, settings.Width, settings.Height, start,
+                        indices.Length - 4 * (count + 1), visited, work)
+                    || !RoomsHaveCorridor(indices, settings.Width, settings.Height, mins, count + 1))
+                {
+                    SetRoom(indices, settings.Width, min, -1);
+                    continue;
+                }
+                count++;
+                if (count > bestCount)
+                {
+                    bestCount = count;
+                    Array.Copy(mins, best, count);
+                    if (count == mins.Length) return count;
+                }
+                nextCandidate[count] = candidate + 1;
+            }
+            // Arama tükenirse veya sınırına ulaşırsa en büyük geçerli yerleşim geri yüklenir.
+            for (int i = 0; i < indices.Length; i++) indices[i] = -1;
+            Array.Copy(best, mins, bestCount);
+            for (int i = 0; i < bestCount; i++) SetRoom(indices, settings.Width, mins[i], i);
+            return bestCount;
+        }
+
+        private static bool CoversMouth(GridPos min, LabyrinthMouth[] mouths)
+        {
+            for (int i = 0; i < mouths.Length; i++)
+            {
+                GridPos cell = mouths[i].Cell;
+                if (cell.X >= min.X && cell.X <= min.X + 1 && cell.Y >= min.Y && cell.Y <= min.Y + 1)
+                    return true;
+            }
+            return false;
         }
 
         private static void SetRoom(int[] indices, int width, GridPos min, int room)

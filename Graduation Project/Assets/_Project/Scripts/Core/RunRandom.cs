@@ -16,7 +16,9 @@ namespace RetroFPS.Run
         /// <summary>Araf oda içerik seçimleri.</summary>
         ArafRooms = 6,
         /// <summary>Araf curse and blessing card offers.</summary>
-        ArafCards = 7
+        ArafCards = 7,
+        /// <summary>Araf tehdit doğuşları.</summary>
+        ArafThreat = 8
     }
 
     /// <summary>SplitMix64 ile başlatılan, tahsissiz ve deterministik xoshiro128** üreteci.</summary>

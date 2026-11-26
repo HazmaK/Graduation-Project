@@ -5,6 +5,7 @@ using UnityEngine.SceneManagement;
 using RetroFPS.Combat;
 using RetroFPS.Pause;
 using RetroFPS.Stats;
+using RetroFPS.Run.Araf;
 
 namespace RetroFPS.Run
 {
@@ -339,6 +340,8 @@ namespace RetroFPS.Run
                 {
                     Transform entry = _arafLevel.EntryPoint != null ? _arafLevel.EntryPoint : _arafLevel.transform;
                     Quaternion entryRot = Quaternion.Euler(0f, entry.eulerAngles.y, 0f);
+                    ArafTuning tuning = _arafLevel != null ? _arafLevel.Tuning : null;
+                    ArafWound.Apply(_state.Stats, tuning != null ? tuning.WoundMaxHealth : ArafTuning.DefaultWoundMaxHealth);
                     player.Revive(entry.position, entryRot);
                 }
 
@@ -391,6 +394,7 @@ namespace RetroFPS.Run
                     _arafLevel.SetContentActive(false);
                 }
 
+                ArafWound.Remove(_state.Stats);
                 if (_pendingEncounter != null)
                 {
                     _pendingEncounter.ResumeAfterPurgatory();
@@ -416,6 +420,7 @@ namespace RetroFPS.Run
             }
             catch (OperationCanceledException)
             {
+                ArafWound.Remove(_state.Stats);
                 if (transition != null) transition.EndSlowMo();
             }
             finally

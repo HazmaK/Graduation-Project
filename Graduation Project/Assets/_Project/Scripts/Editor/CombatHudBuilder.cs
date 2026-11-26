@@ -207,12 +207,12 @@ namespace RetroFPS.Editor
                 new StringTable.Translation("hud.wave.remaining", "KALAN {0}", "LEFT {0}"),
                 new StringTable.Translation("hud.wave.label", "DALGA", "WAVE"),
                 new StringTable.Translation("hud.wave.remainingLabel", "KALAN", "LEFT"),
-                new StringTable.Translation("hud.araf.roomsLabel", "ODALAR", "ROOMS"),
+                new StringTable.Translation("hud.araf.sealsLabel", "MÜHÜR", "SEALS"),
                 new StringTable.Translation("hud.araf.ready", "ARAF: HAZIR", "PURGATORY: READY"),
                 new StringTable.Translation("hud.araf.used", "ARAF: KULLANILDI", "PURGATORY: USED"),
-                new StringTable.Translation("hud.araf.warning", "ARAF'TASIN — ÇIKIŞ ODASINI BUL", "IN PURGATORY — FIND THE EXIT ROOM"),
-                new StringTable.Translation("hud.araf.rooms", "ODALAR {0}/{1}", "ROOMS {0}/{1}"),
-                new StringTable.Translation("hud.araf.exitFound", "ÇIKIŞ BULUNDU", "EXIT FOUND"),
+                new StringTable.Translation("hud.araf.warning", "ARAF'TASIN — 3 MÜHRÜ TOPLA", "IN PURGATORY — TAKE 3 SEALS"),
+                new StringTable.Translation("hud.araf.seals", "MÜHÜR {0}/{1}", "SEALS {0}/{1}"),
+                new StringTable.Translation("hud.araf.portalOpen", "PORTAL AÇIK", "PORTAL OPEN"),
                 new StringTable.Translation("hud.banner.arenaSealed", "ARENA MÜHÜRLENDİ", "ARENA SEALED"),
                 new StringTable.Translation("hud.banner.wave", "DALGA {0}", "WAVE {0}"),
                 new StringTable.Translation("hud.banner.waveCleared", "DALGA {0} TEMİZLENDİ", "WAVE {0} CLEARED"),
@@ -662,7 +662,7 @@ namespace RetroFPS.Editor
             TMP_Text rooms = Label("Rooms", araf, null, 24, 0, 54, 316, 30);
             RectTransform exit = At("Exit", araf, 0, 85, 316, 25);
             Image("Arrow", exit, theme.Arrow, Palette.Text, 0, 4, 15, 15);
-            Label("Text", exit, "hud.araf.exitFound", 20, 24, 0, 292, 25);
+            Label("Text", exit, "hud.araf.portalOpen", 20, 24, 0, 292, 25);
             wave.gameObject.SetActive(false); araf.gameObject.SetActive(false); exit.gameObject.SetActive(false);
             Set(view, "runGroup", run.gameObject); Set(view, "waveGroup", wave.gameObject); Set(view, "arafGroup", araf.gameObject);
             Set(view, "exitGroup", exit.gameObject); Set(view, "waveOpacity", opacity); Set(view, "waveText", counter);

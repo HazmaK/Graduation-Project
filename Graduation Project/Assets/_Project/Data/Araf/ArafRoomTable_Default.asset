@@ -13,12 +13,8 @@ MonoBehaviour:
   m_Name: ArafRoomTable_Default
   m_EditorClassIdentifier: RetroFPS.Gameplay::RetroFPS.Run.Labyrinth.ArafRoomTable
   rooms:
-  - {fileID: 11400000, guid: 2255214f1e0702f40970dd71fc50232d, type: 2}
-  - {fileID: 11400000, guid: 2e3b9e630ffe269448720c75b4a4cb39, type: 2}
-  - {fileID: 11400000, guid: 57387714a116d744685c3f356cf32d27, type: 2}
   - {fileID: 11400000, guid: eba4396088a674b4b962ea9b666412a6, type: 2}
   - {fileID: 11400000, guid: 6fd1c33c96d4d284aa8331cda53dde24, type: 2}
-  exitRoom: {fileID: 11400000, guid: e130428e71170d2479a207bf459b9b3f, type: 2}
-  exitBaseChance: 0.1
-  exitChancePerReveal: 0.15
-  exitMinDepth: 3
+  sealRoom: {fileID: 11400000, guid: e130428e71170d2479a207bf459b9b3f, type: 2}
+  arenaRoom: {fileID: 11400000, guid: 471632353b3722f4a8863b93f505525a, type: 2}
+  arenaWaves: {fileID: 11400000, guid: 9816a9008c839bf42a34f9c6f6639345, type: 2}

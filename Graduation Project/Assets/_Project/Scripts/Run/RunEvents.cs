@@ -99,7 +99,7 @@ namespace RetroFPS.Run
             if (_fallbackStreams == null)
             {
                 _fallbackSeed = Environment.TickCount;
-                _fallbackStreams = new RunRandom[8];
+                _fallbackStreams = new RunRandom[9];
             }
             int index = (int)stream;
             return _fallbackStreams[index] ??
@@ -131,8 +131,18 @@ namespace RetroFPS.Run
         /// </summary>
         public static event Action OnEscapePortalReached;
 
-        /// <summary>Araf oda keşif sayıları ve çıkış odası durumu değiştiğinde yükseltilir.</summary>
-        public static event Action<int, int, bool> OnArafRoomsChanged;
+        /// <summary>Araf mühür sayıları değiştiğinde yükseltilir.</summary>
+        public static event Action<int, int> OnArafSealsChanged;
+
+        /// <summary>Araf uyanış seviyesi değiştiğinde yükseltilir.</summary>
+        public static event Action<int> OnArafAwakeningChanged;
+
+        /// <summary>Son bildirilen toplanmış mühür sayısı.</summary>
+        public static int ArafSealsCollected { get; private set; }
+        /// <summary>Son bildirilen toplam mühür sayısı.</summary>
+        public static int ArafSealsTotal { get; private set; }
+        /// <summary>Son bildirilen uyanış seviyesi.</summary>
+        public static int ArafAwakeningLevel { get; private set; }
 
         /// <summary>
         /// Oyuncunun şu anda içinde savaştığı aktif yeniden denenebilir karşılaşma.
@@ -191,9 +201,20 @@ namespace RetroFPS.Run
         public static void RaiseEscapePortalReached()
             => OnEscapePortalReached?.Invoke();
 
-        /// <summary>Araf oda keşif durumunu arayüze ve diğer dinleyicilere iletir.</summary>
-        public static void RaiseArafRoomsChanged(int revealed, int total, bool exitRevealed)
-            => OnArafRoomsChanged?.Invoke(revealed, total, exitRevealed);
+        /// <summary>Araf mühür sayılarını kaydeder ve dinleyicilere iletir.</summary>
+        public static void RaiseArafSealsChanged(int collected, int total)
+        {
+            ArafSealsCollected = collected;
+            ArafSealsTotal = total;
+            OnArafSealsChanged?.Invoke(collected, total);
+        }
+
+        /// <summary>Araf uyanış seviyesini kaydeder ve dinleyicilere iletir.</summary>
+        public static void RaiseArafAwakeningChanged(int level)
+        {
+            ArafAwakeningLevel = level;
+            OnArafAwakeningChanged?.Invoke(level);
+        }
 
         /// <summary>Opens an offer unless another offer is already open.</summary>
         public static void RaiseCardOfferOpened(CardOffer offer)
@@ -231,7 +252,11 @@ namespace RetroFPS.Run
             OnEscapedAraf = null;
             OnTrueDeath = null;
             OnEscapePortalReached = null;
-            OnArafRoomsChanged = null;
+            OnArafSealsChanged = null;
+            OnArafAwakeningChanged = null;
+            ArafSealsCollected = 0;
+            ArafSealsTotal = 0;
+            ArafAwakeningLevel = 0;
             OnCardOfferOpened = null;
             OnCardOfferResolved = null;
             OnCardAcquired = null;

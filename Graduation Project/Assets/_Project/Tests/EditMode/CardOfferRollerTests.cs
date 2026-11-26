@@ -66,7 +66,7 @@ namespace RetroFPS.Tests.EditMode
             {
                 var first = new CardOfferRoller(new RunRandom(seed));
                 var second = new CardOfferRoller(new RunRandom(seed));
-                for (int i = 0; i < CardOfferRoller.MaxOffersPerVisit; i++)
+                for (int i = 0; i < first.MaxOffers; i++)
                 {
                     Assert.That(first.TryRoll(catalog, null, out CardOffer left), Is.True);
                     Assert.That(second.TryRoll(catalog, null, out CardOffer right), Is.True);
@@ -116,7 +116,7 @@ namespace RetroFPS.Tests.EditMode
                 var first = new CardOfferRoller(new RunRandom(seed));
                 var second = new CardOfferRoller(new RunRandom(seed));
                 var inventory = new CardInventory(new StatSheet());
-                for (int i = 0; i < CardOfferRoller.MaxOffersPerVisit; i++)
+                for (int i = 0; i < first.MaxOffers; i++)
                 {
                     Assert.That(first.TryRoll(catalog, inventory, out CardOffer left), Is.True);
                     Assert.That(second.TryRoll(catalog, inventory, out CardOffer right), Is.True);
@@ -161,6 +161,7 @@ namespace RetroFPS.Tests.EditMode
         public void MaximumTwoOffersPerVisit()
         {
             var roller = new CardOfferRoller(new RunRandom(42));
+            Assert.That(roller.MaxOffers, Is.EqualTo(2));
             var catalog = CreateCatalog(CreateCard("a"), CreateCard("b"), CreateCard("c"),
                 CreateCard("d"), CreateCard("e"));
             Assert.That(roller.OffersMade, Is.Zero);
@@ -174,6 +175,147 @@ namespace RetroFPS.Tests.EditMode
             Assert.That(roller.TryRoll(catalog, null, out CardOffer rejected), Is.False);
             Assert.That(rejected.Count, Is.Zero);
             Assert.That(roller.OffersMade, Is.EqualTo(2));
+        }
+
+        /// <summary>The configured cap supports three distinct two-card offers.</summary>
+        [Test]
+        public void ConfigureVisitThreeAllowsThreeOffers()
+        {
+            var roller = new CardOfferRoller(new RunRandom(42));
+            roller.ConfigureVisit(3);
+            var catalog = CreateCatalog(CreateCard("a"), CreateCard("b"), CreateCard("c"),
+                CreateCard("d"), CreateCard("e"), CreateCard("f"), CreateCard("g"));
+            var shown = new HashSet<string>();
+            Assert.That(roller.MaxOffers, Is.EqualTo(3));
+            for (int i = 0; i < roller.MaxOffers; i++)
+            {
+                Assert.That(roller.TryRoll(catalog, null, out CardOffer offer), Is.True);
+                Assert.That(offer.Count, Is.EqualTo(2));
+                for (int j = 0; j < offer.Count; j++) Assert.That(shown.Add(offer.Get(j).Id), Is.True);
+            }
+            Assert.That(shown.Count, Is.EqualTo(6));
+            Assert.That(roller.CanOffer, Is.False);
+            Assert.That(roller.TryRoll(catalog, null, out _), Is.False);
+        }
+
+        /// <summary>Six offers retain twelve distinct cards and repeated visit configuration preserves progress.</summary>
+        [Test]
+        public void ConfigureVisitSixAllowsSixDistinctOffers()
+        {
+            var cards = new CurseBlessingDefinition[CardOfferRoller.MaxOffersCap * 2];
+            for (int i = 0; i < cards.Length; i++) cards[i] = CreateCard("arena_" + i);
+            var catalog = CreateCatalog(cards);
+            var roller = new CardOfferRoller(new RunRandom(42));
+            var shown = new HashSet<string>();
+            for (int i = 0; i < CardOfferRoller.MaxOffersCap; i++)
+            {
+                roller.ConfigureVisit(CardOfferRoller.MaxOffersCap);
+                Assert.That(roller.TryRoll(catalog, null, out CardOffer offer), Is.True);
+                Assert.That(offer.Count, Is.EqualTo(2));
+                for (int j = 0; j < offer.Count; j++) Assert.That(shown.Add(offer.Get(j).Id), Is.True);
+            }
+            Assert.That(shown.Count, Is.EqualTo(cards.Length));
+            Assert.That(roller.TryRoll(catalog, null, out _), Is.False);
+        }
+
+        /// <summary>Visit configuration clamps both ends without resetting existing offers.</summary>
+        [Test]
+        public void ConfigureVisitClampsToSupportedRange()
+        {
+            var roller = new CardOfferRoller(new RunRandom(42));
+            Assert.That(CardOfferRoller.MaxOffersCap, Is.EqualTo(6));
+            roller.ConfigureVisit(int.MaxValue);
+            Assert.That(roller.MaxOffers, Is.EqualTo(6));
+            var catalog = CreateCatalog(CreateCard("a"), CreateCard("b"));
+            Assert.That(roller.TryRoll(catalog, null, out _), Is.True);
+            roller.ConfigureVisit(-1);
+            Assert.That(roller.MaxOffers, Is.Zero);
+            Assert.That(roller.CanOffer, Is.False);
+            Assert.That(roller.TryRoll(catalog, null, out _), Is.False);
+            roller.ConfigureVisit(3);
+            Assert.That(roller.OffersMade, Is.EqualTo(1));
+            Assert.That(roller.TryRoll(catalog, null, out _), Is.False);
+        }
+
+        /// <summary>Common-only weights exclude rare and relic cards while eligible commons remain.</summary>
+        [Test]
+        public void CommonOnlyMultipliersOfferOnlyCommonsWhenAvailable()
+        {
+            var catalog = CreateCatalog(CreateRarityCard("a", CardRarity.Common),
+                CreateRarityCard("b", CardRarity.Common), CreateRarityCard("c", CardRarity.Common),
+                CreateRarityCard("d", CardRarity.Common), CreateRarityCard("rare", CardRarity.Rare),
+                CreateRarityCard("relic", CardRarity.Relic));
+            var rarity = new CardRarityMultipliers(1f, 0f, 0f);
+            for (ulong seed = 0; seed < 64; seed++)
+            {
+                var roller = new CardOfferRoller(new RunRandom(seed));
+                for (int i = 0; i < roller.MaxOffers; i++)
+                {
+                    Assert.That(roller.TryRoll(catalog, null, in rarity, out CardOffer offer), Is.True);
+                    Assert.That(offer.Count, Is.EqualTo(2));
+                    for (int j = 0; j < offer.Count; j++)
+                        Assert.That(offer.Get(j).Rarity, Is.EqualTo(CardRarity.Common));
+                }
+            }
+        }
+
+        /// <summary>Each pick retries default weights as soon as the common tier is exhausted.</summary>
+        [Test]
+        public void CommonOnlyMultipliersFallBackForSecondPickAndLaterOffers()
+        {
+            var common = CreateRarityCard("common", CardRarity.Common);
+            var catalog = CreateCatalog(common, CreateRarityCard("rare_a", CardRarity.Rare),
+                CreateRarityCard("rare_b", CardRarity.Rare), CreateRarityCard("relic", CardRarity.Relic));
+            var rarity = new CardRarityMultipliers(1f, 0f, 0f);
+            var roller = new CardOfferRoller(new RunRandom(7));
+            Assert.That(roller.TryRoll(catalog, null, in rarity, out CardOffer first), Is.True);
+            Assert.That(first.Get(0), Is.SameAs(common));
+            Assert.That(first.Count, Is.EqualTo(2));
+            Assert.That(first.Get(1).Rarity, Is.Not.EqualTo(CardRarity.Common));
+            Assert.That(roller.TryRoll(catalog, null, in rarity, out CardOffer second), Is.True);
+            Assert.That(second.Count, Is.EqualTo(2));
+            Assert.That(second.Get(0).Rarity, Is.Not.EqualTo(CardRarity.Common));
+            Assert.That(second.Get(1).Rarity, Is.Not.EqualTo(CardRarity.Common));
+        }
+
+        /// <summary>Configured three-offer visits remain deterministic through weighted and fallback picks.</summary>
+        [Test]
+        public void SameSeedAndSealMultipliersProduceSameThreeOffers()
+        {
+            var catalog = CreateCatalog(CreateRarityCard("a", CardRarity.Common),
+                CreateRarityCard("b", CardRarity.Common), CreateRarityCard("c", CardRarity.Rare),
+                CreateRarityCard("d", CardRarity.Rare), CreateRarityCard("e", CardRarity.Relic),
+                CreateRarityCard("f", CardRarity.Relic));
+            var rarities = new[] { new CardRarityMultipliers(1f, 0f, 0f),
+                new CardRarityMultipliers(1f, 1f, 0f), new CardRarityMultipliers(0.5f, 1.5f, 1f) };
+            for (ulong seed = 0; seed < 32; seed++)
+            {
+                var first = new CardOfferRoller(new RunRandom(seed));
+                var second = new CardOfferRoller(new RunRandom(seed));
+                first.ConfigureVisit(3);
+                second.ConfigureVisit(3);
+                for (int i = 0; i < first.MaxOffers; i++)
+                {
+                    Assert.That(first.TryRoll(catalog, null, in rarities[i], out CardOffer left), Is.True);
+                    Assert.That(second.TryRoll(catalog, null, in rarities[i], out CardOffer right), Is.True);
+                    Assert.That(right.Count, Is.EqualTo(left.Count));
+                    for (int j = 0; j < left.Count; j++) Assert.That(right.Get(j), Is.SameAs(left.Get(j)));
+                }
+            }
+        }
+
+        /// <summary>Negative multipliers and unknown tiers are disabled; neutral multipliers preserve all tiers.</summary>
+        [Test]
+        public void RarityMultipliersClampNegativeAndUnknownTiers()
+        {
+            var rarity = new CardRarityMultipliers(-1f, -2f, -3f);
+            Assert.That(rarity.Get(CardRarity.Common), Is.Zero);
+            Assert.That(rarity.Get(CardRarity.Rare), Is.Zero);
+            Assert.That(rarity.Get(CardRarity.Relic), Is.Zero);
+            Assert.That(rarity.Get((CardRarity)99), Is.Zero);
+            Assert.That(CardRarityMultipliers.One.Get(CardRarity.Common), Is.EqualTo(1f));
+            Assert.That(CardRarityMultipliers.One.Get(CardRarity.Rare), Is.EqualTo(1f));
+            Assert.That(CardRarityMultipliers.One.Get(CardRarity.Relic), Is.EqualTo(1f));
         }
 
         /// <summary>A lone eligible card is a valid offer and cannot appear again after refusal.</summary>

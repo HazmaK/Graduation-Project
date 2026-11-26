@@ -17,8 +17,10 @@ MonoBehaviour:
   ceilingTile: {fileID: 4189307731756245674, guid: 1e677db60ffc5f34e9d49cbc269e5a18, type: 3}
   pillar: {fileID: 6846618990350565217, guid: 90c531be55eb02445ae7fc9d49b4b063, type: 3}
   veil: {fileID: 1604820090295088786, guid: a2d219e7bd6e3c6459dffc24f4f0542d, type: 3}
-  doorBarrier: {fileID: 5702752689819896866, guid: a4c0f7d0a5a6afb46bd6ebfe4c925fe0, type: 3}
+  doorBarrier: {fileID: 6912981889385453145, guid: b017f6f380bbd3948aed8b42e08eb439, type: 3}
   torch: {fileID: 3615505866909191146, guid: 395bca02e09fab1428d59a7c2df06f30, type: 3}
+  islandPlatform: {fileID: 1332613532474681323, guid: c8d9c57337a488941bb0883e33dfd7df, type: 3}
   wallHeight: 5
   wallThickness: 0.6
+  islandThickness: 1.2
   torchEveryNCells: 4

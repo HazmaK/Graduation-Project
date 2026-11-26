@@ -15,18 +15,18 @@ RenderSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 10
   m_Fog: 1
-  m_FogColor: {r: 0.18, g: 0.02, b: 0.03, a: 1}
+  m_FogColor: {r: 0.1, g: 0.05, b: 0.16, a: 1}
   m_FogMode: 1
   m_FogDensity: 0.01
-  m_LinearFogStart: 6
-  m_LinearFogEnd: 38
-  m_AmbientSkyColor: {r: 0.16, g: 0.04, b: 0.04, a: 1}
+  m_LinearFogStart: 20
+  m_LinearFogEnd: 140
+  m_AmbientSkyColor: {r: 0.09, g: 0.06, b: 0.14, a: 1}
   m_AmbientEquatorColor: {r: 0.114, g: 0.125, b: 0.133, a: 1}
   m_AmbientGroundColor: {r: 0.047, g: 0.043, b: 0.035, a: 1}
   m_AmbientIntensity: 1
   m_AmbientMode: 3
   m_SubtractiveShadowColor: {r: 0.42, g: 0.478, b: 0.627, a: 1}
-  m_SkyboxMaterial: {fileID: 10304, guid: 0000000000000000f000000000000000, type: 0}
+  m_SkyboxMaterial: {fileID: 2100000, guid: 426be923a6c9d43459d86aab2ec8726a, type: 2}
   m_HaloStrength: 0.5
   m_FlareStrength: 1
   m_FlareFadeSpeed: 3
@@ -119,7 +119,7 @@ NavMeshSettings:
     debug:
       m_Flags: 0
   m_NavMeshData: {fileID: 0}
---- !u!1 &749044581
+--- !u!1 &1122538945
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -127,30 +127,96 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 749044582}
+  - component: {fileID: 1122538946}
+  - component: {fileID: 1122538947}
   m_Layer: 0
-  m_Name: EntryPoint
+  m_Name: VioletRim
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &749044582
+--- !u!4 &1122538946
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 749044581}
+  m_GameObject: {fileID: 1122538945}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0.1, z: 0}
+  m_LocalRotation: {x: 0.21315141, y: 0.16953202, z: -0.037584342, w: 0.96146387}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 774307457}
+  m_Father: {fileID: 1453038644}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &774307454
+--- !u!108 &1122538947
+Light:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1122538945}
+  m_Enabled: 1
+  serializedVersion: 13
+  m_Type: 1
+  m_Color: {r: 0.55, g: 0.42, b: 0.9, a: 1}
+  m_Intensity: 0.35
+  m_Range: 10
+  m_SpotAngle: 30
+  m_InnerSpotAngle: 21.80208
+  m_CookieSize2D: {x: 0.5, y: 0.5}
+  m_Shadows:
+    m_Type: 0
+    m_Resolution: -1
+    m_CustomResolution: -1
+    m_Strength: 1
+    m_Bias: 0.05
+    m_NormalBias: 0.4
+    m_NearPlane: 0.2
+    m_CullingMatrixOverride:
+      e00: 1
+      e01: 0
+      e02: 0
+      e03: 0
+      e10: 0
+      e11: 1
+      e12: 0
+      e13: 0
+      e20: 0
+      e21: 0
+      e22: 1
+      e23: 0
+      e30: 0
+      e31: 0
+      e32: 0
+      e33: 1
+    m_UseCullingMatrixOverride: 0
+  m_Cookie: {fileID: 0}
+  m_DrawHalo: 0
+  m_Flare: {fileID: 0}
+  m_RenderMode: 0
+  m_CullingMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_RenderingLayerMask: 1
+  m_Lightmapping: 4
+  m_LightShadowCasterMode: 0
+  m_AreaSize: {x: 1, y: 1}
+  m_BounceIntensity: 1
+  m_ColorTemperature: 6570
+  m_UseColorTemperature: 0
+  m_BoundingSphereOverride: {x: 0, y: 0, z: 0, w: 0}
+  m_UseBoundingSphereOverride: 0
+  m_UseViewFrustumForShadowCasterCull: 1
+  m_ForceVisible: 0
+  m_ShapeRadius: 0.025
+  m_ShadowAngle: 0
+  m_LightUnit: 1
+  m_LuxAtDistance: 1
+  m_EnableSpotReflector: 1
+--- !u!1 &1453038643
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -158,9 +224,48 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 774307457}
-  - component: {fileID: 774307456}
-  - component: {fileID: 774307455}
+  - component: {fileID: 1453038644}
+  m_Layer: 0
+  m_Name: Content
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 0
+--- !u!4 &1453038644
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1453038643}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 1122538946}
+  m_Father: {fileID: 1501060616}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1501060606
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1501060616}
+  - component: {fileID: 1501060615}
+  - component: {fileID: 1501060614}
+  - component: {fileID: 1501060613}
+  - component: {fileID: 1501060612}
+  - component: {fileID: 1501060611}
+  - component: {fileID: 1501060610}
+  - component: {fileID: 1501060609}
+  - component: {fileID: 1501060608}
+  - component: {fileID: 1501060607}
   m_Layer: 0
   m_Name: ArafLevel
   m_TagString: Untagged
@@ -168,18 +273,227 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &774307455
+--- !u!114 &1501060607
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 774307454}
+  m_GameObject: {fileID: 1501060606}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d8b91028342e4d9498e5bd1a753cf221, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: RetroFPS.Gameplay::RetroFPS.Run.Araf.ArafFloatingDebris
+  labyrinth: {fileID: 1501060613}
+  debrisPrefabs:
+  - {fileID: 4916930547338718693, guid: aab847b7718cffe4983d98127f99735a, type: 3}
+  - {fileID: 408161719844500256, guid: 936556cb4bfdb474ea7a12e46a250758, type: 3}
+  - {fileID: 3254267465536154317, guid: 52be94c2339b51f4aae22535419c0274, type: 3}
+  bobAmplitude: 1.5
+  bobSpeed: 0.25
+  spinSpeed: 4
+--- !u!114 &1501060608
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1501060606}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0ea9c7893aee0284d80ad24b916a7414, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: RetroFPS.Gameplay::RetroFPS.Run.Araf.ArafAtmosphereDirector
+  labyrinth: {fileID: 1501060613}
+  stingSource: {fileID: 1501060609}
+  awakeningSting: {fileID: 8300000, guid: d8d8d200f84204641b134d098c662e16, type: 3}
+  fogLerpSeconds: 3
+--- !u!82 &1501060609
+AudioSource:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1501060606}
+  m_Enabled: 1
+  serializedVersion: 4
+  OutputAudioMixerGroup: {fileID: 0}
+  m_audioClip: {fileID: 0}
+  m_Resource: {fileID: 0}
+  m_PlayOnAwake: 0
+  m_Volume: 0.9
+  m_Pitch: 1
+  Loop: 0
+  Mute: 0
+  Spatialize: 0
+  SpatializePostEffects: 0
+  Priority: 128
+  DopplerLevel: 1
+  MinDistance: 1
+  MaxDistance: 500
+  Pan2D: 0
+  rolloffMode: 0
+  BypassEffects: 0
+  BypassListenerEffects: 0
+  BypassReverbZones: 0
+  rolloffCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    - serializedVersion: 3
+      time: 1
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  panLevelCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  spreadCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  reverbZoneMixCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+--- !u!114 &1501060610
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1501060606}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bb9ac188f72e65144b03631c505b0387, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: RetroFPS.Gameplay::RetroFPS.Run.Araf.ArafThreatDirector
+  labyrinth: {fileID: 1501060613}
+  patrolEnemyPrefab: {fileID: 5349570471886633040, guid: 9ac052f5657dabe478d13eea780617b6, type: 3}
+  waveEnemyPrefab: {fileID: 5349570471886633040, guid: 9ac052f5657dabe478d13eea780617b6, type: 3}
+  islandEyePrefab: {fileID: 3659605130630274911, guid: 02177a9e23183124fbe40a546e414de1, type: 3}
+  islandPenitentPrefab: {fileID: 7637322481129231680, guid: a88eba293ab871d4ba7c37b1af78554f, type: 3}
+  waveAlertDistance: 22
+--- !u!114 &1501060611
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1501060606}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 32de750b8371f4c43b8cd3971e50a1ce, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: RetroFPS.Gameplay::RetroFPS.Run.Araf.ArafVoidFall
+  labyrinth: {fileID: 0}
+  safe: {fileID: 0}
+  fallDamage: 20
+--- !u!114 &1501060612
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1501060606}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 87855c1b9eb976f4b8a72f22284d8cd3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: RetroFPS.Gameplay::RetroFPS.Run.Araf.ArafSafeGround
+  labyrinth: {fileID: 0}
+  stableSeconds: 0.3
+--- !u!114 &1501060613
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1501060606}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: e90112ac2ada9cb4ab048bbbca1648d8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: RetroFPS.Gameplay::RetroFPS.Run.Labyrinth.ArafLabyrinthDirector
+  world:
+    hub:
+      width: 7
+      height: 7
+      cellSize: 6
+      roomSlotCount: 2
+      braidChance: 0.15
+      minRoomGap: 1
+      doorwaysPerRoomMax: 2
+    wing:
+      width: 7
+      height: 7
+      cellSize: 6
+      roomSlotCount: 3
+      braidChance: 0.15
+      minRoomGap: 1
+      doorwaysPerRoomMax: 2
+    wingCount: 3
+    wingHeightOffsets:
+    - 2.4
+    - -3.2
+    - 4
+    platformsMin: 4
+    platformsMax: 6
+    platformSize: 5
+    gapMin: 2
+    gapMax: 3.5
+    maxRisePerHop: 0.8
+    lateralJitter: 1.5
   settings:
     width: 9
     height: 9
@@ -190,45 +504,68 @@ MonoBehaviour:
     doorwaysPerRoomMax: 2
   kit: {fileID: 11400000, guid: f158408429c95fe4ebfd83d00824ec82, type: 2}
   roomTable: {fileID: 11400000, guid: 10fb7085b84497540884de7e04bde47c, type: 2}
-  level: {fileID: 774307456}
+  level: {fileID: 1501060615}
+  navMeshBaker: {fileID: 1501060614}
   cardCatalog: {fileID: 11400000, guid: 21ed4c20eb23f2d4fb4f33156750578c, type: 2}
   cardAltarPrefab: {fileID: 4921400497666458138, guid: 61c784924e8e223409cd05adc808d25a, type: 3}
+  hubPortalPrefab: {fileID: 7977575327437296873, guid: 09a7ecd885472ec43955085b05303db1, type: 3}
+  sealBeaconPrefab: {fileID: 9132436456660995669, guid: 4016cb92ac3a9794abe0426d721723a5, type: 3}
+  sealLightPillarPrefab: {fileID: 4272121177502984153, guid: 3e58bad5913b52e4cb0a3576f4870b96, type: 3}
   eliteDamage: 1.4
   eliteSpeed: 1.4
   eliteHealth: 1.25
   logGeneration: 1
---- !u!114 &774307456
+--- !u!114 &1501060614
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 774307454}
+  m_GameObject: {fileID: 1501060606}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e23cbee7d15e0de4997c70e43a0c0821, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: RetroFPS.Gameplay::RetroFPS.Combat.Navigation.RuntimeNavMeshBaker
+  root: {fileID: 0}
+  bakeOnStart: 0
+  includeLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  agentTypeId: 0
+--- !u!114 &1501060615
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1501060606}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: f70e772146d2f824caa593da8997a803, type: 3}
   m_Name: 
   m_EditorClassIdentifier: RetroFPS.Gameplay::RetroFPS.Run.ArafLevel
-  entryPoint: {fileID: 749044582}
-  contentRoot: {fileID: 1094571266}
---- !u!4 &774307457
+  entryPoint: {fileID: 1630122588}
+  contentRoot: {fileID: 1453038643}
+  tuning: {fileID: 11400000, guid: f378e82c8e547b346bea67e305195af8, type: 2}
+--- !u!4 &1501060616
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 774307454}
+  m_GameObject: {fileID: 1501060606}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 1000, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 749044582}
-  - {fileID: 1094571267}
+  - {fileID: 1630122588}
+  - {fileID: 1453038644}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &1094571266
+--- !u!1 &1630122587
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -236,31 +573,31 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 1094571267}
+  - component: {fileID: 1630122588}
   m_Layer: 0
-  m_Name: Content
+  m_Name: EntryPoint
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
---- !u!4 &1094571267
+  m_IsActive: 1
+--- !u!4 &1630122588
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1094571266}
+  m_GameObject: {fileID: 1630122587}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalPosition: {x: 0, y: 0.1, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 774307457}
+  m_Father: {fileID: 1501060616}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
   m_Roots:
-  - {fileID: 774307457}
+  - {fileID: 1501060616}

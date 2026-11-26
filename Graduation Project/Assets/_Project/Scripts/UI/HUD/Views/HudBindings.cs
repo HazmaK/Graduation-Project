@@ -3,7 +3,6 @@ using RetroFPS.Combat;
 using RetroFPS.Pause;
 using RetroFPS.Presentation;
 using RetroFPS.Run;
-using RetroFPS.Run.Labyrinth;
 using RetroFPS.Settings;
 using RetroFPS.Weapons;
 using TMPro;
@@ -116,7 +115,7 @@ namespace RetroFPS.UI.HUD
             if (ammo != null) { ammo.OnAmmoChanged -= AmmoChanged; ammo.OnAmmoCollected -= AmmoCollected; }
             WaveSpawnDirector.OnActiveDirectorChanged -= BindDirector;
             RunEvents.OnRunChanged -= RunChanged; RunEvents.OnPhaseChanged -= PhaseChanged;
-            RunEvents.OnArafChargeChanged -= ChargeChanged; RunEvents.OnArafRoomsChanged -= RoomsChanged;
+            RunEvents.OnArafChargeChanged -= ChargeChanged; RunEvents.OnArafSealsChanged -= SealsChanged;
             RunEvents.OnTrueDeath -= TrueDeath; GameSettings.Changed -= SettingsChanged;
             SceneManager.activeSceneChanged -= SceneChanged;
             BossEvents.OnBossEngaged -= BossEngaged; BossEvents.OnBossHealthChanged -= BossHealthChanged;
@@ -136,7 +135,7 @@ namespace RetroFPS.UI.HUD
             if (ammo != null) { ammo.OnAmmoChanged += AmmoChanged; ammo.OnAmmoCollected += AmmoCollected; }
             WaveSpawnDirector.OnActiveDirectorChanged += BindDirector;
             RunEvents.OnRunChanged += RunChanged; RunEvents.OnPhaseChanged += PhaseChanged;
-            RunEvents.OnArafChargeChanged += ChargeChanged; RunEvents.OnArafRoomsChanged += RoomsChanged;
+            RunEvents.OnArafChargeChanged += ChargeChanged; RunEvents.OnArafSealsChanged += SealsChanged;
             RunEvents.OnTrueDeath += TrueDeath; GameSettings.Changed += SettingsChanged;
             SceneManager.activeSceneChanged += SceneChanged;
             BossEvents.OnBossEngaged += BossEngaged; BossEvents.OnBossHealthChanged += BossHealthChanged;
@@ -149,7 +148,7 @@ namespace RetroFPS.UI.HUD
             if (movement != null) DashChanged(movement.CurrentDashCharges, movement.MaxDashCharges);
             WeaponChanged(weapons != null ? weapons.CurrentSlot : WeaponSlot.RepeaterArbalest);
             RunChanged(RunEvents.CurrentRun); BindDirector(WaveSpawnDirector.ActiveDirector);
-            SnapshotRooms(); BossSnapshot();
+            SnapshotSeals(); BossSnapshot();
         }
         private void BossSnapshot()
         {
@@ -220,15 +219,14 @@ namespace RetroFPS.UI.HUD
             if (phase == RunPhase.Tower) araf = false;
             else if (phase == RunPhase.InAraf || phase == RunPhase.EscapingAraf) araf = true;
             encounterView?.SetPhase(phase);
-            if (araf) { bannerView?.Clear(); encounterView?.SetEncounter(false); SnapshotRooms(); }
+            if (araf) { bannerView?.Clear(); encounterView?.SetEncounter(false); SnapshotSeals(); }
             else if (phase == RunPhase.Tower) SnapshotDirector();
         }
         private void ChargeChanged(bool used) => encounterView?.SetCharge(used);
-        private void RoomsChanged(int revealed, int total, bool exit) => encounterView?.SetRooms(revealed, total, exit);
-        private void SnapshotRooms()
+        private void SealsChanged(int collected, int total) => encounterView?.SetSeals(collected, total);
+        private void SnapshotSeals()
         {
-            ArafLabyrinthDirector labyrinth = ArafLabyrinthDirector.Active;
-            if (labyrinth != null) RoomsChanged(labyrinth.RevealedRooms, labyrinth.TotalRooms, labyrinth.ExitRevealed);
+            if (RunEvents.ArafSealsTotal > 0) SealsChanged(RunEvents.ArafSealsCollected, RunEvents.ArafSealsTotal);
         }
         private void TrueDeath() { suppressBanners = true; bannerView?.Clear(); deathView?.Show(); }
         private void SceneChanged(Scene previous, Scene next) => bannerView?.Clear();

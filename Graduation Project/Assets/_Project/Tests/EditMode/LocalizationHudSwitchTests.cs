@@ -91,13 +91,13 @@ namespace RetroFPS.Tests.EditMode
             ability.SetDash(1, 3); ability.ParrySucceeded(true);
             encounter.SetRun(new RunState(7)); encounter.SetPhase(RunPhase.InAraf);
             encounter.SetCharge(true); encounter.SetWave(2, 5); encounter.SetRemaining(1, 8);
-            encounter.SetRooms(2, 10, false); encounter.SetRooms(3, 10, true);
+            encounter.SetSeals(2, 3); encounter.SetSeals(3, 3);
             encounter.EncounterCompleted();
             // Exercise production weapon selection once. Refresh must never call SetWeapon again.
             var source = root.AddComponent<RepeaterArbalestWeapon>();
             weapon.SetWeapon(source); weapon.AmmoChanged(AmmoType.Bolts, 0, 20); weapon.AmmoCollected(AmmoType.Bolts, 1);
             object successUntil = LocalizationHudTestContext.Get(ability, "successUntil");
-            object roomUntil = LocalizationHudTestContext.Get(encounter, "roomFlashUntil");
+            object roomUntil = LocalizationHudTestContext.Get(encounter, "sealFlashUntil");
             object pickupUntil = LocalizationHudTestContext.Get(weapon, "pickupUntil");
             object fade = LocalizationHudTestContext.Get(encounter, "completedFade");
             context.Service.SetLanguage(LanguageSetting.English);
@@ -107,12 +107,12 @@ namespace RetroFPS.Tests.EditMode
             Assert.That(Text(ability, "parryState"), Is.EqualTo("PARRIED"));
             Assert.That(Text(encounter, "waveText"), Is.EqualTo("WAVE 2/5"));
             Assert.That(Text(encounter, "remainingText"), Is.EqualTo("LEFT 1"));
-            Assert.That(Text(encounter, "roomsText"), Is.EqualTo("ROOMS 3/10"));
+            Assert.That(Text(encounter, "roomsText"), Is.EqualTo("SEALS 3/3"));
             Assert.That(Text(encounter, "chargeText"), Is.EqualTo("PURGATORY: USED"));
             Assert.That(Text(weapon, "weaponName"), Is.EqualTo("ARBALEST"));
             Assert.That(Text(weapon, "warningText"), Is.EqualTo("EMPTY"));
             Assert.That(LocalizationHudTestContext.Get(ability, "successUntil"), Is.EqualTo(successUntil));
-            Assert.That(LocalizationHudTestContext.Get(encounter, "roomFlashUntil"), Is.EqualTo(roomUntil));
+            Assert.That(LocalizationHudTestContext.Get(encounter, "sealFlashUntil"), Is.EqualTo(roomUntil));
             Assert.That(LocalizationHudTestContext.Get(encounter, "completedFade"), Is.SameAs(fade));
             Assert.That(LocalizationHudTestContext.Get(encounter, "hiding"), Is.True);
             Assert.That(LocalizationHudTestContext.Get(weapon, "pickupUntil"), Is.EqualTo(pickupUntil));

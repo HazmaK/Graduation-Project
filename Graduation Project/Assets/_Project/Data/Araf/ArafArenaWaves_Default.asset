@@ -1,0 +1,34 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b1a266d42c97e8a4db6c008457aeceac, type: 3}
+  m_Name: ArafArenaWaves_Default
+  m_EditorClassIdentifier: RetroFPS.Gameplay::RetroFPS.Run.Labyrinth.ArafArenaWaveTable
+  ghoulPrefab: {fileID: 5349570471886633040, guid: 9ac052f5657dabe478d13eea780617b6, type: 3}
+  eyePrefab: {fileID: 3659605130630274911, guid: 02177a9e23183124fbe40a546e414de1, type: 3}
+  penitentPrefab: {fileID: 7637322481129231680, guid: a88eba293ab871d4ba7c37b1af78554f, type: 3}
+  settings:
+    optionalWavesByAwakening: 02000000020000000300000003000000
+    sealWavesByAwakening: 03000000030000000300000003000000
+    ghoulsByAwakening: 03000000030000000400000004000000
+    eyesByAwakening: 00000000010000000100000002000000
+    finalWavePenitentsByAwakening: 00000000000000000100000001000000
+    sealFinalPenitents: 1
+    advanceWhenAliveAtMost: 1
+    telegraphSeconds: 0.6
+    minSpawnDistance: 4
+    realertInterval: 0.5
+    maxAlivePerArena: 12
+  aggressionByAwakening:
+  - {fileID: 11400000, guid: 225bd5e660f58d240ad039f8dc761020, type: 2}
+  - {fileID: 11400000, guid: b0bcbea173bd5784795dff487cd76651, type: 2}
+  - {fileID: 11400000, guid: e001c7d4c0adbd8409ed255e4bd1c1fa, type: 2}
+  - {fileID: 11400000, guid: f21c37f58e33a7f4badc4cb0ceb65784, type: 2}

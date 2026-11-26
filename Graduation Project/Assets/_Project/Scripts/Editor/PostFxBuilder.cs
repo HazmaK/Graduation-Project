@@ -90,19 +90,19 @@ namespace RetroFPS.Editor
             ColorAdjustments color = Component<ColorAdjustments>(profile);
             Set(color.contrast, 8f);
             Set(color.saturation, 6f);
-            Set(color.colorFilter, new Color(1f, 0.86f, 0.80f));
+            Set(color.colorFilter, new Color(0.86f, 0.82f, 1.0f));
             SplitToning split = Component<SplitToning>(profile);
-            Set(split.shadows, new Color(0.58f, 0.38f, 0.38f));
-            Set(split.highlights, new Color(0.64f, 0.50f, 0.36f));
+            Set(split.shadows, new Color(0.42f, 0.36f, 0.62f));
+            Set(split.highlights, new Color(0.62f, 0.55f, 0.70f));
             Set(split.balance, 0f);
             Vignette vignette = Component<Vignette>(profile);
-            Set(vignette.color, new Color(0.22f, 0f, 0.02f));
+            Set(vignette.color, new Color(0.10f, 0f, 0.16f));
             Set(vignette.intensity, 0.26f);
             Set(vignette.smoothness, 0.4f);
             Set(Component<FilmGrain>(profile).intensity, 0.36f);
             Bloom bloom = Component<Bloom>(profile);
             Set(bloom.intensity, 0.65f);
-            Set(bloom.tint, new Color(1f, 0.72f, 0.55f));
+            Set(bloom.tint, new Color(0.85f, 0.72f, 1.0f));
         }
 
         private static void AuthorBoss(VolumeProfile profile)

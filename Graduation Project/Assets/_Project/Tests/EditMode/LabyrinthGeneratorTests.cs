@@ -12,6 +12,107 @@ namespace RetroFPS.Tests.EditMode
     {
         private const int SeedCount = 50;
 
+        /// <summary>Varsayılan ayarlar iki bin tohumda bütün odaları ve yerleşim kurallarını korur.</summary>
+        [Test]
+        public void DefaultSettingsFillAllRoomSlotsAcrossSeeds()
+        {
+            var settings = new LabyrinthSettings();
+            for (ulong seed = 1; seed <= 2000; seed++)
+            {
+                LabyrinthLayout layout = LabyrinthGenerator.Generate(settings, new RunRandom(seed));
+                Assert.That(layout.RoomCount, Is.EqualTo(settings.RoomSlotCount), "Tohum: " + seed);
+                Assert.That(layout.GetRoomIndex(layout.StartCell.X, layout.StartCell.Y), Is.EqualTo(-1));
+                for (int i = 0; i < layout.RoomCount; i++)
+                {
+                    GridPos min = layout.GetRoom(i).Min;
+                    Assert.That(min.X, Is.InRange(0, settings.Width - 2));
+                    Assert.That(min.Y, Is.InRange(0, settings.Height - 2));
+                    for (int y = min.Y; y <= min.Y + 1; y++)
+                    for (int x = min.X; x <= min.X + 1; x++)
+                        Assert.That(layout.GetRoomIndex(x, y), Is.EqualTo(i));
+                    for (int j = 0; j < i; j++)
+                    {
+                        GridPos other = layout.GetRoom(j).Min;
+                        Assert.That(Math.Max(Math.Abs(min.X - other.X), Math.Abs(min.Y - other.Y)),
+                            Is.GreaterThanOrEqualTo(2 + settings.MinRoomGap));
+                    }
+                }
+                AssertCorridorsConnected(layout);
+                AssertReachable(layout);
+            }
+        }
+
+        /// <summary>Açgözlü geçişi dolduran eski tohumun oda sırası ve iki yolun tekrarlanabilirliği korunur.</summary>
+        [TestCase(1ul)]
+        [TestCase(2ul)]
+        public void PlacementRemainsRepeatableAndGreedyRoomMinsAreUnchanged(ulong seed)
+        {
+            var settings = new LabyrinthSettings();
+            var firstRng = new RunRandom(seed);
+            var secondRng = new RunRandom(seed);
+            LabyrinthLayout first = LabyrinthGenerator.Generate(settings, firstRng);
+            LabyrinthLayout second = LabyrinthGenerator.Generate(settings, secondRng);
+            Assert.That(first.RoomCount, Is.EqualTo(settings.RoomSlotCount));
+            Assert.That(second.RoomCount, Is.EqualTo(first.RoomCount));
+            Assert.That(second.StartCell, Is.EqualTo(first.StartCell));
+            // Değişiklik öncesi açgözlü yerleşimde 2 numaralı tohumun oda başlangıçları.
+            GridPos[] greedyMins =
+            {
+                new GridPos(4, 1), new GridPos(2, 7), new GridPos(2, 4), new GridPos(1, 1),
+                new GridPos(5, 4), new GridPos(6, 7), new GridPos(7, 1)
+            };
+            for (int i = 0; i < first.RoomCount; i++)
+            {
+                Assert.That(second.GetRoom(i).Min, Is.EqualTo(first.GetRoom(i).Min));
+                if (seed == 2) Assert.That(first.GetRoom(i).Min, Is.EqualTo(greedyMins[i]));
+            }
+            for (int y = 0; y < settings.Height; y++)
+            for (int x = 0; x < settings.Width; x++)
+            {
+                Assert.That(second.GetRoomIndex(x, y), Is.EqualTo(first.GetRoomIndex(x, y)));
+                Assert.That(second.GetDepth(x, y), Is.EqualTo(first.GetDepth(x, y)));
+                for (int dir = 0; dir < 4; dir++)
+                    Assert.That(second.HasWall(x, y, (LabyrinthDir)dir),
+                        Is.EqualTo(first.HasWall(x, y, (LabyrinthDir)dir)));
+            }
+            Assert.That(secondRng.NextUInt(), Is.EqualTo(firstRng.NextUInt()));
+        }
+
+        /// <summary>Ağız desteğinden önce kaydedilen başlangıç, oda, duvar, derinlik ve akış izleri korunur.</summary>
+        [TestCase(1ul, 17720118196098562757ul, 2796140817u)]
+        [TestCase(2ul, 14909744236110875203ul, 2430709283u)]
+        [TestCase(42ul, 10499098760461478848ul, 3996404675u)]
+        [TestCase(1234ul, 3046141102464807074ul, 3144180815u)]
+        public void LegacyLayoutAndRandomConsumptionMatchRecordedSnapshots(ulong seed, ulong expected, uint next)
+        {
+            var rng = new RunRandom(seed);
+            LabyrinthLayout layout = LabyrinthGenerator.Generate(new LabyrinthSettings(), rng);
+            ulong hash = 14695981039346656037ul;
+            AddSnapshotValue(ref hash, layout.StartCell.X);
+            AddSnapshotValue(ref hash, layout.StartCell.Y);
+            AddSnapshotValue(ref hash, layout.RoomCount);
+            for (int r = 0; r < layout.RoomCount; r++)
+            {
+                AddSnapshotValue(ref hash, layout.GetRoom(r).Min.X);
+                AddSnapshotValue(ref hash, layout.GetRoom(r).Min.Y);
+            }
+            for (int y = 0; y < layout.Height; y++)
+            for (int x = 0; x < layout.Width; x++)
+            {
+                AddSnapshotValue(ref hash, layout.GetRoomIndex(x, y));
+                AddSnapshotValue(ref hash, layout.GetDepth(x, y));
+                for (int d = 0; d < 4; d++)
+                    AddSnapshotValue(ref hash, layout.HasWall(x, y, (LabyrinthDir)d) ? 1 : 0);
+            }
+            Assert.That(hash, Is.EqualTo(expected));
+            Assert.That(rng.NextUInt(), Is.EqualTo(next));
+        }
+
+        private static void AddSnapshotValue(ref ulong hash, int value)
+        {
+            unchecked { hash = (hash ^ (uint)value) * 1099511628211ul; }
+        }
+
         /// <summary>Aynı ayarlar ve aynı akış durumu bütün çıktıyı tekrarlar.</summary>
         [TestCase(9, 9, 7)]
         [TestCase(5, 5, 2)]
@@ -363,6 +464,125 @@ namespace RetroFPS.Tests.EditMode
         private static LabyrinthSettings Settings(int width, int height, int rooms, float braid = 0.15f)
             => new LabyrinthSettings(width, height, 6f, rooms, braid, 1, 2);
 
+        /// <summary>Merkez başlangıcı ve üç ağız hem açgözlü hem aramalı yerleşimde korunur.</summary>
+        [Test]
+        public void ConstrainedGenerationPreservesStartMouthsRoomsAndDepthsAcrossSeeds()
+        {
+            var settings = new LabyrinthSettings(7, 7, 6f, 2, 0.15f, 1, 2);
+            var start = new GridPos(3, 3);
+            LabyrinthMouth[] mouths =
+            {
+                new LabyrinthMouth(new GridPos(3, 6), LabyrinthDir.North),
+                new LabyrinthMouth(new GridPos(6, 3), LabyrinthDir.East),
+                new LabyrinthMouth(new GridPos(0, 3), LabyrinthDir.West)
+            };
+            for (ulong seed = 1; seed <= 300; seed++)
+            {
+                var firstRng = new RunRandom(seed);
+                var secondRng = new RunRandom(seed);
+                LabyrinthLayout first = LabyrinthGenerator.Generate(settings, firstRng, start, mouths);
+                LabyrinthLayout second = LabyrinthGenerator.Generate(settings, secondRng, start, mouths);
+                Assert.That(first.StartCell, Is.EqualTo(start));
+                Assert.That(first.GetRoomIndex(start.X, start.Y), Is.EqualTo(-1));
+                Assert.That(first.MouthCount, Is.EqualTo(mouths.Length));
+                Assert.That(first.RoomCount, Is.EqualTo(settings.RoomSlotCount));
+                for (int i = 0; i < mouths.Length; i++)
+                {
+                    Assert.That(first.GetMouth(i), Is.EqualTo(mouths[i]));
+                    Assert.That(first.GetRoomIndex(mouths[i].Cell.X, mouths[i].Cell.Y), Is.EqualTo(-1));
+                    Assert.That(first.HasWall(mouths[i].Cell.X, mouths[i].Cell.Y, mouths[i].Outward), Is.False);
+                }
+                for (int i = 0; i < first.RoomCount; i++)
+                    Assert.That(second.GetRoom(i).Min, Is.EqualTo(first.GetRoom(i).Min));
+                for (int y = 0; y < first.Height; y++)
+                for (int x = 0; x < first.Width; x++)
+                {
+                    Assert.That(second.GetRoomIndex(x, y), Is.EqualTo(first.GetRoomIndex(x, y)));
+                    Assert.That(second.GetDepth(x, y), Is.EqualTo(first.GetDepth(x, y)));
+                    for (int d = 0; d < 4; d++)
+                    {
+                        Assert.That(second.HasWall(x, y, (LabyrinthDir)d),
+                            Is.EqualTo(first.HasWall(x, y, (LabyrinthDir)d)));
+                        GridPos next = Next(new GridPos(x, y), d);
+                        if (InBounds(first, next))
+                            Assert.That(first.HasWall(x, y, (LabyrinthDir)d),
+                                Is.EqualTo(first.HasWall(next.X, next.Y, (LabyrinthDir)((d + 2) & 3))));
+                        else
+                        {
+                            bool isMouth = false;
+                            for (int i = 0; i < mouths.Length; i++)
+                                isMouth |= mouths[i].Cell.X == x && mouths[i].Cell.Y == y
+                                    && (int)mouths[i].Outward == d;
+                            Assert.That(first.HasWall(x, y, (LabyrinthDir)d), Is.EqualTo(!isMouth));
+                        }
+                    }
+                }
+                Assert.That(secondRng.NextUInt(), Is.EqualTo(firstRng.NextUInt()));
+                AssertCorridorsConnected(first);
+                AssertReachable(first);
+            }
+        }
+
+        /// <summary>Girdi ağız dizisinin sonradan değiştirilmesi üretilen topolojiyi değiştirmez.</summary>
+        [Test]
+        public void MouthInputsAreCopiedAndLegacyLayoutsHaveNoMouths()
+        {
+            var mouths = new[] { new LabyrinthMouth(new GridPos(0, 3), LabyrinthDir.West) };
+            LabyrinthLayout layout = LabyrinthGenerator.Generate(Settings(7, 7, 3), new RunRandom(42),
+                new GridPos(0, 3), mouths);
+            LabyrinthMouth expected = mouths[0];
+            mouths[0] = new LabyrinthMouth(new GridPos(3, 6), LabyrinthDir.North);
+            Assert.That(layout.GetMouth(0), Is.EqualTo(expected));
+            Assert.That(LabyrinthGenerator.Generate(new LabyrinthSettings(), new RunRandom(42)).MouthCount, Is.Zero);
+        }
+
+        /// <summary>İçeri bakan, sınır dışı ve geçersiz yönlü ağızlar reddedilir.</summary>
+        [Test]
+        public void InvalidConstraintsAreRejectedBeforeConsumingRandomness()
+        {
+            var settings = Settings(7, 7, 3);
+            var rng = new RunRandom(42);
+            LabyrinthMouth[] invalid =
+            {
+                new LabyrinthMouth(new GridPos(3, 3), LabyrinthDir.North),
+                new LabyrinthMouth(new GridPos(0, 3), LabyrinthDir.East),
+                new LabyrinthMouth(new GridPos(-1, 3), LabyrinthDir.West),
+                new LabyrinthMouth(new GridPos(7, 3), LabyrinthDir.East),
+                new LabyrinthMouth(new GridPos(3, 6), (LabyrinthDir)4)
+            };
+            foreach (LabyrinthMouth mouth in invalid)
+                Assert.Throws<ArgumentException>(() => LabyrinthGenerator.Generate(settings, rng,
+                    new GridPos(3, 3), new[] { mouth }));
+            Assert.Throws<ArgumentException>(() => LabyrinthGenerator.Generate(settings, rng,
+                new GridPos(7, 3), Array.Empty<LabyrinthMouth>()));
+            Assert.Throws<ArgumentNullException>(() => LabyrinthGenerator.Generate(settings, rng, new GridPos(3, 3), null));
+            Assert.That(rng.NextUInt(), Is.EqualTo(new RunRandom(42).NextUInt()));
+        }
+
+        private static void AssertCorridorsConnected(LabyrinthLayout layout)
+        {
+            var visited = new bool[layout.Width * layout.Height];
+            var queue = new Queue<GridPos>();
+            queue.Enqueue(layout.StartCell);
+            visited[layout.StartCell.Y * layout.Width + layout.StartCell.X] = true;
+            int reached = 0;
+            while (queue.Count > 0)
+            {
+                GridPos cell = queue.Dequeue();
+                reached++;
+                for (int dir = 0; dir < 4; dir++)
+                {
+                    GridPos next = Next(cell, dir);
+                    if (!InBounds(layout, next) || layout.GetRoomIndex(next.X, next.Y) >= 0) continue;
+                    int index = next.Y * layout.Width + next.X;
+                    if (visited[index]) continue;
+                    visited[index] = true;
+                    queue.Enqueue(next);
+                }
+            }
+            Assert.That(reached, Is.EqualTo(layout.Width * layout.Height - 4 * layout.RoomCount));
+        }
+
         private static void AssertReachable(LabyrinthLayout layout)
         {
             var distances = new int[layout.Width * layout.Height];
@@ -379,7 +599,17 @@ namespace RetroFPS.Tests.EditMode
                 {
                     if (layout.HasWall(cell.X, cell.Y, (LabyrinthDir)dir)) continue;
                     GridPos next = Next(cell, dir);
-                    Assert.That(InBounds(layout, next), Is.True);
+                    if (!InBounds(layout, next))
+                    {
+                        bool isMouth = false;
+                        for (int i = 0; i < layout.MouthCount; i++)
+                        {
+                            LabyrinthMouth mouth = layout.GetMouth(i);
+                            isMouth |= mouth.Cell.X == cell.X && mouth.Cell.Y == cell.Y && (int)mouth.Outward == dir;
+                        }
+                        Assert.That(isMouth, Is.True, "Kayıtsız sınır açıklığı.");
+                        continue;
+                    }
                     int index = next.Y * layout.Width + next.X;
                     if (distances[index] >= 0) continue;
                     distances[index] = distances[cell.Y * layout.Width + cell.X] + 1;

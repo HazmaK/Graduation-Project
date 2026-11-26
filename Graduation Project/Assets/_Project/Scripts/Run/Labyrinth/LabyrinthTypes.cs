@@ -29,6 +29,22 @@ namespace RetroFPS.Run.Labyrinth
         public GridPos(int x, int y) { X = x; Y = y; }
     }
 
+    /// <summary>Bölüm sınırındaki koridor hücresi ve ızgara dışına bakan ağız yönü.</summary>
+    public readonly struct LabyrinthMouth
+    {
+        /// <summary>Ağzın koridor hücresi.</summary>
+        public GridPos Cell { get; }
+        /// <summary>Izgaradan dışarı bakan yön.</summary>
+        public LabyrinthDir Outward { get; }
+
+        /// <summary>Sınır açıklığının hücresini ve yönünü kaydeder.</summary>
+        public LabyrinthMouth(GridPos cell, LabyrinthDir outward)
+        {
+            Cell = cell;
+            Outward = outward;
+        }
+    }
+
     /// <summary>Bir koşunun labirent üretim ayarları; üretim sırasında doğrulanır.</summary>
     [Serializable]
     public sealed class LabyrinthSettings

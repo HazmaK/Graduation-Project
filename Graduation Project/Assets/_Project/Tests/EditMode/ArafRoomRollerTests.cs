@@ -7,10 +7,12 @@ using UnityEngine;
 
 namespace RetroFPS.Tests.EditMode
 {
+    /// <summary>Rol ve ağırlık temelli oda seçiminin testleri.</summary>
     public class ArafRoomRollerTests
     {
         private readonly List<ScriptableObject> _createdAssets = new List<ScriptableObject>();
 
+        /// <summary>Geçici test varlıklarını temizler.</summary>
         [TearDown]
         public void TearDown()
         {
@@ -46,12 +48,7 @@ namespace RetroFPS.Tests.EditMode
             return def;
         }
 
-        private ArafRoomTable CreateTable(
-            ArafRoomDefinition[] rooms,
-            ArafRoomDefinition exitRoom,
-            float exitBaseChance = 0.10f,
-            float exitChancePerReveal = 0.15f,
-            int exitMinDepth = 3)
+        private ArafRoomTable CreateTable(ArafRoomDefinition[] rooms, ArafRoomDefinition sealRoom, ArafRoomDefinition arenaRoom = null)
         {
             ArafRoomTable table = ScriptableObject.CreateInstance<ArafRoomTable>();
             _createdAssets.Add(table);
@@ -63,115 +60,81 @@ namespace RetroFPS.Tests.EditMode
             {
                 roomsProp.GetArrayElementAtIndex(i).objectReferenceValue = rooms[i];
             }
-            so.FindProperty("exitRoom").objectReferenceValue = exitRoom;
-            so.FindProperty("exitBaseChance").floatValue = exitBaseChance;
-            so.FindProperty("exitChancePerReveal").floatValue = exitChancePerReveal;
-            so.FindProperty("exitMinDepth").intValue = exitMinDepth;
+            so.FindProperty("sealRoom").objectReferenceValue = sealRoom;
+            so.FindProperty("arenaRoom").objectReferenceValue = arenaRoom;
             so.ApplyModifiedPropertiesWithoutUndo();
             return table;
         }
 
+        /// <summary>İsteğe bağlı arena rolü ağırlık, derinlik ve adet sınırından bağımsızdır.</summary>
         [Test]
-        public void ExitAlwaysSpawnsExactlyOnce_AcrossManySeeds()
+        public void OptionalArenaAlwaysReturnsArenaDefinition()
         {
-            ArafRoomDefinition combat = CreateDefinition("Combat", ArafRoomKind.Combat, weight: 1f);
-            ArafRoomDefinition ambush = CreateDefinition("Ambush", ArafRoomKind.Ambush, weight: 1f);
-            ArafRoomDefinition shrine = CreateDefinition("Shrine", ArafRoomKind.Shrine, weight: 0.5f, maxPerRun: 1);
-            ArafRoomDefinition exit = CreateDefinition("Exit", ArafRoomKind.Exit, weight: 1f);
-            ArafRoomTable table = CreateTable(new[] { combat, ambush, shrine }, exit, 0.10f, 0.15f, 3);
-
-            const int totalSlots = 7;
-            for (ulong seed = 1UL; seed <= 120UL; seed++)
+            var calm = CreateDefinition("Calm", ArafRoomKind.Ossuary);
+            var seal = CreateDefinition("Seal", ArafRoomKind.Seal);
+            var arena = CreateDefinition("Arena", ArafRoomKind.Arena, weight: 0f, minDepth: 99, maxPerRun: 0);
+            var table = CreateTable(new[] { calm }, seal, arena);
+            for (ulong seed = 1; seed <= 50; seed++)
             {
-                ArafRoomRoller roller = new ArafRoomRoller(table, new RunRandom(seed), totalSlots);
-                int exitCount = 0;
-                for (int slot = 0; slot < totalSlots; slot++)
-                {
-                    int depth = slot + 1;
-                    ArafRoomDefinition rolled = roller.Roll(depth);
-                    Assert.IsNotNull(rolled);
-                    if (ReferenceEquals(rolled, exit))
-                    {
-                        exitCount++;
-                    }
-                }
-                Assert.AreEqual(1, exitCount, $"Seed {seed} did not spawn exit exactly once.");
-                Assert.IsTrue(roller.ExitSpawned);
-                Assert.AreEqual(totalSlots, roller.RevealedCount);
+                var roller = new ArafRoomRoller(table, new RunRandom(seed), 7);
+                for (int depth = 0; depth < 7; depth++)
+                    Assert.That(roller.Roll(depth, ArafRoomRole.OptionalArena), Is.SameAs(arena));
+                Assert.That(roller.RevealedCount, Is.EqualTo(7));
             }
         }
 
+        /// <summary>Oda seçimi sözleşmesinin ilgili sınırlarını doğrular.</summary>
         [Test]
-        public void LastSlot_IsGuaranteedExit_WhenNotYetSpawned()
+        public void SealSlot_AlwaysReturnsSealRoom_AcrossDepthsAndSeeds()
         {
-            ArafRoomDefinition combat = CreateDefinition("Combat", ArafRoomKind.Combat, weight: 1f);
-            ArafRoomDefinition exit = CreateDefinition("Exit", ArafRoomKind.Exit, weight: 1f);
-            ArafRoomTable table = CreateTable(new[] { combat }, exit, exitBaseChance: 0f, exitChancePerReveal: 0f, exitMinDepth: 99);
+            ArafRoomDefinition combat = CreateDefinition("Combat", ArafRoomKind.Combat, weight: 100f);
+            ArafRoomDefinition ambush = CreateDefinition("Ambush", ArafRoomKind.Ambush, weight: 50f);
+            ArafRoomDefinition seal = CreateDefinition("Seal", ArafRoomKind.Seal, weight: 1f, minDepth: 99, maxPerRun: 1);
+            ArafRoomTable table = CreateTable(new[] { combat, ambush }, seal);
 
-            const int totalSlots = 5;
-            ArafRoomRoller roller = new ArafRoomRoller(table, new RunRandom(42UL), totalSlots);
-
-            for (int i = 0; i < totalSlots - 1; i++)
-            {
-                ArafRoomDefinition rolled = roller.Roll(slotDepth: 1);
-                Assert.AreSame(combat, rolled);
-                Assert.IsFalse(roller.ExitSpawned);
-            }
-
-            ArafRoomDefinition lastRolled = roller.Roll(slotDepth: 1);
-            Assert.AreSame(exit, lastRolled);
-            Assert.IsTrue(roller.ExitSpawned);
-        }
-
-        [Test]
-        public void ExitNeverSpawnsBelowExitMinDepth_UnlessLastSlot()
-        {
-            ArafRoomDefinition combat = CreateDefinition("Combat", ArafRoomKind.Combat, weight: 1f);
-            ArafRoomDefinition exit = CreateDefinition("Exit", ArafRoomKind.Exit, weight: 1f);
-            ArafRoomTable table = CreateTable(new[] { combat }, exit, exitBaseChance: 1f, exitChancePerReveal: 1f, exitMinDepth: 4);
-
-            const int totalSlots = 6;
             for (ulong seed = 1UL; seed <= 50UL; seed++)
             {
-                ArafRoomRoller roller = new ArafRoomRoller(table, new RunRandom(seed), totalSlots);
-                for (int i = 0; i < totalSlots - 1; i++)
-                {
-                    ArafRoomDefinition rolled = roller.Roll(slotDepth: 3);
-                    Assert.AreSame(combat, rolled);
-                }
-
-                ArafRoomDefinition finalSlot = roller.Roll(slotDepth: 2);
-                Assert.AreSame(exit, finalSlot);
+                ArafRoomRoller roller = new ArafRoomRoller(table, new RunRandom(seed), totalSlots: 7);
+                Assert.AreSame(seal, roller.Roll(slotDepth: 0, role: ArafRoomRole.SealArena));
+                Assert.AreSame(seal, roller.Roll(slotDepth: 2, role: ArafRoomRole.SealArena));
+                Assert.AreSame(seal, roller.Roll(slotDepth: 10, role: ArafRoomRole.SealArena));
+                Assert.AreEqual(3, roller.RevealedCount);
             }
         }
 
+        /// <summary>Oda seçimi sözleşmesinin ilgili sınırlarını doğrular.</summary>
         [Test]
-        public void CurrentExitChance_IncreasesPerNonExitReveal_AndCapsAtOne()
+        public void NonSealSlot_NeverReturnsSealRoom_EvenWhenPoolEmptyOrExhausted()
         {
-            ArafRoomDefinition combat = CreateDefinition("Combat", ArafRoomKind.Combat, weight: 1f);
-            ArafRoomDefinition exit = CreateDefinition("Exit", ArafRoomKind.Exit, weight: 1f);
-            ArafRoomTable table = CreateTable(new[] { combat }, exit, exitBaseChance: 0.25f, exitChancePerReveal: 0.40f, exitMinDepth: 10);
+            ArafRoomDefinition combat = CreateDefinition("Combat", ArafRoomKind.Combat, weight: 1f, maxPerRun: 1);
+            ArafRoomDefinition seal = CreateDefinition("Seal", ArafRoomKind.Seal, weight: 1f);
+            ArafRoomTable populated = CreateTable(new[] { combat }, seal);
+            ArafRoomTable empty = CreateTable(new ArafRoomDefinition[0], seal);
 
-            ArafRoomRoller roller = new ArafRoomRoller(table, new RunRandom(7UL), totalSlots: 6);
-            Assert.AreEqual(0.25f, roller.CurrentExitChance, 1e-5f);
+            for (ulong seed = 1UL; seed <= 40UL; seed++)
+            {
+                ArafRoomRoller roller = new ArafRoomRoller(populated, new RunRandom(seed), totalSlots: 7);
+                for (int i = 0; i < 7; i++)
+                {
+                    ArafRoomDefinition rolled = roller.Roll(slotDepth: i, role: ArafRoomRole.Calm);
+                    Assert.AreSame(combat, rolled);
+                    Assert.AreNotSame(seal, rolled);
+                }
 
-            roller.Roll(slotDepth: 1);
-            Assert.AreEqual(0.65f, roller.CurrentExitChance, 1e-5f);
-
-            roller.Roll(slotDepth: 1);
-            Assert.AreEqual(1.0f, roller.CurrentExitChance, 1e-5f);
-
-            roller.Roll(slotDepth: 1);
-            Assert.AreEqual(1.0f, roller.CurrentExitChance, 1e-5f);
+                ArafRoomRoller emptyRoller = new ArafRoomRoller(empty, new RunRandom(seed), totalSlots: 4);
+                Assert.IsNull(emptyRoller.Roll(slotDepth: 3, role: ArafRoomRole.Calm));
+                Assert.AreSame(seal, emptyRoller.Roll(slotDepth: 3, role: ArafRoomRole.SealArena));
+            }
         }
 
+        /// <summary>Oda seçimi sözleşmesinin ilgili sınırlarını doğrular.</summary>
         [Test]
         public void MaxPerRun_IsRespected_WithFallbackWhenExhausted()
         {
             ArafRoomDefinition shrine = CreateDefinition("Shrine", ArafRoomKind.Shrine, weight: 100f, minDepth: 0, maxPerRun: 1);
             ArafRoomDefinition combat = CreateDefinition("Combat", ArafRoomKind.Combat, weight: 1f, minDepth: 0, maxPerRun: 2);
-            ArafRoomDefinition exit = CreateDefinition("Exit", ArafRoomKind.Exit, weight: 1f);
-            ArafRoomTable table = CreateTable(new[] { shrine, combat }, exit, exitBaseChance: 0f, exitChancePerReveal: 0f, exitMinDepth: 99);
+            ArafRoomDefinition seal = CreateDefinition("Seal", ArafRoomKind.Seal, weight: 1f);
+            ArafRoomTable table = CreateTable(new[] { shrine, combat }, seal);
 
             ArafRoomRoller roller = new ArafRoomRoller(table, new RunRandom(99UL), totalSlots: 5);
 
@@ -179,7 +142,7 @@ namespace RetroFPS.Tests.EditMode
             int combatCount = 0;
             for (int i = 0; i < 3; i++)
             {
-                ArafRoomDefinition rolled = roller.Roll(slotDepth: 2);
+                ArafRoomDefinition rolled = roller.Roll(slotDepth: 2, role: ArafRoomRole.Calm);
                 if (ReferenceEquals(rolled, shrine)) shrineCount++;
                 else if (ReferenceEquals(rolled, combat)) combatCount++;
             }
@@ -187,52 +150,56 @@ namespace RetroFPS.Tests.EditMode
             Assert.AreEqual(1, shrineCount);
             Assert.AreEqual(2, combatCount);
 
-            // Both non-exit definitions have reached MaxPerRun; fallback still picks a non-exit room before the last slot.
-            ArafRoomDefinition fallbackRoll = roller.Roll(slotDepth: 2);
+            // Both normal definitions have reached MaxPerRun; fallback still picks a normal room, never SealRoom.
+            ArafRoomDefinition fallbackRoll = roller.Roll(slotDepth: 2, role: ArafRoomRole.Calm);
             Assert.IsTrue(ReferenceEquals(fallbackRoll, shrine) || ReferenceEquals(fallbackRoll, combat));
+            Assert.AreNotSame(seal, fallbackRoll);
         }
 
+        /// <summary>Oda seçimi sözleşmesinin ilgili sınırlarını doğrular.</summary>
         [Test]
         public void MinDepth_IsRespected_WithFallbackWhenNoneQualifies()
         {
             ArafRoomDefinition shallow = CreateDefinition("Shallow", ArafRoomKind.Combat, weight: 1f, minDepth: 2, maxPerRun: 99);
             ArafRoomDefinition deep = CreateDefinition("Deep", ArafRoomKind.Ambush, weight: 100f, minDepth: 5, maxPerRun: 99);
-            ArafRoomDefinition exit = CreateDefinition("Exit", ArafRoomKind.Exit, weight: 1f);
-            ArafRoomTable table = CreateTable(new[] { shallow, deep }, exit, exitBaseChance: 0f, exitChancePerReveal: 0f, exitMinDepth: 99);
+            ArafRoomDefinition seal = CreateDefinition("Seal", ArafRoomKind.Seal, weight: 1f);
+            ArafRoomTable table = CreateTable(new[] { shallow, deep }, seal);
 
             ArafRoomRoller roller = new ArafRoomRoller(table, new RunRandom(123UL), totalSlots: 10);
 
             for (int i = 0; i < 5; i++)
             {
-                ArafRoomDefinition rolled = roller.Roll(slotDepth: 3);
+                ArafRoomDefinition rolled = roller.Roll(slotDepth: 3, role: ArafRoomRole.Calm);
                 Assert.AreSame(shallow, rolled);
             }
 
-            // At depth 1 neither room satisfies MinDepth; fallback ignores limits and still returns a non-exit room.
-            ArafRoomDefinition fallback = roller.Roll(slotDepth: 1);
+            // At depth 1 neither room satisfies MinDepth; fallback ignores limits and still returns a non-seal room.
+            ArafRoomDefinition fallback = roller.Roll(slotDepth: 1, role: ArafRoomRole.Calm);
             Assert.IsNotNull(fallback);
-            Assert.AreNotSame(exit, fallback);
+            Assert.AreNotSame(seal, fallback);
         }
 
+        /// <summary>Oda seçimi sözleşmesinin ilgili sınırlarını doğrular.</summary>
         [Test]
         public void Roll_IsDeterministic_ForSameSeed()
         {
             ArafRoomDefinition a = CreateDefinition("A", ArafRoomKind.Combat, weight: 1f);
             ArafRoomDefinition b = CreateDefinition("B", ArafRoomKind.Ambush, weight: 2f);
             ArafRoomDefinition c = CreateDefinition("C", ArafRoomKind.Ossuary, weight: 1.5f, minDepth: 2, maxPerRun: 2);
-            ArafRoomDefinition exit = CreateDefinition("Exit", ArafRoomKind.Exit, weight: 1f);
-            ArafRoomTable table = CreateTable(new[] { a, b, c }, exit, 0.12f, 0.18f, 2);
+            ArafRoomDefinition seal = CreateDefinition("Seal", ArafRoomKind.Seal, weight: 1f);
+            ArafRoomTable table = CreateTable(new[] { a, b, c }, seal);
 
             const int totalSlots = 8;
             ArafRoomRoller roller1 = new ArafRoomRoller(table, new RunRandom(2026UL), totalSlots);
             ArafRoomRoller roller2 = new ArafRoomRoller(table, new RunRandom(2026UL), totalSlots);
 
+            Assert.AreEqual(totalSlots, roller1.TotalSlots);
             for (int i = 0; i < totalSlots; i++)
             {
                 int depth = (i % 4) + 1;
-                Assert.AreSame(roller1.Roll(depth), roller2.Roll(depth));
-                Assert.AreEqual(roller1.CurrentExitChance, roller2.CurrentExitChance, 1e-6f);
-                Assert.AreEqual(roller1.ExitSpawned, roller2.ExitSpawned);
+                bool isSeal = i == 1 || i == 4 || i == 7;
+                Assert.AreSame(roller1.Roll(depth, isSeal ? ArafRoomRole.SealArena : ArafRoomRole.Calm), roller2.Roll(depth, isSeal ? ArafRoomRole.SealArena : ArafRoomRole.Calm));
+                Assert.AreEqual(roller1.RevealedCount, roller2.RevealedCount);
             }
         }
     }
