@@ -62,8 +62,8 @@ namespace RetroFPS.Pause
                     case MenuFocusTarget.Settings: return rootItems[2];
                     case MenuFocusTarget.Quit: return rootItems[3];
                     case MenuFocusTarget.Language: return settingsItems[0];
-                    case MenuFocusTarget.WindowMode: return settingsItems[6];
-                    case MenuFocusTarget.Resolution: return settingsItems[7];
+                    case MenuFocusTarget.WindowMode: return settingsPanel.WindowModeRow;
+                    case MenuFocusTarget.Resolution: return settingsPanel.ResolutionRow;
                     case MenuFocusTarget.No: return mainMenuDialog.Negative;
                     case MenuFocusTarget.Revert: return revertDialog.Negative;
                     default: return null;

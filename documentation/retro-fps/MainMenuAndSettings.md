@@ -147,3 +147,7 @@ PlayerPrefs keys are `postProcessing`, `brightness`, and `screenEffects`. Missin
 The panel retains its 1040x900 size and 36-unit minimum font size. Vertical content margins become 12 units, controls use 48-unit rows (32 pixels at 720p), and Back uses 56 units. The final button ends at content coordinate 866 within the 876-unit content height, so scrolling is unnecessary. Brightness shows -50..+50 in steps of 5; Screen Effects shows 0..100 percent in steps of 10. Value strings are prewarmed for both languages.
 
 New string keys: `settings.post_processing` (Görüntü İşleme / Post-Processing), `settings.brightness` (Parlaklık / Brightness), `settings.screen_effects` (Ekran Efektleri / Screen Effects). Existing `settings.on` / `settings.off` values are reused. Run the shared settings builder in Unity to materialize the prefab and StringTable upgrade; no prefab/asset YAML is edited by P2.
+
+## Difficulty setting (2026-11-27)
+
+`GameSettingsData.Difficulty` (`DifficultySetting` Easy/Normal/Hard, default Normal), `ISettingsService.SetDifficulty`, PlayerPrefs key `difficulty`. The shared panel now has 14 controls: a `Difficulty` row under Language in the General group; rows and header gaps use a 44-unit pitch and Back ends at 858 of 876. Hosts resolve WindowMode/Resolution/MasterVolume focus from `SettingsPanelView` references instead of fixed indices. Details: [[DifficultySystem]].

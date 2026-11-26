@@ -157,6 +157,10 @@ namespace RetroFPS
         private float _eliteHealthMult = 1f;
         private float _huntMoveMult = 1f;
         private float _huntTurnMult = 1f;
+        private float _huntCooldownMult = 1f;
+        private float _difficultyHealthMult = 1f;
+        private float _difficultySpeedMult = 1f;
+        private float _difficultyCooldownMult = 1f;
         private Vector3 _spawnPosition;
         private Quaternion _spawnRotation;
         private Vector3 _initialScale;
@@ -225,12 +229,24 @@ namespace RetroFPS
         {
             if (!_baseStatsCached) return;
             attackDamage = _baseAttackDamage * _eliteDamageMult;
-            maxHealth = _baseMaxHealth * _eliteHealthMult;
-            chaseSpeed = _baseChaseSpeed * _eliteSpeedMult * _huntMoveMult;
-            patrolSpeed = _basePatrolSpeed * _eliteSpeedMult;
-            // Elit çarpanı kulede de flankSpeed'e dokunmaz (eski davranış); yalnızca av çarpanı uygulanır.
-            flankSpeed = _baseFlankSpeed * _huntMoveMult;
+            maxHealth = _baseMaxHealth * _eliteHealthMult * _difficultyHealthMult;
+            chaseSpeed = _baseChaseSpeed * _eliteSpeedMult * _huntMoveMult * _difficultySpeedMult;
+            patrolSpeed = _basePatrolSpeed * _eliteSpeedMult * _difficultySpeedMult;
+            // Elit çarpanı kulede de flankSpeed'e dokunmaz (eski davranış); yalnızca av ve zorluk çarpanı uygulanır.
+            flankSpeed = _baseFlankSpeed * _huntMoveMult * _difficultySpeedMult;
             rotationSpeed = _baseRotationSpeed * _huntTurnMult;
+            _attack?.SetCooldownScale(_huntCooldownMult * _difficultyCooldownMult);
+        }
+
+        /// <summary>Doğuşta zorluk çarpanlarını okur; elit ve av çarpanlarıyla çarpılarak birleşir.</summary>
+        private void RefreshDifficulty()
+        {
+            EnsureBaseStatsCached();
+            DifficultyModifiers difficulty = GameDifficulty.Current;
+            _difficultyHealthMult = difficulty.EnemyHealth;
+            _difficultySpeedMult = difficulty.EnemySpeed;
+            _difficultyCooldownMult = difficulty.EnemyAttackCooldown;
+            RecomputeEffectiveStats();
         }
 
         /// <summary>Temel değerleri saklayarak elit çarpanlarını doğuş başına bir kez uygular.</summary>
@@ -276,7 +292,7 @@ namespace RetroFPS
             _huntGraceTimer = profile != null ? profile.HuntStartDelay : defaultHuntStartDelay;
             _huntMoveMult = profile != null ? profile.MoveSpeedMultiplier : 1f;
             _huntTurnMult = profile != null ? profile.TurnSpeedMultiplier : 1f;
-            _attack?.SetCooldownScale(profile != null ? profile.AttackCooldownMultiplier : 1f);
+            _huntCooldownMult = profile != null ? profile.AttackCooldownMultiplier : 1f;
             RecomputeEffectiveStats();
 
             if (target != null)
@@ -317,7 +333,7 @@ namespace RetroFPS
             _huntProfile = null;
             _huntMoveMult = 1f;
             _huntTurnMult = 1f;
-            _attack?.SetCooldownScale(1f);
+            _huntCooldownMult = 1f;
             RecomputeEffectiveStats();
         }
 
@@ -375,6 +391,7 @@ namespace RetroFPS
             _spawnPosition = transform.position;
             _spawnRotation = transform.rotation;
             _initialScale = transform.localScale;
+            RefreshDifficulty();
             _currentHealth = maxHealth;
             _patrolTarget = _spawnPosition;
             _lastKnownPlayerPos = _spawnPosition;
@@ -1550,6 +1567,7 @@ namespace RetroFPS
             _orbitSign = Random.value < 0.5f ? -1f : 1f;
             _surroundRadiusT = Random.value;
             ResetEliteScaling();
+            RefreshDifficulty();
             if (_controller != null) _controller.enabled = false;
             transform.position = _spawnPosition;
             transform.rotation = _spawnRotation;

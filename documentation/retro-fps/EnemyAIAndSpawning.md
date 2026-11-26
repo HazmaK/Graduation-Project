@@ -173,5 +173,6 @@ stateDiagram-v2
 - [[ArafLabyrinthSystem]] ➔ `runtime_navmesh_bake_target` *(runtime bake ve av modu bağlantısı)*
 - [[CombatVFXAndDecalSystem]] ➔ `spawns_gibs_and_blood`
 - [[KefaretciPenitent]] ➔ `details_penitent_enemy`
+- [[DifficultySystem]] ➔ `scaled_by_difficulty` *(2026-11-27: can/hız/bekleme çarpanları ve jeton ofseti doğuşta uygulanır)*
 - ⬅️ [[START_HERE_AI_CONSTITUTION]] ➔ `mandated_by_constitution` *(gelen)*
 - ⬅️ [[ProjectOverview]] ➔ `utilizes_ai` *(gelen)*

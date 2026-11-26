@@ -1004,7 +1004,8 @@ namespace RetroFPS.Combat
             if (_queuedRemaining <= 0) return;
 
             float healthPct = _playerHealth != null ? _playerHealth.HealthPercent : 1f;
-            float intervalMul = _difficultyModel.GetSpawnIntervalMultiplier(healthPct);
+            float intervalMul = _difficultyModel.GetSpawnIntervalMultiplier(healthPct)
+                * GameDifficulty.Current.WaveSpawnInterval;
             bool spawnedAny = false;
             bool blocked = false;
 

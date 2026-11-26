@@ -62,6 +62,7 @@ namespace RetroFPS.Combat
         private float _remaining;
         private float _cooldown;
         private float _jitter;
+        private float _cooldownScale = 1f;
         private bool _strikeStarted;
         private bool _slamEnded;
 
@@ -187,6 +188,12 @@ namespace RetroFPS.Combat
                 remaining + Mathf.Max(0f, extension))));
         }
 
+        /// <summary>Scales future slam cooldowns (difficulty); survives <see cref="Reset"/>.</summary>
+        public void SetCooldownScale(float scale) => _cooldownScale = Mathf.Max(0f, scale);
+
+        /// <summary>Current slam cooldown scale.</summary>
+        public float CooldownScale => _cooldownScale;
+
         /// <summary>Clears all timing, flags and cooldowns for a new spawn.</summary>
         public void Reset()
         {
@@ -199,7 +206,7 @@ namespace RetroFPS.Combat
 
         private void AssignCooldown()
         {
-            _cooldown = Mathf.Max(0f, _settings.SlamCooldown * (1f + _settings.CooldownJitter * _jitter));
+            _cooldown = Mathf.Max(0f, _settings.SlamCooldown * _cooldownScale * (1f + _settings.CooldownJitter * _jitter));
             _jitter = 0f;
         }
 

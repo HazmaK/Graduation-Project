@@ -214,6 +214,11 @@ namespace RetroFPS
         private EnemyAggressionProfile _huntProfile;
         private float _huntGraceTimer;
         private float _huntMoveSpeedMultiplier = 1f;
+        private float _huntCooldownMultiplier = 1f;
+        private float _eliteHealthMultiplier = 1f;
+        private float _difficultyHealthMultiplier = 1f;
+        private float _difficultySpeedMultiplier = 1f;
+        private float _difficultyCooldownMultiplier = 1f;
         private float _lowerGroundTimer;
         private Vector3 _spawnPosition;
         private float _lastGroundY; // Son bilinen zemin yüksekliği (uçuş sınırları buna GÖRELİ uygulanır)
@@ -297,6 +302,28 @@ namespace RetroFPS
             _eliteBaseCached = true;
         }
 
+        /// <summary>Elit, av ve zorluk çarpanlarını temel değerlerle birleştirir (hasar hariç).</summary>
+        private void RecomputeScaledStats()
+        {
+            if (!_eliteBaseCached) return;
+            flySpeed = _baseFlySpeed * _eliteSpeedMultiplier * _huntMoveSpeedMultiplier * _difficultySpeedMultiplier;
+            maxHealth = _baseMaxHealth * _eliteHealthMultiplier * _difficultyHealthMultiplier;
+            float cooldown = _huntCooldownMultiplier * _difficultyCooldownMultiplier;
+            lightCooldown = _baseLightCooldown * cooldown;
+            heavyCooldown = _baseHeavyCooldown * cooldown;
+        }
+
+        /// <summary>Doğuşta zorluk çarpanlarını okur.</summary>
+        private void RefreshDifficulty()
+        {
+            EnsureBaseStatsCached();
+            DifficultyModifiers difficulty = GameDifficulty.Current;
+            _difficultyHealthMultiplier = difficulty.EnemyHealth;
+            _difficultySpeedMultiplier = difficulty.EnemySpeed;
+            _difficultyCooldownMultiplier = difficulty.EnemyAttackCooldown;
+            RecomputeScaledStats();
+        }
+
         /// <summary>Temel değerleri saklayarak elit çarpanlarını doğuş başına bir kez uygular.</summary>
         public void ApplyEliteScaling(float damageMultiplier, float speedMultiplier, float healthMultiplier)
         {
@@ -304,10 +331,10 @@ namespace RetroFPS
             EnsureBaseStatsCached();
 
             _eliteSpeedMultiplier = speedMultiplier;
+            _eliteHealthMultiplier = healthMultiplier;
             projectileDamage = _baseProjectileDamage * damageMultiplier;
             heavyDamage = _baseHeavyDamage * damageMultiplier;
-            flySpeed = _baseFlySpeed * _eliteSpeedMultiplier * _huntMoveSpeedMultiplier;
-            maxHealth = _baseMaxHealth * healthMultiplier;
+            RecomputeScaledStats();
             _currentHealth = maxHealth;
             _isElite = true;
             RebuildProjectileSettings();
@@ -317,10 +344,10 @@ namespace RetroFPS
         {
             if (!_eliteBaseCached) return;
             _eliteSpeedMultiplier = 1f;
+            _eliteHealthMultiplier = 1f;
             projectileDamage = _baseProjectileDamage;
             heavyDamage = _baseHeavyDamage;
-            flySpeed = _baseFlySpeed * _huntMoveSpeedMultiplier;
-            maxHealth = _baseMaxHealth;
+            RecomputeScaledStats();
             _isElite = false;
             RebuildProjectileSettings();
         }
@@ -338,10 +365,8 @@ namespace RetroFPS
             _huntGraceTimer = profile != null ? profile.HuntStartDelay : defaultHuntStartDelay;
             _huntMoveSpeedMultiplier = profile != null ? profile.MoveSpeedMultiplier : 1f;
 
-            flySpeed = _baseFlySpeed * _eliteSpeedMultiplier * _huntMoveSpeedMultiplier;
-            float cooldownMult = profile != null ? profile.AttackCooldownMultiplier : 1f;
-            lightCooldown = _baseLightCooldown * cooldownMult;
-            heavyCooldown = _baseHeavyCooldown * cooldownMult;
+            _huntCooldownMultiplier = profile != null ? profile.AttackCooldownMultiplier : 1f;
+            RecomputeScaledStats();
 
             if (profile != null)
             {
@@ -386,11 +411,10 @@ namespace RetroFPS
             _huntProfile = null;
             _huntGraceTimer = 0f;
             _huntMoveSpeedMultiplier = 1f;
+            _huntCooldownMultiplier = 1f;
             if (_eliteBaseCached)
             {
-                flySpeed = _baseFlySpeed * _eliteSpeedMultiplier;
-                lightCooldown = _baseLightCooldown;
-                heavyCooldown = _baseHeavyCooldown;
+                RecomputeScaledStats();
                 hoverHeight = _baseHoverHeight;
                 minFlyHeight = _baseMinFlyHeight;
                 maxFlyHeight = _baseMaxFlyHeight;
@@ -428,6 +452,7 @@ namespace RetroFPS
             _spawnRotation = transform.rotation;
             _lastGroundY = _spawnPosition.y - hoverHeight;
             _initialScale = transform.localScale;
+            RefreshDifficulty();
             _currentHealth = maxHealth;
             _patrolTarget = _spawnPosition;
             _lastKnownPlayerPos = _spawnPosition;
@@ -1256,6 +1281,7 @@ namespace RetroFPS
             CancelWindup();
             ClearHunt();
             ResetEliteScaling();
+            RefreshDifficulty();
             _planner.Reset();
             _grounded = false;
             _recoveringAltitude = false;

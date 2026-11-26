@@ -236,9 +236,11 @@ namespace RetroFPS.Editor
                     {
                         ValidateTextFit(label, "%100"); ValidateTextFit(label, "100%");
                     }
-                    else if (row == "Cycle0" || row == "Cycle2" || row == "Cycle3")
+                    else if (row == "Cycle0" || row == "Cycle2" || row == "Cycle3" || row == "Difficulty")
                     {
-                        string[] keys = row == "Cycle0" ? new[] { "settings.window_mode.fullscreen",
+                        string[] keys = row == "Difficulty" ? new[] { "settings.difficulty.easy",
+                            "settings.difficulty.normal", "settings.difficulty.hard" }
+                            : row == "Cycle0" ? new[] { "settings.window_mode.fullscreen",
                             "settings.window_mode.borderless", "settings.window_mode.windowed" }
                             : new[] { "settings.off", "settings.on" };
                         for (int i = 0; i < keys.Length; i++)

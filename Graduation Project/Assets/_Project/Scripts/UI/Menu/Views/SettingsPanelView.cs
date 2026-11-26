@@ -18,6 +18,7 @@ namespace RetroFPS.UI.Menu
         [SerializeField] private MenuSlider[] sliders;
         [SerializeField] private TMP_Text[] percentages;
         [SerializeField] private MenuCycleRow language;
+        [SerializeField] private MenuCycleRow difficulty;
         [SerializeField] private MenuCycleRow windowMode;
         [SerializeField] private MenuCycleRow resolution;
         [SerializeField] private MenuCycleRow reduceMotion;
@@ -26,6 +27,12 @@ namespace RetroFPS.UI.Menu
         [SerializeField] private TMP_Text brightnessValue;
         [SerializeField] private MenuSlider screenEffects;
         [SerializeField] private TMP_Text screenEffectsValue;
+        /// <summary>Master volume row, the audio focus anchor.</summary>
+        public UnityEngine.UI.Selectable MasterVolumeRow => sliders[0];
+        /// <summary>Window mode row, the display prompt focus anchor.</summary>
+        public UnityEngine.UI.Selectable WindowModeRow => windowMode;
+        /// <summary>Resolution row, the display prompt focus anchor.</summary>
+        public UnityEngine.UI.Selectable ResolutionRow => resolution;
         private ISettingsPanelHost controller;
         private ISettingsService service;
         private ResolutionOption[] resolutions;
@@ -34,6 +41,8 @@ namespace RetroFPS.UI.Menu
         private readonly string[][] localeModes = new string[2][];
         private readonly string[][] localeMotion = new string[2][];
         private readonly string[][] localeBrightness = new string[2][];
+        private readonly string[][] localeDifficulty = new string[2][];
+        private string[] difficultyStrings;
         private string[] brightnessStrings;
         private string[] resolutionStrings;
         private string[] modeStrings;
@@ -64,6 +73,7 @@ namespace RetroFPS.UI.Menu
             if (postProcessing != null) postProcessing.Changed += PostProcessingChanged;
             if (brightness != null) brightness.onValueChanged.AddListener(BrightnessChanged);
             if (screenEffects != null) screenEffects.onValueChanged.AddListener(ScreenEffectsChanged);
+            if (difficulty != null) difficulty.Changed += DifficultyChanged;
         }
 
         private void PrewarmLanguageCaches()
@@ -79,6 +89,8 @@ namespace RetroFPS.UI.Menu
                 localeModes[locale] = new[] { strings.Get("settings.window_mode.fullscreen", selected),
                     strings.Get("settings.window_mode.borderless", selected), strings.Get("settings.window_mode.windowed", selected) };
                 localeMotion[locale] = new[] { strings.Get("settings.off", selected), strings.Get("settings.on", selected) };
+                localeDifficulty[locale] = new[] { strings.Get("settings.difficulty.easy", selected),
+                    strings.Get("settings.difficulty.normal", selected), strings.Get("settings.difficulty.hard", selected) };
                 var adjustments = new string[21];
                 for (int i = 0; i < adjustments.Length; i++) adjustments[i] = (i * 5 - 50).ToString("+0;-0;0", culture);
                 localeBrightness[locale] = adjustments;
@@ -86,6 +98,7 @@ namespace RetroFPS.UI.Menu
                 WarmValue(windowMode, localeModes[locale]);
                 WarmValue(reduceMotion, localeMotion[locale]);
                 if (postProcessing != null) WarmValue(postProcessing, localeMotion[locale]);
+                if (difficulty != null) WarmValue(difficulty, localeDifficulty[locale]);
                 if (brightnessValue != null) Warm(brightnessValue, adjustments);
                 if (screenEffectsValue != null) Warm(screenEffectsValue, percents);
             }
@@ -109,6 +122,8 @@ namespace RetroFPS.UI.Menu
             modeStrings = localeModes[locale];
             motionStrings = localeMotion[locale];
             brightnessStrings = localeBrightness[locale];
+            difficultyStrings = localeDifficulty[locale];
+            if (difficulty != null) difficulty.SetOptions(difficultyStrings);
             windowMode.SetOptions(modeStrings);
             reduceMotion.SetOptions(motionStrings);
             if (postProcessing != null) postProcessing.SetOptions(motionStrings);
@@ -140,6 +155,7 @@ namespace RetroFPS.UI.Menu
             if (postProcessing != null) postProcessing.Changed -= PostProcessingChanged;
             if (brightness != null) brightness.onValueChanged.RemoveListener(BrightnessChanged);
             if (screenEffects != null) screenEffects.onValueChanged.RemoveListener(ScreenEffectsChanged);
+            if (difficulty != null) difficulty.Changed -= DifficultyChanged;
         }
 
         /// <summary>Injects the controller gate without coupling the settings service to UI.</summary>
@@ -178,6 +194,7 @@ namespace RetroFPS.UI.Menu
         {
             RebuildLanguageCache(data.Language);
             language.SetIndex(data.Language == LanguageSetting.Turkish ? 0 : 1);
+            if (difficulty != null) difficulty.SetIndex((int)data.Difficulty);
             SetSlider(0, data.MasterVolume);
             SetSlider(1, data.MusicVolume);
             SetSlider(2, data.SfxVolume);
@@ -206,6 +223,11 @@ namespace RetroFPS.UI.Menu
         private void LanguageChanged(int index)
         {
             if (CanEdit) service.SetLanguage(index == 0 ? LanguageSetting.Turkish : LanguageSetting.English);
+            else Refresh(service.Current);
+        }
+        private void DifficultyChanged(int index)
+        {
+            if (CanEdit) service.SetDifficulty((DifficultySetting)index);
             else Refresh(service.Current);
         }
         private void MasterChanged(float value) => Volume("masterVolume", value);

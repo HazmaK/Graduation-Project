@@ -96,7 +96,7 @@ namespace RetroFPS.Editor
         }
         private static UnityEngine.UI.Selectable[] Ordered(Transform panel)
         {
-            string[] names = { "Language", "Slider0", "Slider1", "Slider2", "Slider3", "Slider4", "Cycle0", "Cycle1", "Cycle2", "Cycle3", "Slider5", "Slider6", "Back" };
+            string[] names = { "Language", "Difficulty", "Slider0", "Slider1", "Slider2", "Slider3", "Slider4", "Cycle0", "Cycle1", "Cycle2", "Cycle3", "Slider5", "Slider6", "Back" };
             var order = new UnityEngine.UI.Selectable[names.Length];
             for (int i = 0; i < order.Length; i++)
                 order[i] = panel.Find("Content/" + names[i]).GetComponent<UnityEngine.UI.Selectable>();
@@ -118,27 +118,30 @@ namespace RetroFPS.Editor
             MenuCycleRow postProcessing = EnsureRow(content, "Cycle3", "MenuCycleRow", "settings.post_processing").GetComponent<MenuCycleRow>();
             MenuSlider brightness = EnsureRow(content, "Slider5", "MenuSliderRow", "settings.brightness").GetComponent<MenuSlider>();
             MenuSlider screenEffects = EnsureRow(content, "Slider6", "MenuSliderRow", "settings.screen_effects").GetComponent<MenuSlider>();
+            MenuCycleRow difficulty = EnsureRow(content, "Difficulty", "MenuCycleRow", "settings.difficulty").GetComponent<MenuCycleRow>();
+            Set(view, "difficulty", difficulty);
             brightness.minValue = 0; brightness.maxValue = 20; brightness.wholeNumbers = true;
             screenEffects.minValue = 0; screenEffects.maxValue = 10; screenEffects.wholeNumbers = true;
             Set(view, "postProcessing", postProcessing);
             Set(view, "brightness", brightness); Set(view, "brightnessValue", brightness.transform.Find("Value").GetComponent<TMP_Text>());
             Set(view, "screenEffects", screenEffects); Set(view, "screenEffectsValue", screenEffects.transform.Find("Value").GetComponent<TMP_Text>());
 
-            // Retain the 900-unit panel and 36-unit minimum fonts. 48-unit rows still
-            // provide 32 screen pixels at 720p; the final button ends at 866 of 876 units.
+            // Retain the 900-unit panel and 36-unit minimum fonts. The Difficulty row needs
+            // 48 more units, so rows and header gaps use a 44-unit pitch (29 screen pixels
+            // at 720p); the final button ends at 858 of 876 units.
             RectTransform contentRect = (RectTransform)content;
             contentRect.offsetMin = new Vector2(contentRect.offsetMin.x, 12);
             contentRect.offsetMax = new Vector2(contentRect.offsetMax.x, -12);
             PositionGroup(content, "General", 76);
-            PositionGroup(content, "Audio", 168);
-            PositionGroup(content, "Controls", 404);
-            PositionGroup(content, "Display", 496);
+            PositionGroup(content, "Audio", 208);
+            PositionGroup(content, "Controls", 428);
+            PositionGroup(content, "Display", 516);
             var order = Ordered(root.transform);
-            float[] centers = { 122, 214, 262, 310, 358, 450, 542, 590, 638, 686, 734, 782, 838 };
+            float[] centers = { 120, 164, 252, 296, 340, 384, 472, 560, 604, 648, 692, 736, 780, 830 };
             for (int i = 0; i < order.Length; i++)
             {
                 Transform row = order[i].transform;
-                float height = i == order.Length - 1 ? 56 : 48;
+                float height = i == order.Length - 1 ? 56 : 44;
                 RectTransform rect = (RectTransform)row;
                 Top(rect, centers[i]);
                 rect.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, height);
@@ -147,6 +150,7 @@ namespace RetroFPS.Editor
                     if (child != rect && child.anchorMin.y == child.anchorMax.y && child.sizeDelta.y > height)
                         child.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, height);
             }
+            difficulty.transform.SetSiblingIndex(content.Find("Language").GetSiblingIndex() + 1);
             int sibling = content.Find("Cycle2").GetSiblingIndex() + 1;
             postProcessing.transform.SetSiblingIndex(sibling);
             brightness.transform.SetSiblingIndex(sibling + 1);

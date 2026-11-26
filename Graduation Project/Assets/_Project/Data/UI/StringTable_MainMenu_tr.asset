@@ -152,3 +152,15 @@ MonoBehaviour:
   - key: settings.screen_effects
     value: Ekran Efektleri
     en: Screen Effects
+  - key: settings.difficulty
+    value: Zorluk
+    en: Difficulty
+  - key: settings.difficulty.easy
+    value: Kolay
+    en: Easy
+  - key: settings.difficulty.normal
+    value: Normal
+    en: Normal
+  - key: settings.difficulty.hard
+    value: Zor
+    en: Hard

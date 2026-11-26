@@ -157,7 +157,7 @@ namespace RetroFPS
                 return;
             }
 
-            amount = PlayerStats.Get(StatId.DamageTaken, amount);
+            amount = PlayerStats.Get(StatId.DamageTaken, amount) * Combat.GameDifficulty.Current.PlayerDamageTaken;
             _currentHealth = Mathf.Max(0f, _currentHealth - amount);
             _timeSinceLastDamage = 0f;
 
@@ -186,7 +186,7 @@ namespace RetroFPS
         {
             if (Pause.GamePause.IsSimulationBlocked) return false;
             if (_isDead || (_movement != null && _movement.IsInvincible)) return false;
-            amount = PlayerStats.Get(StatId.DamageTaken, amount);
+            amount = PlayerStats.Get(StatId.DamageTaken, amount) * Combat.GameDifficulty.Current.PlayerDamageTaken;
             _currentHealth = Mathf.Max(0f, _currentHealth - amount);
             _timeSinceLastDamage = 0f;
             if (_damageFeedback != null) _damageFeedback.OnPlayerDamaged(amount, hitPoint, hitNormal, null);

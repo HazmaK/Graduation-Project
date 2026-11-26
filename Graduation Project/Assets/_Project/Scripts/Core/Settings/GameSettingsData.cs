@@ -31,6 +31,7 @@ namespace RetroFPS.Settings
         [SerializeField] private float brightness;
         [SerializeField] private float screenEffects;
         [SerializeField] private LanguageSetting language;
+        [SerializeField] private DifficultySetting difficulty;
 
         /// <summary>Global audio gain.</summary>
         public float MasterVolume => masterVolume;
@@ -58,6 +59,8 @@ namespace RetroFPS.Settings
         public float ScreenEffects => screenEffects;
         /// <summary>Current language authority.</summary>
         public LanguageSetting Language => language;
+        /// <summary>Selected difficulty; Normal reproduces the untuned game.</summary>
+        public DifficultySetting Difficulty => difficulty;
 
         /// <summary>Creates a settings snapshot; use Clamp before applying untrusted data.</summary>
         public GameSettingsData(float masterVolume, float musicVolume, float sfxVolume,
@@ -70,7 +73,8 @@ namespace RetroFPS.Settings
         public GameSettingsData(float masterVolume, float musicVolume, float sfxVolume,
             float uiVolume, float mouseSensitivity, WindowModeSetting windowMode,
             int resolutionWidth, int resolutionHeight, bool reduceMotion, LanguageSetting language,
-            bool postProcessing = true, float brightness = 0f, float screenEffects = 1f)
+            bool postProcessing = true, float brightness = 0f, float screenEffects = 1f,
+            DifficultySetting difficulty = DifficultySetting.Normal)
         {
             this.masterVolume = masterVolume;
             this.musicVolume = musicVolume;
@@ -85,6 +89,7 @@ namespace RetroFPS.Settings
             this.brightness = brightness;
             this.screenEffects = screenEffects;
             this.language = language;
+            this.difficulty = difficulty;
         }
 
         /// <summary>Creates first-boot defaults using the supplied desktop size.</summary>
@@ -110,7 +115,8 @@ namespace RetroFPS.Settings
                 resolutionWidth > 0 && resolutionHeight > 0 ? resolutionWidth : defaults.ResolutionWidth,
                 resolutionWidth > 0 && resolutionHeight > 0 ? resolutionHeight : defaults.ResolutionHeight,
                 reduceMotion, LanguageDefaults.IsValid(language) ? language : defaults.Language,
-                postProcessing, SignedUnit(brightness, defaults.Brightness), Unit(screenEffects, defaults.ScreenEffects));
+                postProcessing, SignedUnit(brightness, defaults.Brightness), Unit(screenEffects, defaults.ScreenEffects),
+                DifficultyDefaults.IsValid(difficulty) ? difficulty : defaults.Difficulty);
         }
 
         internal static float Unit(float value, float fallback)
@@ -134,13 +140,20 @@ namespace RetroFPS.Settings
         {
             return new GameSettingsData(masterVolume, musicVolume, sfxVolume, uiVolume,
                 mouseSensitivity, windowMode, resolutionWidth, resolutionHeight, reduceMotion, language,
-                enabled, adjustment, intensity);
+                enabled, adjustment, intensity, difficulty);
         }
 
         internal GameSettingsData WithDisplay(WindowModeSetting mode, int width, int height)
         {
             return new GameSettingsData(masterVolume, musicVolume, sfxVolume, uiVolume,
-                mouseSensitivity, mode, width, height, reduceMotion, language, postProcessing, brightness, screenEffects);
+                mouseSensitivity, mode, width, height, reduceMotion, language, postProcessing, brightness, screenEffects, difficulty);
+        }
+
+        internal GameSettingsData WithDifficulty(DifficultySetting selected)
+        {
+            return new GameSettingsData(masterVolume, musicVolume, sfxVolume, uiVolume,
+                mouseSensitivity, windowMode, resolutionWidth, resolutionHeight, reduceMotion, language,
+                postProcessing, brightness, screenEffects, selected);
         }
     }
 }

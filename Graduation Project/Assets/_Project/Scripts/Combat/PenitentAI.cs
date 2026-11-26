@@ -137,6 +137,11 @@ namespace RetroFPS.Combat
         private float _baseHealth;
         private float _baseSlamDamage;
         private float _baseWalkSpeed;
+        private float _eliteHealthMult = 1f;
+        private float _eliteDamageMult = 1f;
+        private float _eliteSpeedMult = 1f;
+        private float _difficultyHealthMult = 1f;
+        private float _difficultySpeedMult = 1f;
         private EnemyAggressionProfile _aggressionProfile;
         private bool _isHunting;
         private float _huntGraceRemaining;
@@ -183,6 +188,7 @@ namespace RetroFPS.Combat
             _nav = new EnemyNavigator(navQuery, navSettings, new MeleeUnreachableResponse(navQuery, navSettings));
             _spawnPosition = transform.position;
             _spawnRotation = transform.rotation;
+            RefreshDifficulty();
             _health = maxHealth;
             FindPlayer();
             CombatTargetLookup.RegisterHierarchy(this);
@@ -718,16 +724,11 @@ namespace RetroFPS.Combat
         public void ApplyEliteScaling(float damageMultiplier, float speedMultiplier, float healthMultiplier)
         {
             if (_isElite) return;
-            if (!_eliteBaseCached)
-            {
-                _baseHealth = maxHealth;
-                _baseSlamDamage = slamDamage;
-                _baseWalkSpeed = walkSpeed;
-                _eliteBaseCached = true;
-            }
-            maxHealth = _baseHealth * healthMultiplier;
-            slamDamage = _baseSlamDamage * damageMultiplier;
-            walkSpeed = _baseWalkSpeed * speedMultiplier;
+            EnsureBaseStatsCached();
+            _eliteHealthMult = healthMultiplier;
+            _eliteDamageMult = damageMultiplier;
+            _eliteSpeedMult = speedMultiplier;
+            RecomputeEffectiveStats();
             _health = maxHealth;
             _isElite = true;
             if (view != null) view.SetElite(true);
@@ -735,14 +736,40 @@ namespace RetroFPS.Combat
 
         private void ResetEliteScaling()
         {
-            if (_eliteBaseCached)
-            {
-                maxHealth = _baseHealth;
-                slamDamage = _baseSlamDamage;
-                walkSpeed = _baseWalkSpeed;
-            }
+            _eliteHealthMult = 1f;
+            _eliteDamageMult = 1f;
+            _eliteSpeedMult = 1f;
+            RecomputeEffectiveStats();
             _isElite = false;
             if (view != null) view.SetElite(false);
+        }
+
+        private void EnsureBaseStatsCached()
+        {
+            if (_eliteBaseCached) return;
+            _baseHealth = maxHealth;
+            _baseSlamDamage = slamDamage;
+            _baseWalkSpeed = walkSpeed;
+            _eliteBaseCached = true;
+        }
+
+        private void RecomputeEffectiveStats()
+        {
+            if (!_eliteBaseCached) return;
+            maxHealth = _baseHealth * _eliteHealthMult * _difficultyHealthMult;
+            slamDamage = _baseSlamDamage * _eliteDamageMult;
+            walkSpeed = _baseWalkSpeed * _eliteSpeedMult * _difficultySpeedMult;
+        }
+
+        /// <summary>Reads difficulty on spawn; composes with elite scaling.</summary>
+        private void RefreshDifficulty()
+        {
+            EnsureBaseStatsCached();
+            DifficultyModifiers difficulty = GameDifficulty.Current;
+            _difficultyHealthMult = difficulty.EnemyHealth;
+            _difficultySpeedMult = difficulty.EnemySpeed;
+            RecomputeEffectiveStats();
+            _loop?.SetCooldownScale(difficulty.EnemyAttackCooldown);
         }
 
         /// <summary>Restores a complete, idle spawn at the stored director or initial placement.</summary>
@@ -753,6 +780,7 @@ namespace RetroFPS.Combat
             _loop.Reset();
             _nav?.Invalidate();
             ResetEliteScaling();
+            RefreshDifficulty();
             if (_controller != null) _controller.enabled = false;
             transform.SetPositionAndRotation(_spawnPosition, _spawnRotation);
             _alive = true;

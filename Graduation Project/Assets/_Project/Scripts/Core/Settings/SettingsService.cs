@@ -59,7 +59,7 @@ namespace RetroFPS.Settings
                 default: throw new ArgumentException("Unknown volume key.", nameof(key));
             }
             current = new GameSettingsData(master, music, sfx, ui, current.MouseSensitivity,
-                current.WindowMode, current.ResolutionWidth, current.ResolutionHeight, current.ReduceMotion, current.Language, current.PostProcessing, current.Brightness, current.ScreenEffects);
+                current.WindowMode, current.ResolutionWidth, current.ResolutionHeight, current.ReduceMotion, current.Language, current.PostProcessing, current.Brightness, current.ScreenEffects, current.Difficulty);
             audio.Apply(current);
             PersistNonDisplay();
         }
@@ -69,7 +69,7 @@ namespace RetroFPS.Settings
         {
             current = new GameSettingsData(current.MasterVolume, current.MusicVolume,
                 current.SfxVolume, current.UiVolume, GameSettingsData.Unit(value, defaults.MouseSensitivity),
-                current.WindowMode, current.ResolutionWidth, current.ResolutionHeight, current.ReduceMotion, current.Language, current.PostProcessing, current.Brightness, current.ScreenEffects);
+                current.WindowMode, current.ResolutionWidth, current.ResolutionHeight, current.ReduceMotion, current.Language, current.PostProcessing, current.Brightness, current.ScreenEffects, current.Difficulty);
             PersistNonDisplay();
         }
 
@@ -78,7 +78,7 @@ namespace RetroFPS.Settings
         {
             current = new GameSettingsData(current.MasterVolume, current.MusicVolume,
                 current.SfxVolume, current.UiVolume, current.MouseSensitivity,
-                current.WindowMode, current.ResolutionWidth, current.ResolutionHeight, value, current.Language, current.PostProcessing, current.Brightness, current.ScreenEffects);
+                current.WindowMode, current.ResolutionWidth, current.ResolutionHeight, value, current.Language, current.PostProcessing, current.Brightness, current.ScreenEffects, current.Difficulty);
             PersistNonDisplay();
         }
 
@@ -113,7 +113,16 @@ namespace RetroFPS.Settings
             current = new GameSettingsData(current.MasterVolume, current.MusicVolume,
                 current.SfxVolume, current.UiVolume, current.MouseSensitivity,
                 current.WindowMode, current.ResolutionWidth, current.ResolutionHeight,
-                current.ReduceMotion, language, current.PostProcessing, current.Brightness, current.ScreenEffects);
+                current.ReduceMotion, language, current.PostProcessing, current.Brightness, current.ScreenEffects, current.Difficulty);
+            PersistNonDisplay();
+        }
+
+        /// <inheritdoc/>
+        public void SetDifficulty(DifficultySetting difficulty)
+        {
+            if (!DifficultyDefaults.IsValid(difficulty)) throw new ArgumentOutOfRangeException(nameof(difficulty));
+            if (current.Difficulty == difficulty) return;
+            current = current.WithDifficulty(difficulty);
             PersistNonDisplay();
         }
 

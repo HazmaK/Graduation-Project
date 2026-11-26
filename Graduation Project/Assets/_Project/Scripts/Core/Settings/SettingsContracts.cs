@@ -25,6 +25,8 @@ namespace RetroFPS.Settings
         void SetScreenEffects(float value);
         /// <summary>Changes language immediately and stages committed persistence.</summary>
         void SetLanguage(LanguageSetting language);
+        /// <summary>Changes difficulty immediately and stages committed persistence.</summary>
+        void SetDifficulty(DifficultySetting difficulty);
         /// <summary>Previews display values without committing them.</summary>
         void RequestDisplay(WindowModeSetting mode, int width, int height);
         /// <summary>Commits the preview and flushes persistence.</summary>

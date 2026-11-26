@@ -268,7 +268,7 @@ namespace RetroFPS.Tests
                 Assert.That(content.Find("Cycle2").gameObject, Is.EqualTo(original[1]));
                 Assert.That(content.Find("Back").gameObject, Is.EqualTo(original[2]));
                 Assert.That(content.Find("Cycle3").gameObject, Is.EqualTo(addedCycle));
-                string[] names = { "Language", "Slider0", "Slider1", "Slider2", "Slider3", "Slider4", "Cycle0", "Cycle1", "Cycle2", "Cycle3", "Slider5", "Slider6", "Back" };
+                string[] names = { "Language", "Difficulty", "Slider0", "Slider1", "Slider2", "Slider3", "Slider4", "Cycle0", "Cycle1", "Cycle2", "Cycle3", "Slider5", "Slider6", "Back" };
                 Assert.That(view.OrderedSelectables.Length, Is.EqualTo(names.Length));
                 float previousBottom = 0;
                 for (int i = 0; i < names.Length; i++)
@@ -285,12 +285,12 @@ namespace RetroFPS.Tests
                     previousBottom = bottom;
                 }
                 data.Update();
-                foreach (string field in new[] { "postProcessing", "brightness", "brightnessValue", "screenEffects", "screenEffectsValue" })
+                foreach (string field in new[] { "difficulty", "postProcessing", "brightness", "brightnessValue", "screenEffects", "screenEffectsValue" })
                     Assert.That(data.FindProperty(field).objectReferenceValue, Is.Not.Null, field);
                 Assert.That(content.Find("Slider5").GetComponent<MenuSlider>().maxValue, Is.EqualTo(20));
                 Assert.That(content.Find("Slider6").GetComponent<MenuSlider>().maxValue, Is.EqualTo(10));
-                string[] rowNames = { "Cycle3", "Slider5", "Slider6" };
-                string[] keys = { "settings.post_processing", "settings.brightness", "settings.screen_effects" };
+                string[] rowNames = { "Difficulty", "Cycle3", "Slider5", "Slider6" };
+                string[] keys = { "settings.difficulty", "settings.post_processing", "settings.brightness", "settings.screen_effects" };
                 for (int i = 0; i < rowNames.Length; i++)
                 {
                     var label = new SerializedObject(content.Find(rowNames[i] + "/Label").GetComponent<LocalizedText>());
@@ -339,9 +339,9 @@ namespace RetroFPS.Tests
                 Assert.That(dialog.Affirmative.navigation.selectOnUp, Is.EqualTo(dialog.Negative));
             }
             SettingsPanelView settings = pause.GetComponentInChildren<SettingsPanelView>(true);
-            Assert.That(settings.OrderedSelectables.Length, Is.EqualTo(13));
+            Assert.That(settings.OrderedSelectables.Length, Is.EqualTo(14));
             Assert.That(settings.OrderedSelectables[0].name, Is.EqualTo("Language"));
-            Assert.That(settings.OrderedSelectables[12].navigation.selectOnDown, Is.EqualTo(settings.OrderedSelectables[0]));
+            Assert.That(settings.OrderedSelectables[settings.OrderedSelectables.Length - 1].navigation.selectOnDown, Is.EqualTo(settings.OrderedSelectables[0]));
         }
         [Test]
         public void TextFloorDynamicLabelsAndUiAudioExceptionAreValid()

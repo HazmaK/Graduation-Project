@@ -1,0 +1,17 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 64d9c1e36f5ccee41877e2f0616755bd, type: 3}
+  m_Name: DifficultyPresetTable
+  m_EditorClassIdentifier: RetroFPS.Gameplay::RetroFPS.Combat.DifficultyPresetTable
+  easy: {fileID: 11400000, guid: 84fb5230e4102f045a5cbb1c81f7c89d, type: 2}
+  normal: {fileID: 11400000, guid: 624fce8119a9eeb4cbb6da9db6763ffa, type: 2}
+  hard: {fileID: 11400000, guid: 9efbdec81d7e1ae4a9b2bc8dbc8cd2f7, type: 2}

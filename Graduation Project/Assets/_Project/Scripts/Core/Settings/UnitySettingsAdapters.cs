@@ -80,7 +80,8 @@ namespace RetroFPS.Settings
                 LanguageDefaults.FromCode(preferences.GetString("language", string.Empty), defaults.Language),
                 postProcessing == 0 ? false : postProcessing == 1 ? true : defaults.PostProcessing,
                 preferences.GetFloat("brightness", defaults.Brightness),
-                preferences.GetFloat("screenEffects", defaults.ScreenEffects));
+                preferences.GetFloat("screenEffects", defaults.ScreenEffects),
+                (DifficultySetting)preferences.GetInt("difficulty", (int)defaults.Difficulty));
         }
 
         /// <inheritdoc/>
@@ -110,6 +111,7 @@ namespace RetroFPS.Settings
             preferences.SetFloat("brightness", data.Brightness);
             preferences.SetFloat("screenEffects", data.ScreenEffects);
             preferences.SetString("language", LanguageDefaults.ToCode(data.Language));
+            preferences.SetInt("difficulty", (int)data.Difficulty);
         }
 
         /// <inheritdoc/>
