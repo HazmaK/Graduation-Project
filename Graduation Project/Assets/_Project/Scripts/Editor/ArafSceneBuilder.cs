@@ -99,6 +99,12 @@ namespace RetroFPS.Editor
                 Material veil = VeilMaterialAsset("Mat_Araf_Veil", new Color(0.02f, 0f, 0.04f, 0.92f));
                 Material doorStone = MaterialAsset("Mat_Araf_DoorStone", new Color(0.22f, 0.19f, 0.28f));
                 Material rune = MaterialAsset("Mat_Araf_Rune", new Color(1f, 0.08f, 0.05f), true, new Color(4f, 0.32f, 0.2f));
+                // Mat_Araf_Bone kuledeki Judge_ArenaAmmoCache'te de kullanılıyor; kuleye dokunmamak için
+                // Araf kit/oda parçaları dokulu ayrı Mat_Araf_Wall kullanır, Bone düz kalır.
+                Material wall = MaterialAsset("Mat_Araf_Wall", new Color(0.42f, 0.38f, 0.50f));
+                // Yer tutucu dokular: var olan PNG'lere dokunmaz, yalnızca shader/doku bağlar.
+                ArafPlaceholderTextures.Apply(wall, floor, doorStone);
+                bone = wall;
 
                 EnsureFolder(ArafPrefabDir);
                 EnsureFolder(KitPrefabDir);

@@ -263,3 +263,9 @@ ArafArenaEnemyActivator düşman davranışı bağdaştırıcısıdır (bağland
 - Mühür arenası: 3 dalga; son dalgada elit Kefaretçi (400/400, taban 320); temizlenince mühür 1/3, uyanış 1, sunak.
 - Kule rengi değişmedi (araf-p4-01 ↔ araf-p1b-07). Kanıt: `production/qa/evidence/araf-p4-*.png`.
 - Açık: gerçek girdiyle elle oynanış testi yapılmadı (betikli ışınlama/öldürme). Düşman AI oturumunun `IHuntableEnemy`'si bağlanınca yalnızca `ArafArenaEnemyActivator` değişecek.
+
+### Yer tutucu dokular (2026-11-27)
+- `ArafPlaceholderTextures` (Editor) 128 px nokta filtreli PNG üretir: `Data/Araf/Textures/Tex_Araf_Floor.png`, `Tex_Araf_Wall.png`, `Tex_Araf_DoorStone.png`. **Dosya varsa üzerine yazmaz**: kullanıcı dokusu aynı adla konur. Menü: `RetroFPS/Araf/Apply Placeholder Textures`; ArafSceneBuilder da çağırır.
+- Shader `RetroFPS/Araf/TriplanarLit` (`Art/Shaders/Araf_TriplanarLit.shader`): dünya uzayı triplanar URP Lit (Forward+, UniversalForwardOnly). Kit parçaları ölçeklenmiş küp olduğu için UV yerine dünya konumu; `_TileSize` = doku başına metre (zemin/duvar 4 m, kapı 2 m → 32 px/m).
+- Araf kit/oda parçaları `Mat_Araf_Wall` kullanır. `Mat_Araf_Bone` kuledeki `Judge_ArenaAmmoCache`'te de kullanıldığı için dokusuz URP Lit bırakıldı (kule değişmesin).
+- Doğrulama: derleme temiz, materyaller bağlı, kule rengi aynı. Kanıt `production/qa/evidence/araf-tex-0*.png`. Araf genel olarak karanlık; ışıksız koridorlarda dokular zor okunuyor (ışık seviyesi konusu).
